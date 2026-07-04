@@ -57,6 +57,22 @@ func main() {
 	must(err)
 	fmt.Printf("batch of %d: %s\n", len(texts), time.Since(t2))
 
+	// Optional: dump embeddings for cross-model comparison.
+	if dump := os.Getenv("SPIKE_DUMP"); dump != "" {
+		f, err := os.Create(dump)
+		must(err)
+		for _, e := range out.Embeddings {
+			for i, v := range e {
+				if i > 0 {
+					fmt.Fprint(f, ",")
+				}
+				fmt.Fprintf(f, "%g", v)
+			}
+			fmt.Fprintln(f)
+		}
+		f.Close()
+	}
+
 	// Sanity: Korean/English paraphrases should be far more similar
 	// than the unrelated Korean sentence.
 	simKE := cosine(out.Embeddings[0], out.Embeddings[1])
