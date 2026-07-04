@@ -65,6 +65,24 @@ canopy new "..." --sync        # 단건 작업은 생성과 동시에 sync
   모든 canopy 명령이 시작할 때 미동기 상태 배너(⚠)를 띄우니, 배너가 보이면 sync가 밀린 것.
 - push 실패 시 커밋은 로컬에 안전하다. `canopy sync` 재실행.
 
+## Second Brain 루프 (resurface / bridge)
+
+위키가 축적한 지식을 사용자에게 되돌려주는 루프. **후보 선정은 canopy가, 판단·문장화·전달은 네가** 한다.
+canopy가 주는 후보를 무시하고 임의 페이지를 고르지 마라. state 파일(`_meta/resurface/`)은 직접 편집 금지.
+
+```bash
+canopy resurface -n 1 --json                     # 잊힌 페이지/낡은 허브 후보 (노출 이력 자동 기록)
+canopy bridge -n 3 --json                        # 유사한데 연결 안 된 페어
+canopy resurface feedback <slug> --up|--down|--snooze 7   # 사용자 반응 기록
+canopy bridge --dismiss a:b                      # 사용자가 "관련 없다"고 한 페어 영구 제외
+```
+
+- cron 저널/하이라이트: 후보의 excerpt/explanation을 바탕으로 짧게 문장화해 Telegram 전송,
+  끝에 `canopy sync -m "resurface state"`.
+- 사용자가 bridge에 "연결해"라고 하면: 두 페이지의 관련 섹션에 [[상호 링크]]를 추가하고
+  각각 `canopy update <page>` 실행.
+- 미리보기만 필요하면 `--peek` (state 무기록).
+
 ## 건강 검사
 
 ```bash

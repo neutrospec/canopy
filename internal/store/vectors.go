@@ -129,6 +129,61 @@ func (s *Store) SearchSemantic(query []float32, k int) ([]Hit, error) {
 	return hits, nil
 }
 
+// PageVectors returns one unit vector per page: the normalized mean of
+// its chunk vectors. Used for page-to-page similarity (bridge picks).
+func (s *Store) PageVectors() (map[string][]float32, error) {
+	rows, err := s.db.Query(`SELECT slug, vector FROM chunks ORDER BY slug, seq`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	sums := map[string][]float64{}
+	counts := map[string]int{}
+	for rows.Next() {
+		var slug string
+		var blob []byte
+		if err := rows.Scan(&slug, &blob); err != nil {
+			return nil, err
+		}
+		vec, err := decodeVec(blob)
+		if err != nil {
+			return nil, err
+		}
+		sum := sums[slug]
+		if sum == nil {
+			sum = make([]float64, len(vec))
+			sums[slug] = sum
+		}
+		for i, f := range vec {
+			sum[i] += float64(f)
+		}
+		counts[slug]++
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	out := make(map[string][]float32, len(sums))
+	for slug, sum := range sums {
+		var norm float64
+		for _, f := range sum {
+			norm += f * f
+		}
+		norm = math.Sqrt(norm)
+		if norm == 0 {
+			continue
+		}
+		v := make([]float32, len(sum))
+		for i, f := range sum {
+			v[i] = float32(f / norm)
+		}
+		out[slug] = v
+	}
+	return out, nil
+}
+
+// Cosine of two unit vectors (exported for bridge scoring).
+func Cosine(a, b []float32) float64 { return dot(a, b) }
+
 func snippetOf(text string) string {
 	// Chunk text starts with the page title line; snip a bit of the body.
 	if i := strings.Index(text, "\n\n"); i >= 0 {
