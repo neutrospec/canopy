@@ -19,6 +19,7 @@ import (
 	"github.com/nobocop/canopy/internal/indexer"
 	"github.com/nobocop/canopy/internal/lint"
 	"github.com/nobocop/canopy/internal/search"
+	"github.com/nobocop/canopy/internal/skills"
 	"github.com/nobocop/canopy/internal/store"
 	"github.com/nobocop/canopy/internal/wiki"
 )
@@ -39,7 +40,7 @@ func main() {
 	root.PersistentFlags().BoolVar(&flagJSON, "json", false, "machine-readable JSON output")
 
 	root.AddCommand(cmdInit(), cmdStatus(), cmdReindex(), cmdSearch(), cmdBacklinks(), cmdLint(), cmdShow(), cmdModel(),
-		cmdNew(), cmdUpdate(), cmdMv(), cmdRm(), cmdArchive(), cmdSync())
+		cmdNew(), cmdUpdate(), cmdMv(), cmdRm(), cmdArchive(), cmdSync(), cmdSkills())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
@@ -414,6 +415,41 @@ func cmdModel() *cobra.Command {
 			return nil
 		},
 	})
+	return c
+}
+
+func cmdSkills() *cobra.Command {
+	var dir string
+	c := &cobra.Command{Use: "skills", Short: "Manage the hermes skill set for this wiki"}
+	install := &cobra.Command{
+		Use:   "install",
+		Short: "Write the canopy-wiki / canopy-ingest skills into the hermes skills directory",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			if dir == "" {
+				if dir, err = skills.DefaultSkillsDir(); err != nil {
+					return err
+				}
+			}
+			written, err := skills.Install(dir)
+			if err != nil {
+				return err
+			}
+			present := skills.SupersededPresent(dir)
+			if flagJSON {
+				return emitJSON(map[string]any{"written": written, "superseded_present": present})
+			}
+			for _, p := range written {
+				fmt.Println("✓", p)
+			}
+			if hint := skills.RemovalHint(dir, present); hint != "" {
+				fmt.Print(hint)
+			}
+			return nil
+		},
+	}
+	install.Flags().StringVar(&dir, "dir", "", "skills directory (default ~/.hermes/skills)")
+	c.AddCommand(install)
 	return c
 }
 
