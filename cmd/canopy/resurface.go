@@ -126,11 +126,11 @@ func cmdResurfaceFeedback() *cobra.Command {
 func cmdBridge() *cobra.Command {
 	var n int
 	var minSim float64
-	var peek bool
+	var peek, includeLinked bool
 	var dismiss string
 	c := &cobra.Command{
 		Use:   "bridge",
-		Short: "Find similar-but-unlinked page pairs (connection candidates)",
+		Short: "Find similar page pairs: unlinked = connection candidates; --include-linked adds merge/contradiction candidates",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			w, err := loadWiki()
 			if err != nil {
@@ -172,7 +172,7 @@ func cmdBridge() *cobra.Command {
 				return fmt.Errorf("no embeddings in the index — run `canopy reindex` first")
 			}
 			now := time.Now()
-			bridges := resurface.PickBridges(scan, vectors, st, minSim, n, now)
+			bridges := resurface.PickBridges(scan, vectors, st, minSim, n, includeLinked, now)
 			if !peek && len(bridges) > 0 {
 				for _, b := range bridges {
 					st.MarkPairShown(strings.ToLower(b.A.Slug), strings.ToLower(b.B.Slug), now)
@@ -189,7 +189,11 @@ func cmdBridge() *cobra.Command {
 				return nil
 			}
 			for _, b := range bridges {
-				fmt.Printf("[%.3f] %s ↔ %s\n", b.Similarity, b.A.Slug, b.B.Slug)
+				mark := ""
+				if b.Linked {
+					mark = " (already linked — merge/contradiction candidate)"
+				}
+				fmt.Printf("[%.3f] %s ↔ %s%s\n", b.Similarity, b.A.Slug, b.B.Slug, mark)
 				fmt.Printf("  A: %s\n  B: %s\n", b.A.Title, b.B.Title)
 			}
 			if !peek {
@@ -201,6 +205,7 @@ func cmdBridge() *cobra.Command {
 	c.Flags().IntVarP(&n, "count", "n", 5, "max pairs")
 	c.Flags().Float64Var(&minSim, "min-sim", 0.70, "cosine similarity threshold")
 	c.Flags().BoolVar(&peek, "peek", false, "don't record pairs in state (preview only)")
+	c.Flags().BoolVar(&includeLinked, "include-linked", false, "also return linked pairs (semantic-lint candidates; raise --min-sim to ~0.85)")
 	c.Flags().StringVar(&dismiss, "dismiss", "", "permanently dismiss a pair: slug-a:slug-b")
 	return c
 }

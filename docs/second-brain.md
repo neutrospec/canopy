@@ -60,15 +60,42 @@ bridge에 "연결해줘"라고 답하면 hermes가 실제로 두 페이지에 [[
 
 **금지**: 후보를 무시하고 hermes가 임의 페이지를 고르는 것, state 파일 직접 편집.
 
-## 로드맵 (P2–P4) — 아직 점검 명령이 없으므로 invariants가 아니라 여기 있다
+## P2 — Query 파일링 루프 (구현됨, invariants G1–G3)
 
-- **P2 — Query 파일링 루프**: `canopy recall "질문" --json`이 청크 단위 근거+출처
-  slug를 반환(에이전트 컨텍스트 주입용). 스킬 규칙: 재도출 비용이 큰 답은
-  `canopy new`로 파일링. Karpathy의 "질문할수록 위키가 부자가 된다" 복원.
-- **P3 — Semantic Lint (야간 증류)**: 주 1회 hermes가 `canopy bridge` + 고유사
-  페어를 받아 모순 탐지·통합 제안·커버리지 갭 판단. canopy 쪽 후보 명령 추가 검토:
-  `canopy lint --semantic-candidates`.
-- **P4 — Express**: `canopy digest --since 90d` (분기 회고 소재), decision 태그
-  시계열. 위키 → 외부 산출물.
+```bash
+canopy recall "질문" --json [-k 6] [--per-page 2]
+```
+
+search(페이지 랭킹)와 달리 **청크 원문 + 출처 slug**를 반환한다 — 에이전트가
+컨텍스트에 주입하고 `[[slug]]`로 인용하는 용도. per-page 캡으로 긴 페이지가
+결과를 독점하지 못한다. 나머지 절반은 스킬 규칙이다:
+**재도출 비용이 큰 답(비교·심층 종합)은 `canopy new`로 파일링하라** —
+Karpathy의 "질문할수록 위키가 부자가 된다"의 복원.
+
+## P3 — Semantic Lint 후보 (canopy 측 구현됨, invariant G6)
+
+```bash
+canopy bridge --include-linked --min-sim 0.85 --peek --json
+```
+
+링크 여부와 무관하게 고유사 페어를 공급하고 `linked` 필드로 구분한다.
+`linked: true`인 고유사 페어 = **통합/모순 후보** (예: 실위키 첫 실행에서
+0.986짜리 opencode-gitops 중복 페이지 발견). 주기 실행에서 hermes가
+모순 탐지·통합 제안·커버리지 갭을 판단한다 — hermes cron 등록은 보류 중 (task #4).
+
+## P4 — Express 소재 수집 (canopy 측 구현됨, invariants G4–G5)
+
+```bash
+canopy digest --since 90d --json   # 90d | 12w | 3m | YYYY-MM-DD
+```
+
+기간 내 생성/갱신 페이지, 신규 페이지 태그 분포, decision 태그 시계열(전 기간)을
+구조화 출력. 분기 회고("이 3개월 내가 뭘 알게 됐나")·주간 저널의 소재.
+문장화는 에이전트가 한다.
+
+## 남은 로드맵
+
+- 커버리지 갭 후보: raw/ 최근 유입과 위키 페이지의 의미적 커버리지 비교 (원 설계 전략 5)
+- 피드백 가중치 자동 조정 (원 설계 v3) — feedback 데이터가 쌓인 뒤
 
 각 항목은 구현 시 invariants.md에 점검 항목을 먼저 추가한다.

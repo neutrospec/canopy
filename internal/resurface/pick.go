@@ -68,7 +68,7 @@ func PickPages(scan *wiki.ScanResult, st *State, strategy string, n int, now tim
 		return hubs[i].stale > hubs[j].stale
 	})
 
-	var picks []Pick
+	picks := []Pick{}
 	used := map[string]bool{}
 	take := func(c cand, strat string) {
 		if used[c.page.Slug] {
@@ -154,11 +154,15 @@ func PickPages(scan *wiki.ScanResult, st *State, strategy string, n int, now tim
 	return picks, nil
 }
 
-// Bridge is a similar-but-unlinked page pair (strategy: concept bridge).
+// Bridge is a similar page pair. In default mode only unlinked pairs
+// are returned (connection candidates). With includeLinked, linked
+// pairs at high similarity also surface — those are merge/contradiction
+// candidates for the agent's semantic lint pass.
 type Bridge struct {
 	A          BridgeSide `json:"a"`
 	B          BridgeSide `json:"b"`
 	Similarity float64    `json:"similarity"`
+	Linked     bool       `json:"linked"`
 }
 
 type BridgeSide struct {
@@ -168,9 +172,9 @@ type BridgeSide struct {
 	Excerpt string `json:"excerpt"`
 }
 
-// PickBridges finds page pairs with cosine similarity >= minSim that
-// have no wikilink in either direction.
-func PickBridges(scan *wiki.ScanResult, vectors map[string][]float32, st *State, minSim float64, n int, now time.Time) []Bridge {
+// PickBridges finds page pairs with cosine similarity >= minSim.
+// Linked pairs are excluded unless includeLinked is set.
+func PickBridges(scan *wiki.ScanResult, vectors map[string][]float32, st *State, minSim float64, n int, includeLinked bool, now time.Time) []Bridge {
 	linked := map[string]bool{}
 	for _, p := range scan.Pages {
 		from := normalizeSlug(p.Slug)
@@ -186,12 +190,13 @@ func PickBridges(scan *wiki.ScanResult, vectors map[string][]float32, st *State,
 	}
 	sort.Strings(slugs)
 
-	var bridges []Bridge
+	bridges := []Bridge{}
 	for i := 0; i < len(slugs); i++ {
 		for j := i + 1; j < len(slugs); j++ {
 			a, b := slugs[i], slugs[j]
 			na, nb := normalizeSlug(a), normalizeSlug(b)
-			if linked[pairKey(na, nb)] || !st.pairEligible(na, nb, now) {
+			isLinked := linked[pairKey(na, nb)]
+			if (isLinked && !includeLinked) || !st.pairEligible(na, nb, now) {
 				continue
 			}
 			sim := store.Cosine(vectors[a], vectors[b])
@@ -203,6 +208,7 @@ func PickBridges(scan *wiki.ScanResult, vectors map[string][]float32, st *State,
 				A:          BridgeSide{Slug: pa.Slug, RelPath: pa.RelPath, Title: pa.Title, Excerpt: excerpt(pa.Body)},
 				B:          BridgeSide{Slug: pb.Slug, RelPath: pb.RelPath, Title: pb.Title, Excerpt: excerpt(pb.Body)},
 				Similarity: sim,
+				Linked:     isLinked,
 			})
 		}
 	}

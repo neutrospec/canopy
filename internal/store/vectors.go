@@ -129,6 +129,61 @@ func (s *Store) SearchSemantic(query []float32, k int) ([]Hit, error) {
 	return hits, nil
 }
 
+// ChunkHit is a chunk-level retrieval result for agent context
+// injection: the verbatim chunk text plus its source page.
+type ChunkHit struct {
+	Slug    string  `json:"slug"`
+	RelPath string  `json:"rel_path"`
+	Title   string  `json:"title"`
+	Seq     int     `json:"seq"`
+	Score   float64 `json:"score"`
+	Text    string  `json:"text"`
+}
+
+// SearchChunks returns the top-k chunks by cosine similarity, capped at
+// perPageCap chunks per page so one long page cannot crowd out the rest
+// (perPageCap <= 0 disables the cap).
+func (s *Store) SearchChunks(query []float32, k, perPageCap int) ([]ChunkHit, error) {
+	rows, err := s.db.Query(`
+		SELECT c.slug, p.rel_path, p.title, c.seq, c.vector, c.text
+		FROM chunks c JOIN pages p ON p.slug = c.slug`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var all []ChunkHit
+	for rows.Next() {
+		var h ChunkHit
+		var blob []byte
+		if err := rows.Scan(&h.Slug, &h.RelPath, &h.Title, &h.Seq, &blob, &h.Text); err != nil {
+			return nil, err
+		}
+		vec, err := decodeVec(blob)
+		if err != nil {
+			return nil, err
+		}
+		h.Score = dot(query, vec)
+		all = append(all, h)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	sort.Slice(all, func(i, j int) bool { return all[i].Score > all[j].Score })
+	perPage := map[string]int{}
+	out := []ChunkHit{}
+	for _, h := range all {
+		if perPageCap > 0 && perPage[h.Slug] >= perPageCap {
+			continue
+		}
+		perPage[h.Slug]++
+		out = append(out, h)
+		if len(out) == k {
+			break
+		}
+	}
+	return out, nil
+}
+
 // PageVectors returns one unit vector per page: the normalized mean of
 // its chunk vectors. Used for page-to-page similarity (bridge picks).
 func (s *Store) PageVectors() (map[string][]float32, error) {

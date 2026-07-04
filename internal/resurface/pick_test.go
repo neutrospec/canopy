@@ -98,10 +98,13 @@ func TestPickBridges(t *testing.T) {
 		"hub":       {0.95, 0.312},
 		"fresh":     {0.9, 0.436},
 	}
-	bridges := PickBridges(scan, vectors, newState(), 0.9, 10, now)
+	bridges := PickBridges(scan, vectors, newState(), 0.9, 10, false, now)
 	found := map[string]bool{}
 	for _, b := range bridges {
 		found[b.A.Slug+"|"+b.B.Slug] = true
+		if b.Linked {
+			t.Errorf("default mode returned linked pair: %+v", b)
+		}
 		if (b.A.Slug == "fresh" && b.B.Slug == "hub") || (b.A.Slug == "hub" && b.B.Slug == "fresh") {
 			t.Error("linked pair fresh↔hub must be excluded")
 		}
@@ -110,10 +113,25 @@ func TestPickBridges(t *testing.T) {
 		t.Errorf("expected forgotten|hub bridge, got %+v", bridges)
 	}
 
+	// --include-linked surfaces fresh↔hub, flagged as linked (G6).
+	withLinked := PickBridges(scan, vectors, newState(), 0.9, 10, true, now)
+	sawLinked := false
+	for _, b := range withLinked {
+		if (b.A.Slug == "fresh" && b.B.Slug == "hub") || (b.A.Slug == "hub" && b.B.Slug == "fresh") {
+			sawLinked = true
+			if !b.Linked {
+				t.Error("linked pair not flagged Linked=true")
+			}
+		}
+	}
+	if !sawLinked {
+		t.Errorf("include-linked did not surface the linked pair: %+v", withLinked)
+	}
+
 	// Dismissed pairs never come back.
 	st := newState()
 	st.DismissPair("forgotten", "hub")
-	if bs := PickBridges(scan, vectors, st, 0.9, 10, now); len(bs) != len(bridges)-1 {
+	if bs := PickBridges(scan, vectors, st, 0.9, 10, false, now); len(bs) != len(bridges)-1 {
 		t.Errorf("dismiss not honored: %+v", bs)
 	}
 }
