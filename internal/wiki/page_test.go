@@ -70,8 +70,8 @@ func TestScanAndBacklinks(t *testing.T) {
 func TestSlugify(t *testing.T) {
 	cases := map[string]string{
 		"Windows RDP Remote Access Guide": "windows-rdp-remote-access-guide",
-		"태국 입국 정보":                       "", // pure Korean → caller must ask for explicit slug
-		"OPC-UA란? (개요)":                  "opc-ua",
+		"태국 입국 정보":                        "", // pure Korean → caller must ask for explicit slug
+		"OPC-UA란? (개요)":                   "opc-ua",
 	}
 	for in, want := range cases {
 		if got := Slugify(in); got != want {

@@ -10,11 +10,11 @@ import (
 )
 
 type Status struct {
-	IsRepo  bool   `json:"is_repo"`
-	Branch  string `json:"branch"`
-	Dirty   int    `json:"dirty"`  // modified + untracked paths
-	Ahead   int    `json:"ahead"`  // commits not pushed
-	Behind  int    `json:"behind"` // commits not pulled
+	IsRepo  bool     `json:"is_repo"`
+	Branch  string   `json:"branch"`
+	Dirty   int      `json:"dirty"`  // modified + untracked paths
+	Ahead   int      `json:"ahead"`  // commits not pushed
+	Behind  int      `json:"behind"` // commits not pulled
 	Changed []string `json:"changed,omitempty"`
 }
 

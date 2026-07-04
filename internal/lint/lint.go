@@ -28,8 +28,8 @@ type Finding struct {
 }
 
 type Report struct {
-	TotalPages int       `json:"total_pages"`
-	Findings   []Finding `json:"findings"`
+	TotalPages int            `json:"total_pages"`
+	Findings   []Finding      `json:"findings"`
 	Counts     map[string]int `json:"counts"`
 }
 

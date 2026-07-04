@@ -19,6 +19,10 @@ type Store struct {
 	db *sql.DB
 }
 
+// schemaVersion: bump when the layout changes — the DB is a derived
+// cache, so on mismatch we simply drop everything and rebuild.
+const schemaVersion = "2"
+
 const schema = `
 CREATE TABLE IF NOT EXISTS pages (
 	slug     TEXT PRIMARY KEY,
@@ -33,13 +37,13 @@ CREATE VIRTUAL TABLE IF NOT EXISTS fts USING fts5(
 	slug, title, body, tokenize='unicode61 remove_diacritics 2'
 );
 CREATE TABLE IF NOT EXISTS chunks (
-	id       INTEGER PRIMARY KEY,
 	slug     TEXT NOT NULL,
 	seq      INTEGER NOT NULL,
+	hash     TEXT NOT NULL,
 	text     TEXT NOT NULL,
-	vector   BLOB
+	vector   BLOB NOT NULL,
+	PRIMARY KEY (slug, seq)
 );
-CREATE INDEX IF NOT EXISTS idx_chunks_slug ON chunks(slug);
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
 `
 
@@ -51,11 +55,29 @@ func Open(path string) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
+	s := &Store{db: db}
 	if _, err := db.Exec(schema); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("migrate: %w", err)
 	}
-	return &Store{db: db}, nil
+	v, _ := s.GetMeta("schema_version")
+	if v != schemaVersion {
+		for _, t := range []string{"pages", "fts", "chunks", "meta"} {
+			if _, err := db.Exec("DROP TABLE IF EXISTS " + t); err != nil {
+				db.Close()
+				return nil, err
+			}
+		}
+		if _, err := db.Exec(schema); err != nil {
+			db.Close()
+			return nil, fmt.Errorf("migrate: %w", err)
+		}
+		if err := s.SetMeta("schema_version", schemaVersion); err != nil {
+			db.Close()
+			return nil, err
+		}
+	}
+	return s, nil
 }
 
 func (s *Store) Close() error { return s.db.Close() }

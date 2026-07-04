@@ -5,6 +5,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,8 +14,11 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/nobocop/canopy/internal/config"
+	"github.com/nobocop/canopy/internal/embed"
 	"github.com/nobocop/canopy/internal/gitops"
+	"github.com/nobocop/canopy/internal/indexer"
 	"github.com/nobocop/canopy/internal/lint"
+	"github.com/nobocop/canopy/internal/search"
 	"github.com/nobocop/canopy/internal/store"
 	"github.com/nobocop/canopy/internal/wiki"
 )
@@ -33,7 +38,7 @@ func main() {
 	root.PersistentFlags().StringVar(&flagWiki, "wiki", "", "wiki root (default: $CANOPY_WIKI or canopy.toml discovery)")
 	root.PersistentFlags().BoolVar(&flagJSON, "json", false, "machine-readable JSON output")
 
-	root.AddCommand(cmdInit(), cmdStatus(), cmdReindex(), cmdSearch(), cmdBacklinks(), cmdLint(), cmdShow())
+	root.AddCommand(cmdInit(), cmdStatus(), cmdReindex(), cmdSearch(), cmdBacklinks(), cmdLint(), cmdShow(), cmdModel())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
@@ -69,8 +74,9 @@ func emitJSON(v any) error {
 
 // refreshIndex rescans the wiki and rebuilds page metadata + FTS.
 // Cheap at current scale (~250 pages), so read commands always run it
-// and can never serve stale keyword results.
-func refreshIndex(w *config.Wiki) (*store.Store, *wiki.ScanResult, error) {
+// and can never serve stale keyword results. Vector chunks are only
+// refreshed when an engine is passed (they cost model inference).
+func refreshIndex(w *config.Wiki, eng embed.Engine) (*store.Store, *wiki.ScanResult, error) {
 	scan, err := wiki.Scan(w)
 	if err != nil {
 		return nil, nil, err
@@ -79,11 +85,25 @@ func refreshIndex(w *config.Wiki) (*store.Store, *wiki.ScanResult, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := st.RebuildPages(scan.Pages); err != nil {
+	progress := func(s string) {
+		if !flagJSON {
+			fmt.Fprintln(os.Stderr, "  "+s)
+		}
+	}
+	if _, err := indexer.Reindex(w, st, scan, eng, progress); err != nil {
 		st.Close()
 		return nil, nil, err
 	}
 	return st, scan, nil
+}
+
+// newEngine loads the in-process embedding model, with a heads-up on
+// stderr because the fp32 model takes ~10s to load.
+func newEngine() (embed.Engine, error) {
+	if !flagJSON {
+		fmt.Fprintln(os.Stderr, "loading embedding model (~10s)…")
+	}
+	return embed.New()
 }
 
 func cmdInit() *cobra.Command {
@@ -105,7 +125,7 @@ func cmdInit() *cobra.Command {
 			if err := ensureGitignore(w); err != nil {
 				return err
 			}
-			st, scan, err := refreshIndex(w)
+			st, scan, err := refreshIndex(w, nil)
 			if err != nil {
 				return err
 			}
@@ -166,10 +186,10 @@ func cmdStatus() *cobra.Command {
 			}
 			if flagJSON {
 				return emitJSON(map[string]any{
-					"root":       w.Root,
-					"pages":      len(scan.Pages),
-					"stray_root": scan.StrayRoot,
-					"git":        git,
+					"root":        w.Root,
+					"pages":       len(scan.Pages),
+					"stray_root":  scan.StrayRoot,
+					"git":         git,
 					"initialized": w.HasTOML,
 				})
 			}
@@ -201,27 +221,55 @@ func cmdStatus() *cobra.Command {
 }
 
 func cmdReindex() *cobra.Command {
-	return &cobra.Command{
+	var noEmbed bool
+	c := &cobra.Command{
 		Use:   "reindex",
-		Short: "Rebuild the derived index (pages + FTS; embeddings in M2)",
+		Short: "Rebuild the derived index (pages, FTS, and embeddings)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			w, err := loadWiki()
 			if err != nil {
 				return err
 			}
 			banner(w)
-			st, scan, err := refreshIndex(w)
+			var eng embed.Engine
+			if !noEmbed && embed.Available && embed.ModelAvailable() {
+				if eng, err = newEngine(); err != nil {
+					return err
+				}
+				defer eng.Close()
+			}
+			scan, err := wiki.Scan(w)
+			if err != nil {
+				return err
+			}
+			st, err := store.Open(w.DBPath())
 			if err != nil {
 				return err
 			}
 			defer st.Close()
-			if flagJSON {
-				return emitJSON(map[string]any{"pages": len(scan.Pages)})
+			progress := func(s string) {
+				if !flagJSON {
+					fmt.Fprintln(os.Stderr, "  "+s)
+				}
 			}
-			fmt.Printf("✓ indexed %d pages → %s\n", len(scan.Pages), w.DBPath())
+			res, err := indexer.Reindex(w, st, scan, eng, progress)
+			if err != nil {
+				return err
+			}
+			if flagJSON {
+				return emitJSON(res)
+			}
+			fmt.Printf("✓ indexed %d pages → %s\n", res.Pages, w.DBPath())
+			if eng != nil {
+				fmt.Printf("  embeddings: %d page(s) refreshed, %d pruned, %d chunks total\n", res.Embedded, res.Pruned, res.TotalChunks)
+			} else if !noEmbed {
+				fmt.Println("  embeddings skipped (model or ORT build missing — see `canopy model pull`)")
+			}
 			return nil
 		},
 	}
+	c.Flags().BoolVar(&noEmbed, "no-embed", false, "skip embedding refresh")
+	return c
 }
 
 func cmdSearch() *cobra.Command {
@@ -229,7 +277,7 @@ func cmdSearch() *cobra.Command {
 	var topK int
 	c := &cobra.Command{
 		Use:   "search <query>",
-		Short: "Search the wiki (keyword now; semantic/hybrid arrive with M2)",
+		Short: "Search the wiki (hybrid = BM25 keyword + semantic vectors)",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			query := strings.Join(args, " ")
@@ -239,20 +287,56 @@ func cmdSearch() *cobra.Command {
 			}
 			banner(w)
 			switch mode {
-			case "keyword":
-			case "semantic", "hybrid":
-				return fmt.Errorf("mode %q requires the embedding index (M2); use --mode keyword for now", mode)
+			case "keyword", "semantic", "hybrid":
 			default:
 				return fmt.Errorf("unknown mode %q", mode)
 			}
-			st, _, err := refreshIndex(w)
+
+			// Hybrid degrades to keyword when the embedding stack is
+			// missing; explicit --mode semantic fails loudly instead.
+			var eng embed.Engine
+			if mode != "keyword" {
+				eng, err = newEngine()
+				if err != nil {
+					if mode == "semantic" {
+						return err
+					}
+					fmt.Fprintf(os.Stderr, "hybrid → keyword only (%v)\n", err)
+					mode = "keyword"
+				} else {
+					defer eng.Close()
+				}
+			}
+
+			st, _, err := refreshIndex(w, eng)
 			if err != nil {
 				return err
 			}
 			defer st.Close()
-			hits, err := st.SearchKeyword(query, topK)
-			if err != nil {
-				return err
+
+			var hits []store.Hit
+			var kw, sem []store.Hit
+			if mode == "keyword" || mode == "hybrid" {
+				if kw, err = st.SearchKeyword(query, topK); err != nil {
+					return err
+				}
+			}
+			if mode == "semantic" || mode == "hybrid" {
+				qv, err := eng.Embed([]string{query})
+				if err != nil {
+					return err
+				}
+				if sem, err = st.SearchSemantic(qv[0], topK); err != nil {
+					return err
+				}
+			}
+			switch mode {
+			case "keyword":
+				hits = kw
+			case "semantic":
+				hits = sem
+			case "hybrid":
+				hits = search.Fuse(topK, kw, sem)
 			}
 			if flagJSON {
 				return emitJSON(map[string]any{"query": query, "mode": mode, "hits": hits})
@@ -270,9 +354,91 @@ func cmdSearch() *cobra.Command {
 			return nil
 		},
 	}
-	c.Flags().StringVar(&mode, "mode", "keyword", "keyword|semantic|hybrid")
+	c.Flags().StringVar(&mode, "mode", "hybrid", "keyword|semantic|hybrid")
 	c.Flags().IntVarP(&topK, "top-k", "k", 10, "number of results")
 	return c
+}
+
+// modelFiles are fetched from Hugging Face by `canopy model pull`.
+// EmbeddedLLM/bge-m3-onnx-o2-cpu: fp32 CPU-optimized bge-m3 whose fused
+// ops require the ONNX Runtime backend (hence the ORT build tag).
+const modelRepo = "EmbeddedLLM/bge-m3-onnx-o2-cpu"
+
+var modelFiles = []string{
+	"model.onnx", "model.onnx.data", "config.json",
+	"tokenizer.json", "tokenizer_config.json", "special_tokens_map.json",
+}
+
+func cmdModel() *cobra.Command {
+	c := &cobra.Command{Use: "model", Short: "Manage the local embedding model"}
+	c.AddCommand(&cobra.Command{
+		Use:   "pull",
+		Short: "Download bge-m3 ONNX (~2.3GB) to ~/.canopy/models",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			dir := embed.DefaultModelPath()
+			if err := os.MkdirAll(dir, 0o755); err != nil {
+				return err
+			}
+			for _, f := range modelFiles {
+				dst := filepath.Join(dir, f)
+				if _, err := os.Stat(dst); err == nil {
+					fmt.Printf("  %s (cached)\n", f)
+					continue
+				}
+				fmt.Printf("  %s …\n", f)
+				if err := download("https://huggingface.co/"+modelRepo+"/resolve/main/"+f, dst); err != nil {
+					return fmt.Errorf("%s: %w", f, err)
+				}
+			}
+			fmt.Println("✓ model ready:", dir)
+			if !embed.Available {
+				fmt.Println("note: this binary lacks the ORT backend — rebuild with `make build` (-tags ORT)")
+			}
+			return nil
+		},
+	})
+	c.AddCommand(&cobra.Command{
+		Use:   "status",
+		Short: "Show embedding stack status",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if flagJSON {
+				return emitJSON(map[string]any{
+					"ort_build":       embed.Available,
+					"model_available": embed.ModelAvailable(),
+					"model_path":      embed.DefaultModelPath(),
+				})
+			}
+			fmt.Printf("ORT backend in binary: %v\n", embed.Available)
+			fmt.Printf("model downloaded:      %v (%s)\n", embed.ModelAvailable(), embed.DefaultModelPath())
+			return nil
+		},
+	})
+	return c
+}
+
+func download(url, dst string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+	tmp := dst + ".part"
+	f, err := os.Create(tmp)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(f, resp.Body); err != nil {
+		f.Close()
+		os.Remove(tmp)
+		return err
+	}
+	if err := f.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmp, dst)
 }
 
 func cmdBacklinks() *cobra.Command {
