@@ -12,7 +12,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/nobocop/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/config"
 )
 
 // Page is one markdown page inside a schema-governed directory.

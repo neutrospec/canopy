@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/nobocop/canopy/internal/config"
-	"github.com/nobocop/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/wiki"
 )
 
 func TestRunFixture(t *testing.T) {

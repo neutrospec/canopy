@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nobocop/canopy/internal/config"
-	"github.com/nobocop/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/wiki"
 )
 
 type Severity string

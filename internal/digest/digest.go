@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nobocop/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/wiki"
 )
 
 type PageRef struct {

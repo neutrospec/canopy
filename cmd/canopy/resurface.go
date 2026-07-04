@@ -11,9 +11,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/nobocop/canopy/internal/resurface"
-	"github.com/nobocop/canopy/internal/store"
-	"github.com/nobocop/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/resurface"
+	"github.com/neutrospec/canopy/internal/store"
+	"github.com/neutrospec/canopy/internal/wiki"
 )
 
 func cmdResurface() *cobra.Command {

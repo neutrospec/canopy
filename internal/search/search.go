@@ -4,7 +4,7 @@ package search
 import (
 	"sort"
 
-	"github.com/nobocop/canopy/internal/store"
+	"github.com/neutrospec/canopy/internal/store"
 )
 
 // rrfK is the standard Reciprocal Rank Fusion damping constant.

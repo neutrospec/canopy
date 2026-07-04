@@ -13,7 +13,7 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/nobocop/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/wiki"
 )
 
 type Store struct {

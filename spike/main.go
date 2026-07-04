@@ -14,7 +14,7 @@ import (
 	"github.com/knights-analytics/hugot"
 	"github.com/knights-analytics/hugot/pipelines"
 
-	"github.com/nobocop/canopy/internal/embed"
+	"github.com/neutrospec/canopy/internal/embed"
 )
 
 func main() {

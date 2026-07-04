@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/nobocop/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/config"
 )
 
 type Entry struct {

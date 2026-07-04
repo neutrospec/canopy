@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nobocop/canopy/internal/store"
-	"github.com/nobocop/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/store"
+	"github.com/neutrospec/canopy/internal/wiki"
 )
 
 // Thresholds from the user's 2026-06 Distill & Express design.

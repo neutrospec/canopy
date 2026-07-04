@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/nobocop/canopy/internal/digest"
-	"github.com/nobocop/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/digest"
+	"github.com/neutrospec/canopy/internal/wiki"
 )
 
 func cmdRecall() *cobra.Command {

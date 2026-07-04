@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nobocop/canopy/internal/config"
-	"github.com/nobocop/canopy/internal/embed"
-	"github.com/nobocop/canopy/internal/store"
-	"github.com/nobocop/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/embed"
+	"github.com/neutrospec/canopy/internal/store"
+	"github.com/neutrospec/canopy/internal/wiki"
 )
 
 type Result struct {

@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/nobocop/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/config"
 )
 
 const (

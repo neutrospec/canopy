@@ -1,4 +1,4 @@
-module github.com/nobocop/canopy
+module github.com/neutrospec/canopy
 
 go 1.26.4
 

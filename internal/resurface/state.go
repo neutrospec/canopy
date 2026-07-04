@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nobocop/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/config"
 )
 
 // State is the pick history and user feedback. It is NOT a derived

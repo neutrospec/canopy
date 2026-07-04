@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nobocop/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/wiki"
 )
 
 var now = time.Date(2026, 7, 4, 12, 0, 0, 0, time.UTC)

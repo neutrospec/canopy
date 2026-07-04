@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/nobocop/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/config"
 )
 
 func fixtureWiki(t *testing.T) *config.Wiki {

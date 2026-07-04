@@ -18,14 +18,14 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/nobocop/canopy/internal/config"
-	"github.com/nobocop/canopy/internal/embed"
-	"github.com/nobocop/canopy/internal/genindex"
-	"github.com/nobocop/canopy/internal/gitops"
-	"github.com/nobocop/canopy/internal/indexer"
-	"github.com/nobocop/canopy/internal/logops"
-	"github.com/nobocop/canopy/internal/store"
-	"github.com/nobocop/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/embed"
+	"github.com/neutrospec/canopy/internal/genindex"
+	"github.com/neutrospec/canopy/internal/gitops"
+	"github.com/neutrospec/canopy/internal/indexer"
+	"github.com/neutrospec/canopy/internal/logops"
+	"github.com/neutrospec/canopy/internal/store"
+	"github.com/neutrospec/canopy/internal/wiki"
 )
 
 var typeDirs = map[string]string{
