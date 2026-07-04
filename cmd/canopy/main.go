@@ -113,7 +113,7 @@ func cmdInit() *cobra.Command {
 	var force bool
 	c := &cobra.Command{
 		Use:   "init",
-		Short: "Adopt a wiki: write canopy.toml, prepare .canopy/, build the index",
+		Short: "Adopt a wiki: write canopy.toml (schema) and build the index cache",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			w, err := loadWiki()
 			if err != nil {
@@ -125,49 +125,21 @@ func cmdInit() *cobra.Command {
 			if err := w.WriteTOML(); err != nil {
 				return err
 			}
-			if err := ensureGitignore(w); err != nil {
-				return err
-			}
 			st, scan, err := refreshIndex(w, nil)
 			if err != nil {
 				return err
 			}
 			defer st.Close()
 			if flagJSON {
-				return emitJSON(map[string]any{"root": w.Root, "pages": len(scan.Pages)})
+				return emitJSON(map[string]any{"root": w.Root, "pages": len(scan.Pages), "db": w.DBPath()})
 			}
 			fmt.Printf("✓ initialized %s\n", w.Root)
-			fmt.Printf("  canopy.toml written, .canopy/ gitignored, %d pages indexed\n", len(scan.Pages))
+			fmt.Printf("  canopy.toml written, %d pages indexed → %s\n", len(scan.Pages), w.DBPath())
 			return nil
 		},
 	}
 	c.Flags().BoolVar(&force, "force", false, "overwrite existing canopy.toml")
 	return c
-}
-
-// ensureGitignore keeps the derived .canopy/ cache out of the wiki repo.
-func ensureGitignore(w *config.Wiki) error {
-	path := filepath.Join(w.Root, ".gitignore")
-	data, err := os.ReadFile(path)
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	for _, line := range strings.Split(string(data), "\n") {
-		if strings.TrimSpace(line) == ".canopy/" {
-			return nil
-		}
-	}
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	prefix := ""
-	if len(data) > 0 && !strings.HasSuffix(string(data), "\n") {
-		prefix = "\n"
-	}
-	_, err = f.WriteString(prefix + ".canopy/\n")
-	return err
 }
 
 func cmdStatus() *cobra.Command {
@@ -376,7 +348,7 @@ func cmdModel() *cobra.Command {
 	c := &cobra.Command{Use: "model", Short: "Manage the local embedding model"}
 	c.AddCommand(&cobra.Command{
 		Use:   "pull",
-		Short: "Download bge-m3 ONNX (~2.3GB) to ~/.canopy/models",
+		Short: "Download bge-m3 ONNX (~2.3GB) to $XDG_DATA_HOME/canopy/models",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			dir := embed.DefaultModelPath()
 			if err := os.MkdirAll(dir, 0o755); err != nil {

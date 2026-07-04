@@ -6,7 +6,8 @@
 # `make deps` fetches the static tokenizer lib.
 
 TOKENIZERS_VERSION := v1.27.0
-LIBDIR := $(HOME)/.canopy/lib
+XDG_DATA := $(or $(XDG_DATA_HOME),$(HOME)/.local/share)
+LIBDIR := $(XDG_DATA)/canopy/lib
 export CGO_LDFLAGS := -L$(LIBDIR)
 
 .PHONY: build build-lite test deps install

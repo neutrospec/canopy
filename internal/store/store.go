@@ -1,6 +1,7 @@
-// Package store maintains the derived SQLite index at <wiki>/.canopy/index.db.
-// The DB is a cache: it can be deleted and rebuilt from the markdown files
-// at any time with `canopy reindex`.
+// Package store maintains the derived SQLite index (one DB per wiki
+// under $XDG_CACHE_HOME/canopy/index/). The DB is a cache: it can be
+// deleted and rebuilt from the markdown files at any time with
+// `canopy reindex`.
 package store
 
 import (

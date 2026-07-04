@@ -4,19 +4,50 @@
 //  1. --wiki flag (explicit path)
 //  2. CANOPY_WIKI environment variable
 //  3. walk up from cwd looking for canopy.toml
-//  4. default_wiki in ~/.canopy/config.toml
+//  4. default_wiki in $XDG_CONFIG_HOME/canopy/config.toml
 //
 // A wiki without canopy.toml is usable read-only with built-in defaults;
 // `canopy init` materializes the defaults into <wiki>/canopy.toml.
+//
+// Path layout follows XDG Base Directory:
+//   - config (global settings)      $XDG_CONFIG_HOME/canopy  (~/.config/canopy)
+//   - cache (derived, rebuildable)  $XDG_CACHE_HOME/canopy   (~/.cache/canopy)
+//   - data (models, static libs)    $XDG_DATA_HOME/canopy    (~/.local/share/canopy)
+//
+// Only two things live inside the wiki itself, both deliberately:
+// canopy.toml (the wiki's schema travels with its data) and
+// _meta/resurface/ (non-derivable state that must sync across devices).
 package config
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
 )
+
+func xdgDir(envKey, fallback string) string {
+	if v := os.Getenv(envKey); v != "" {
+		return filepath.Join(v, "canopy")
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return filepath.Join(".", "canopy")
+	}
+	return filepath.Join(home, fallback, "canopy")
+}
+
+// ConfigHome is $XDG_CONFIG_HOME/canopy (default ~/.config/canopy).
+func ConfigHome() string { return xdgDir("XDG_CONFIG_HOME", ".config") }
+
+// CacheHome is $XDG_CACHE_HOME/canopy (default ~/.cache/canopy).
+func CacheHome() string { return xdgDir("XDG_CACHE_HOME", ".cache") }
+
+// DataHome is $XDG_DATA_HOME/canopy (default ~/.local/share/canopy).
+func DataHome() string { return xdgDir("XDG_DATA_HOME", filepath.Join(".local", "share")) }
 
 type Config struct {
 	Schema    Schema    `toml:"schema"`
@@ -86,9 +117,14 @@ type Wiki struct {
 	HasTOML bool
 }
 
-func (w *Wiki) DBPath() string      { return filepath.Join(w.Root, ".canopy", "index.db") }
+// DBPath keys the derived index cache by wiki path so multiple wikis
+// coexist: $XDG_CACHE_HOME/canopy/index/<sha256[:12] of root>.db.
+func (w *Wiki) DBPath() string {
+	sum := sha256.Sum256([]byte(w.Root))
+	return filepath.Join(CacheHome(), "index", hex.EncodeToString(sum[:])[:12]+".db")
+}
+
 func (w *Wiki) TOMLPath() string    { return filepath.Join(w.Root, "canopy.toml") }
-func (w *Wiki) CanopyDir() string   { return filepath.Join(w.Root, ".canopy") }
 func (w *Wiki) LogsDir() string     { return filepath.Join(w.Root, "logs") }
 func (w *Wiki) IndexMDPath() string { return filepath.Join(w.Root, "index.md") }
 
@@ -137,14 +173,11 @@ func findRoot(explicit string) (string, error) {
 			}
 		}
 	}
-	if home, err := os.UserHomeDir(); err == nil {
-		gc := globalConfig{}
-		p := filepath.Join(home, ".canopy", "config.toml")
-		if _, err := toml.DecodeFile(p, &gc); err == nil && gc.DefaultWiki != "" {
-			return gc.DefaultWiki, nil
-		}
+	gc := globalConfig{}
+	if _, err := toml.DecodeFile(filepath.Join(ConfigHome(), "config.toml"), &gc); err == nil && gc.DefaultWiki != "" {
+		return gc.DefaultWiki, nil
 	}
-	return "", fmt.Errorf("no wiki found: pass --wiki, set CANOPY_WIKI, or set default_wiki in ~/.canopy/config.toml")
+	return "", fmt.Errorf("no wiki found: pass --wiki, set CANOPY_WIKI, or set default_wiki in %s", filepath.Join(ConfigHome(), "config.toml"))
 }
 
 // WriteTOML writes the current config to <root>/canopy.toml.

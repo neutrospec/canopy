@@ -33,7 +33,7 @@
 | C1 | index.md Total == 실제 파일 수 | `canopy status --json $W \| jq .pages` == index.md의 `Total pages` 숫자 |
 | C2 | 카테고리 인덱스는 전량 나열 | `grep -c '^\- \[\[' <wiki>/index/concepts.md` == `ls <wiki>/concepts/*.md \| wc -l` |
 | C3 | 쓰기마다 JSONL 로그 1건 이상 | 쓰기 직후 `tail -1 <wiki>/logs/$(date +%Y-%m).jsonl` 의 timestamp가 방금 것 |
-| C4 | 검색 인덱스는 완전 재구축 가능 | `rm -rf <wiki>/.canopy && canopy reindex $W` 성공 후 `canopy search "test" $W` 동작 |
+| C4 | 검색 인덱스는 완전 재구축 가능 | `rm -rf ~/.cache/canopy && canopy reindex $W` 성공 후 `canopy search "test" $W` 동작 |
 | C5 | 임베딩은 변경분만 갱신 | 무변경 상태에서 `canopy reindex $W` → `embedded_pages == 0`, 수 초 내 종료 |
 
 ## D. git 동기화
@@ -43,7 +43,7 @@
 | D1 | 미동기 상태는 배너로 노출 | 파일 touch 후 `canopy status $W` → ⚠ 배너 |
 | D2 | sync는 pull이 선행 | `canopy sync $W` 출력/로그에 pull 단계 확인 |
 | D3 | sync 후 클린 | `canopy sync $W && canopy status $W` → "✓ fully synced" |
-| D4 | `.canopy/`는 git 밖 | `git -C <wiki> check-ignore .canopy` → 성공 |
+| D4 | 위키 안에 canopy 캐시 없음 (캐시는 `$XDG_CACHE_HOME/canopy`) | `test ! -e <wiki>/.canopy` && `ls ~/.cache/canopy/index/*.db` 존재 |
 
 ## E. Second-brain 루프 (resurface/bridge)
 

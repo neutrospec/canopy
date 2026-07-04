@@ -37,7 +37,8 @@ canopy bridge [-n 5] [--min-sim 0.70] [--peek] [--dismiss a:b] [--json]
 쿨다운: 노출 45일, 페어 90일, 👎 120일. 스누즈는 지정일까지. `--peek`은 상태 무기록.
 
 상태는 `<wiki>/_meta/resurface/state.json` — 파생 불가능한 데이터이므로 위키 repo에
-커밋되어 기기 간 동기화된다(`.canopy/` 캐시와 다른 이유가 이것).
+커밋되어 기기 간 동기화된다 (XDG 캐시로 빼지 않는 이유: 캐시는 재구축 가능하지만
+노출 이력·피드백은 잃으면 기기 간 중복 resurface가 발생한다).
 
 ## hermes 운영 레시피
 

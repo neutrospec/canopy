@@ -9,16 +9,16 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/knights-analytics/hugot"
 	"github.com/knights-analytics/hugot/pipelines"
+
+	"github.com/nobocop/canopy/internal/embed"
 )
 
 func main() {
-	home, _ := os.UserHomeDir()
-	modelPath := filepath.Join(home, ".canopy", "models", "bge-m3")
+	modelPath := embed.DefaultModelPath()
 	if len(os.Args) > 1 {
 		modelPath = os.Args[1]
 	}

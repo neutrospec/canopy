@@ -3,12 +3,14 @@
 //
 // The engine is only available in binaries built with `-tags ORT`
 // (see engine_ort.go / engine_stub.go). Model files live under
-// ~/.canopy/models/bge-m3.
+// $XDG_DATA_HOME/canopy/models/bge-m3.
 package embed
 
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/nobocop/canopy/internal/config"
 )
 
 const (
@@ -22,13 +24,9 @@ type Engine interface {
 	Close() error
 }
 
-// DefaultModelPath is ~/.canopy/models/bge-m3.
+// DefaultModelPath is $XDG_DATA_HOME/canopy/models/bge-m3.
 func DefaultModelPath() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return ""
-	}
-	return filepath.Join(home, ".canopy", "models", ModelDirName)
+	return filepath.Join(config.DataHome(), "models", ModelDirName)
 }
 
 // ModelAvailable reports whether the model files are downloaded.
