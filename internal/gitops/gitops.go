@@ -67,6 +67,32 @@ func GetStatus(dir string) (*Status, error) {
 	return st, nil
 }
 
+// Pull rebases local work onto origin. Called before committing so a
+// user's direct edits (e.g. via Obsidian on another machine) merge in.
+func Pull(dir string) (string, error) {
+	out, err := run(dir, "pull", "--rebase", "--autostash")
+	if err != nil && strings.Contains(err.Error(), "no tracking information") {
+		return "no upstream configured, skipping pull", nil
+	}
+	return strings.TrimSpace(out), err
+}
+
+func CommitAll(dir, message string) (string, error) {
+	if _, err := run(dir, "add", "-A"); err != nil {
+		return "", err
+	}
+	out, err := run(dir, "commit", "-m", message)
+	return strings.TrimSpace(out), err
+}
+
+func Push(dir string) (string, error) {
+	out, err := run(dir, "push")
+	if err != nil && strings.Contains(err.Error(), "No configured push destination") {
+		return "no remote configured, skipping push", nil
+	}
+	return strings.TrimSpace(out), err
+}
+
 // Banner renders the unsynced-state warning shown at the start of every
 // command. Empty string means the wiki is clean and pushed.
 func (s *Status) Banner() string {
