@@ -245,6 +245,10 @@ func cmdNew() *cobra.Command {
 			today := time.Now().Format("2006-01-02")
 			content := wiki.NewPageContent(title, typ, today, tags, links, body)
 			relPath := filepath.Join(dir, slug+".md")
+			// Fresh wikis start without category directories.
+			if err := os.MkdirAll(filepath.Join(w.Root, dir), 0o755); err != nil {
+				return err
+			}
 			if err := os.WriteFile(filepath.Join(w.Root, relPath), []byte(content), 0o644); err != nil {
 				return err
 			}
@@ -410,6 +414,9 @@ func cmdMv() *cobra.Command {
 				content = wiki.SetFrontmatterField(content, "type", typ)
 			}
 			content = wiki.SetFrontmatterField(content, "updated", time.Now().Format("2006-01-02"))
+			if err := os.MkdirAll(filepath.Join(w.Root, dir), 0o755); err != nil {
+				return err
+			}
 			if err := os.WriteFile(filepath.Join(w.Root, newRel), []byte(content), 0o644); err != nil {
 				return err
 			}
