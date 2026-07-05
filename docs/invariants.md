@@ -63,6 +63,8 @@
 | F1 | 전체 테스트 통과 | `make test` |
 | F2 | 임베딩 없는 환경에서도 동작(우아한 강등) | `make build-lite` 바이너리로 `search --mode hybrid` → keyword로 강등 + 경고, exit 0 |
 | F3 | 포맷 준수 | `gofmt -l .` 출력 없음 |
+| F4 | 어떤 cwd에서도 동작 (자동화 전제) | `which canopy && cd /tmp && canopy status` 성공 (PATH + default_wiki 구성 검증) |
+| F5 | 스킬 설치는 멱등·재현 가능 | `canopy skills install --dir /tmp/sc` 2회 실행 → 동일 내용, exit 0 |
 
 ## G. 에이전트 메모리 / 회고 (recall · digest · semantic 후보)
 
