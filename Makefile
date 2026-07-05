@@ -2,7 +2,8 @@
 #
 # The ORT build embeds semantic search (hugot + ONNX Runtime). It needs:
 #   brew install onnxruntime            → libonnxruntime.dylib
-#   ~/.canopy/lib/libtokenizers.a       → prebuilt from daulet/tokenizers releases
+#   $XDG_DATA_HOME/canopy/lib/libtokenizers.a (~/.local/share/canopy/lib)
+#                                       → prebuilt from daulet/tokenizers releases
 # `make deps` fetches the static tokenizer lib.
 
 TOKENIZERS_VERSION := v1.27.0

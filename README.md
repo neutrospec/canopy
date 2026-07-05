@@ -31,7 +31,7 @@ make install               # ~/.local/bin 또는 /opt/homebrew/bin
 
 ```bash
 canopy init --wiki ~/workspace/wiki   # canopy.toml 생성, .canopy/ 준비, 인덱싱
-canopy model pull                     # bge-m3 ONNX ~2.3GB → ~/.canopy/models (1회)
+canopy model pull                     # bge-m3 ONNX ~2.3GB → ~/.local/share/canopy/models (1회)
 canopy reindex                        # 최초 전체 임베딩 (이후엔 변경분만)
 ```
 
