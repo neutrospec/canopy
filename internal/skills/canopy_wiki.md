@@ -12,6 +12,9 @@ JSONL 로그, 임베딩 동기화, 스키마 검증)는 전부 canopy가 자동 
 - Wiki 경로: `~/workspace/wiki` (`canopy.toml`이 있는 곳). 다르면 `--wiki <path>`.
 - 모든 명령은 `--json` 지원 (파싱해서 쓸 것).
 - `index.md`, `index/*.md`, `logs/*.jsonl`은 **canopy 생성물 — 절대 직접 편집 금지.**
+- 이 SKILL.md도 canopy가 설치·갱신한다 (`canopy skills install`이 덮어쓴다).
+  **직접 수정하거나 옆에 별도 명령 레퍼런스 노트를 만들지 마라** — 손 노트는
+  CLI 업그레이드 순간 낡는다. 명령 표면이 궁금하면 `canopy --help`가 진실 소스.
 
 ## 검색 (페이지 생성 전 필수)
 
@@ -51,6 +54,9 @@ echo "$BODY" | canopy new "제목" --type concept --tags ai-ml,tool \
 - `--type`: entity(사람/조직/제품/하드웨어) | concept(개념/방법/가이드) | comparison(비교)
 - `--tags`: taxonomy에 있는 것만 — 목록은 `canopy tags --json`으로 확인 (위반 시 명령이 거부한다; 새 태그가 정말 필요하면 canopy.toml 수정이 먼저)
 - 제목이 한글뿐이면 `--slug english-slug` 필수 (파일명은 영문 강제)
+- 본문에 `<`/`>`가 들어가면(`<password>`, `<path>` 등) `echo … | --body-file -`
+  파이프가 셸 리다이렉션으로 오해석되어 본문이 조용히 잘릴 수 있다 —
+  본문은 임시 파일에 쓰고 `--body-file <파일>`로 넘기고, 생성 후 `canopy show`로 본문을 검증하라
 - `--links`: **실존 페이지만** 허용 (없는 페이지면 거부). 생성 후 출력되는
   "related pages" 제안(유사도 ≥0.8, 태그 겹치는 페이지 우선)에서 진짜 관련 있는
   것만 골라라 — 유사도가 높아도 주제가 다르면 버려라, 억지 연결 금지
