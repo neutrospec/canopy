@@ -18,9 +18,14 @@ JSONL 로그, 임베딩 동기화, 스키마 검증)는 전부 canopy가 자동 
 ```bash
 canopy search "질의"                  # hybrid: 키워드 + 시맨틱 (bge-m3 내장, 외부 서버 없음)
 canopy search "질의" --mode keyword   # 빠름 (모델 로드 없음), 정확한 용어 매칭
+canopy list [--type T] [--tag t]     # 전체 페이지 목록 (slug/type/title) — ls로 훑지 마라
 canopy backlinks <page>               # 이 페이지를 참조하는 페이지들
-canopy show <page>                    # 페이지 내용 확인
+canopy show <page>                    # 페이지 내용 확인 (view도 동작; 경로 헤더는 stderr, 본문만 stdout)
+canopy tags                           # 유효 type·태그 taxonomy (new가 검증에 쓰는 목록 그대로)
 ```
+
+시맨틱/hybrid 검색의 첫 호출은 모델 로드가 선행된다 (워밍업 후 ~0.5s, 콜드 캐시면
+수 초). 로드가 부담스러운 단순 조회는 `--mode keyword`나 `list`를 써라.
 
 한국어/영어 모두 잘 된다. **새 페이지를 만들기 전에 반드시 검색해서** (1) 중복 방지,
 (2) 연결할 관련 페이지 파악을 하라.
@@ -44,10 +49,11 @@ echo "$BODY" | canopy new "제목" --type concept --tags ai-ml,tool \
 ```
 
 - `--type`: entity(사람/조직/제품/하드웨어) | concept(개념/방법/가이드) | comparison(비교)
-- `--tags`: taxonomy에 있는 것만 (위반 시 명령이 거부한다; 새 태그가 정말 필요하면 canopy.toml 수정이 먼저)
+- `--tags`: taxonomy에 있는 것만 — 목록은 `canopy tags --json`으로 확인 (위반 시 명령이 거부한다; 새 태그가 정말 필요하면 canopy.toml 수정이 먼저)
 - 제목이 한글뿐이면 `--slug english-slug` 필수 (파일명은 영문 강제)
 - `--links`: **실존 페이지만** 허용 (없는 페이지면 거부). 생성 후 출력되는
-  "related pages" 제안에서 진짜 관련 있는 것만 골라라 — 억지 연결 금지
+  "related pages" 제안(유사도 ≥0.8, 태그 겹치는 페이지 우선)에서 진짜 관련 있는
+  것만 골라라 — 유사도가 높아도 주제가 다르면 버려라, 억지 연결 금지
 - 성공 시 index/log/임베딩 자동 처리됨
 
 ## 수정 / 이동 / 삭제

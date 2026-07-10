@@ -13,6 +13,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -54,9 +55,52 @@ func validateTags(w *config.Wiki, tags []string) error {
 		}
 	}
 	if len(bad) > 0 {
-		return fmt.Errorf("tags not in taxonomy: %s (extend canopy.toml first if genuinely new)", strings.Join(bad, ", "))
+		return fmt.Errorf("tags not in taxonomy: %s (see `canopy tags` for the valid list; extend canopy.toml first if genuinely new)", strings.Join(bad, ", "))
 	}
 	return nil
+}
+
+// relatedThreshold is the minimum page-level cosine for a "related
+// pages" suggestion after `canopy new`. bge-m3 page vectors have a high
+// similarity floor, so 0.80 trims only the clearly-unrelated tail;
+// tag-overlap ordering does the real de-noising.
+const relatedThreshold = 0.80
+
+// rankRelated filters semantic hits for the related-pages suggestion:
+// drop the new page itself and sub-threshold hits, then order by shared
+// frontmatter tags first (score decides ties — hits arrive score-desc).
+func rankRelated(hits []store.Hit, selfSlug string, newTags []string, scan *wiki.ScanResult) []store.Hit {
+	tagSet := map[string]bool{}
+	for _, t := range newTags {
+		tagSet[t] = true
+	}
+	overlap := func(slug string) int {
+		p, ok := scan.BySlug[strings.ToLower(slug)]
+		if !ok {
+			return 0
+		}
+		n := 0
+		for _, t := range p.Tags {
+			if tagSet[t] {
+				n++
+			}
+		}
+		return n
+	}
+	related := []store.Hit{}
+	for _, h := range hits {
+		if h.Slug == selfSlug || h.Score < relatedThreshold {
+			continue
+		}
+		related = append(related, h)
+	}
+	sort.SliceStable(related, func(i, j int) bool {
+		return overlap(related[i].Slug) > overlap(related[j].Slug)
+	})
+	if len(related) > 5 {
+		related = related[:5]
+	}
+	return related
 }
 
 // afterWrite is the invariant pipeline every mutation runs.
@@ -258,17 +302,13 @@ func cmdNew() *cobra.Command {
 
 			// Surface related pages so the agent can wire wikilinks
 			// while the context is fresh.
-			var related []store.Hit
+			related := []store.Hit{}
 			if embed.Available && embed.ModelAvailable() {
 				if eng, err := embed.New(); err == nil {
 					if qv, err := eng.Embed([]string{title + "\n" + body}); err == nil {
 						if st, err := store.Open(w.DBPath()); err == nil {
-							if hits, err := st.SearchSemantic(qv[0], 6); err == nil {
-								for _, h := range hits {
-									if h.Slug != slug {
-										related = append(related, h)
-									}
-								}
+							if hits, err := st.SearchSemantic(qv[0], 12); err == nil {
+								related = rankRelated(hits, slug, tags, scan)
 							}
 							st.Close()
 						}
@@ -278,10 +318,7 @@ func cmdNew() *cobra.Command {
 			}
 			if len(related) > 0 && !flagJSON {
 				fmt.Println("related pages (add [[wikilinks]] where genuinely relevant):")
-				for i, h := range related {
-					if i >= 5 {
-						break
-					}
+				for _, h := range related {
 					fmt.Printf("  [%.2f] %s — %s\n", h.Score, h.Slug, h.Title)
 				}
 			}

@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -39,7 +41,7 @@ func main() {
 	root.PersistentFlags().StringVar(&flagWiki, "wiki", "", "wiki root (default: $CANOPY_WIKI or canopy.toml discovery)")
 	root.PersistentFlags().BoolVar(&flagJSON, "json", false, "machine-readable JSON output")
 
-	root.AddCommand(cmdInit(), cmdStatus(), cmdReindex(), cmdSearch(), cmdBacklinks(), cmdLint(), cmdShow(), cmdModel(),
+	root.AddCommand(cmdInit(), cmdStatus(), cmdReindex(), cmdSearch(), cmdBacklinks(), cmdLint(), cmdShow(), cmdList(), cmdTags(), cmdModel(),
 		cmdNew(), cmdUpdate(), cmdMv(), cmdRm(), cmdArchive(), cmdSync(), cmdSkills(),
 		cmdResurface(), cmdBridge(), cmdRecall(), cmdDigest())
 
@@ -101,12 +103,22 @@ func refreshIndex(w *config.Wiki, eng embed.Engine) (*store.Store, *wiki.ScanRes
 }
 
 // newEngine loads the in-process embedding model, with a heads-up on
-// stderr because the fp32 model takes ~10s to load.
+// stderr. Warm loads of the int8 model take ~0.5s, but a cold OS page
+// cache (first run after boot) can take several seconds, so report the
+// measured time instead of promising one.
 func newEngine() (embed.Engine, error) {
-	if !flagJSON {
-		fmt.Fprintln(os.Stderr, "loading embedding model (~10s)…")
+	if flagJSON {
+		return embed.New()
 	}
-	return embed.New()
+	fmt.Fprint(os.Stderr, "loading embedding model… ")
+	start := time.Now()
+	eng, err := embed.New()
+	if err != nil {
+		fmt.Fprintln(os.Stderr)
+		return nil, err
+	}
+	fmt.Fprintf(os.Stderr, "%.1fs\n", time.Since(start).Seconds())
+	return eng, nil
 }
 
 func cmdInit() *cobra.Command {
@@ -548,9 +560,11 @@ func cmdLint() *cobra.Command {
 
 func cmdShow() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show <page>",
-		Short: "Print a page (path + content)",
-		Args:  cobra.ExactArgs(1),
+		Use: "show <page>",
+		// "view" is what agents reach for first; make it just work.
+		Aliases: []string{"view", "cat"},
+		Short:   "Print a page (path header on stderr, content on stdout)",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			w, err := loadWiki()
 			if err != nil {
@@ -576,4 +590,88 @@ func cmdShow() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func cmdList() *cobra.Command {
+	var typ, tag string
+	c := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List all pages (slug, type, title), filterable by --type / --tag",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			w, err := loadWiki()
+			if err != nil {
+				return err
+			}
+			banner(w)
+			scan, err := wiki.Scan(w)
+			if err != nil {
+				return err
+			}
+			type row struct {
+				Slug    string   `json:"slug"`
+				Type    string   `json:"type"`
+				Title   string   `json:"title"`
+				Tags    []string `json:"tags"`
+				Updated string   `json:"updated"`
+				RelPath string   `json:"rel_path"`
+			}
+			rows := []row{}
+			for _, p := range scan.Pages {
+				if typ != "" && p.Type != typ {
+					continue
+				}
+				if tag != "" && !contains(p.Tags, tag) {
+					continue
+				}
+				rows = append(rows, row{p.Slug, p.Type, p.Title, p.Tags, p.Updated, p.RelPath})
+			}
+			sort.Slice(rows, func(i, j int) bool { return rows[i].RelPath < rows[j].RelPath })
+			if flagJSON {
+				return emitJSON(map[string]any{"pages": rows, "count": len(rows)})
+			}
+			for _, r := range rows {
+				fmt.Printf("%-32s %-11s %s\n", r.Slug, r.Type, r.Title)
+			}
+			fmt.Fprintf(os.Stderr, "%d page(s)\n", len(rows))
+			return nil
+		},
+	}
+	c.Flags().StringVar(&typ, "type", "", "filter by type (entity|concept|comparison)")
+	c.Flags().StringVar(&tag, "tag", "", "filter by tag")
+	return c
+}
+
+// cmdTags exposes the taxonomy that validation enforces, from the same
+// source (canopy.toml / defaults) — no need to parse the TOML by hand.
+func cmdTags() *cobra.Command {
+	return &cobra.Command{
+		Use:   "tags",
+		Short: "Show the valid types and tag taxonomy for this wiki",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			w, err := loadWiki()
+			if err != nil {
+				return err
+			}
+			if flagJSON {
+				return emitJSON(map[string]any{
+					"types": w.Cfg.Schema.Types,
+					"tags":  w.Cfg.Schema.Tags,
+				})
+			}
+			fmt.Printf("types: %s\n", strings.Join(w.Cfg.Schema.Types, ", "))
+			fmt.Printf("tags:  %s\n", strings.Join(w.Cfg.Schema.Tags, ", "))
+			fmt.Fprintln(os.Stderr, "(source: canopy.toml — extend it there before using a new tag)")
+			return nil
+		},
+	}
+}
+
+func contains(list []string, v string) bool {
+	for _, s := range list {
+		if s == v {
+			return true
+		}
+	}
+	return false
 }
