@@ -2,11 +2,13 @@ package webui
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -47,6 +49,8 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /static/", http.FileServerFS(assets))
 	mux.HandleFunc("GET /page/{slug}", s.handlePage)
 	mux.HandleFunc("GET /search", s.handleSearch)
+	mux.HandleFunc("GET /api/search", s.handleAPISearch)
+	mux.HandleFunc("GET /api/preview/{slug}", s.handleAPIPreview)
 	mux.HandleFunc("GET /{$}", s.handleHome)
 	return logRequests(mux)
 }
@@ -143,9 +147,10 @@ type result struct {
 	Snippet string
 }
 
-// runSearch mirrors cmdSearch: refresh the index, then hybrid unless
-// the engine is missing (keyword-only fallback).
-func (s *Server) runSearch(query string, k int) ([]result, string, error) {
+// runSearch mirrors cmdSearch: hybrid unless the engine is missing
+// (keyword-only fallback). refresh controls whether the index is
+// rebuilt first — full page loads do, per-keystroke API calls skip it.
+func (s *Server) runSearch(query string, k int, refresh bool) ([]result, string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	scan, err := wiki.Scan(s.w)
@@ -157,8 +162,10 @@ func (s *Server) runSearch(query string, k int) ([]result, string, error) {
 		return nil, "", err
 	}
 	defer st.Close()
-	if _, err := indexer.Reindex(s.w, st, scan, s.eng, nil); err != nil {
-		return nil, "", err
+	if refresh {
+		if _, err := indexer.Reindex(s.w, st, scan, s.eng, nil); err != nil {
+			return nil, "", err
+		}
 	}
 	kw, err := st.SearchKeyword(query, k)
 	if err != nil {
@@ -166,6 +173,9 @@ func (s *Server) runSearch(query string, k int) ([]result, string, error) {
 	}
 	mode := "keyword"
 	hits := kw
+	// Best matching chunk per page: shows WHICH paragraph matched,
+	// not just that the page did.
+	chunkText := map[string]string{}
 	if s.eng != nil {
 		qv, err := s.eng.Embed([]string{query})
 		if err != nil {
@@ -175,12 +185,22 @@ func (s *Server) runSearch(query string, k int) ([]result, string, error) {
 		if err != nil {
 			return nil, "", err
 		}
+		if chunks, err := st.SearchChunks(qv[0], k*2, 1); err == nil {
+			for _, c := range chunks {
+				if _, seen := chunkText[c.Slug]; !seen {
+					chunkText[c.Slug] = c.Text
+				}
+			}
+		}
 		hits = search.Fuse(k, kw, sem)
 		mode = "hybrid"
 	}
 	res := make([]result, 0, len(hits))
 	for _, h := range hits {
 		snippet := strings.Join(strings.Fields(h.Snippet), " ")
+		if t, ok := chunkText[h.Slug]; ok {
+			snippet = excerptText(t, 200)
+		}
 		if p, ok := scan.BySlug[wiki.NormalizeLink(h.Slug)]; ok && snippet == "" {
 			snippet = FirstParagraph(p.Body, 160)
 		}
@@ -189,13 +209,29 @@ func (s *Server) runSearch(query string, k int) ([]result, string, error) {
 	return res, mode, nil
 }
 
+// excerptText flattens whitespace and truncates to maxRunes.
+func excerptText(t string, maxRunes int) string {
+	r := []rune(strings.Join(strings.Fields(t), " "))
+	if len(r) > maxRunes {
+		return string(r[:maxRunes]) + "…"
+	}
+	return string(r)
+}
+
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	query := strings.TrimSpace(r.URL.Query().Get("q"))
 	if query == "" {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
-	res, mode, err := s.runSearch(query, 20)
+	// Wikipedia "Go" behavior: an exact title jumps straight to the page.
+	if scan, err := wiki.Scan(s.w); err == nil {
+		if p, ok := scan.BySlug[wiki.NormalizeLink(query)]; ok {
+			http.Redirect(w, r, "/page/"+p.Slug, http.StatusFound)
+			return
+		}
+	}
+	res, mode, err := s.runSearch(query, 20, true)
 	if err != nil {
 		s.fail(w, err)
 		return
@@ -208,10 +244,59 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// --- JSON API (instant search + popover previews) ---
+
+func (s *Server) emit(w http.ResponseWriter, v any) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		log.Printf("json: %v", err)
+	}
+}
+
+func (s *Server) handleAPISearch(w http.ResponseWriter, r *http.Request) {
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	if query == "" {
+		s.emit(w, map[string]any{"results": []result{}})
+		return
+	}
+	k := 8
+	if n, err := strconv.Atoi(r.URL.Query().Get("k")); err == nil && n > 0 && n <= 50 {
+		k = n
+	}
+	res, mode, err := s.runSearch(query, k, false)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	s.emit(w, map[string]any{"query": query, "mode": mode, "results": res})
+}
+
+func (s *Server) handleAPIPreview(w http.ResponseWriter, r *http.Request) {
+	scan, err := wiki.Scan(s.w)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	slug := wiki.NormalizeLink(r.PathValue("slug"))
+	p, ok := scan.BySlug[slug]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		s.emit(w, map[string]any{"exists": false})
+		return
+	}
+	s.emit(w, map[string]any{
+		"exists":  true,
+		"slug":    p.Slug,
+		"title":   p.Title,
+		"type":    p.Type,
+		"excerpt": FirstParagraph(p.Body, 240),
+	})
+}
+
 // searchFallback renders search results for a slug that has no page.
 func (s *Server) searchFallback(w http.ResponseWriter, raw string) {
 	query := strings.ReplaceAll(wiki.NormalizeLink(raw), "-", " ")
-	res, mode, err := s.runSearch(query, 20)
+	res, mode, err := s.runSearch(query, 20, true)
 	if err != nil {
 		s.fail(w, err)
 		return

@@ -68,6 +68,23 @@ a.wikilink.missing { color: var(--missing); }
 .backlinks { margin-top: 3rem; border-top: 1px solid var(--line); padding-top: .5rem; }
 .backlinks h2 { font-size: 1rem; color: var(--muted); }
 
+.ac {
+  position: absolute; left: 0; right: 0; top: 100%; z-index: 20;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+  margin-top: 4px; overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,.12);
+}
+.ac a { display: block; padding: .45rem .8rem; color: var(--fg); text-decoration: none; }
+.ac a b { font-weight: 600; }
+.ac a.sel, .ac a:hover { background: var(--chip); }
+
+.popover {
+  position: absolute; z-index: 30; max-width: 22rem;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+  padding: .7rem .9rem; box-shadow: 0 8px 30px rgba(0,0,0,.18);
+  font-size: .85rem;
+}
+.popover p { margin: .3rem 0 0; color: var(--muted); }
+
 .pagelist, .results { padding-left: 1.2rem; }
 .pagelist li, .results li { margin: .35rem 0; }
 .results .snippet { margin: .15rem 0 0; font-size: .88rem; color: var(--muted); }

@@ -9,9 +9,20 @@
 
 ## Doing
 
-_(비어 있음 — 다음: M2)_
+_(비어 있음 — 다음: M3)_
 
 ## Done
+
+### M2 — 검색-우선 UX
+
+- [x] 홈을 검색박스 중심으로 (M1 히어로가 이미 Wikipedia 메인 패턴 — 브라우저로 확인)
+- [x] `GET /api/search?q=&k=` JSON 엔드포인트 (~44ms/쿼리, 키스트로크마다 감당 가능)
+- [x] 인스턴트 서치: debounce 150ms, ↑↓/Enter/Esc 키보드 내비, 응답 순서 가드
+- [x] `/search` exact slug 일치 시 페이지로 302 (Wikipedia "Go" 동작)
+- [x] 검색 결과에 chunk 스니펫(`SearchChunks` 재사용, 페이지당 1개) — 매칭 문단 표시
+- [x] 위키링크 hover popover(`/api/preview/{slug}`, 250ms 지연, 캐시, red link 제외)
+- ✓ Exit:
+  - [x] "검색박스 → 타이핑 → ↓↓ Enter → 페이지" 동선을 실제 Chrome에서 검증(콘솔 에러 0)
 
 ### M1 — 읽기 뷰어 (MVP)
 
