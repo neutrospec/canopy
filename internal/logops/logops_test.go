@@ -125,3 +125,38 @@ func TestAppendCreatesLogsDir(t *testing.T) {
 		t.Error("logs dir was not created")
 	}
 }
+
+func TestReadRecent(t *testing.T) {
+	root := t.TempDir()
+	w := &config.Wiki{Root: root, Cfg: config.Default()}
+
+	// Older month written by hand, current month via Append.
+	if err := os.MkdirAll(w.LogsDir(), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	old := `{"timestamp":"2020-01-02T10:00:00","action":"create","file":"concepts/old.md","auto":true}
+not json at all
+{"timestamp":"2020-01-03T10:00:00","action":"update","file":"concepts/old.md","auto":true}
+`
+	if err := os.WriteFile(filepath.Join(w.LogsDir(), "2020-01.jsonl"), []byte(old), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := Append(w, "create", "concepts/new.md", nil, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := ReadRecent(w, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 3 {
+		t.Fatalf("expected 3 entries (malformed line skipped), got %d", len(got))
+	}
+	if got[0].File != "concepts/new.md" || got[1].Action != "update" || got[2].Action != "create" {
+		t.Errorf("wrong order, newest first expected: %+v", got)
+	}
+
+	if capped, _ := ReadRecent(w, 2); len(capped) != 2 || capped[0].File != "concepts/new.md" {
+		t.Errorf("cap to n newest failed: %+v", capped)
+	}
+}

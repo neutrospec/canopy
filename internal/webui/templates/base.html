@@ -12,6 +12,12 @@
   <form class="searchbar" action="/search" method="get">
     <input type="search" name="q" placeholder="검색…" value="{{.Query}}" autocomplete="off">
   </form>
+  <nav>
+    <a href="/browse">탐색</a>
+    <a href="/special/recent">최근</a>
+    <a href="/special/attention">점검</a>
+    <a href="/special/random">랜덤</a>
+  </nav>
 </header>
 <main>
 {{template "content" .}}

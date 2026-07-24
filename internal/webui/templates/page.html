@@ -2,11 +2,26 @@
 <article>
   <h1>{{.Page.Title}}</h1>
   <div class="metacard">
-    <span class="chip">{{.Page.Type}}</span>
-    {{range .Page.Tags}}<span class="chip tag">{{.}}</span>{{end}}
+    <a class="chip" href="/browse?type={{.Page.Type}}">{{.Page.Type}}</a>
+    {{range .Page.Tags}}<a class="chip tag" href="/tag/{{.}}">{{.}}</a>{{end}}
     <span class="muted">updated {{.Page.Updated}} · {{.Page.RelPath}}</span>
   </div>
   <div class="prose">{{.Body}}</div>
+  {{if .GraphNodes}}
+  <details class="graph">
+    <summary class="muted">로컬 그래프 ({{len .GraphEdges}} connections)</summary>
+    <svg viewBox="0 0 640 260" role="img" aria-label="local link graph">
+      {{range .GraphEdges}}<line x1="{{.X1}}" y1="{{.Y1}}" x2="{{.X2}}" y2="{{.Y2}}"/>{{end}}
+      {{range $i, $n := .GraphNodes}}
+      <a href="/page/{{$n.Slug}}"><g>
+        <circle cx="{{$n.X}}" cy="{{$n.Y}}" r="{{if eq $i 0}}7{{else}}4{{end}}"
+                class="{{if eq $i 0}}center{{else if $n.Missing}}missing{{end}}"/>
+        <text x="{{$n.X}}" y="{{$n.Y}}" dy="-9" text-anchor="middle">{{short $n.Slug}}</text>
+      </g></a>
+      {{end}}
+    </svg>
+  </details>
+  {{end}}
   <footer class="backlinks">
     <h2>여기를 링크한 페이지 ({{len .Backlinks}})</h2>
     {{if .Backlinks}}

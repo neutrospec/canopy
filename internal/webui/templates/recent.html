@@ -1,0 +1,16 @@
+{{define "content"}}
+<h1>최근 변경</h1>
+<table class="logtable">
+  <thead><tr><th>시각</th><th>동작</th><th>페이지</th><th>메모</th></tr></thead>
+  <tbody>
+  {{range .Rows}}
+  <tr>
+    <td class="muted">{{.Time}}</td>
+    <td><span class="chip">{{.Action}}</span></td>
+    <td>{{if .Exists}}<a class="wikilink" href="/page/{{.Slug}}" data-slug="{{.Slug}}">{{.Slug}}</a>{{else}}{{.Slug}}{{end}}</td>
+    <td class="muted">{{.Note}}</td>
+  </tr>
+  {{end}}
+  </tbody>
+</table>
+{{end}}

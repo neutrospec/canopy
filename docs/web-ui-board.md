@@ -9,9 +9,26 @@
 
 ## Doing
 
-_(비어 있음 — 다음: M3)_
+_(비어 있음 — 다음: M4)_
 
 ## Done
+
+### M3 — 브라우징 구조
+
+- [x] `GET /browse?dir=&type=&tag=`: facet 교차 필터(다중 태그 AND), 칩 카운트는 현재
+      결과 집합 기준(모든 칩이 유효한 refinement), 활성 칩 클릭 시 해제
+- [x] 태그 페이지 `GET /tag/{tag}` → `/browse?tag=`로 통합. 단일 태그 필터 시 co-occurrence
+      태그가 카운트순으로 나옴(연관 태그). 페이지 메타 카드의 type/태그 칩도 여기로 연결
+- [x] Special: 최근 변경 `/special/recent` — `logops.ReadRecent` 신설(월별 jsonl 역순,
+      깨진 줄 스킵), 100건 테이블
+- [x] Special: 고아·stale `/special/attention` — `scan.Backlinks()` 고아 + `Schema.StaleDays`
+      기준 오래된 페이지 (resurface의 랜덤 픽 대신 전량 결정적 목록이 브라우징에 맞음)
+- [x] Special: random page `/special/random` → 302
+- [x] (선택) 로컬 그래프 뷰 — 페이지 하단 `<details>`에 서버 렌더 SVG(중심+이웃 radial,
+      1-hop이라 물리엔진 불필요), red 노드 = missing
+- [x] 헤더 내비(탐색·최근·점검·랜덤) + 홈 디렉토리 카운트를 /browse 링크로
+- ✓ Exit:
+  - [x] 검색 없이 3클릭 도달: 홈 → 탐색(1) → 태그 칩(2) → 페이지(3) — Chrome에서 확인
 
 ### M2 — 검색-우선 UX
 

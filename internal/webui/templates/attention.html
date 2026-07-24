@@ -1,0 +1,23 @@
+{{define "content"}}
+<h1>점검</h1>
+<section>
+  <h2>고아 페이지 ({{len .Orphans}})</h2>
+  <p class="muted">어느 페이지도 링크하지 않는 페이지 — 연결하거나 정리할 후보.</p>
+  <ul class="pagelist">
+    {{range .Orphans}}
+    <li><a class="wikilink" href="/page/{{.Slug}}" data-slug="{{.Slug}}">{{.Title}}</a>
+        <span class="muted">{{.Dir}}</span></li>
+    {{end}}
+  </ul>
+</section>
+<section>
+  <h2>오래된 페이지 ({{len .Stale}})</h2>
+  <p class="muted">{{.StaleDays}}일 이상 수정되지 않은 페이지.</p>
+  <ul class="pagelist">
+    {{range .Stale}}
+    <li><a class="wikilink" href="/page/{{.Page.Slug}}" data-slug="{{.Page.Slug}}">{{.Page.Title}}</a>
+        <span class="muted">{{.Days}}일 전 · {{.Page.Dir}}</span></li>
+    {{end}}
+  </ul>
+</section>
+{{end}}

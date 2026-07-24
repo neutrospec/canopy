@@ -1,0 +1,21 @@
+{{define "content"}}
+<h1>탐색</h1>
+<div class="facets">
+  <div class="facetrow"><span class="facetlabel">dir</span>
+    {{range .Dirs}}<a class="chip{{if .Active}} active{{end}}" href="{{.Href}}">{{.Value}} <small>{{.Count}}</small></a>{{end}}
+  </div>
+  <div class="facetrow"><span class="facetlabel">type</span>
+    {{range .Types}}<a class="chip{{if .Active}} active{{end}}" href="{{.Href}}">{{.Value}} <small>{{.Count}}</small></a>{{end}}
+  </div>
+  <div class="facetrow"><span class="facetlabel">tag</span>
+    {{range .Tags}}<a class="chip tag{{if .Active}} active{{end}}" href="{{.Href}}">{{.Value}} <small>{{.Count}}</small></a>{{end}}
+  </div>
+</div>
+<p class="muted">{{len .Pages}} page(s){{if .Filtered}} — 활성 필터를 클릭하면 해제{{end}}</p>
+<ul class="pagelist">
+  {{range .Pages}}
+  <li><a class="wikilink" href="/page/{{.Slug}}" data-slug="{{.Slug}}">{{.Title}}</a>
+      <span class="muted">{{.Updated}} · {{.Dir}}{{range .Tags}} #{{.}}{{end}}</span></li>
+  {{end}}
+</ul>
+{{end}}

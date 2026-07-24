@@ -45,9 +45,33 @@ a.wikilink.missing { color: var(--missing); }
 .metacard { margin: -0.4rem 0 1.2rem; display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
 .chip {
   background: var(--chip); border-radius: 999px; padding: .1rem .7rem;
-  font-size: .8rem;
+  font-size: .8rem; color: var(--fg); text-decoration: none; display: inline-block;
 }
 .chip.tag::before { content: "#"; color: var(--muted); }
+.chip.active { outline: 2px solid var(--accent); }
+a.chip:hover { outline: 1px solid var(--accent); }
+
+header nav { display: flex; gap: .8rem; white-space: nowrap; }
+header nav a { color: var(--muted); text-decoration: none; font-size: .9rem; }
+header nav a:hover { color: var(--fg); }
+
+.facets { display: flex; flex-direction: column; gap: .45rem; margin: 1rem 0; }
+.facetrow { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+.facetlabel { color: var(--muted); font-size: .8rem; min-width: 2.6rem; }
+.chip small { color: var(--muted); font-weight: 400; }
+
+.logtable { border-collapse: collapse; width: 100%; font-size: .9rem; }
+.logtable th { text-align: left; color: var(--muted); font-weight: 500; }
+.logtable th, .logtable td { padding: .3rem .5rem; border-bottom: 1px solid var(--line); }
+
+.graph { margin-top: 2rem; }
+.graph svg { width: 100%; max-width: 40rem; display: block; margin: .5rem auto; }
+.graph line { stroke: var(--line); }
+.graph circle { fill: var(--link); }
+.graph circle.center { fill: var(--accent); }
+.graph circle.missing { fill: var(--missing); }
+.graph text { fill: var(--muted); font-size: 11px; }
+.graph a:hover text { fill: var(--fg); }
 
 .prose h1, .prose h2, .prose h3 { line-height: 1.3; margin-top: 1.8em; }
 .prose pre {

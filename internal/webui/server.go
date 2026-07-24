@@ -34,8 +34,9 @@ type Server struct {
 
 func NewServer(w *config.Wiki, eng cembed.Engine) (*Server, error) {
 	s := &Server{w: w, eng: eng, tmpl: map[string]*template.Template{}}
-	for _, name := range []string{"home.html", "page.html", "search.html"} {
-		t, err := template.ParseFS(assets, "templates/base.html", "templates/"+name)
+	funcs := template.FuncMap{"short": short}
+	for _, name := range []string{"home.html", "page.html", "search.html", "browse.html", "recent.html", "attention.html"} {
+		t, err := template.New("base.html").Funcs(funcs).ParseFS(assets, "templates/base.html", "templates/"+name)
 		if err != nil {
 			return nil, err
 		}
@@ -51,6 +52,11 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /search", s.handleSearch)
 	mux.HandleFunc("GET /api/search", s.handleAPISearch)
 	mux.HandleFunc("GET /api/preview/{slug}", s.handleAPIPreview)
+	mux.HandleFunc("GET /browse", s.handleBrowse)
+	mux.HandleFunc("GET /tag/{tag}", s.handleTag)
+	mux.HandleFunc("GET /special/recent", s.handleRecent)
+	mux.HandleFunc("GET /special/attention", s.handleAttention)
+	mux.HandleFunc("GET /special/random", s.handleRandom)
 	mux.HandleFunc("GET /{$}", s.handleHome)
 	return logRequests(mux)
 }
@@ -130,11 +136,14 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	backlinks := scan.Backlinks()[slug]
+	nodes, edges := localGraph(scan, p, backlinks)
 	s.render(w, http.StatusOK, "page.html", map[string]any{
-		"Title":     p.Title,
-		"Page":      p,
-		"Body":      body,
-		"Backlinks": backlinks,
+		"Title":      p.Title,
+		"Page":       p,
+		"Body":       body,
+		"Backlinks":  backlinks,
+		"GraphNodes": nodes,
+		"GraphEdges": edges,
 	})
 }
 

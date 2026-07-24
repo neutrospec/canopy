@@ -5,7 +5,7 @@
     <input type="search" name="q" placeholder="무엇이든 검색…" autofocus autocomplete="off">
   </form>
   <p class="muted">{{.Total}} pages ·
-    {{range $i, $d := .Dirs}}{{if $i}} · {{end}}{{$d.Dir}} {{$d.Count}}{{end}}
+    {{range $i, $d := .Dirs}}{{if $i}} · {{end}}<a class="wikilink" href="/browse?dir={{$d.Dir}}">{{$d.Dir}}</a> {{$d.Count}}{{end}}
   </p>
 </section>
 <section>
