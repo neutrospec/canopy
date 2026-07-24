@@ -136,6 +136,16 @@ header nav a:hover { color: var(--fg); }
 .seeall { font-size: .8rem; font-weight: 400; text-decoration: none; color: var(--muted); }
 .progress { height: 6px; background: var(--chip); border-radius: 999px; overflow: hidden; margin: .6rem 0 1.2rem; }
 .progressbar { height: 100%; background: var(--accent); }
+
+.suggested { margin-top: 2.2rem; border-top: 1px solid var(--line); padding-top: .5rem; }
+.suggested h2 { font-size: 1rem; color: var(--muted); }
+.suggestrow { display: flex; flex-wrap: wrap; gap: .45rem; }
+.chip.suggest {
+  background: none; border: 1px dashed var(--muted); color: var(--link);
+  padding: .18rem .8rem;
+}
+.chip.suggest:hover { border-color: var(--accent); outline: none; }
+.chip.suggest small { color: var(--muted); margin-left: .25rem; }
 .editform textarea {
   width: 100%; min-height: 24rem; padding: .8rem 1rem;
   font: .88rem/1.6 ui-monospace, "SF Mono", Menlo, monospace;

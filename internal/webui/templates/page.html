@@ -33,6 +33,18 @@
     </svg>
   </details>
   {{end}}
+  {{if .Suggested}}
+  <section class="suggested">
+    <h2>제안 링크 <span class="muted">— 유사하지만 아직 연결 안 됨</span></h2>
+    <div class="suggestrow">
+      {{range .Suggested}}
+      <a class="chip suggest" href="/page/{{.Slug}}" data-slug="{{.Slug}}"
+         title="유사도 {{printf "%.2f" .Sim}}{{if .Tags}} · 태그 {{.Tags}}개 공유{{end}}">{{.Title}}
+        <small>{{printf "%.2f" .Sim}}</small></a>
+      {{end}}
+    </div>
+  </section>
+  {{end}}
   <footer class="backlinks">
     <h2>여기를 링크한 페이지 ({{len .Backlinks}})</h2>
     {{if .Backlinks}}

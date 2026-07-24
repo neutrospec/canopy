@@ -179,6 +179,7 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 		"GraphEdges": edges,
 		"Read":       rs.Get(slug),
 		"ReadSecs":   readThresholdSecs(p),
+		"Suggested":  s.suggestLinks(scan, p, backlinks),
 	})
 }
 
