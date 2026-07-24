@@ -1,6 +1,6 @@
 # Web UI 개발 보드
 
-> [web-ui-plan.md](web-ui-plan.md)의 실행 보드. kanban처럼 쓴다.
+> [web-ui-plan.md](web-ui-plan.md)(M1–M4) · [web-ui-plan-2.md](web-ui-plan-2.md)(M5–M8)의 실행 보드. kanban처럼 쓴다.
 >
 > **규칙**: ① 착수할 작업은 Backlog에서 **Doing**으로 옮긴다(동시에 1–2개만).
 > ② 끝나면 체크하고 **Done**으로 옮기며, 그 커밋에 보드 갱신을 포함한다.
@@ -9,7 +9,7 @@
 
 ## Doing
 
-_(비어 있음 — **M1–M4 전 마일스톤 완료.** 남은 것은 Icebox의 조건부 항목뿐)_
+_(비어 있음 — M1–M4 완료. 다음: M5)_
 
 ## Done
 
@@ -76,9 +76,58 @@ _(비어 있음 — **M1–M4 전 마일스톤 완료.** 남은 것은 Icebox의
 
 ## Backlog
 
-_(비어 있음 — 계획된 마일스톤 M1–M4 전부 완료. 새 일감은 여기(다음 스텝)에 추가)_
+### M5 — 보안: localhost 기본 + 인증 ([설계 D1·D2](web-ui-plan-2.md))
+
+- [ ] `--addr` 기본값 `localhost:8737`로 변경, 문서 갱신
+- [ ] 공개 바인딩 가드: loopback 밖 바인딩 + 인증 미설정 → 기동 거부 및 절차 안내
+- [ ] webauth 저장소: `~/.config/canopy/webauth.json`, bcrypt 해시, 계정 1개
+- [ ] 부트스트랩: 계정 없으면 1회용 설정 코드를 터미널에 출력 → `/setup`에서 코드+id/pw 등록
+- [ ] `/login` · `/logout`, 세션(메모리 토큰 + HttpOnly/SameSite=Lax 쿠키, 30일)
+- [ ] 로그인 실패 지수 지연, POST Origin 검사
+- [ ] troubleshooting: 계정 재설정(webauth.json 삭제), TLS는 tailscale/프록시 안내
+- ✓ Exit:
+  - [ ] 공개 바인딩은 인증 설정 없이 기동 불가, 설정 코드 없이 계정 등록 불가
+  - [ ] localhost 바인딩은 기존처럼 무인증으로 전 기능 동작
+  - [ ] 로그인 후 편집 포함 전 기능 동작 (브라우저 검증)
+
+### M6 — 읽기 히스토리와 새발견 ([설계 D3·D4](web-ui-plan-2.md))
+
+- [ ] reads 저장소: `<wiki>/_meta/webui/reads.json` (`{slug: {first,last,count,source}}`, 포맷 문서화)
+- [ ] `✓ 읽음` 버튼(form POST, JS 불필요) + 단축키 `r`, 읽음 상태·취소 UI
+- [ ] 자동 감지: 가시 탭 체류시간(본문 길이 비례, 최소 30s) + 스크롤 70% → `auto` 읽음, 취소 가능
+- [ ] `canopy mv` 시 reads 키 이관
+- [ ] 홈 "새발견" 섹션(3–5개): 신규성·허브성·관심 인접(최근 읽은 페이지와의 유사도) 랭킹
+- [ ] `/special/discover`: 전체 미독 목록 + facet, 읽기 진행률
+- [ ] invariants.md에 `_meta/webui` 점검 항목 추가
+- ✓ Exit:
+  - [ ] 짧은 체류 방문이 읽음으로 기록되지 않음을 실측 확인
+  - [ ] 명시/자동 구분 기록·취소 동작, 읽은 페이지는 새발견에서 즉시 제외
+  - [ ] reads.json이 `canopy sync`로 커밋된다
+
+### M7 — 느슨한 제안 링크 ([설계 D5](web-ui-plan-2.md))
+
+- [ ] 페이지 하단 "제안 링크": 미연결(양방향) 유사 페이지 top-N, 코사인+태그 부스트, min-sim 0.7
+- [ ] 명시 링크와 시각 구분(추측 연결 스타일), 유사도 표기
+- [ ] 성능: 요청당 벡터 로드 비용 측정, 필요시 serve 수명 캐시
+- ✓ Exit:
+  - [ ] 이미 링크된 페이지는 제안에 안 나옴
+  - [ ] 250페이지 규모에서 페이지 로드 추가 지연 <50ms
+
+### M8 — 위키가 먼저 말을 거는 홈 ([설계 D6](web-ui-plan-2.md))
+
+- [ ] 홈 "오늘의 재발견" 카드: `resurface.PickPages` 1건 + 발췌, 👍/👎/😴 버튼
+- [ ] 웹 피드백 → CLI와 같은 `_meta/resurface/state.json` 기록 (쿨다운 공유)
+- [ ] bridge 제안 카드(보기 전용, 연결은 CLI/에이전트 안내)
+- [ ] 검색 갭 로그: 0건/저점수 질의 → `_meta/webui/search-gaps.jsonl`, `/special/gaps` 화면
+- ✓ Exit:
+  - [ ] 웹 👍 직후 CLI `resurface`에서 같은 페이지가 쿨다운으로 제외됨을 확인
+  - [ ] 빈약한 검색이 갭 로그에 쌓이고 /special/gaps에서 보인다
 
 ### Icebox (지금 할 일 아님 — 명시된 조건이 생기면 Backlog로 승격)
 
+- reads를 resurface 후보 선정의 진짜 열람 신호로 사용 (M6 데이터가 쌓이면)
+- 제안 링크 원클릭 승격 — writeops 경유 본문 링크 삽입 (M7 사용 경험을 보고)
+- digest에 읽기 통계 포함 (M6 이후)
+- TLS 직접 종단 (요구 생기면; 그 전엔 tailscale/프록시)
 - Quartz exporter로 정적 퍼블리싱 (외부 공유 요구가 생기면)
 - fsnotify 캐시 (위키가 수천 페이지에 도달하면)
