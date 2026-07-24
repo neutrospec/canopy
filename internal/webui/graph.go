@@ -13,12 +13,13 @@ import (
 // force-graph) does force layout, zoom/pan, drag, hover highlighting.
 
 type graphAPINode struct {
-	ID     string `json:"id"`
-	Title  string `json:"title"`
-	Dir    string `json:"dir"`
-	Deg    int    `json:"deg"`    // total degree — drives node size
-	Read   bool   `json:"read"`   // ties into the read-history loop
-	Island bool   `json:"island"` // outside the largest connected component
+	ID      string `json:"id"`
+	Title   string `json:"title"`
+	Dir     string `json:"dir"`
+	Deg     int    `json:"deg"`     // total degree — drives node size
+	Read    bool   `json:"read"`    // ties into the read-history loop
+	Island  bool   `json:"island"`  // outside the largest connected component
+	Excerpt string `json:"excerpt"` // hover tooltip — shipped upfront so the tip never waits
 }
 
 type graphAPILink struct {
@@ -68,12 +69,13 @@ func (s *Server) handleAPIGraph(w http.ResponseWriter, r *http.Request) {
 	for _, p := range scan.Pages {
 		slug := strings.ToLower(p.Slug)
 		nodes = append(nodes, graphAPINode{
-			ID:     slug,
-			Title:  p.Title,
-			Dir:    p.Dir,
-			Deg:    deg[slug],
-			Read:   rs.IsRead(slug),
-			Island: islands[slug],
+			ID:      slug,
+			Title:   p.Title,
+			Dir:     p.Dir,
+			Deg:     deg[slug],
+			Read:    rs.IsRead(slug),
+			Island:  islands[slug],
+			Excerpt: FirstParagraph(p.Body, 160),
 		})
 	}
 	s.emit(w, map[string]any{"nodes": nodes, "links": links})

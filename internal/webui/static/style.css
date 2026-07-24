@@ -190,6 +190,16 @@ h2:hover .hanchor, h3:hover .hanchor, h4:hover .hanchor { opacity: 1; }
 .dot.d-comparisons { background: #c586c0; }
 .dot.d-unread { background: transparent; border: 1.5px solid var(--missing); }
 .dot.d-island { background: transparent; border: 1.5px dashed #d29922; }
+.graphtip {
+  position: absolute; z-index: 20; max-width: 21rem; pointer-events: none;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  border: 1px solid var(--line); border-radius: 10px;
+  padding: .55rem .8rem; font-size: .82rem; line-height: 1.5;
+  box-shadow: 0 8px 30px rgba(0,0,0,.25); backdrop-filter: blur(6px);
+}
+.graphtip b { display: block; }
+.graphtip .tipmeta { color: var(--muted); font-size: .74rem; }
+.graphtip p { margin: .3rem 0 0; color: var(--muted); }
 
 .card {
   border: 1px solid var(--line); border-radius: 12px;

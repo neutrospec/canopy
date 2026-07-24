@@ -35,6 +35,40 @@
   const neighbors = new Map(); // id -> Set(ids)
   const nodeLinks = new Map(); // id -> Set(link objects)
 
+  // Rich hover tooltip: zoomed out the dots carry no information, so
+  // the hovered node always gets a card (instant metadata, excerpt
+  // filled async from /api/preview).
+  const tip = document.createElement("div");
+  tip.className = "graphtip";
+  tip.hidden = true;
+  el.appendChild(tip);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+  let mouse = { x: 0, y: 0 };
+  el.addEventListener("mousemove", (e) => {
+    const r = el.getBoundingClientRect();
+    mouse = { x: e.clientX - r.left, y: e.clientY - r.top };
+    if (!tip.hidden) placeTip();
+  });
+  function placeTip() {
+    const pad = 14;
+    let x = mouse.x + pad, y = mouse.y + pad;
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    if (x + w > el.clientWidth - 8) x = mouse.x - w - pad;
+    if (y + h > el.clientHeight - 8) y = mouse.y - h - pad;
+    tip.style.left = Math.max(8, x) + "px";
+    tip.style.top = Math.max(8, y) + "px";
+  }
+  function showTip(n) {
+    const meta = [n.dir, `링크 ${n.deg}`, n.read ? "읽음" : "안 읽음"];
+    if (n.island) meta.push("🏝 섬");
+    tip.innerHTML = `<b>${esc(n.title)}</b><span class="tipmeta">${esc(meta.join(" · "))}</span>` +
+      (n.excerpt ? `<p>${esc(n.excerpt)}</p>` : "");
+    tip.hidden = false;
+    placeTip();
+  }
+
   const radius = (n) => 2.5 + Math.sqrt(n.deg || 0) * 1.6;
 
   graph
@@ -85,6 +119,9 @@
         highlightNodes.add(n.id);
         (neighbors.get(n.id) || []).forEach((id) => highlightNodes.add(id));
         (nodeLinks.get(n.id) || []).forEach((l) => highlightLinks.add(l));
+        showTip(n);
+      } else {
+        tip.hidden = true;
       }
       el.style.cursor = n ? "pointer" : "";
     })
@@ -137,4 +174,7 @@
   }).catch(() => {
     el.textContent = "그래프 데이터를 불러오지 못했습니다";
   });
+
+  // Debug/power-user hook (also used by automated UI tests).
+  window.__canopyGraph = graph;
 })();
