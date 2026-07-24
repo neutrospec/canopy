@@ -4,22 +4,22 @@
 > compounding은 양방향이다 — 지식을 넣는 것만으로는 창고이고,
 > **위키가 먼저 말을 걸어야** second brain이다.
 >
-> 이 문서는 그 "되돌려주는 절반"의 설계와 운영법. 원 설계는 위키의
-> [[wiki-distill-express]] / [[wiki-resurface-distill-express]] (2026-06-01,
-> Tiago Forte + Andy Matuschak 기반)이며, canopy가 당시 L1(데이터 소스)을 전부
+> 이 문서는 그 "되돌려주는 절반"의 설계와 운영법. 원 설계는 Tiago Forte의
+> Distill/Express와 Andy Matuschak의 노트 원칙에 기반한 Resurface 설계(2026-06)이며,
+> canopy가 당시 L1(데이터 소스)을 전부
 > 내장하면서 대폭 단순해졌다.
 
 ## 역할 분담 (philosophy.md 원칙 6)
 
 ```
-canopy  (결정론, 코드)          hermes  (판단, LLM)              사용자
+canopy  (결정론, 코드)          에이전트 (판단, LLM)             사용자
 ─────────────────────          ─────────────────────           ──────────
 resurface: 잊힌/허브 후보   →   후보 중 오늘 보낼 것 판단    →   Telegram 수신
 bridge:   유사-미연결 페어  →   "왜 관련 있는지" 문장화       →   👍/👎/링크 결정
 state:    노출/피드백 기록  ←   feedback 명령으로 기록        ←   반응
 ```
 
-canopy는 절대 메시지를 만들지 않고, hermes는 절대 후보를 임의로 고르지 않는다.
+canopy는 절대 메시지를 만들지 않고, 에이전트는 절대 후보를 임의로 고르지 않는다.
 
 ## 명령
 
@@ -40,7 +40,7 @@ canopy bridge [-n 5] [--min-sim 0.70] [--peek] [--dismiss a:b] [--json]
 커밋되어 기기 간 동기화된다 (XDG 캐시로 빼지 않는 이유: 캐시는 재구축 가능하지만
 노출 이력·피드백은 잃으면 기기 간 중복 resurface가 발생한다).
 
-## hermes 운영 레시피
+## 에이전트 운영 레시피
 
 원 설계의 v1 → v2 진행을 그대로 따른다. **v1부터 시작하고 반응을 보고 늘린다.**
 
@@ -48,18 +48,18 @@ canopy bridge [-n 5] [--min-sim 0.70] [--peek] [--dismiss a:b] [--json]
 ```bash
 canopy resurface -n 5 --strategy auto --json   # 후보 5
 canopy bridge -n 2 --json                      # 연결 제안 2
-# hermes: 각 pick의 excerpt/explanation으로 30-50줄 저널 작성 → Telegram
-# hermes: 마지막에 canopy sync -m "resurface: weekly journal state"
+# 에이전트: 각 pick의 excerpt/explanation으로 30-50줄 저널 작성 → Telegram
+# 에이전트: 마지막에 canopy sync -m "resurface: weekly journal state"
 ```
 
 **v1.5 — Daily Highlight (평일 09:00)**: `canopy resurface -n 1 --json` → 5-10줄.
 
 **v2 — 반응 처리**: 사용자의 👍/👎/스누즈를 받으면
 `canopy resurface feedback <slug> --up|--down|--snooze 7`.
-bridge에 "연결해줘"라고 답하면 hermes가 실제로 두 페이지에 [[링크]]를 추가하고
+bridge에 "연결해줘"라고 답하면 에이전트가 실제로 두 페이지에 [[링크]]를 추가하고
 (`canopy update` 로 마무리), "아니야"면 `canopy bridge --dismiss a:b`.
 
-**금지**: 후보를 무시하고 hermes가 임의 페이지를 고르는 것, state 파일 직접 편집.
+**금지**: 후보를 무시하고 에이전트가 임의 페이지를 고르는 것, state 파일 직접 편집.
 
 ## P2 — Query 파일링 루프 (구현됨, invariants G1–G3)
 
@@ -80,9 +80,9 @@ canopy bridge --include-linked --min-sim 0.85 --peek --json
 ```
 
 링크 여부와 무관하게 고유사 페어를 공급하고 `linked` 필드로 구분한다.
-`linked: true`인 고유사 페어 = **통합/모순 후보** (예: 실위키 첫 실행에서
-0.986짜리 opencode-gitops 중복 페이지 발견). 주기 실행에서 hermes가
-모순 탐지·통합 제안·커버리지 갭을 판단한다 — hermes cron 등록은 보류 중 (task #4).
+`linked: true`인 고유사 페어 = **통합/모순 후보** (유사도 0.98대의 사실상 중복
+페이지가 이 방법으로 발견된다). 주기 실행에서 에이전트가
+모순 탐지·통합 제안·커버리지 갭을 판단한다.
 
 ## P4 — Express 소재 수집 (canopy 측 구현됨, invariants G4–G5)
 
