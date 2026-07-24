@@ -109,6 +109,23 @@ func Run(w *config.Wiki, scan *wiki.ScanResult) *Report {
 		}
 	}
 
+	// Island clusters pass the per-page orphan check (they backlink each
+	// other) but no path connects them to the main knowledge network.
+	if comps := scan.Components(); len(comps) > 1 {
+		for _, island := range comps[1:] {
+			preview := island
+			if len(preview) > 6 {
+				preview = preview[:6]
+			}
+			msg := fmt.Sprintf("%d-page island, unreachable from the main graph (%d pages): %s",
+				len(island), len(comps[0]), strings.Join(preview, ", "))
+			if len(island) > len(preview) {
+				msg += fmt.Sprintf(", … (+%d)", len(island)-len(preview))
+			}
+			add(Warning, "island", island[0], msg)
+		}
+	}
+
 	sort.SliceStable(r.Findings, func(i, j int) bool {
 		order := map[Severity]int{Critical: 0, Warning: 1, Info: 2}
 		if order[r.Findings[i].Severity] != order[r.Findings[j].Severity] {

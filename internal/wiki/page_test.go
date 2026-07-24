@@ -2,6 +2,7 @@ package wiki
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/neutrospec/canopy/internal/config"
@@ -77,5 +78,37 @@ func TestSlugify(t *testing.T) {
 		if got := Slugify(in); got != want {
 			t.Errorf("Slugify(%q) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+func TestComponents(t *testing.T) {
+	mk := func(slug string, links ...string) *Page {
+		body := ""
+		for _, l := range links {
+			body += "[[" + l + "]] "
+		}
+		return Parse("concepts/"+slug+".md", []byte("---\ntitle: \""+slug+"\"\ntype: concept\n---\n"+body))
+	}
+	res := &ScanResult{BySlug: map[string]*Page{}}
+	for _, p := range []*Page{
+		mk("a", "b"), mk("b", "c"), mk("c"), // mainland: a-b-c
+		mk("x", "y"), mk("y"), // island: x-y
+		mk("solo"), // orphan island of one
+	} {
+		res.Pages = append(res.Pages, p)
+		res.BySlug[strings.ToLower(p.Slug)] = p
+	}
+	comps := res.Components()
+	if len(comps) != 3 {
+		t.Fatalf("expected 3 components, got %d: %v", len(comps), comps)
+	}
+	if len(comps[0]) != 3 || comps[0][0] != "a" {
+		t.Errorf("mainland wrong: %v", comps[0])
+	}
+	if len(comps[1]) != 2 || comps[1][0] != "x" {
+		t.Errorf("island wrong: %v", comps[1])
+	}
+	if len(comps[2]) != 1 || comps[2][0] != "solo" {
+		t.Errorf("solo island wrong: %v", comps[2])
 	}
 }

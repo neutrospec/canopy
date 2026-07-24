@@ -189,6 +189,7 @@ h2:hover .hanchor, h3:hover .hanchor, h4:hover .hanchor { opacity: 1; }
 .dot.d-concepts { background: var(--accent); }
 .dot.d-comparisons { background: #c586c0; }
 .dot.d-unread { background: transparent; border: 1.5px solid var(--missing); }
+.dot.d-island { background: transparent; border: 1.5px dashed #d29922; }
 
 .card {
   border: 1px solid var(--line); border-radius: 12px;

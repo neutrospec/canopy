@@ -235,3 +235,54 @@ func (r *ScanResult) Backlinks() map[string][]string {
 	}
 	return in
 }
+
+// Components returns the connected components of the undirected
+// wikilink graph, largest first (members sorted). The first component
+// is the "mainland"; every other one is an island — internally linked
+// pages that no path connects to the main knowledge network, which
+// per-page orphan checks cannot see.
+func (r *ScanResult) Components() [][]string {
+	adj := map[string][]string{}
+	for _, p := range r.Pages {
+		from := strings.ToLower(p.Slug)
+		if _, ok := adj[from]; !ok {
+			adj[from] = nil
+		}
+		for _, target := range p.Links {
+			if _, exists := r.BySlug[target]; exists && target != from {
+				adj[from] = append(adj[from], target)
+				adj[target] = append(adj[target], from)
+			}
+		}
+	}
+	slugs := make([]string, 0, len(adj))
+	for s := range adj {
+		slugs = append(slugs, s)
+	}
+	sort.Strings(slugs) // deterministic traversal order
+	seen := map[string]bool{}
+	var comps [][]string
+	for _, start := range slugs {
+		if seen[start] {
+			continue
+		}
+		var comp []string
+		stack := []string{start}
+		seen[start] = true
+		for len(stack) > 0 {
+			v := stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			comp = append(comp, v)
+			for _, w := range adj[v] {
+				if !seen[w] {
+					seen[w] = true
+					stack = append(stack, w)
+				}
+			}
+		}
+		sort.Strings(comp)
+		comps = append(comps, comp)
+	}
+	sort.SliceStable(comps, func(i, j int) bool { return len(comps[i]) > len(comps[j]) })
+	return comps
+}

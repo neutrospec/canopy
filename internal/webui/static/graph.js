@@ -51,6 +51,15 @@
         ctx.lineWidth = 1 / scale;
         ctx.stroke();
       }
+      if (n.island) { // disconnected clusters get a dashed halo
+        ctx.beginPath();
+        ctx.setLineDash([2.5, 2]);
+        ctx.arc(n.x, n.y, r + 3, 0, 2 * Math.PI);
+        ctx.strokeStyle = "#d29922";
+        ctx.lineWidth = 1.2 / scale;
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
       // labels appear as you zoom in (Obsidian behavior), always on hover
       if (scale > 2 || (hoverNode && highlightNodes.has(n.id))) {
         const size = Math.max(11 / scale, 1.6);

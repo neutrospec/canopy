@@ -1,6 +1,31 @@
 {{define "content"}}
 <h1>점검</h1>
 <p class="muted"><a class="wikilink" href="/special/gaps">검색 갭 →</a> 위키가 답하지 못한 질의(페이지 생성 후보)</p>
+{{if .Islands}}
+<section>
+  <h2>섬 클러스터 ({{len .Islands}})</h2>
+  <p class="muted">서로는 링크돼 있지만 본토(최대 연결 성분)와 끊어진 클러스터 —
+  고아 검사는 통과하지만 그래프에서 고립돼 있습니다.</p>
+  {{range .Islands}}
+  <div class="card">
+    <p>
+      {{range $i, $p := .Pages}}{{if $i}} · {{end}}<a class="wikilink" href="/page/{{$p.Slug}}" data-slug="{{$p.Slug}}">{{$p.Slug}}</a>{{end}}
+    </p>
+    {{if .HasSuggestion}}
+    <p class="muted">🌉 다리 제안 (유사도 {{printf "%.2f" .Sim}}):
+      <a class="wikilink" href="/page/{{.BridgeA}}" data-slug="{{.BridgeA}}">{{.BridgeATitle}}</a>
+      ↔
+      <a class="wikilink" href="/page/{{.BridgeB}}" data-slug="{{.BridgeB}}">{{.BridgeBTitle}}</a>
+      — 이 링크 하나면 섬이 연결됩니다.
+      <a class="wikilink" href="/edit/{{.BridgeA}}">바로 편집 →</a>
+    </p>
+    {{else}}
+    <p class="muted">다리 제안 없음 (임베딩 인덱스 필요 — <code>canopy reindex</code>)</p>
+    {{end}}
+  </div>
+  {{end}}
+</section>
+{{end}}
 <section>
   <h2>고아 페이지 ({{len .Orphans}})</h2>
   <p class="muted">어느 페이지도 링크하지 않는 페이지 — 연결하거나 정리할 후보.</p>

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/neutrospec/canopy/internal/logops"
+	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
 )
 
@@ -219,7 +220,70 @@ func (s *Server) handleAttention(w http.ResponseWriter, r *http.Request) {
 		"Orphans":   orphans,
 		"Stale":     stale,
 		"StaleDays": staleDays,
+		"Islands":   s.islandReport(scan),
 	})
+}
+
+// islandReport lists disconnected clusters with, when embeddings are
+// available, the best island↔mainland pair — the single link that
+// would reconnect the island. Suggesting only; linking is a content
+// judgement for the human/agent.
+type islandInfo struct {
+	Pages          []*wiki.Page
+	BridgeA        string // island side
+	BridgeB        string // mainland side
+	BridgeATitle   string
+	BridgeBTitle   string
+	Sim            float64
+	HasSuggestion  bool
+}
+
+func (s *Server) islandReport(scan *wiki.ScanResult) []islandInfo {
+	comps := scan.Components()
+	if len(comps) <= 1 {
+		return nil
+	}
+	var vectors map[string][]float32
+	if st, err := store.Open(s.w.DBPath()); err == nil {
+		vectors, _ = st.PageVectors()
+		st.Close()
+	}
+	mainland := comps[0]
+	var out []islandInfo
+	for _, island := range comps[1:] {
+		info := islandInfo{}
+		for _, slug := range island {
+			if p, ok := scan.BySlug[slug]; ok {
+				info.Pages = append(info.Pages, p)
+			}
+		}
+		for _, a := range island {
+			av, ok := vectors[a]
+			if !ok {
+				continue
+			}
+			for _, b := range mainland {
+				bv, ok := vectors[b]
+				if !ok {
+					continue
+				}
+				if sim := store.Cosine(av, bv); sim > info.Sim {
+					info.Sim, info.BridgeA, info.BridgeB = sim, a, b
+				}
+			}
+		}
+		if info.BridgeA != "" {
+			info.HasSuggestion = true
+			if p, ok := scan.BySlug[info.BridgeA]; ok {
+				info.BridgeATitle = p.Title
+			}
+			if p, ok := scan.BySlug[info.BridgeB]; ok {
+				info.BridgeBTitle = p.Title
+			}
+		}
+		out = append(out, info)
+	}
+	return out
 }
 
 func (s *Server) handleRandom(w http.ResponseWriter, r *http.Request) {

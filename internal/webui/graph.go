@@ -13,11 +13,12 @@ import (
 // force-graph) does force layout, zoom/pan, drag, hover highlighting.
 
 type graphAPINode struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-	Dir   string `json:"dir"`
-	Deg   int    `json:"deg"`  // total degree — drives node size
-	Read  bool   `json:"read"` // ties into the read-history loop
+	ID     string `json:"id"`
+	Title  string `json:"title"`
+	Dir    string `json:"dir"`
+	Deg    int    `json:"deg"`    // total degree — drives node size
+	Read   bool   `json:"read"`   // ties into the read-history loop
+	Island bool   `json:"island"` // outside the largest connected component
 }
 
 type graphAPILink struct {
@@ -55,15 +56,24 @@ func (s *Server) handleAPIGraph(w http.ResponseWriter, r *http.Request) {
 			deg[target]++
 		}
 	}
+	islands := map[string]bool{}
+	if comps := scan.Components(); len(comps) > 1 {
+		for _, comp := range comps[1:] {
+			for _, slug := range comp {
+				islands[slug] = true
+			}
+		}
+	}
 	nodes := make([]graphAPINode, 0, len(scan.Pages))
 	for _, p := range scan.Pages {
 		slug := strings.ToLower(p.Slug)
 		nodes = append(nodes, graphAPINode{
-			ID:    slug,
-			Title: p.Title,
-			Dir:   p.Dir,
-			Deg:   deg[slug],
-			Read:  rs.IsRead(slug),
+			ID:     slug,
+			Title:  p.Title,
+			Dir:    p.Dir,
+			Deg:    deg[slug],
+			Read:   rs.IsRead(slug),
+			Island: islands[slug],
 		})
 	}
 	s.emit(w, map[string]any{"nodes": nodes, "links": links})
