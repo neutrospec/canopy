@@ -1,6 +1,7 @@
 // Package webui serves the wiki over HTTP for human browsing.
-// It is strictly read-only: every mutation still goes through the CLI
-// so the afterWrite invariants cannot be bypassed (docs/web-ui-plan.md D3).
+// Reading is free-form; the only mutation is the body editor, which
+// runs the same writeops.Run pipeline as the CLI so the write
+// invariants cannot be bypassed (docs/web-ui-write-design.md).
 package webui
 
 import (

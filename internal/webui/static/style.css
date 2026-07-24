@@ -109,6 +109,20 @@ header nav a:hover { color: var(--fg); }
 }
 .popover p { margin: .3rem 0 0; color: var(--muted); }
 
+.notice.conflict { border-left-color: var(--missing); }
+.editform textarea {
+  width: 100%; min-height: 24rem; padding: .8rem 1rem;
+  font: .88rem/1.6 ui-monospace, "SF Mono", Menlo, monospace;
+  background: var(--chip); color: var(--fg);
+  border: 1px solid var(--line); border-radius: 8px; resize: vertical;
+}
+.editform textarea:focus { outline: 2px solid var(--accent); }
+.editactions { margin-top: .8rem; display: flex; gap: 1rem; align-items: center; }
+.editactions button {
+  background: var(--accent); color: #fff; border: 0; border-radius: 8px;
+  padding: .5rem 1.4rem; font-size: 1rem; cursor: pointer;
+}
+
 .pagelist, .results { padding-left: 1.2rem; }
 .pagelist li, .results li { margin: .35rem 0; }
 .results .snippet { margin: .15rem 0 0; font-size: .88rem; color: var(--muted); }

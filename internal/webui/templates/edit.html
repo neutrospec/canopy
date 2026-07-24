@@ -1,0 +1,18 @@
+{{define "content"}}
+<h1>편집: {{.Page.Title}}</h1>
+{{if .Conflict}}
+<p class="notice conflict">⚠ 이 페이지가 다른 곳(CLI/에이전트/다른 탭)에서 수정되었습니다.
+아래는 <b>당신의 편집본</b>입니다 — 현재 저장된 내용과 비교해 필요한 부분을 반영한 뒤
+다시 저장하세요. <a class="wikilink" href="/page/{{.Page.Slug}}" target="_blank">현재 버전 보기</a></p>
+{{end}}
+<p class="muted">본문만 편집합니다 (frontmatter·페이지 생성/이동/삭제는 CLI로).
+저장하면 <code>updated</code> 날짜가 갱신되고 인덱스·로그가 자동 처리됩니다.</p>
+<form class="editform" method="post" action="/edit/{{.Page.Slug}}">
+  <input type="hidden" name="hash" value="{{.Hash}}">
+  <textarea name="body" spellcheck="false">{{.Body}}</textarea>
+  <div class="editactions">
+    <button type="submit">저장</button>
+    <a class="wikilink" href="/page/{{.Page.Slug}}">취소</a>
+  </div>
+</form>
+{{end}}

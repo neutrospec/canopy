@@ -9,9 +9,22 @@
 
 ## Doing
 
-_(비어 있음 — 다음: M4)_
+_(비어 있음 — **M1–M4 전 마일스톤 완료.** 남은 것은 Icebox의 조건부 항목뿐)_
 
 ## Done
+
+### M4 — 웹에서 쓰기
+
+- [x] 동시 쓰기·충돌 처리 설계 문서: [web-ui-write-design.md](web-ui-write-design.md)
+      (낙관적 잠금 = MediaWiki 편집 충돌 패턴, 자동 병합 없음, sync는 웹에서 안 함)
+- [x] 편집 폼 `GET/POST /edit/{slug}` → frontmatter 검증 → 저장 → **`writeops.Run`**
+      (afterWrite의 불변 파이프라인을 internal/writeops로 추출, CLI와 웹이 같은 함수 호출
+      — 우회 쓰기 경로가 구조적으로 불가능). 본문만 편집, frontmatter·생성/이동/삭제는 CLI 전용.
+      저장 후 이 페이지의 lint finding을 화면에 표시(저장은 막지 않음, CLI와 동일)
+- [x] 충돌 처리: 폼의 SHA-256 해시 불일치 시 409 + 편집본 보존 화면 (curl로 검증)
+- ✓ Exit:
+  - [x] 스크래치 위키에서 CLI `update`와 웹 편집을 나란히 실행해 부수효과 비교:
+        파일(updated 갱신·본문 교체)·logs 엔트리·genindex·FTS 인덱스 모두 동일 확인
 
 ### M3 — 브라우징 구조
 
@@ -63,35 +76,9 @@ _(비어 있음 — 다음: M4)_
 
 ## Backlog
 
-### M2 — 검색-우선 UX
+_(비어 있음 — 계획된 마일스톤 M1–M4 전부 완료. 새 일감은 여기(다음 스텝)에 추가)_
 
-- [ ] 홈을 검색박스 중심으로 교체(Wikipedia 메인 패턴)
-- [ ] `GET /api/search?q=` JSON 엔드포인트
-- [ ] 인스턴트 서치: debounce, ↑↓/Enter 키보드 내비, slug 정확 일치 시 즉시 이동
-- [ ] 검색 결과에 chunk 스니펫(`SearchChunks` 재사용) — 매칭된 문단 표시
-- [ ] 위키링크 hover popover preview(대상 페이지 첫 문단)
-- ✓ Exit:
-  - [ ] "검색박스에서 시작 → 두세 타이핑 → Enter → 페이지"가 기본 동선이 된다
+### Icebox (지금 할 일 아님 — 명시된 조건이 생기면 Backlog로 승격)
 
-### M3 — 브라우징 구조
-
-- [ ] `GET /browse?dir=&type=&tag=`: facet 교차 필터(다중 태그 AND)
-- [ ] 태그 페이지 `GET /tag/{tag}`: 소속 페이지 + 연관 태그(co-occurrence)
-- [ ] Special: 최근 변경(logs 재사용)
-- [ ] Special: 고아·stale 페이지(resurface 재사용)
-- [ ] Special: random page
-- [ ] (선택) 로컬 그래프 뷰 — 안 해도 M3 완료
-- ✓ Exit:
-  - [ ] 검색 없이 facet만으로 임의 주제의 페이지에 3클릭 내 도달
-
-### M4 — (선택) 웹에서 쓰기
-
-- [ ] 동시 쓰기·충돌 처리 설계 문서 먼저 작성
-- [ ] 편집 폼 → lint → 저장 → afterWrite 파이프라인 호출(우회 쓰기 경로 금지)
-- ✓ Exit:
-  - [ ] 웹에서 한 편집이 CLI 편집과 완전히 같은 부수효과(genindex/logops/reindex)를 남긴다
-
-### Icebox (요구 생기면)
-
-- [ ] Quartz exporter로 정적 퍼블리싱
-- [ ] fsnotify 캐시(수천 페이지 도달 시)
+- Quartz exporter로 정적 퍼블리싱 (외부 공유 요구가 생기면)
+- fsnotify 캐시 (위키가 수천 페이지에 도달하면)

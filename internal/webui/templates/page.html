@@ -1,10 +1,13 @@
 {{define "content"}}
 <article>
+  {{if .Saved}}<p class="notice">✓ 저장되었습니다. 커밋은 <code>canopy sync</code>로.</p>{{end}}
+  {{range .Lint}}<p class="notice conflict">lint: {{.}}</p>{{end}}
   <h1>{{.Page.Title}}</h1>
   <div class="metacard">
     <a class="chip" href="/browse?type={{.Page.Type}}">{{.Page.Type}}</a>
     {{range .Page.Tags}}<a class="chip tag" href="/tag/{{.}}">{{.}}</a>{{end}}
     <span class="muted">updated {{.Page.Updated}} · {{.Page.RelPath}}</span>
+    <a class="chip" href="/edit/{{.Page.Slug}}">✎ 편집</a>
   </div>
   <div class="prose">{{.Body}}</div>
   {{if .GraphNodes}}

@@ -21,12 +21,12 @@ import (
 
 	"github.com/neutrospec/canopy/internal/config"
 	"github.com/neutrospec/canopy/internal/embed"
-	"github.com/neutrospec/canopy/internal/genindex"
 	"github.com/neutrospec/canopy/internal/gitops"
 	"github.com/neutrospec/canopy/internal/indexer"
 	"github.com/neutrospec/canopy/internal/logops"
 	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/writeops"
 )
 
 var typeDirs = map[string]string{
@@ -103,34 +103,11 @@ func rankRelated(hits []store.Hit, selfSlug string, newTags []string, scan *wiki
 	return related
 }
 
-// afterWrite is the invariant pipeline every mutation runs.
-// It performs ONE filesystem scan (after the mutation) and uses it for
-// both index regeneration and reindexing — genindex only touches index/
-// files which are outside governed dirs, so the page set is unchanged.
+// afterWrite runs the shared invariant pipeline (writeops.Run — same
+// path the web UI editor uses), then the CLI-only tail: optional sync
+// and the NEXT hint.
 func afterWrite(w *config.Wiki, action, relPath string, related []string, note string, syncNow bool, syncMsg string) error {
-	scan, err := wiki.Scan(w)
-	if err != nil {
-		return err
-	}
-	if err := genindex.Regenerate(w, scan); err != nil {
-		return err
-	}
-	if err := logops.Append(w, action, relPath, related, note); err != nil {
-		return err
-	}
-	var eng embed.Engine
-	if embed.Available() && embed.ModelAvailable() {
-		if e, err := embed.New(); err == nil {
-			eng = e
-			defer eng.Close()
-		}
-	}
-	st, err := store.Open(w.DBPath())
-	if err != nil {
-		return err
-	}
-	defer st.Close()
-	if _, err := indexer.Reindex(w, st, scan, eng, nil); err != nil {
+	if _, err := writeops.Run(w, action, relPath, related, note); err != nil {
 		return err
 	}
 	if syncNow {
