@@ -9,9 +9,24 @@
 
 ## Doing
 
-_(비어 있음 — **M1–M8 전 마일스톤 완료.** 남은 것은 Icebox의 조건부 항목뿐)_
+_(비어 있음 — **M1–M9 전 마일스톤 완료.** 남은 것은 Icebox의 조건부 항목뿐)_
 
 ## Done
+
+### M9 — 현대적 마크다운 뷰어
+
+- [x] 코드 문법 하이라이팅: goldmark-highlighting + chroma(서버사이드, CSS 클래스 방식) —
+      static/chroma.css에 github(라이트)/github-dark(다크) 토큰 팔레트 생성
+- [x] mermaid 다이어그램: ```mermaid → `<pre class="mermaid">`(goldmark-mermaid, 클라이언트 렌더),
+      번들(3.4MB)을 vendor로 내장하고 다이어그램 있는 페이지에서만 lazy 로드, 다크 테마 자동
+- [x] LaTeX 수식: MathJax tex-svg(2MB, 폰트 내장 SVG 출력) vendor 내장, 본문(코드 제외)에
+      $…$/$$…$$ 패턴이 있을 때만 lazy 로드 — currentColor 상속으로 다크모드 자동
+- [x] 코드 블록 복사 버튼(hover 시 표시), 헤딩 hover 앵커(#), 외부 링크 새 탭+↗ 표시,
+      footnote 확장
+- ✓ Exit:
+  - [x] Go/Python 하이라이팅·mermaid 그래프·인라인/블록 수식·복사 버튼을 Chrome에서 확인
+  - [x] 실위키 수식 페이지(partial-derivative)가 다크모드에서 올바르게 렌더
+  - [x] 오프라인 완결(CDN 없음): 모든 에셋 embed.FS 내장, 필요한 페이지에서만 로드
 
 ### M8 — 위키가 먼저 말을 거는 홈 ([설계 D6](web-ui-plan-2.md))
 
@@ -124,7 +139,7 @@ _(비어 있음 — **M1–M8 전 마일스톤 완료.** 남은 것은 Icebox의
 
 ## Backlog
 
-_(비어 있음 — 계획된 마일스톤 M1–M8 전부 완료)_
+_(비어 있음 — 계획된 마일스톤 M1–M9 전부 완료)_
 
 ### Icebox (지금 할 일 아님 — 명시된 조건이 생기면 Backlog로 승격)
 

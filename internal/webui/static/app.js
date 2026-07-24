@@ -99,6 +99,76 @@
     if (e.target.closest && e.target.closest("a.wikilink[data-slug]")) hidePop();
   });
 
+  // --- modern viewer: code copy, anchors, mermaid, math ---------------
+  const loadScript = (src) => new Promise((ok, bad) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = ok; s.onerror = bad;
+    document.head.appendChild(s);
+  });
+  const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  const prose = document.querySelector(".prose");
+  if (prose) {
+    // copy button on every code block (except mermaid)
+    prose.querySelectorAll("pre").forEach((pre) => {
+      if (pre.classList.contains("mermaid")) return;
+      const btn = document.createElement("button");
+      btn.className = "copybtn";
+      btn.textContent = "복사";
+      btn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(pre.querySelector("code")?.innerText ?? pre.innerText);
+          btn.textContent = "✓ 복사됨";
+          setTimeout(() => { btn.textContent = "복사"; }, 1500);
+        } catch { btn.textContent = "실패"; }
+      });
+      pre.appendChild(btn);
+    });
+
+    // hover anchors on headings (auto IDs come from goldmark)
+    prose.querySelectorAll("h2[id], h3[id], h4[id]").forEach((h) => {
+      const a = document.createElement("a");
+      a.className = "hanchor";
+      a.href = "#" + h.id;
+      a.textContent = "#";
+      h.appendChild(a);
+    });
+
+    // external links open in a new tab
+    prose.querySelectorAll('a[href^="http"]').forEach((a) => {
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.classList.add("external");
+    });
+
+    // mermaid: lazy-load the vendored bundle only when needed
+    const diagrams = prose.querySelectorAll("pre.mermaid, div.mermaid");
+    if (diagrams.length) {
+      loadScript("/static/vendor/mermaid.min.js").then(() => {
+        window.mermaid.initialize({
+          startOnLoad: false,
+          theme: dark ? "dark" : "default",
+          securityLevel: "strict",
+        });
+        window.mermaid.run({ nodes: diagrams });
+      }).catch(() => {});
+    }
+
+    // math: lazy-load MathJax (SVG output, self-contained) when the
+    // body outside code blocks looks like it contains TeX
+    const textOnly = (() => {
+      const c = prose.cloneNode(true);
+      c.querySelectorAll("pre, code").forEach((n) => n.remove());
+      return c.textContent;
+    })();
+    if (/\$\$[^$]+\$\$|(^|[^\\$])\$[^\s$][^$\n]*\$|\\\(|\\\[/.test(textOnly)) {
+      window.MathJax = {
+        tex: { inlineMath: [["$", "$"], ["\\(", "\\)"]], displayMath: [["$$", "$$"], ["\\[", "\\]"]] },
+        svg: { fontCache: "global" },
+      };
+      loadScript("/static/vendor/tex-svg.js").catch(() => {});
+    }
+  }
+
   // --- read tracking ---------------------------------------------------
   const article = document.querySelector("article[data-slug]");
   if (article) {

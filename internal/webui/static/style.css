@@ -76,8 +76,30 @@ header nav a:hover { color: var(--fg); }
 .prose h1, .prose h2, .prose h3 { line-height: 1.3; margin-top: 1.8em; }
 .prose pre {
   background: var(--chip); padding: .8rem 1rem; border-radius: 8px;
-  overflow-x: auto; font-size: .85rem;
+  overflow-x: auto; font-size: .85rem; position: relative;
 }
+.prose pre.mermaid {
+  background: none; text-align: center; overflow-x: auto;
+}
+.copybtn {
+  position: absolute; top: .45rem; right: .45rem;
+  background: var(--bg); color: var(--muted);
+  border: 1px solid var(--line); border-radius: 6px;
+  font-size: .72rem; padding: .15rem .55rem; cursor: pointer;
+  opacity: 0; transition: opacity .15s; font-family: inherit;
+}
+.prose pre:hover .copybtn { opacity: 1; }
+.copybtn:hover { color: var(--fg); border-color: var(--accent); }
+.hanchor {
+  margin-left: .4rem; color: var(--muted); text-decoration: none;
+  opacity: 0; font-weight: 400;
+}
+h2:hover .hanchor, h3:hover .hanchor, h4:hover .hanchor { opacity: 1; }
+.hanchor:hover { color: var(--accent); }
+.prose a.external::after { content: "↗"; font-size: .75em; margin-left: .15em; color: var(--muted); }
+.prose mjx-container[jax="SVG"] { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
+.prose mjx-container[jax="SVG"][display="true"] { margin: 1em 0; }
+/* MathJax SVG inherits currentColor — no dark-mode filter needed. */
 .prose code { background: var(--chip); padding: .1em .35em; border-radius: 4px; font-size: .88em; }
 .prose pre code { background: none; padding: 0; }
 .prose blockquote {

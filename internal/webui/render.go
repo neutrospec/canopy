@@ -12,16 +12,30 @@ import (
 	"regexp"
 	"strings"
 
+	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/yuin/goldmark"
+	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	ghtml "github.com/yuin/goldmark/renderer/html"
+	"go.abhg.dev/goldmark/mermaid"
 
 	"github.com/neutrospec/canopy/internal/wiki"
 )
 
 var md = goldmark.New(
-	goldmark.WithExtensions(extension.GFM),
+	goldmark.WithExtensions(
+		extension.GFM,
+		extension.Footnote,
+		// Server-side syntax highlighting: chroma with CSS classes so
+		// static/chroma.css can restyle tokens for light and dark.
+		highlighting.NewHighlighting(
+			highlighting.WithFormatOptions(chromahtml.WithClasses(true)),
+		),
+		// ```mermaid blocks become <pre class="mermaid">; app.js lazy-
+		// loads the vendored script only when a page contains one.
+		&mermaid.Extender{RenderMode: mermaid.RenderModeClient, NoScript: true},
+	),
 	goldmark.WithParserOptions(parser.WithAutoHeadingID()),
 	// The wiki is the user's own content and wikilink preprocessing
 	// emits inline <a> tags, so raw HTML must pass through.
