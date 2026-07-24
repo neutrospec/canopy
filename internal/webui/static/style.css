@@ -110,6 +110,22 @@ header nav a:hover { color: var(--fg); }
 .popover p { margin: .3rem 0 0; color: var(--muted); }
 
 .notice.conflict { border-left-color: var(--missing); }
+.authform { display: flex; flex-direction: column; gap: .7rem; max-width: 20rem; margin: 1.5rem auto 0; }
+.authform input {
+  padding: .55rem .9rem; font-size: 1rem; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--bg); color: var(--fg);
+}
+.authform input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+.authform button {
+  background: var(--accent); color: #fff; border: 0; border-radius: 8px;
+  padding: .6rem; font-size: 1rem; cursor: pointer;
+}
+.logoutform { display: inline; }
+.logoutform button {
+  background: none; border: 0; color: var(--muted); cursor: pointer;
+  font-size: .9rem; padding: 0; font-family: inherit;
+}
+.logoutform button:hover { color: var(--fg); }
 .editform textarea {
   width: 100%; min-height: 24rem; padding: .8rem 1rem;
   font: .88rem/1.6 ui-monospace, "SF Mono", Menlo, monospace;

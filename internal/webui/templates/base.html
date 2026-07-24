@@ -17,6 +17,7 @@
     <a href="/special/recent">최근</a>
     <a href="/special/attention">점검</a>
     <a href="/special/random">랜덤</a>
+    {{if .AuthOn}}<form method="post" action="/logout" class="logoutform"><button type="submit">로그아웃</button></form>{{end}}
   </nav>
 </header>
 <main>

@@ -9,9 +9,24 @@
 
 ## Doing
 
-_(비어 있음 — M1–M4 완료. 다음: M5)_
+_(비어 있음 — 다음: M6)_
 
 ## Done
+
+### M5 — 보안: localhost 기본 + 인증 ([설계 D1·D2](web-ui-plan-2.md))
+
+- [x] `--addr` 기본값 `localhost:8737`로 변경, 문서 갱신
+- [x] 공개 바인딩 가드: loopback 밖 바인딩이면 인증 벽 자동 활성 — 계정이 없으면
+      /setup 외 전부 차단(무보호 공개 상태가 존재하지 않음)
+- [x] webauth 저장소: `~/.config/canopy/webauth.json`, bcrypt 해시, 계정 1개
+- [x] 부트스트랩: 계정 없으면 1회용 설정 코드를 터미널에 출력 → `/setup`에서 코드+id/pw 등록
+- [x] `/login` · `/logout`, 세션(메모리 토큰 + HttpOnly/SameSite=Lax 쿠키, 30일)
+- [x] 로그인 실패 지수 지연, POST Origin 검사
+- [x] troubleshooting: 계정 재설정(webauth.json 삭제), TLS는 tailscale/프록시 안내
+- ✓ Exit:
+  - [x] 공개 바인딩에서 인증 없이 어떤 페이지도 안 열림(302), 설정 코드 없이 계정 등록 불가(400)
+  - [x] localhost 바인딩은 기존처럼 무인증으로 전 기능 동작
+  - [x] 로그인 후 편집 포함 전 기능 동작 (브라우저 검증)
 
 ### M4 — 웹에서 쓰기
 
@@ -75,20 +90,6 @@ _(비어 있음 — M1–M4 완료. 다음: M5)_
 ---
 
 ## Backlog
-
-### M5 — 보안: localhost 기본 + 인증 ([설계 D1·D2](web-ui-plan-2.md))
-
-- [ ] `--addr` 기본값 `localhost:8737`로 변경, 문서 갱신
-- [ ] 공개 바인딩 가드: loopback 밖 바인딩 + 인증 미설정 → 기동 거부 및 절차 안내
-- [ ] webauth 저장소: `~/.config/canopy/webauth.json`, bcrypt 해시, 계정 1개
-- [ ] 부트스트랩: 계정 없으면 1회용 설정 코드를 터미널에 출력 → `/setup`에서 코드+id/pw 등록
-- [ ] `/login` · `/logout`, 세션(메모리 토큰 + HttpOnly/SameSite=Lax 쿠키, 30일)
-- [ ] 로그인 실패 지수 지연, POST Origin 검사
-- [ ] troubleshooting: 계정 재설정(webauth.json 삭제), TLS는 tailscale/프록시 안내
-- ✓ Exit:
-  - [ ] 공개 바인딩은 인증 설정 없이 기동 불가, 설정 코드 없이 계정 등록 불가
-  - [ ] localhost 바인딩은 기존처럼 무인증으로 전 기능 동작
-  - [ ] 로그인 후 편집 포함 전 기능 동작 (브라우저 검증)
 
 ### M6 — 읽기 히스토리와 새발견 ([설계 D3·D4](web-ui-plan-2.md))
 

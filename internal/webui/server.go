@@ -30,12 +30,15 @@ type Server struct {
 	eng  cembed.Engine
 	mu   sync.Mutex // serializes engine + store access
 	tmpl map[string]*template.Template
+
+	auth         *authStore
+	authRequired bool
 }
 
 func NewServer(w *config.Wiki, eng cembed.Engine) (*Server, error) {
 	s := &Server{w: w, eng: eng, tmpl: map[string]*template.Template{}}
 	funcs := template.FuncMap{"short": short}
-	for _, name := range []string{"home.html", "page.html", "search.html", "browse.html", "recent.html", "attention.html", "edit.html"} {
+	for _, name := range []string{"home.html", "page.html", "search.html", "browse.html", "recent.html", "attention.html", "edit.html", "login.html", "setup.html"} {
 		t, err := template.New("base.html").Funcs(funcs).ParseFS(assets, "templates/base.html", "templates/"+name)
 		if err != nil {
 			return nil, err
@@ -59,8 +62,13 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /special/recent", s.handleRecent)
 	mux.HandleFunc("GET /special/attention", s.handleAttention)
 	mux.HandleFunc("GET /special/random", s.handleRandom)
+	mux.HandleFunc("GET /setup", s.handleSetupForm)
+	mux.HandleFunc("POST /setup", s.handleSetupSave)
+	mux.HandleFunc("GET /login", s.handleLoginForm)
+	mux.HandleFunc("POST /login", s.handleLoginSubmit)
+	mux.HandleFunc("POST /logout", s.handleLogout)
 	mux.HandleFunc("GET /{$}", s.handleHome)
-	return logRequests(mux)
+	return logRequests(s.guard(mux))
 }
 
 func logRequests(next http.Handler) http.Handler {
@@ -71,6 +79,9 @@ func logRequests(next http.Handler) http.Handler {
 }
 
 func (s *Server) render(w http.ResponseWriter, status int, name string, data any) {
+	if m, ok := data.(map[string]any); ok {
+		m["AuthOn"] = s.authRequired
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	if err := s.tmpl[name].ExecuteTemplate(w, "base.html", data); err != nil {

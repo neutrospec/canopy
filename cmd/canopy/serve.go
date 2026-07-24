@@ -46,6 +46,23 @@ pipeline (writeops.Run); frontmatter and page lifecycle stay CLI-only.`,
 			if err != nil {
 				return err
 			}
+			// Non-loopback binds require the auth wall (plan-2 D1/D2):
+			// a public address can never serve the wiki unauthenticated.
+			if !webui.IsLoopbackAddr(addr) {
+				code, err := srv.EnableAuth()
+				if err != nil {
+					return err
+				}
+				fmt.Fprintf(os.Stderr, "⚠ %s is reachable beyond localhost — authentication required\n", addr)
+				if code != "" {
+					fmt.Fprintf(os.Stderr, "\n  최초 1회 계정 설정: 브라우저에서 /setup 을 열고 아래 설정 코드를 입력하세요\n")
+					fmt.Fprintf(os.Stderr, "  ┌──────────────────────────┐\n")
+					fmt.Fprintf(os.Stderr, "  │  setup code: %s    │\n", code)
+					fmt.Fprintf(os.Stderr, "  └──────────────────────────┘\n")
+					fmt.Fprintln(os.Stderr, "  (이 코드는 이 터미널에만 표시되며 1회만 사용됩니다)")
+				}
+				fmt.Fprintln(os.Stderr, "  note: 전송 암호화(TLS)는 tailscale 또는 리버스 프록시 사용을 권장합니다")
+			}
 			hs := &http.Server{Addr: addr, Handler: srv.Handler()}
 			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt)
 			defer stop()
@@ -55,13 +72,13 @@ pipeline (writeops.Run); frontmatter and page lifecycle stay CLI-only.`,
 				defer cancel()
 				_ = hs.Shutdown(sctx)
 			}()
-			fmt.Printf("✓ serving %s on http://localhost%s\n", w.Root, addr)
+			fmt.Printf("✓ serving %s on http://%s\n", w.Root, addr)
 			if err := hs.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 				return err
 			}
 			return nil
 		},
 	}
-	c.Flags().StringVar(&addr, "addr", ":8737", "listen address")
+	c.Flags().StringVar(&addr, "addr", "localhost:8737", "listen address (non-loopback binds require authentication)")
 	return c
 }
