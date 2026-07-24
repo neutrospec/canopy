@@ -125,10 +125,14 @@ LLM 에이전트에게 canopy 사용법을 가르치는 스킬 2종(`canopy-wiki
 내장되어 있습니다:
 
 ```bash
-canopy skills install              # 기본 스킬 디렉토리에 설치
+canopy skills install              # 에이전트 스킬 디렉토리 자동 감지 후 설치
 canopy skills install --dir <path> # 위치 지정
 ```
 
+- 자동 감지는 `~/.hermes/skills`(hermes), `~/.claude/skills`(Claude Code) 순서로
+  첫 번째 존재하는 디렉토리를 사용합니다. 다른 에이전트는 `--dir`로 지정하세요 —
+  일반 에이전트에는 `<skill>/SKILL.md` flat 레이아웃으로, hermes에는 카테고리
+  레이아웃(`note-taking/…`)으로 설치됩니다.
 - 설치본의 진실 소스는 바이너리입니다 — 설치된 SKILL.md를 직접 수정하지 마세요
   (다음 install이 되돌립니다). canopy 업그레이드 후 재실행하면 새 명령이 반영됩니다.
 - 핵심 규칙: **에이전트가 위키 파일을 직접 편집하지 않고 항상 canopy 명령을

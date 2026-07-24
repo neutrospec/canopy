@@ -1,6 +1,12 @@
-// Package skills carries the thin hermes skills that replace the old
-// prose-checklist wiki skills. Content is embedded so `canopy skills
-// install` works from a bare binary.
+// Package skills carries the thin agent skills that teach an LLM agent
+// to drive the wiki through canopy commands. Content is embedded so
+// `canopy skills install` works from a bare binary.
+//
+// Any agent with a skills directory is supported generically (flat
+// <skill>/SKILL.md layout). hermes, the original integration, gets
+// extra care: first priority in auto-detection, its category layout
+// (note-taking/<skill>/SKILL.md), and cleanup hints for the legacy
+// prose-checklist skills that canopy superseded.
 package skills
 
 import (
@@ -8,6 +14,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 //go:embed canopy_wiki.md
@@ -16,7 +23,7 @@ var canopyWiki string
 //go:embed canopy_ingest.md
 var canopyIngest string
 
-// Legacy skills that the two canopy skills supersede.
+// Legacy hermes-era skills that the two canopy skills supersede.
 var Superseded = []string{
 	"note-taking/wiki-management",
 	"note-taking/wiki-semantic-search",
@@ -26,13 +33,52 @@ var Superseded = []string{
 	"research/llm-wiki",
 }
 
-// Install writes the canopy skills into a hermes skills directory
-// (e.g. ~/.hermes/skills). Existing files are overwritten — the binary
-// is the source of truth for these two skills.
+// KnownSkillsDirs returns the agent skills directories canopy can
+// auto-detect, in priority order.
+func KnownSkillsDirs() ([]string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+	return []string{
+		filepath.Join(home, ".hermes", "skills"), // hermes
+		filepath.Join(home, ".claude", "skills"), // Claude Code
+	}, nil
+}
+
+// DefaultSkillsDir returns the first known agent skills directory that
+// exists on this machine.
+func DefaultSkillsDir() (string, error) {
+	candidates, err := KnownSkillsDirs()
+	if err != nil {
+		return "", err
+	}
+	for _, dir := range candidates {
+		if fi, err := os.Stat(dir); err == nil && fi.IsDir() {
+			return dir, nil
+		}
+	}
+	return "", fmt.Errorf("no agent skills directory found (looked for %s) — pass --dir",
+		strings.Join(candidates, ", "))
+}
+
+// isHermesDir reports whether dir is a hermes skills tree, which uses
+// category folders (note-taking/…) instead of the flat layout.
+func isHermesDir(dir string) bool {
+	return strings.Contains(filepath.ToSlash(dir), "/.hermes/")
+}
+
+// Install writes the canopy skills into an agent skills directory.
+// Existing files are overwritten — the binary is the source of truth
+// for these two skills.
 func Install(skillsDir string) ([]string, error) {
+	prefix := ""
+	if isHermesDir(skillsDir) {
+		prefix = "note-taking/"
+	}
 	targets := map[string]string{
-		"note-taking/canopy-wiki/SKILL.md":   canopyWiki,
-		"note-taking/canopy-ingest/SKILL.md": canopyIngest,
+		prefix + "canopy-wiki/SKILL.md":   canopyWiki,
+		prefix + "canopy-ingest/SKILL.md": canopyIngest,
 	}
 	var written []string
 	for rel, content := range targets {
@@ -48,17 +94,12 @@ func Install(skillsDir string) ([]string, error) {
 	return written, nil
 }
 
-// DefaultSkillsDir is ~/.hermes/skills.
-func DefaultSkillsDir() (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, ".hermes", "skills"), nil
-}
-
 // SupersededPresent lists which legacy skills still exist under dir.
+// The legacy skills are hermes-era; other agents never had them.
 func SupersededPresent(dir string) []string {
+	if !isHermesDir(dir) {
+		return nil
+	}
 	var present []string
 	for _, s := range Superseded {
 		if _, err := os.Stat(filepath.Join(dir, s, "SKILL.md")); err == nil {

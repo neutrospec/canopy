@@ -415,10 +415,10 @@ func cmdModel() *cobra.Command {
 
 func cmdSkills() *cobra.Command {
 	var dir string
-	c := &cobra.Command{Use: "skills", Short: "Manage the hermes skill set for this wiki"}
+	c := &cobra.Command{Use: "skills", Short: "Manage the agent skill set for this wiki (hermes, Claude Code, …)"}
 	install := &cobra.Command{
 		Use:   "install",
-		Short: "Write the canopy-wiki / canopy-ingest skills into the hermes skills directory",
+		Short: "Write the canopy-wiki / canopy-ingest skills into an agent skills directory",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			if dir == "" {
@@ -443,7 +443,7 @@ func cmdSkills() *cobra.Command {
 			return nil
 		},
 	}
-	install.Flags().StringVar(&dir, "dir", "", "skills directory (default ~/.hermes/skills)")
+	install.Flags().StringVar(&dir, "dir", "", "skills directory (default: first existing of ~/.hermes/skills, ~/.claude/skills)")
 	c.AddCommand(install)
 	return c
 }
