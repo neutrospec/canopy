@@ -1,0 +1,19 @@
+{{define "content"}}
+{{if .Missing}}
+<p class="notice">“{{.Missing}}” 페이지는 없습니다. 대신 검색 결과를 보여드립니다.</p>
+{{end}}
+<h1>“{{.Query}}” 검색 결과 <span class="muted">({{.Mode}})</span></h1>
+{{if .Results}}
+<ol class="results">
+  {{range .Results}}
+  <li>
+    <a class="wikilink" href="/page/{{.Slug}}">{{.Title}}</a>
+    <span class="muted score">{{printf "%.2f" .Score}}</span>
+    {{if .Snippet}}<p class="snippet">{{.Snippet}}</p>{{end}}
+  </li>
+  {{end}}
+</ol>
+{{else}}
+<p class="muted">결과 없음</p>
+{{end}}
+{{end}}

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}} · canopy</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <a class="brand" href="/">🌳 canopy</a>
+  <form class="searchbar" action="/search" method="get">
+    <input type="search" name="q" placeholder="검색…" value="{{.Query}}" autocomplete="off">
+  </form>
+</header>
+<main>
+{{template "content" .}}
+</main>
+</body>
+</html>

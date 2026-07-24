@@ -1,0 +1,19 @@
+{{define "content"}}
+<article>
+  <h1>{{.Page.Title}}</h1>
+  <div class="metacard">
+    <span class="chip">{{.Page.Type}}</span>
+    {{range .Page.Tags}}<span class="chip tag">{{.}}</span>{{end}}
+    <span class="muted">updated {{.Page.Updated}} · {{.Page.RelPath}}</span>
+  </div>
+  <div class="prose">{{.Body}}</div>
+  <footer class="backlinks">
+    <h2>여기를 링크한 페이지 ({{len .Backlinks}})</h2>
+    {{if .Backlinks}}
+    <ul>
+      {{range .Backlinks}}<li><a class="wikilink" href="/page/{{.}}">{{.}}</a></li>{{end}}
+    </ul>
+    {{else}}<p class="muted">없음</p>{{end}}
+  </footer>
+</article>
+{{end}}

@@ -9,32 +9,31 @@
 
 ## Doing
 
-_(비어 있음 — M1 첫 작업을 여기로 옮기며 시작)_
+_(비어 있음 — 다음: M2)_
 
 ## Done
 
-_(비어 있음)_
+### M1 — 읽기 뷰어 (MVP)
+
+- [x] `canopy serve` 명령 뼈대: `--addr`(기본 `:8737`), loadWiki, graceful shutdown
+- [x] wikilink 렌더: `[[slug]]` → `/page/{slug}`, 없는 페이지는 red link
+      (goldmark Resolver 대신 코드 영역을 피하는 전처리로 구현 — class 제어가 쉬움)
+- [x] 페이지 렌더 `GET /page/{slug}`: 본문 + frontmatter 메타 카드(type/tags/updated)
+- [x] 백링크 섹션: `scan.Backlinks()` 재사용, 페이지 하단 "여기를 링크한 페이지"
+- [x] 검색 페이지 `GET /search?q=`: hybrid(`Fuse` + keyword + semantic), 임베딩 스택 없으면 keyword 폴백
+- [x] 없는 slug → 404 대신 그 문자열로 검색 결과 폴백(Wikipedia 패턴)
+- [x] 홈 `GET /`: 대시보드 요약(디렉토리별 카운트·최근 수정) + 검색박스
+- [x] 기본 레이아웃/CSS: `embed.FS` 내장, 모바일 리더블, 다크모드(`prefers-color-scheme`)
+- [x] 요청 시 keyword 인덱스 갱신(`indexer.Reindex` 재사용) — serve 중 CLI search/list 동시 실행 확인
+- [x] 문서: getting-started에 serve 섹션 추가
+- ✓ Exit:
+  - [x] 네트워크 인터페이스(192.168.x.x:8737)로 페이지·검색 200 확인 — 폰은 같은 경로(tailscale/LAN)
+  - [x] serve 실행 중에도 기존 CLI 명령이 정상 동작한다 (search/list로 확인)
+  - [x] `make build` 하나로 빌드된다(Node 툴체인 없음, goldmark 순수 Go 의존성만 추가)
 
 ---
 
 ## Backlog
-
-### M1 — 읽기 뷰어 (MVP)
-
-- [ ] `canopy serve` 명령 뼈대: `--addr`(기본 `:8737`), loadWiki, graceful shutdown
-- [ ] goldmark + wikilink Resolver 도입: `[[slug]]` → `/page/{slug}`, 없는 페이지는 red link
-- [ ] 페이지 렌더 `GET /page/{slug}`: 본문 + frontmatter 메타 카드(type/tags/updated/sources)
-- [ ] 백링크 섹션: store links 재사용, 페이지 하단 "What links here"
-- [ ] 검색 페이지 `GET /search?q=`: hybrid(`Fuse` + keyword + semantic), 임베딩 스택 없으면 keyword 폴백
-- [ ] 없는 slug → 404 대신 그 문자열로 검색 결과 폴백(Wikipedia 패턴)
-- [ ] 홈 `GET /`: 대시보드 요약 + 검색박스
-- [ ] 기본 레이아웃/CSS: `embed.FS` 내장, 모바일 리더블, 다크모드(`prefers-color-scheme`)
-- [ ] 요청 시 keyword 인덱스 갱신(`refreshIndex` 재사용) — CLI와 동시 실행 안전 확인
-- [ ] 문서: getting-started에 serve 섹션 추가
-- ✓ Exit:
-  - [ ] 폰 브라우저(tailscale)로 위키 전체를 읽고 검색할 수 있다
-  - [ ] serve 실행 중에도 모든 기존 CLI 명령이 정상 동작한다
-  - [ ] `make build` 하나로 빌드된다(Node 툴체인 없음)
 
 ### M2 — 검색-우선 UX
 

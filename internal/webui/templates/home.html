@@ -1,0 +1,20 @@
+{{define "content"}}
+<section class="hero">
+  <h1>🌳 wiki</h1>
+  <form class="searchbar big" action="/search" method="get">
+    <input type="search" name="q" placeholder="무엇이든 검색…" autofocus autocomplete="off">
+  </form>
+  <p class="muted">{{.Total}} pages ·
+    {{range $i, $d := .Dirs}}{{if $i}} · {{end}}{{$d.Dir}} {{$d.Count}}{{end}}
+  </p>
+</section>
+<section>
+  <h2>최근 수정</h2>
+  <ul class="pagelist">
+    {{range .Recent}}
+    <li><a class="wikilink" href="/page/{{.Slug}}">{{.Title}}</a>
+        <span class="muted">{{.Updated}} · {{.Dir}}</span></li>
+    {{end}}
+  </ul>
+</section>
+{{end}}
