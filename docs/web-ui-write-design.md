@@ -1,8 +1,8 @@
 # Web UI 쓰기(M4) 설계 — 동시성과 충돌 처리
 
-> [web-ui-board.md](web-ui-board.md) M4의 선행 설계 문서.
-> 원칙: **우회 쓰기 경로를 만들지 않는다.** 웹 편집은 CLI `update`와
-> 동일한 검증·동일한 파이프라인(`writeops.Run`)을 지나야 한다.
+> 상태: **구현 완료**. [web-ui-board.md](web-ui-board.md) M4의 선행 설계 문서.
+> 원칙: **문은 여러 개여도 복도는 하나다** ([philosophy.md](philosophy.md) 원칙 9).
+> 웹 편집은 CLI `update`와 동일한 검증·동일한 파이프라인(`writeops.Run`)을 지난다.
 
 ## 1. 쓰기 경로 통일
 

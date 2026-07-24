@@ -1,7 +1,9 @@
 # Web UI 고도화 계획 (2차) — 보안, 읽기 히스토리, 발견
 
-> [web-ui-plan.md](web-ui-plan.md)(M1–M4, 완료)의 후속. 실행 보드는
-> [web-ui-board.md](web-ui-board.md)의 M5–M8.
+> 상태: **구현 완료** (2026-07-24, M5–M8). 설계 결정 기록으로 보존.
+> 선행: [web-ui-plan.md](web-ui-plan.md)(M1–M4) ·
+> 후속: [web-ui-plan-3.md](web-ui-plan-3.md)(M9–M10+) ·
+> 실행 기록: [web-ui-board.md](web-ui-board.md).
 >
 > 관통하는 주제: **위키가 먼저 말을 걸게 한다**(philosophy.md 원칙 6의 웹 실현).
 > M1–M4가 "위키를 읽고 쓰는 곳"을 만들었다면, 2차는 위키가 사용자에게

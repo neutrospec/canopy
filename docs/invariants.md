@@ -26,6 +26,7 @@
 | B2 | 새 페이지의 `--links`는 실존 페이지만 | `canopy new t --type concept --links no-such $W` 가 에러 |
 | B3 | 개명 시 인바운드 링크가 따라감 | `canopy mv` 후 `counts["broken-link"]` 증가 없음 |
 | B4 | 삭제는 백링크 있으면 거부 | 백링크 있는 페이지에 `canopy rm` → 에러 + 목록 출력 |
+| B5 | 모든 페이지는 본토(최대 연결 성분)에서 위키링크로 도달 가능 — 섬 클러스터는 고아 검사를 통과하므로 별도 검출 (philosophy 원칙 13) | `canopy lint --json $W \| jq '.counts.island // 0'` == 0 (또는 각 섬이 의도된 것으로 확인됨). finding에 섬 구성원 나열; 웹 점검 페이지가 다리(섬↔본토 최고 유사도 페어) 제안 |
 
 ## C. 파생물 정합성 (생성 시점에 실측)
 
@@ -80,12 +81,6 @@
 | G6 | bridge는 기본적으로 미연결 페어만, --include-linked 시 linked 필드로 구분 | 플래그 없이 → 전부 `linked == false`; 플래그 있이 → linked true/false 혼재 가능하되 필드 존재 |
 | G7 | new의 관련 페이지 제안은 임계값 이상 + 태그 일치 우선 | (임시 위키에서) `canopy new … --json \| jq '.related[].score'` 전부 ≥ 0.8, 최대 5건; 태그가 겹치는 페이지가 앞에 온다 |
 
-## B+. 그래프 연결성
-
-| # | 불변식 | 점검 |
-|---|--------|------|
-| B2 | 모든 페이지는 본토(최대 연결 성분)에서 위키링크로 도달 가능해야 한다 — 섬 클러스터는 고아 검사를 통과하므로 별도 검출 | `canopy lint --json $W \| jq '.counts.island // 0'` == 0. 위반 시 각 finding에 섬 구성원 나열; 웹 점검 페이지가 임베딩 기반 다리(섬↔본토 최고 유사도 페어)를 제안 |
-
 ## H. 웹 UI 상태 (_meta/webui)
 
 | # | 불변식 | 점검 |
@@ -94,12 +89,23 @@
 | H2 | reads의 source는 explicit\|auto 뿐이고 explicit은 auto로 강등되지 않는다 | `jq -r '.reads[].source' $W/_meta/webui/reads.json \| sort -u` ⊆ {explicit, auto}; 읽음 페이지에서 auto 감지가 다시 와도 source 유지 |
 | H3 | mv는 읽기 이력을 함께 이관한다 | 읽음 표시 → `canopy mv <page> --slug new-name` → reads.json에 새 slug만 존재 |
 
+## I. 웹 UI 쓰기·보안 (serve 실행 상태에서 점검)
+
+| # | 불변식 | 점검 |
+|---|--------|------|
+| I1 | 공개 바인딩은 무인증으로 어떤 페이지도 서빙하지 않는다 (philosophy 원칙 11) | `canopy serve --addr :8737` 후 무인증 `curl -s -o /dev/null -w '%{http_code}' http://<LAN-IP>:8737/page/anything` → 302 (로그인/설정으로 리다이렉트, 본문 없음) |
+| I2 | 웹 편집은 CLI `update`와 같은 파이프라인이다 (philosophy 원칙 9) | 스크래치 위키에서 웹 편집 1회 vs `canopy update` 1회 → 파일(updated 갱신·본문 교체), logs 엔트리 형태, `index/*.md` 재생성, keyword 검색 반영이 모두 동일 |
+| I3 | 계정 등록은 터미널의 설정 코드 없이는 불가 | 공개 바인딩·무계정 상태에서 코드 없이 `POST /setup` → 400 |
+| I4 | 교차 출처 변조 거부 | `curl -X POST -H "Origin: https://evil.example" http://localhost:8737/logout` → 403 |
+
 ## 감사 절차
 
 1. `make test && gofmt -l .` (F)
-2. `canopy lint $W --json` 하나로 A1–A5, B1 일괄 (counts 확인)
+2. `canopy lint $W --json` 하나로 A1–A5, B1, B5 일괄 (counts 확인)
 3. C1–C5, D1–D4 순서대로 (D는 dirty 상태를 만들었다가 sync로 정리)
 4. E는 `--peek`으로 안전하게
+5. G1–G7 (recall·digest·bridge — 임베딩 인덱스 필요)
+6. H·I는 `canopy serve`를 띄운 상태에서 (I1은 공개 바인딩 별도 기동, I2는 스크래치 위키 권장)
 
 > 위반을 발견하면: (1) 그 위반이 **어느 명령을 우회해서** 생겼는지 찾고,
 > (2) 우회 경로를 막는 코드/lint를 추가하고, (3) 필요하면 이 목록에 항목을 늘린다.
