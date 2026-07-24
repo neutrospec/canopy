@@ -12,7 +12,11 @@ import (
 	"github.com/knights-analytics/hugot/pipelines"
 )
 
-const Available = true
+// Available reports whether the ORT backend is compiled in AND the
+// ONNX Runtime shared library can be found at runtime.
+func Available() bool {
+	return findOnnxRuntime() != ""
+}
 
 type ortEngine struct {
 	session *hugot.Session
@@ -26,22 +30,23 @@ var onnxRuntimeDirs = []string{
 	"/usr/lib",
 }
 
+// findOnnxRuntime returns the directory containing libonnxruntime, or "".
+func findOnnxRuntime() string {
+	for _, d := range onnxRuntimeDirs {
+		for _, name := range []string{"libonnxruntime.dylib", "libonnxruntime.so"} {
+			if _, err := os.Stat(d + "/" + name); err == nil {
+				return d
+			}
+		}
+	}
+	return ""
+}
+
 func New() (Engine, error) {
 	if !ModelAvailable() {
 		return nil, fmt.Errorf("embedding model not found at %s — run `canopy model pull`", DefaultModelPath())
 	}
-	dir := ""
-	for _, d := range onnxRuntimeDirs {
-		for _, name := range []string{"libonnxruntime.dylib", "libonnxruntime.so"} {
-			if _, err := os.Stat(d + "/" + name); err == nil {
-				dir = d
-				break
-			}
-		}
-		if dir != "" {
-			break
-		}
-	}
+	dir := findOnnxRuntime()
 	if dir == "" {
 		return nil, fmt.Errorf("libonnxruntime not found (try `brew install onnxruntime`)")
 	}

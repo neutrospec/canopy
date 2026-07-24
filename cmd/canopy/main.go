@@ -52,7 +52,14 @@ func main() {
 }
 
 func loadWiki() (*config.Wiki, error) {
-	return config.Resolve(flagWiki)
+	w, err := config.Resolve(flagWiki)
+	if err != nil {
+		return nil, err
+	}
+	// Apply the wiki's model choice here, before any embed.* call:
+	// ModelAvailable() gates and New() must agree on the directory.
+	embed.SetModelDir(w.Cfg.Embedding.Model)
+	return w, nil
 }
 
 // banner prints the unsynced-state warning to stderr on every command,
@@ -219,7 +226,7 @@ func cmdReindex() *cobra.Command {
 			}
 			banner(w)
 			var eng embed.Engine
-			if !noEmbed && embed.Available && embed.ModelAvailable() {
+			if !noEmbed && embed.Available() && embed.ModelAvailable() {
 				if eng, err = newEngine(); err != nil {
 					return err
 				}
@@ -378,7 +385,7 @@ func cmdModel() *cobra.Command {
 				}
 			}
 			fmt.Println("✓ model ready:", dir)
-			if !embed.Available {
+			if !embed.Available() {
 				fmt.Println("note: this binary lacks the ORT backend — rebuild with `make build` (-tags ORT)")
 			}
 			return nil
@@ -388,14 +395,17 @@ func cmdModel() *cobra.Command {
 		Use:   "status",
 		Short: "Show embedding stack status",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Best-effort: inside a wiki, report the configured model dir
+			// (loadWiki applies it); outside one, fall back to the default.
+			_, _ = loadWiki()
 			if flagJSON {
 				return emitJSON(map[string]any{
-					"ort_build":       embed.Available,
+					"ort_available":   embed.Available(),
 					"model_available": embed.ModelAvailable(),
 					"model_path":      embed.DefaultModelPath(),
 				})
 			}
-			fmt.Printf("ORT backend in binary: %v\n", embed.Available)
+			fmt.Printf("ORT backend available: %v\n", embed.Available())
 			fmt.Printf("model downloaded:      %v (%s)\n", embed.ModelAvailable(), embed.DefaultModelPath())
 			return nil
 		},

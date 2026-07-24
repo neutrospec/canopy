@@ -104,6 +104,9 @@ func rankRelated(hits []store.Hit, selfSlug string, newTags []string, scan *wiki
 }
 
 // afterWrite is the invariant pipeline every mutation runs.
+// It performs ONE filesystem scan (after the mutation) and uses it for
+// both index regeneration and reindexing — genindex only touches index/
+// files which are outside governed dirs, so the page set is unchanged.
 func afterWrite(w *config.Wiki, action, relPath string, related []string, note string, syncNow bool, syncMsg string) error {
 	scan, err := wiki.Scan(w)
 	if err != nil {
@@ -116,7 +119,7 @@ func afterWrite(w *config.Wiki, action, relPath string, related []string, note s
 		return err
 	}
 	var eng embed.Engine
-	if embed.Available && embed.ModelAvailable() {
+	if embed.Available() && embed.ModelAvailable() {
 		if e, err := embed.New(); err == nil {
 			eng = e
 			defer eng.Close()
@@ -127,12 +130,6 @@ func afterWrite(w *config.Wiki, action, relPath string, related []string, note s
 		return err
 	}
 	defer st.Close()
-	// Rescan: Regenerate rewrote index files (harmless), and the page
-	// set may have changed (mv/rm).
-	scan, err = wiki.Scan(w)
-	if err != nil {
-		return err
-	}
 	if _, err := indexer.Reindex(w, st, scan, eng, nil); err != nil {
 		return err
 	}
@@ -172,7 +169,9 @@ func runSync(w *config.Wiki, message string) error {
 			message = autoMessage(st.Changed)
 		}
 		// Log the sync itself before committing so the entry rides along.
-		_ = logops.Append(w, "sync", "", nil, message)
+		if err := logops.Append(w, "sync", "", nil, message); err != nil {
+			return fmt.Errorf("log sync: %w", err)
+		}
 		if _, err := gitops.CommitAll(w.Root, message); err != nil {
 			return err
 		}
@@ -303,7 +302,7 @@ func cmdNew() *cobra.Command {
 			// Surface related pages so the agent can wire wikilinks
 			// while the context is fresh.
 			related := []store.Hit{}
-			if embed.Available && embed.ModelAvailable() {
+			if embed.Available() && embed.ModelAvailable() {
 				if eng, err := embed.New(); err == nil {
 					if qv, err := eng.Embed([]string{title + "\n" + body}); err == nil {
 						if st, err := store.Open(w.DBPath()); err == nil {
@@ -618,7 +617,7 @@ func cmdSync() *cobra.Command {
 			}
 			// Post-pull content may differ; keep the derived index fresh.
 			var eng embed.Engine
-			if embed.Available && embed.ModelAvailable() {
+			if embed.Available() && embed.ModelAvailable() {
 				if e, err := embed.New(); err == nil {
 					eng = e
 					defer eng.Close()

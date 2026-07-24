@@ -102,7 +102,10 @@ func Default() *Config {
 			StaleDays:    90,
 		},
 		Embedding: Embedding{
-			Model:       "bge-m3-int8",
+			// Model defaults to the fp32 directory that `canopy model pull`
+			// downloads. Users who run scripts/quantize-model.py set this
+			// to "bge-m3-int8" in their canopy.toml.
+			Model:       "bge-m3",
 			Dimension:   1024,
 			ChunkTokens: 400,
 		},

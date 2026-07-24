@@ -13,10 +13,11 @@ import (
 	"github.com/neutrospec/canopy/internal/config"
 )
 
-const (
-	ModelDirName = "bge-m3"
-	Dimension    = 1024
-)
+const Dimension = 1024
+
+// modelDirName is the default model subdirectory under $XDG_DATA_HOME/canopy/models/.
+// It can be overridden via SetModelDir, typically from the wiki's Embedding.Model config.
+var modelDirName = "bge-m3"
 
 // Engine turns texts into unit-normalized vectors.
 type Engine interface {
@@ -24,9 +25,18 @@ type Engine interface {
 	Close() error
 }
 
-// DefaultModelPath is $XDG_DATA_HOME/canopy/models/bge-m3.
+// SetModelDir overrides the default model directory name.
+// Call before New() to select a different model (e.g. "bge-m3-int8").
+// An empty name is ignored.
+func SetModelDir(name string) {
+	if name != "" {
+		modelDirName = name
+	}
+}
+
+// DefaultModelPath returns $XDG_DATA_HOME/canopy/models/<modelDirName>.
 func DefaultModelPath() string {
-	return filepath.Join(config.DataHome(), "models", ModelDirName)
+	return filepath.Join(config.DataHome(), "models", modelDirName)
 }
 
 // ModelAvailable reports whether the model files are downloaded.
