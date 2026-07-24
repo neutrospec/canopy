@@ -1,0 +1,14 @@
+{{define "content"}}
+<div class="graphwrap">
+  <div class="graphtools">
+    <input type="search" id="graphfind" placeholder="노드 찾기…" autocomplete="off">
+    <span class="legend"><i class="dot d-entities"></i>entities
+      <i class="dot d-concepts"></i>concepts
+      <i class="dot d-comparisons"></i>comparisons
+      <i class="dot d-unread"></i>안 읽음</span>
+  </div>
+  <div id="graph"></div>
+</div>
+<script src="/static/vendor/force-graph.min.js" defer></script>
+<script src="/static/graph.js" defer></script>
+{{end}}

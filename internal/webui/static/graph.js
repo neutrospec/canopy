@@ -1,0 +1,131 @@
+// Interactive knowledge graph (Obsidian-style): force layout with
+// zoom/pan, node dragging, neighbor highlighting on hover, click to
+// open the page, and a find box that flies to a node.
+(function () {
+  "use strict";
+  const el = document.getElementById("graph");
+  if (!el || typeof ForceGraph === "undefined") return;
+
+  const css = getComputedStyle(document.documentElement);
+  const C = {
+    bg: css.getPropertyValue("--bg").trim(),
+    fg: css.getPropertyValue("--fg").trim(),
+    muted: css.getPropertyValue("--muted").trim(),
+    line: css.getPropertyValue("--line").trim(),
+    accent: css.getPropertyValue("--accent").trim(),
+    link: css.getPropertyValue("--link").trim(),
+    missing: css.getPropertyValue("--missing").trim(),
+  };
+  const dirColor = { entities: C.link, concepts: C.accent, comparisons: "#c586c0" };
+
+  const graph = ForceGraph()(el)
+    .backgroundColor(C.bg)
+    .nodeId("id")
+    .nodeLabel(null)
+    .linkColor(() => C.line)
+    .linkWidth((l) => (highlightLinks.has(l) ? 2 : 1))
+    .linkDirectionalParticles((l) => (highlightLinks.has(l) ? 2 : 0))
+    .linkDirectionalParticleWidth(2.5)
+    .cooldownTicks(200)
+    .d3VelocityDecay(0.25);
+
+  let hoverNode = null;
+  const highlightNodes = new Set();
+  const highlightLinks = new Set();
+  const neighbors = new Map(); // id -> Set(ids)
+  const nodeLinks = new Map(); // id -> Set(link objects)
+
+  const radius = (n) => 2.5 + Math.sqrt(n.deg || 0) * 1.6;
+
+  graph
+    .nodeCanvasObject((n, ctx, scale) => {
+      const r = radius(n);
+      const dim = highlightNodes.size > 0 && !highlightNodes.has(n.id);
+      ctx.globalAlpha = dim ? 0.15 : 1;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r, 0, 2 * Math.PI);
+      ctx.fillStyle = dirColor[n.dir] || C.muted;
+      ctx.fill();
+      if (!n.read) { // unread pages get a ring — the discovery loop, visible
+        ctx.strokeStyle = C.missing;
+        ctx.lineWidth = 1 / scale;
+        ctx.stroke();
+      }
+      // labels appear as you zoom in (Obsidian behavior), always on hover
+      if (scale > 2 || (hoverNode && highlightNodes.has(n.id))) {
+        const size = Math.max(11 / scale, 1.6);
+        ctx.font = `${size}px -apple-system, "Apple SD Gothic Neo", sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillStyle = dim ? C.muted : C.fg;
+        ctx.fillText(n.title, n.x, n.y + r + 1.5 / scale);
+      }
+      ctx.globalAlpha = 1;
+    })
+    .nodePointerAreaPaint((n, color, ctx) => {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, radius(n) + 3, 0, 2 * Math.PI);
+      ctx.fillStyle = color;
+      ctx.fill();
+    })
+    .onNodeHover((n) => {
+      highlightNodes.clear();
+      highlightLinks.clear();
+      hoverNode = n || null;
+      if (n) {
+        highlightNodes.add(n.id);
+        (neighbors.get(n.id) || []).forEach((id) => highlightNodes.add(id));
+        (nodeLinks.get(n.id) || []).forEach((l) => highlightLinks.add(l));
+      }
+      el.style.cursor = n ? "pointer" : "";
+    })
+    .onNodeClick((n) => { location.href = "/page/" + encodeURIComponent(n.id); })
+    .onBackgroundClick(() => { highlightNodes.clear(); highlightLinks.clear(); });
+
+  function fit() {
+    graph.width(el.clientWidth).height(el.clientHeight);
+  }
+  fit();
+  addEventListener("resize", fit);
+
+  fetch("/api/graph").then((r) => r.json()).then((data) => {
+    for (const l of data.links) {
+      if (!neighbors.has(l.source)) neighbors.set(l.source, new Set());
+      if (!neighbors.has(l.target)) neighbors.set(l.target, new Set());
+      neighbors.get(l.source).add(l.target);
+      neighbors.get(l.target).add(l.source);
+    }
+    graph.graphData(data);
+    // graphData materializes link endpoints into node objects
+    for (const l of graph.graphData().links) {
+      const a = l.source.id ?? l.source, b = l.target.id ?? l.target;
+      if (!nodeLinks.has(a)) nodeLinks.set(a, new Set());
+      if (!nodeLinks.has(b)) nodeLinks.set(b, new Set());
+      nodeLinks.get(a).add(l);
+      nodeLinks.get(b).add(l);
+    }
+    graph.onEngineStop(() => graph.zoomToFit(400, 40));
+
+    // find box: fly to the best-matching node and light up its neighborhood
+    const find = document.getElementById("graphfind");
+    find?.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      const q = find.value.trim().toLowerCase();
+      if (!q) return;
+      const nodes = graph.graphData().nodes;
+      const hit = nodes.find((n) => n.id === q) ||
+        nodes.find((n) => n.title.toLowerCase().includes(q) || n.id.includes(q));
+      if (!hit) return;
+      graph.centerAt(hit.x, hit.y, 600);
+      graph.zoom(4, 600);
+      highlightNodes.clear();
+      highlightLinks.clear();
+      hoverNode = hit;
+      highlightNodes.add(hit.id);
+      (neighbors.get(hit.id) || []).forEach((id) => highlightNodes.add(id));
+      (nodeLinks.get(hit.id) || []).forEach((l) => highlightLinks.add(l));
+    });
+  }).catch(() => {
+    el.textContent = "그래프 데이터를 불러오지 못했습니다";
+  });
+})();

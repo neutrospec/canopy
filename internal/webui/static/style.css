@@ -169,6 +169,27 @@ h2:hover .hanchor, h3:hover .hanchor, h4:hover .hanchor { opacity: 1; }
 .chip.suggest:hover { border-color: var(--accent); outline: none; }
 .chip.suggest small { color: var(--muted); margin-left: .25rem; }
 
+.graphwrap { position: fixed; top: 3.6rem; left: 0; right: 0; bottom: 0; }
+#graph { width: 100%; height: 100%; }
+.graphtools {
+  position: absolute; top: .7rem; left: 50%; transform: translateX(-50%);
+  z-index: 10; display: flex; gap: .9rem; align-items: center;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  border: 1px solid var(--line); border-radius: 10px; padding: .35rem .7rem;
+  backdrop-filter: blur(6px);
+}
+.graphtools input {
+  border: 1px solid var(--line); border-radius: 7px; padding: .25rem .6rem;
+  background: var(--bg); color: var(--fg); font-size: .85rem; width: 12rem;
+}
+.graphtools input:focus { outline: 2px solid var(--accent); }
+.legend { color: var(--muted); font-size: .75rem; display: flex; gap: .55rem; align-items: center; white-space: nowrap; }
+.legend .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: .2rem; }
+.dot.d-entities { background: var(--link); }
+.dot.d-concepts { background: var(--accent); }
+.dot.d-comparisons { background: #c586c0; }
+.dot.d-unread { background: transparent; border: 1.5px solid var(--missing); }
+
 .card {
   border: 1px solid var(--line); border-radius: 12px;
   padding: .9rem 1.2rem; margin: 1.2rem 0;

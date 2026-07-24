@@ -43,7 +43,7 @@ type Server struct {
 func NewServer(w *config.Wiki, eng cembed.Engine) (*Server, error) {
 	s := &Server{w: w, eng: eng, tmpl: map[string]*template.Template{}}
 	funcs := template.FuncMap{"short": short}
-	for _, name := range []string{"home.html", "page.html", "search.html", "browse.html", "recent.html", "attention.html", "edit.html", "login.html", "setup.html", "discover.html", "gaps.html"} {
+	for _, name := range []string{"home.html", "page.html", "search.html", "browse.html", "recent.html", "attention.html", "edit.html", "login.html", "setup.html", "discover.html", "gaps.html", "graph.html"} {
 		t, err := template.New("base.html").Funcs(funcs).ParseFS(assets, "templates/base.html", "templates/"+name)
 		if err != nil {
 			return nil, err
@@ -67,6 +67,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /special/recent", s.handleRecent)
 	mux.HandleFunc("GET /special/attention", s.handleAttention)
 	mux.HandleFunc("GET /special/random", s.handleRandom)
+	mux.HandleFunc("GET /graph", s.handleGraphPage)
+	mux.HandleFunc("GET /api/graph", s.handleAPIGraph)
 	mux.HandleFunc("GET /special/discover", s.handleDiscover)
 	mux.HandleFunc("GET /special/gaps", s.handleGaps)
 	mux.HandleFunc("POST /read/{slug}", s.handleReadMark)
