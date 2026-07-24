@@ -9,9 +9,19 @@
 
 ## Doing
 
-_(비어 있음 — 다음: M8)_
+_(비어 있음 — **M1–M8 전 마일스톤 완료.** 남은 것은 Icebox의 조건부 항목뿐)_
 
 ## Done
+
+### M8 — 위키가 먼저 말을 거는 홈 ([설계 D6](web-ui-plan-2.md))
+
+- [x] 홈 "오늘의 재발견" 카드: `resurface.PickPages` 1건 + 발췌, 👍/👎/😴 버튼
+- [x] 웹 피드백 → CLI와 같은 `_meta/resurface/state.json` 기록 (쿨다운 공유)
+- [x] bridge 제안 카드(보기 전용, 연결은 CLI/에이전트 안내)
+- [x] 검색 갭 로그: 0건/저점수 질의 → `_meta/webui/search-gaps.jsonl`, `/special/gaps` 화면
+- ✓ Exit:
+  - [x] 웹 👍 직후 CLI `resurface`에서 같은 페이지가 쿨다운으로 제외됨을 확인
+  - [x] 빈약한 검색이 갭 로그에 쌓이고 /special/gaps에서 보인다
 
 ### M7 — 느슨한 제안 링크 ([설계 D5](web-ui-plan-2.md))
 
@@ -114,15 +124,7 @@ _(비어 있음 — 다음: M8)_
 
 ## Backlog
 
-### M8 — 위키가 먼저 말을 거는 홈 ([설계 D6](web-ui-plan-2.md))
-
-- [ ] 홈 "오늘의 재발견" 카드: `resurface.PickPages` 1건 + 발췌, 👍/👎/😴 버튼
-- [ ] 웹 피드백 → CLI와 같은 `_meta/resurface/state.json` 기록 (쿨다운 공유)
-- [ ] bridge 제안 카드(보기 전용, 연결은 CLI/에이전트 안내)
-- [ ] 검색 갭 로그: 0건/저점수 질의 → `_meta/webui/search-gaps.jsonl`, `/special/gaps` 화면
-- ✓ Exit:
-  - [ ] 웹 👍 직후 CLI `resurface`에서 같은 페이지가 쿨다운으로 제외됨을 확인
-  - [ ] 빈약한 검색이 갭 로그에 쌓이고 /special/gaps에서 보인다
+_(비어 있음 — 계획된 마일스톤 M1–M8 전부 완료)_
 
 ### Icebox (지금 할 일 아님 — 명시된 조건이 생기면 Backlog로 승격)
 

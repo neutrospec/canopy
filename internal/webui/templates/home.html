@@ -8,6 +8,31 @@
     {{range $i, $d := .Dirs}}{{if $i}} · {{end}}<a class="wikilink" href="/browse?dir={{$d.Dir}}">{{$d.Dir}}</a> {{$d.Count}}{{end}}
   </p>
 </section>
+{{if .Pick}}
+<section class="card">
+  <h2>오늘의 재발견 <span class="muted">{{.Pick.DaysStale}}일 동안 잊혀 있었어요</span></h2>
+  <p><a class="wikilink" href="/page/{{.Pick.Slug}}" data-slug="{{.Pick.Slug}}"><b>{{.Pick.Title}}</b></a></p>
+  {{if .Pick.Excerpt}}<p class="excerpt">{{.Pick.Excerpt}}</p>{{end}}
+  {{if .Pick.Explanation}}<p class="muted">{{.Pick.Explanation}}</p>{{end}}
+  <form method="post" action="/resurface/feedback" class="fbrow">
+    <input type="hidden" name="slug" value="{{.Pick.Slug}}">
+    <button class="chip" name="action" value="up" title="유익했어요">👍</button>
+    <button class="chip" name="action" value="down" title="관심 없어요">👎</button>
+    <button class="chip" name="action" value="snooze" title="7일 뒤에 다시">😴</button>
+  </form>
+</section>
+{{end}}
+{{if .Bridge}}
+<section class="card">
+  <h2>연결 제안 <span class="muted">유사도 {{printf "%.2f" .Bridge.Similarity}}인데 링크가 없어요</span></h2>
+  <p>
+    <a class="wikilink" href="/page/{{.Bridge.A.Slug}}" data-slug="{{.Bridge.A.Slug}}">{{.Bridge.A.Title}}</a>
+    <span class="muted">↔</span>
+    <a class="wikilink" href="/page/{{.Bridge.B.Slug}}" data-slug="{{.Bridge.B.Slug}}">{{.Bridge.B.Title}}</a>
+  </p>
+  <p class="muted">관련이 있다면 한쪽 페이지를 편집해 [[링크]]를 추가하거나, 에이전트에게 "연결해줘"라고 하세요.</p>
+</section>
+{{end}}
 {{if .Discover}}
 <section>
   <h2>새발견 <a class="muted seeall" href="/special/discover">전체 →</a></h2>

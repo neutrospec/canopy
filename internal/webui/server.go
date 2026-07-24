@@ -35,12 +35,15 @@ type Server struct {
 
 	auth         *authStore
 	authRequired bool
+
+	dailyMu sync.Mutex
+	daily   daily
 }
 
 func NewServer(w *config.Wiki, eng cembed.Engine) (*Server, error) {
 	s := &Server{w: w, eng: eng, tmpl: map[string]*template.Template{}}
 	funcs := template.FuncMap{"short": short}
-	for _, name := range []string{"home.html", "page.html", "search.html", "browse.html", "recent.html", "attention.html", "edit.html", "login.html", "setup.html", "discover.html"} {
+	for _, name := range []string{"home.html", "page.html", "search.html", "browse.html", "recent.html", "attention.html", "edit.html", "login.html", "setup.html", "discover.html", "gaps.html"} {
 		t, err := template.New("base.html").Funcs(funcs).ParseFS(assets, "templates/base.html", "templates/"+name)
 		if err != nil {
 			return nil, err
@@ -65,8 +68,10 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /special/attention", s.handleAttention)
 	mux.HandleFunc("GET /special/random", s.handleRandom)
 	mux.HandleFunc("GET /special/discover", s.handleDiscover)
+	mux.HandleFunc("GET /special/gaps", s.handleGaps)
 	mux.HandleFunc("POST /read/{slug}", s.handleReadMark)
 	mux.HandleFunc("POST /api/read/{slug}", s.handleReadAuto)
+	mux.HandleFunc("POST /resurface/feedback", s.handleResurfaceFeedback)
 	mux.HandleFunc("GET /setup", s.handleSetupForm)
 	mux.HandleFunc("POST /setup", s.handleSetupSave)
 	mux.HandleFunc("GET /login", s.handleLoginForm)
@@ -134,12 +139,15 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	if len(discover) > 4 {
 		discover = discover[:4]
 	}
+	pick, bridge := s.todaysCard()
 	s.render(w, http.StatusOK, "home.html", map[string]any{
 		"Title":    "wiki",
 		"Total":    len(scan.Pages),
 		"Dirs":     dirs,
 		"Recent":   recent,
 		"Discover": discover,
+		"Pick":     pick,
+		"Bridge":   bridge,
 	})
 }
 
@@ -205,26 +213,26 @@ type result struct {
 // runSearch mirrors cmdSearch: hybrid unless the engine is missing
 // (keyword-only fallback). refresh controls whether the index is
 // rebuilt first — full page loads do, per-keystroke API calls skip it.
-func (s *Server) runSearch(query string, k int, refresh bool) ([]result, string, error) {
+func (s *Server) runSearch(query string, k int, refresh bool) ([]result, string, bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	scan, err := wiki.Scan(s.w)
 	if err != nil {
-		return nil, "", err
+		return nil, "", false, err
 	}
 	st, err := store.Open(s.w.DBPath())
 	if err != nil {
-		return nil, "", err
+		return nil, "", false, err
 	}
 	defer st.Close()
 	if refresh {
 		if _, err := indexer.Reindex(s.w, st, scan, s.eng, nil); err != nil {
-			return nil, "", err
+			return nil, "", false, err
 		}
 	}
 	kw, err := st.SearchKeyword(query, k)
 	if err != nil {
-		return nil, "", err
+		return nil, "", false, err
 	}
 	mode := "keyword"
 	hits := kw
@@ -234,11 +242,11 @@ func (s *Server) runSearch(query string, k int, refresh bool) ([]result, string,
 	if s.eng != nil {
 		qv, err := s.eng.Embed([]string{query})
 		if err != nil {
-			return nil, "", err
+			return nil, "", false, err
 		}
 		sem, err := st.SearchSemantic(qv[0], k)
 		if err != nil {
-			return nil, "", err
+			return nil, "", false, err
 		}
 		if chunks, err := st.SearchChunks(qv[0], k*2, 1); err == nil {
 			for _, c := range chunks {
@@ -261,7 +269,7 @@ func (s *Server) runSearch(query string, k int, refresh bool) ([]result, string,
 		}
 		res = append(res, result{h.Slug, h.Title, h.Score, snippet})
 	}
-	return res, mode, nil
+	return res, mode, len(kw) == 0, nil
 }
 
 // excerptText flattens whitespace and truncates to maxRunes.
@@ -286,11 +294,12 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	res, mode, err := s.runSearch(query, 20, true)
+	res, mode, kwEmpty, err := s.runSearch(query, 20, true)
 	if err != nil {
 		s.fail(w, err)
 		return
 	}
+	s.logSearchGap(query, res, kwEmpty)
 	s.render(w, http.StatusOK, "search.html", map[string]any{
 		"Title":   fmt.Sprintf("search: %s", query),
 		"Query":   query,
@@ -318,7 +327,7 @@ func (s *Server) handleAPISearch(w http.ResponseWriter, r *http.Request) {
 	if n, err := strconv.Atoi(r.URL.Query().Get("k")); err == nil && n > 0 && n <= 50 {
 		k = n
 	}
-	res, mode, err := s.runSearch(query, k, false)
+	res, mode, _, err := s.runSearch(query, k, false)
 	if err != nil {
 		s.fail(w, err)
 		return
@@ -351,7 +360,7 @@ func (s *Server) handleAPIPreview(w http.ResponseWriter, r *http.Request) {
 // searchFallback renders search results for a slug that has no page.
 func (s *Server) searchFallback(w http.ResponseWriter, raw string) {
 	query := strings.ReplaceAll(wiki.NormalizeLink(raw), "-", " ")
-	res, mode, err := s.runSearch(query, 20, true)
+	res, mode, _, err := s.runSearch(query, 20, true)
 	if err != nil {
 		s.fail(w, err)
 		return

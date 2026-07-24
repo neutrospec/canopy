@@ -146,6 +146,16 @@ header nav a:hover { color: var(--fg); }
 }
 .chip.suggest:hover { border-color: var(--accent); outline: none; }
 .chip.suggest small { color: var(--muted); margin-left: .25rem; }
+
+.card {
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: .9rem 1.2rem; margin: 1.2rem 0;
+}
+.card h2 { margin: 0 0 .5rem; font-size: 1rem; }
+.card .excerpt { font-size: .9rem; }
+.fbrow { display: flex; gap: .4rem; margin-top: .5rem; }
+.fbrow button { cursor: pointer; border: 1px solid var(--line); font-size: .95rem; }
+.fbrow button:hover { outline: 1px solid var(--accent); }
 .editform textarea {
   width: 100%; min-height: 24rem; padding: .8rem 1rem;
   font: .88rem/1.6 ui-monospace, "SF Mono", Menlo, monospace;

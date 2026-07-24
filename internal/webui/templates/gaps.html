@@ -1,0 +1,22 @@
+{{define "content"}}
+<h1>검색 갭</h1>
+<p class="muted">위키가 답하지 못한 검색 — 결과가 없거나 키워드 매치가 0건이던 질의입니다.
+반복되는 질의는 곧 <b>페이지 생성 후보</b>입니다 (<code>canopy new</code> 또는 에이전트에게 요청).</p>
+{{if .Rows}}
+<table class="logtable">
+  <thead><tr><th>질의</th><th>횟수</th><th>마지막</th><th></th></tr></thead>
+  <tbody>
+  {{range .Rows}}
+  <tr>
+    <td>{{.Query}}</td>
+    <td>{{.Count}}</td>
+    <td class="muted">{{.Last}}</td>
+    <td><a class="wikilink" href="/search?q={{.Query}}">다시 검색</a></td>
+  </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="muted">기록 없음 — 모든 검색이 결과를 찾았습니다.</p>
+{{end}}
+{{end}}
