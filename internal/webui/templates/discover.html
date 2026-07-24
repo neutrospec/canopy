@@ -1,0 +1,17 @@
+{{define "content"}}
+<h1>새발견</h1>
+<p class="muted">아직 읽지 않은 페이지를 새 페이지·허브·최근 관심과의 유사도로 랭킹합니다.
+읽기 진행률: <b>{{.ReadCount}}/{{.Total}}</b> ({{.Pct}}%)</p>
+<div class="progress"><div class="progressbar" style="width: {{.Pct}}%"></div></div>
+{{if .Ranked}}
+<ul class="pagelist">
+  {{range .Ranked}}
+  <li><a class="wikilink" href="/page/{{.Page.Slug}}" data-slug="{{.Page.Slug}}">{{.Page.Title}}</a>
+      <span class="chip reason">{{.Reason}}</span>
+      <span class="muted">{{printf "%.2f" .Score}} · {{.Page.Dir}}{{range .Page.Tags}} #{{.}}{{end}}</span></li>
+  {{end}}
+</ul>
+{{else}}
+<p class="muted">전부 읽으셨습니다 🎉</p>
+{{end}}
+{{end}}

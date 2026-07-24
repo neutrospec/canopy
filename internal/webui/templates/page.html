@@ -1,5 +1,5 @@
 {{define "content"}}
-<article>
+<article data-slug="{{.Page.Slug}}" {{if not .Read}}data-read-secs="{{.ReadSecs}}"{{end}}>
   {{if .Saved}}<p class="notice">✓ 저장되었습니다. 커밋은 <code>canopy sync</code>로.</p>{{end}}
   {{range .Lint}}<p class="notice conflict">lint: {{.}}</p>{{end}}
   <h1>{{.Page.Title}}</h1>
@@ -8,6 +8,14 @@
     {{range .Page.Tags}}<a class="chip tag" href="/tag/{{.}}">{{.}}</a>{{end}}
     <span class="muted">updated {{.Page.Updated}} · {{.Page.RelPath}}</span>
     <a class="chip" href="/edit/{{.Page.Slug}}">✎ 편집</a>
+    <form method="post" action="/read/{{.Page.Slug}}" class="readform" id="readform">
+      {{if .Read}}
+      <span class="chip readmark">✓ 읽음{{if eq .Read.Source "auto"}} <small>자동</small>{{end}}</span>
+      <button class="chip" name="action" value="unread" title="읽음 취소">취소</button>
+      {{else}}
+      <button class="chip" name="action" value="read" title="단축키 r">✓ 읽음</button>
+      {{end}}
+    </form>
   </div>
   <div class="prose">{{.Body}}</div>
   {{if .GraphNodes}}

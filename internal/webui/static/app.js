@@ -98,4 +98,49 @@
   document.addEventListener("mouseout", (e) => {
     if (e.target.closest && e.target.closest("a.wikilink[data-slug]")) hidePop();
   });
+
+  // --- read tracking ---------------------------------------------------
+  const article = document.querySelector("article[data-slug]");
+  if (article) {
+    // shortcut: r marks read (unless typing in a field)
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "r" || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (/^(input|textarea|select)$/i.test(e.target.tagName)) return;
+      const btn = document.querySelector('#readform button[value="read"]');
+      if (btn) btn.click();
+    });
+
+    // conservative auto-detect: visible dwell time meets the page's
+    // threshold AND scrolled ≥70% (short pages count as scrolled).
+    const secs = +article.dataset.readSecs;
+    if (secs) {
+      const slug = article.dataset.slug;
+      let visibleMs = 0;
+      let maxScroll = 0;
+      let sent = false;
+      const scrolled = () => {
+        const h = document.documentElement.scrollHeight;
+        if (h <= innerHeight + 50) return 1;
+        return (scrollY + innerHeight) / h;
+      };
+      const onScroll = () => { maxScroll = Math.max(maxScroll, scrolled()); };
+      onScroll();
+      addEventListener("scroll", onScroll, { passive: true });
+      const tick = setInterval(async () => {
+        if (document.visibilityState !== "visible" || sent) return;
+        visibleMs += 1000;
+        if (visibleMs >= secs * 1000 && maxScroll >= 0.7) {
+          sent = true;
+          clearInterval(tick);
+          try {
+            await fetch(`/api/read/${encodeURIComponent(slug)}?source=auto`, { method: "POST" });
+            const form = document.getElementById("readform");
+            if (form) form.innerHTML =
+              '<span class="chip readmark">✓ 읽음 <small>자동</small></span>' +
+              '<button class="chip" name="action" value="unread" title="읽음 취소">취소</button>';
+          } catch { /* offline; explicit button still works */ }
+        }
+      }, 1000);
+    }
+  }
 })();

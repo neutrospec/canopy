@@ -8,6 +8,18 @@
     {{range $i, $d := .Dirs}}{{if $i}} · {{end}}<a class="wikilink" href="/browse?dir={{$d.Dir}}">{{$d.Dir}}</a> {{$d.Count}}{{end}}
   </p>
 </section>
+{{if .Discover}}
+<section>
+  <h2>새발견 <a class="muted seeall" href="/special/discover">전체 →</a></h2>
+  <ul class="pagelist">
+    {{range .Discover}}
+    <li><a class="wikilink" href="/page/{{.Page.Slug}}" data-slug="{{.Page.Slug}}">{{.Page.Title}}</a>
+        <span class="chip reason">{{.Reason}}</span>
+        <span class="muted">{{.Page.Dir}}</span></li>
+    {{end}}
+  </ul>
+</section>
+{{end}}
 <section>
   <h2>최근 수정</h2>
   <ul class="pagelist">

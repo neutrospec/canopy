@@ -24,6 +24,7 @@ import (
 	"github.com/neutrospec/canopy/internal/gitops"
 	"github.com/neutrospec/canopy/internal/indexer"
 	"github.com/neutrospec/canopy/internal/logops"
+	"github.com/neutrospec/canopy/internal/reads"
 	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
 	"github.com/neutrospec/canopy/internal/writeops"
@@ -457,6 +458,15 @@ func cmdMv() *cobra.Command {
 						if !flagJSON {
 							fmt.Printf("  relinked %s\n", other.RelPath)
 						}
+					}
+				}
+			}
+			// Read history follows the page across renames.
+			if !strings.EqualFold(slug, p.Slug) {
+				if rs, err := reads.Load(w); err == nil && rs.IsRead(p.Slug) {
+					rs.Rename(p.Slug, slug)
+					if err := rs.Save(w); err != nil {
+						fmt.Fprintf(os.Stderr, "warning: read history not migrated: %v\n", err)
 					}
 				}
 			}

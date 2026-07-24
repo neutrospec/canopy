@@ -11,10 +11,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/neutrospec/canopy/internal/config"
 	cembed "github.com/neutrospec/canopy/internal/embed"
 	"github.com/neutrospec/canopy/internal/indexer"
+	"github.com/neutrospec/canopy/internal/reads"
 	"github.com/neutrospec/canopy/internal/search"
 	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
@@ -38,7 +40,7 @@ type Server struct {
 func NewServer(w *config.Wiki, eng cembed.Engine) (*Server, error) {
 	s := &Server{w: w, eng: eng, tmpl: map[string]*template.Template{}}
 	funcs := template.FuncMap{"short": short}
-	for _, name := range []string{"home.html", "page.html", "search.html", "browse.html", "recent.html", "attention.html", "edit.html", "login.html", "setup.html"} {
+	for _, name := range []string{"home.html", "page.html", "search.html", "browse.html", "recent.html", "attention.html", "edit.html", "login.html", "setup.html", "discover.html"} {
 		t, err := template.New("base.html").Funcs(funcs).ParseFS(assets, "templates/base.html", "templates/"+name)
 		if err != nil {
 			return nil, err
@@ -62,6 +64,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /special/recent", s.handleRecent)
 	mux.HandleFunc("GET /special/attention", s.handleAttention)
 	mux.HandleFunc("GET /special/random", s.handleRandom)
+	mux.HandleFunc("GET /special/discover", s.handleDiscover)
+	mux.HandleFunc("POST /read/{slug}", s.handleReadMark)
+	mux.HandleFunc("POST /api/read/{slug}", s.handleReadAuto)
 	mux.HandleFunc("GET /setup", s.handleSetupForm)
 	mux.HandleFunc("POST /setup", s.handleSetupSave)
 	mux.HandleFunc("GET /login", s.handleLoginForm)
@@ -120,11 +125,21 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	if len(recent) > 10 {
 		recent = recent[:10]
 	}
+	rs, err := reads.Load(s.w)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	discover := s.discoverRanked(scan, rs, time.Now())
+	if len(discover) > 4 {
+		discover = discover[:4]
+	}
 	s.render(w, http.StatusOK, "home.html", map[string]any{
-		"Title":  "wiki",
-		"Total":  len(scan.Pages),
-		"Dirs":   dirs,
-		"Recent": recent,
+		"Title":    "wiki",
+		"Total":    len(scan.Pages),
+		"Dirs":     dirs,
+		"Recent":   recent,
+		"Discover": discover,
 	})
 }
 
@@ -150,6 +165,11 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 	}
 	backlinks := scan.Backlinks()[slug]
 	nodes, edges := localGraph(scan, p, backlinks)
+	rs, err := reads.Load(s.w)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
 	s.render(w, http.StatusOK, "page.html", map[string]any{
 		"Title":      p.Title,
 		"Page":       p,
@@ -157,7 +177,19 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 		"Backlinks":  backlinks,
 		"GraphNodes": nodes,
 		"GraphEdges": edges,
+		"Read":       rs.Get(slug),
+		"ReadSecs":   readThresholdSecs(p),
 	})
+}
+
+// readThresholdSecs scales the auto-read dwell requirement with page
+// length: floor 30s, +1s per 8 lines, capped at 150s.
+func readThresholdSecs(p *wiki.Page) int {
+	secs := 30 + p.Lines/8
+	if secs > 150 {
+		secs = 150
+	}
+	return secs
 }
 
 // --- search ---

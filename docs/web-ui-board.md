@@ -9,9 +9,23 @@
 
 ## Doing
 
-_(비어 있음 — 다음: M6)_
+_(비어 있음 — 다음: M7)_
 
 ## Done
+
+### M6 — 읽기 히스토리와 새발견 ([설계 D3·D4](web-ui-plan-2.md))
+
+- [x] reads 저장소: `<wiki>/_meta/webui/reads.json` (`{slug: {first,last,count,source}}`, 포맷 문서화)
+- [x] `✓ 읽음` 버튼(form POST, JS 불필요) + 단축키 `r`, 읽음 상태·취소 UI
+- [x] 자동 감지: 가시 탭 체류시간(본문 길이 비례, 최소 30s) + 스크롤 70% → `auto` 읽음, 취소 가능
+- [x] `canopy mv` 시 reads 키 이관
+- [x] 홈 "새발견" 섹션(3–5개): 신규성·허브성·관심 인접(최근 읽은 페이지와의 유사도) 랭킹
+- [x] `/special/discover`: 전체 미독 목록 + facet, 읽기 진행률
+- [x] invariants.md에 `_meta/webui` 점검 항목 추가
+- ✓ Exit:
+  - [x] 짧은 체류 방문이 읽음으로 기록되지 않음을 실측 확인
+  - [x] 명시/자동 구분 기록·취소 동작, 읽은 페이지는 새발견에서 즉시 제외
+  - [x] reads.json이 git 추적 대상으로 커밋된다 (`_meta/webui/`, sync의 CommitAll 범위)
 
 ### M5 — 보안: localhost 기본 + 인증 ([설계 D1·D2](web-ui-plan-2.md))
 
@@ -90,20 +104,6 @@ _(비어 있음 — 다음: M6)_
 ---
 
 ## Backlog
-
-### M6 — 읽기 히스토리와 새발견 ([설계 D3·D4](web-ui-plan-2.md))
-
-- [ ] reads 저장소: `<wiki>/_meta/webui/reads.json` (`{slug: {first,last,count,source}}`, 포맷 문서화)
-- [ ] `✓ 읽음` 버튼(form POST, JS 불필요) + 단축키 `r`, 읽음 상태·취소 UI
-- [ ] 자동 감지: 가시 탭 체류시간(본문 길이 비례, 최소 30s) + 스크롤 70% → `auto` 읽음, 취소 가능
-- [ ] `canopy mv` 시 reads 키 이관
-- [ ] 홈 "새발견" 섹션(3–5개): 신규성·허브성·관심 인접(최근 읽은 페이지와의 유사도) 랭킹
-- [ ] `/special/discover`: 전체 미독 목록 + facet, 읽기 진행률
-- [ ] invariants.md에 `_meta/webui` 점검 항목 추가
-- ✓ Exit:
-  - [ ] 짧은 체류 방문이 읽음으로 기록되지 않음을 실측 확인
-  - [ ] 명시/자동 구분 기록·취소 동작, 읽은 페이지는 새발견에서 즉시 제외
-  - [ ] reads.json이 `canopy sync`로 커밋된다
 
 ### M7 — 느슨한 제안 링크 ([설계 D5](web-ui-plan-2.md))
 
