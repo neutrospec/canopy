@@ -46,20 +46,42 @@ func KnownSkillsDirs() ([]string, error) {
 	}, nil
 }
 
-// DefaultSkillsDir returns the first known agent skills directory that
-// exists on this machine.
-func DefaultSkillsDir() (string, error) {
+// DetectSkillsDirs returns every known agent skills directory that
+// exists on this machine, in priority order.
+func DetectSkillsDirs() ([]string, error) {
 	candidates, err := KnownSkillsDirs()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+	var found []string
 	for _, dir := range candidates {
 		if fi, err := os.Stat(dir); err == nil && fi.IsDir() {
-			return dir, nil
+			found = append(found, dir)
 		}
 	}
-	return "", fmt.Errorf("no agent skills directory found (looked for %s) — pass --dir",
-		strings.Join(candidates, ", "))
+	if len(found) == 0 {
+		return nil, fmt.Errorf("no agent skills directory found (looked for %s) — pass --dir",
+			strings.Join(candidates, ", "))
+	}
+	return found, nil
+}
+
+// InstallAll installs the skills into every detected agent skills
+// directory — one command keeps every agent fresh after an upgrade.
+func InstallAll() (map[string][]string, error) {
+	dirs, err := DetectSkillsDirs()
+	if err != nil {
+		return nil, err
+	}
+	written := map[string][]string{}
+	for _, dir := range dirs {
+		w, err := Install(dir)
+		if err != nil {
+			return written, err
+		}
+		written[dir] = w
+	}
+	return written, nil
 }
 
 // isHermesDir reports whether dir is a hermes skills tree, which uses

@@ -418,32 +418,48 @@ func cmdSkills() *cobra.Command {
 	c := &cobra.Command{Use: "skills", Short: "Manage the agent skill set for this wiki (hermes, Claude Code, …)"}
 	install := &cobra.Command{
 		Use:   "install",
-		Short: "Write the canopy-wiki / canopy-ingest skills into an agent skills directory",
+		Short: "Install/refresh the canopy-wiki / canopy-ingest skills for every detected agent",
+		Long: `Installs the two embedded skills into every known agent skills
+directory that exists (~/.hermes/skills, ~/.claude/skills), so one
+command after a canopy upgrade refreshes every agent. Use --dir to
+target a single directory (it is created if missing).`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var err error
-			if dir == "" {
-				if dir, err = skills.DefaultSkillsDir(); err != nil {
+			// --dir targets exactly one directory (and can bootstrap it);
+			// the default sweeps every detected agent.
+			byDir := map[string][]string{}
+			if dir != "" {
+				written, err := skills.Install(dir)
+				if err != nil {
+					return err
+				}
+				byDir[dir] = written
+			} else {
+				var err error
+				if byDir, err = skills.InstallAll(); err != nil {
 					return err
 				}
 			}
-			written, err := skills.Install(dir)
-			if err != nil {
-				return err
+			supersededByDir := map[string][]string{}
+			for d := range byDir {
+				if present := skills.SupersededPresent(d); len(present) > 0 {
+					supersededByDir[d] = present
+				}
 			}
-			present := skills.SupersededPresent(dir)
 			if flagJSON {
-				return emitJSON(map[string]any{"written": written, "superseded_present": present})
+				return emitJSON(map[string]any{"written": byDir, "superseded_present": supersededByDir})
 			}
-			for _, p := range written {
-				fmt.Println("✓", p)
-			}
-			if hint := skills.RemovalHint(dir, present); hint != "" {
-				fmt.Print(hint)
+			for d, written := range byDir {
+				for _, p := range written {
+					fmt.Println("✓", p)
+				}
+				if hint := skills.RemovalHint(d, supersededByDir[d]); hint != "" {
+					fmt.Print(hint)
+				}
 			}
 			return nil
 		},
 	}
-	install.Flags().StringVar(&dir, "dir", "", "skills directory (default: first existing of ~/.hermes/skills, ~/.claude/skills)")
+	install.Flags().StringVar(&dir, "dir", "", "install into this directory only (default: every existing known dir)")
 	c.AddCommand(install)
 	return c
 }

@@ -6,11 +6,11 @@ import (
 	"testing"
 )
 
-func TestDefaultSkillsDirDetection(t *testing.T) {
+func TestDetectAndInstallAll(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 
-	if _, err := DefaultSkillsDir(); err == nil {
+	if _, err := DetectSkillsDirs(); err == nil {
 		t.Fatal("expected error when no known skills directory exists")
 	}
 
@@ -18,17 +18,33 @@ func TestDefaultSkillsDirDetection(t *testing.T) {
 	if err := os.MkdirAll(claude, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if got, err := DefaultSkillsDir(); err != nil || got != claude {
-		t.Fatalf("expected %s, got %s (%v)", claude, got, err)
+	if got, err := DetectSkillsDirs(); err != nil || len(got) != 1 || got[0] != claude {
+		t.Fatalf("expected [%s], got %v (%v)", claude, got, err)
 	}
 
-	// hermes takes priority when both exist.
+	// hermes joins (and leads) when both exist.
 	hermes := filepath.Join(home, ".hermes", "skills")
 	if err := os.MkdirAll(hermes, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if got, err := DefaultSkillsDir(); err != nil || got != hermes {
-		t.Fatalf("expected %s, got %s (%v)", hermes, got, err)
+	got, err := DetectSkillsDirs()
+	if err != nil || len(got) != 2 || got[0] != hermes || got[1] != claude {
+		t.Fatalf("expected [hermes claude], got %v (%v)", got, err)
+	}
+
+	// InstallAll writes to both, each with its own layout.
+	byDir, err := InstallAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(byDir) != 2 {
+		t.Fatalf("expected 2 dirs installed, got %v", byDir)
+	}
+	if _, err := os.Stat(filepath.Join(hermes, "note-taking", "canopy-wiki", "SKILL.md")); err != nil {
+		t.Errorf("hermes layout missing: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(claude, "canopy-wiki", "SKILL.md")); err != nil {
+		t.Errorf("claude flat layout missing: %v", err)
 	}
 }
 
