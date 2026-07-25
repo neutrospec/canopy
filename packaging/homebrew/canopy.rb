@@ -14,7 +14,7 @@ class Canopy < Formula
   desc "Local knowledge manager for markdown wikis: schema, hybrid search, web UI"
   homepage "https://github.com/neutrospec/canopy"
   url "https://github.com/neutrospec/canopy/archive/refs/tags/v0.1.0.tar.gz"
-  sha256 "REPLACE_WITH_SOURCE_TARBALL_SHA256" # scripts/brew-sha256.sh v0.1.0
+  sha256 "0b02d709e45ae0eba85ab427d1d634ffe7252874113ced606209661676126afe"
   license "MIT"
   head "https://github.com/neutrospec/canopy.git", branch: "main"
 
@@ -73,7 +73,7 @@ class Canopy < Formula
         canopy model pull
       Keyword search works without it. If the ONNX Runtime library is not found
       automatically (e.g. Linuxbrew or a non-standard prefix), point canopy at it:
-        export CANOPY_ONNXRUNTIME_DIR="#{Formula["onnxruntime"].opt_lib}"
+        export CANOPY_ONNXRUNTIME_DIR="#{formula_opt_lib("onnxruntime")}"
     EOS
   end
 
