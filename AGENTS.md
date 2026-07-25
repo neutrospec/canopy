@@ -69,6 +69,8 @@ drop 후 재생성한다. **사다리에 넣지 마라.** 던져버릴 것을 �
 
 ## 릴리스
 
-`make release-check` → `make release-tag V=x.y.z` → `goreleaser release` →
-Homebrew 포뮬러(`packaging/homebrew/canopy.rb`) sha 갱신 후 탭에 push.
-상세: [docs/versioning.md](docs/versioning.md) "릴리스 절차".
+`make release-check` → `make release-tag V=x.y.z`(태그 push). 그러면 GitHub Actions
+(`.github/workflows/release.yml`)가 GitHub Release·변경로그·lite 아카이브 생성 + Homebrew
+탭 포뮬러 자동 갱신. 포뮬러를 고칠 땐 **`packaging/homebrew/canopy.rb`(원본)만** — 탭
+파일은 릴리스가 덮어쓴다. 초심자 실습 가이드: [docs/homebrew-guide.md](docs/homebrew-guide.md),
+설계: [docs/versioning.md](docs/versioning.md).

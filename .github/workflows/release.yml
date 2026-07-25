@@ -1,0 +1,84 @@
+name: release
+
+# Cut a release by pushing a version tag (see docs/homebrew-guide.md):
+#   make release-tag V=0.2.0        # tags v0.2.0 and pushes it
+#
+# This then runs automatically:
+#   1. GoReleaser  → GitHub Release + changelog + dependency-free lite archives
+#   2. publish-tap → patch the Homebrew tap formula's url/sha256 and push it,
+#                    so `brew upgrade canopy` picks up the new version.
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # GoReleaser creates the GitHub Release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so the changelog can be built
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: GoReleaser — GitHub Release + changelog + lite archives
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-tap:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the tap token
+        env:
+          TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::HOMEBREW_TAP_TOKEN secret is not set — see docs/homebrew-guide.md (릴리스 자동화 준비)."
+            exit 1
+          fi
+      - name: Checkout canopy (formula source of truth)
+        uses: actions/checkout@v4
+      - name: Checkout the tap
+        uses: actions/checkout@v4
+        with:
+          repository: neutrospec/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: tap
+      - name: Render the formula for ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          url="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${tag}.tar.gz"
+          sha="$(curl -fsSL "$url" | sha256sum | awk '{print $1}')"
+          echo "url = $url"
+          echo "sha = $sha"
+          # Derive the tap formula from canopy's source-of-truth template,
+          # patching ONLY the top-level (2-space-indented) url + sha256. The
+          # 8-space-indented tokenizer resource sha256s are left untouched.
+          cp packaging/homebrew/canopy.rb tap/Formula/canopy.rb
+          sed -i -E 's|^  url "https://github.com/[^"]*/archive/refs/tags/[^"]*"|  url "'"$url"'"|' tap/Formula/canopy.rb
+          sed -i -E 's|^  sha256 "[0-9a-f]{64}"|  sha256 "'"$sha"'"|' tap/Formula/canopy.rb
+          echo "--- patched formula head ---"
+          grep -nE '^  (url|sha256) ' tap/Formula/canopy.rb
+      - name: Commit + push the tap
+        run: |
+          set -euo pipefail
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- Formula/canopy.rb; then
+            echo "formula already current — nothing to push"
+            exit 0
+          fi
+          git add Formula/canopy.rb
+          git commit -m "canopy ${GITHUB_REF_NAME}"
+          git push

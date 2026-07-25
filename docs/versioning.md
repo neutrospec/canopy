@@ -98,8 +98,15 @@ canopy에는 **세 개의 버전 번호**가 있고, 서로 다른 것을 센다
 
 ## 릴리스 절차
 
+> 처음이라면 단계별 실습 가이드부터: [homebrew-guide.md](homebrew-guide.md) — 개념·토큰
+> 설정·릴리스·로컬 시험·문제 해결을 초심자용으로 풀어 놓았다. 아래는 그 요약이다.
+
 버전 정책은 [semver](https://semver.org): `0.y.z` 동안은 y가 기능, z가 수정. 1.0 전에는
 파괴적 변경도 y로 낸다. 태그는 Go 모듈 규약대로 **`v` 접두사**(`v0.1.0`)를 쓴다.
+
+태그를 push하면 GitHub Actions(`​.github/workflows/release.yml`)가 GitHub Release +
+변경로그 + `*_lite` 아카이브를 만들고, 탭 포뮬러의 url·sha256을 자동 갱신한다(최초 1회
+`HOMEBREW_TAP_TOKEN` 시크릿 필요 — 가이드 §4). 손으로 할 때의 절차는 다음과 같다.
 
 ```bash
 make release-check                 # 트리 clean·테스트·gofmt 게이트 (F1/F3)

@@ -223,6 +223,7 @@ Apple Silicon, int8 양자화 모델 기준:
 | 문서 | 내용 |
 |------|------|
 | [docs/versioning.md](docs/versioning.md) | 세 버전 번호·마이그레이션 사다리·릴리스 절차·Homebrew 배포 |
+| [docs/homebrew-guide.md](docs/homebrew-guide.md) | Homebrew 배포·릴리스 실습 가이드 (처음 하는 사람용) |
 | [docs/web-ui-plan.md](docs/web-ui-plan.md) | 1차(M1–M4): 검색-우선 뷰어, facet, 웹 편집 |
 | [docs/web-ui-plan-2.md](docs/web-ui-plan-2.md) | 2차(M5–M8): 보안, 읽기 이력·새발견, 제안 링크, 말 거는 홈 |
 | [docs/web-ui-plan-3.md](docs/web-ui-plan-3.md) | 3차(M9–M10+): 현대 뷰어, 지식 그래프, 섬 검출 |

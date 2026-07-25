@@ -1,0 +1,32 @@
+name: ci
+
+# Fast checks on every push and PR: format, vet, tests, and the CGO-free lite
+# build. The full ORT build (semantic search) needs onnxruntime + a native
+# tokenizer lib, so it is validated at release time (Homebrew source build),
+# not here — this keeps CI quick and green.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: gofmt (invariant F3)
+        run: |
+          out="$(gofmt -l .)"
+          if [ -n "$out" ]; then
+            echo "these files need gofmt:"; echo "$out"; exit 1
+          fi
+      - name: go vet
+        run: go vet ./...
+      - name: tests (invariant F1)
+        run: go test ./internal/...
+      - name: lite build (CGO-free path, invariant F2)
+        run: make build-lite
