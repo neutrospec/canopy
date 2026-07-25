@@ -1,0 +1,79 @@
+# GoReleaser turns a pushed tag (v0.1.0) into a GitHub release with a changelog
+# generated from Conventional Commit messages.
+#
+# Scope note: it builds the CGO-free *lite* binaries (keyword search only) as
+# cross-platform downloads. The full semantic-search build needs ONNX Runtime
+# and a native tokenizer lib at build time, which does not cross-compile
+# cleanly — that path is distributed via the source-build Homebrew formula
+# (packaging/homebrew/canopy.rb), not from these archives. See docs/versioning.md.
+version: 2
+
+project_name: canopy
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: canopy-lite
+    main: ./cmd/canopy
+    binary: canopy
+    env:
+      - CGO_ENABLED=0
+    goos: [darwin, linux]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w
+      - -X github.com/neutrospec/canopy/internal/buildinfo.version={{ .Version }}
+      - -X github.com/neutrospec/canopy/internal/buildinfo.commit={{ .ShortCommit }}
+      - -X github.com/neutrospec/canopy/internal/buildinfo.date={{ .Date }}
+
+archives:
+  - id: lite
+    # _lite in the name is deliberate: these binaries do keyword search only.
+    name_template: "canopy_{{ .Version }}_{{ .Os }}_{{ .Arch }}_lite"
+    files:
+      - README.md
+      - LICENSE
+      - docs/**/*
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  use: git
+  sort: asc
+  filters:
+    exclude:
+      - "^test:"
+      - "^chore:"
+      - "^ci:"
+      - "^style:"
+      - "merge"
+  groups:
+    - title: Features
+      regexp: "^feat"
+      order: 0
+    - title: Fixes
+      regexp: "^fix"
+      order: 1
+    - title: Documentation
+      regexp: "^docs"
+      order: 2
+    - title: Other
+      order: 99
+
+release:
+  github:
+    owner: neutrospec
+    name: canopy
+  name_template: "canopy {{ .Tag }}"
+  footer: |
+    ## Install
+
+    Full build (semantic search) via Homebrew:
+
+        brew install neutrospec/tap/canopy
+        canopy model pull   # one-time ~2.3GB bge-m3 download
+
+    The attached `*_lite` archives are keyword-search-only (no dependencies).

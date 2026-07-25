@@ -229,13 +229,13 @@ func (s *Server) handleAttention(w http.ResponseWriter, r *http.Request) {
 // would reconnect the island. Suggesting only; linking is a content
 // judgement for the human/agent.
 type islandInfo struct {
-	Pages          []*wiki.Page
-	BridgeA        string // island side
-	BridgeB        string // mainland side
-	BridgeATitle   string
-	BridgeBTitle   string
-	Sim            float64
-	HasSuggestion  bool
+	Pages         []*wiki.Page
+	BridgeA       string // island side
+	BridgeB       string // mainland side
+	BridgeATitle  string
+	BridgeBTitle  string
+	Sim           float64
+	HasSuggestion bool
 }
 
 func (s *Server) islandReport(scan *wiki.ScanResult) []islandInfo {

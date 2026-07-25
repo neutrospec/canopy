@@ -15,11 +15,13 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/neutrospec/canopy/internal/buildinfo"
 	"github.com/neutrospec/canopy/internal/config"
 	"github.com/neutrospec/canopy/internal/embed"
 	"github.com/neutrospec/canopy/internal/gitops"
 	"github.com/neutrospec/canopy/internal/indexer"
 	"github.com/neutrospec/canopy/internal/lint"
+	"github.com/neutrospec/canopy/internal/migrate"
 	"github.com/neutrospec/canopy/internal/search"
 	"github.com/neutrospec/canopy/internal/skills"
 	"github.com/neutrospec/canopy/internal/store"
@@ -35,15 +37,31 @@ func main() {
 	root := &cobra.Command{
 		Use:           "canopy",
 		Short:         "Manage an LLM wiki: schema-enforced writes, hybrid search, sync",
+		Version:       buildinfo.Version(),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
 	root.PersistentFlags().StringVar(&flagWiki, "wiki", "", "wiki root (default: $CANOPY_WIKI or canopy.toml discovery)")
 	root.PersistentFlags().BoolVar(&flagJSON, "json", false, "machine-readable JSON output")
 
+	// Bring durable on-disk state up to the binary's schema before any command
+	// that touches it — "migrate before doing anything" on a fresh upgrade.
+	// version/migrate/help/completion manage or inspect the schema themselves,
+	// so they are exempt and stay usable to recover from a failed migration.
+	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		switch p := cmd.CommandPath(); {
+		case p == "canopy", p == "canopy version", p == "canopy help",
+			strings.HasPrefix(p, "canopy migrate"), strings.HasPrefix(p, "canopy completion"):
+			return nil
+		}
+		_, err := migrate.Ensure(migrateCtx(), buildinfo.Version())
+		return err
+	}
+
 	root.AddCommand(cmdInit(), cmdStatus(), cmdReindex(), cmdSearch(), cmdBacklinks(), cmdLint(), cmdShow(), cmdList(), cmdTags(), cmdModel(),
 		cmdNew(), cmdUpdate(), cmdMv(), cmdRm(), cmdArchive(), cmdSync(), cmdSkills(),
-		cmdResurface(), cmdBridge(), cmdRecall(), cmdDigest(), cmdServe())
+		cmdResurface(), cmdBridge(), cmdRecall(), cmdDigest(), cmdServe(),
+		cmdVersion(), cmdMigrate())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
@@ -60,6 +78,23 @@ func loadWiki() (*config.Wiki, error) {
 	// ModelAvailable() gates and New() must agree on the directory.
 	embed.SetModelDir(w.Cfg.Embedding.Model)
 	return w, nil
+}
+
+// migrateCtx builds the migration runner's view of the machine-local XDG
+// directories. Migrations self-report concrete actions to stderr; in --json
+// mode they stay silent so machine-readable output is never polluted.
+func migrateCtx() *migrate.Context {
+	logf := func(format string, args ...any) {
+		if !flagJSON {
+			fmt.Fprintf(os.Stderr, format+"\n", args...)
+		}
+	}
+	return &migrate.Context{
+		ConfigHome: config.ConfigHome(),
+		CacheHome:  config.CacheHome(),
+		DataHome:   config.DataHome(),
+		Log:        logf,
+	}
 }
 
 // banner prints the unsynced-state warning to stderr on every command,
@@ -691,6 +726,97 @@ func cmdTags() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func cmdVersion() *cobra.Command {
+	return &cobra.Command{
+		Use:   "version",
+		Short: "Print version, build metadata, and the data-schema version",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rep, err := migrate.Status(migrateCtx())
+			if err != nil {
+				return err
+			}
+			if flagJSON {
+				return emitJSON(map[string]any{
+					"version":        buildinfo.Version(),
+					"commit":         buildinfo.Commit(),
+					"date":           buildinfo.Date(),
+					"go":             buildinfo.GoVersion(),
+					"schema_version": rep.Current,
+					"schema_target":  rep.Target,
+					"cache_schema":   store.SchemaVersion,
+					"semantic":       embed.Available(),
+				})
+			}
+			fmt.Printf("canopy %s\n", buildinfo.Version())
+			fmt.Printf("  commit    %s\n", buildinfo.Commit())
+			fmt.Printf("  built     %s\n", buildinfo.Date())
+			fmt.Printf("  go        %s\n", buildinfo.GoVersion())
+			fmt.Printf("  schema    %d/%d\n", rep.Current, rep.Target)
+			fmt.Printf("  semantic  %v\n", embed.Available())
+			return nil
+		},
+	}
+}
+
+func cmdMigrate() *cobra.Command {
+	c := &cobra.Command{
+		Use:   "migrate",
+		Short: "Apply pending data-state migrations (also runs automatically on first use)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := migrateCtx()
+			res, err := migrate.Ensure(ctx, buildinfo.Version())
+			if err != nil {
+				return err
+			}
+			if flagJSON {
+				return emitJSON(res)
+			}
+			if len(res.Applied) == 0 {
+				fmt.Printf("✓ up to date (schema %d/%d)\n", res.To, migrate.Target())
+				return nil
+			}
+			fmt.Printf("✓ migrated schema %d → %d\n", res.From, res.To)
+			for _, name := range res.Applied {
+				fmt.Printf("  • %s\n", name)
+			}
+			return nil
+		},
+	}
+	c.AddCommand(&cobra.Command{
+		Use:   "status",
+		Short: "Show the current and target data-schema version and any pending steps",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rep, err := migrate.Status(migrateCtx())
+			if err != nil {
+				return err
+			}
+			if flagJSON {
+				pending := []map[string]any{}
+				for _, m := range rep.Pending {
+					pending = append(pending, map[string]any{"to": m.To, "name": m.Name})
+				}
+				return emitJSON(map[string]any{
+					"current":   rep.Current,
+					"target":    rep.Target,
+					"persisted": rep.Persisted,
+					"pending":   pending,
+				})
+			}
+			fmt.Printf("schema %d/%d\n", rep.Current, rep.Target)
+			if len(rep.Pending) == 0 {
+				fmt.Println("✓ no pending migrations")
+				return nil
+			}
+			fmt.Println("pending:")
+			for _, m := range rep.Pending {
+				fmt.Printf("  → %d  %s\n", m.To, m.Name)
+			}
+			return nil
+		},
+	})
+	return c
 }
 
 func contains(list []string, v string) bool {

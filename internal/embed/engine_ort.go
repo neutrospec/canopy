@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/knights-analytics/hugot"
 	"github.com/knights-analytics/hugot/options"
@@ -23,7 +24,8 @@ type ortEngine struct {
 	pipe    *pipelines.FeatureExtractionPipeline
 }
 
-// onnxRuntimeDirs are searched for libonnxruntime.dylib/.so.
+// onnxRuntimeDirs are the fixed fallback locations searched for
+// libonnxruntime.dylib/.so (Apple Silicon brew, Intel brew, system).
 var onnxRuntimeDirs = []string{
 	"/opt/homebrew/lib",
 	"/usr/local/lib",
@@ -31,10 +33,21 @@ var onnxRuntimeDirs = []string{
 }
 
 // findOnnxRuntime returns the directory containing libonnxruntime, or "".
+// It checks, in order: an explicit override, the active Homebrew prefix
+// (covers Linuxbrew and non-standard prefixes the Homebrew formula relies on),
+// then the fixed fallbacks.
 func findOnnxRuntime() string {
-	for _, d := range onnxRuntimeDirs {
+	var dirs []string
+	if d := os.Getenv("CANOPY_ONNXRUNTIME_DIR"); d != "" {
+		dirs = append(dirs, d)
+	}
+	if p := os.Getenv("HOMEBREW_PREFIX"); p != "" {
+		dirs = append(dirs, filepath.Join(p, "lib"))
+	}
+	dirs = append(dirs, onnxRuntimeDirs...)
+	for _, d := range dirs {
 		for _, name := range []string{"libonnxruntime.dylib", "libonnxruntime.so"} {
-			if _, err := os.Stat(d + "/" + name); err == nil {
+			if _, err := os.Stat(filepath.Join(d, name)); err == nil {
 				return d
 			}
 		}

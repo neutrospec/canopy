@@ -98,6 +98,17 @@
 | I3 | 계정 등록은 터미널의 설정 코드 없이는 불가 | 공개 바인딩·무계정 상태에서 코드 없이 `POST /setup` → 400 |
 | I4 | 교차 출처 변조 거부 | `curl -X POST -H "Origin: https://evil.example" http://localhost:8737/logout` → 403 |
 
+## J. 버전·마이그레이션 ([versioning.md](versioning.md))
+
+| # | 불변식 | 점검 |
+|---|--------|------|
+| J1 | 세 버전 번호(앱·데이터 스키마·캐시 스키마)가 노출된다 | `canopy version --json` → `version`(semver 문자열) && `schema_version`/`schema_target`(정수) && `cache_schema` 필드 존재 |
+| J2 | 사다리는 조밀하고(rung i → 버전 i+1) append-only | `canopy migrate status --json \| jq '.target'` == `internal/migrate/migrations.go`의 `ladder` 항목 수; `go test ./internal/migrate/`의 `TestLadderIsDense` 통과 |
+| J3 | 첫 실행이 버전을 각인하고, 재실행은 no-op이다 (idempotent) | 빈 `XDG_CONFIG_HOME`에서 아무 명령 → `state.json` 생성; 이어서 `canopy migrate` → "up to date". `go test`의 `TestEnsureFreshInstall`·`TestLegacyRelocation`(2회차 무변경) |
+| J4 | 데이터가 바이너리보다 새로우면 거부한다 (다운그레이드 가드) | `state.json`의 `schema_version`을 `schema_target`보다 크게 써두고 아무 명령 실행 → 에러로 종료. `go test`의 `TestDowngradeGuard` |
+| J5 | 파생 캐시(인덱스 DB)는 마이그레이션 대상이 아니라 재구축 대상이다 (C4 재확인) | `migrate`가 `store`에 의존하지 않음: `grep -rn '"github.com/neutrospec/canopy/internal/store"' internal/migrate/` → 빈 출력. 캐시 손실 복구는 C4가 보증 |
+| J6 | 마이그레이션은 순서대로 적용되고 idempotent하다 | `go test ./internal/migrate/` 전부 통과 (F1에 포함) |
+
 ## 감사 절차
 
 1. `make test && gofmt -l .` (F)
@@ -106,6 +117,7 @@
 4. E는 `--peek`으로 안전하게
 5. G1–G7 (recall·digest·bridge — 임베딩 인덱스 필요)
 6. H·I는 `canopy serve`를 띄운 상태에서 (I1은 공개 바인딩 별도 기동, I2는 스크래치 위키 권장)
+7. J1–J5는 `canopy version --json` / `canopy migrate status --json`으로 (J6은 1의 `make test`에 포함)
 
 > 위반을 발견하면: (1) 그 위반이 **어느 명령을 우회해서** 생겼는지 찾고,
 > (2) 우회 경로를 막는 코드/lint를 추가하고, (3) 필요하면 이 목록에 항목을 늘린다.

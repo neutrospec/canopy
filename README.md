@@ -26,13 +26,25 @@
 
 ## 설치
 
+**Homebrew** (권장 — 소스에서 빌드하며 onnxruntime을 자동으로 링크합니다):
+
+```bash
+brew install neutrospec/tap/canopy
+canopy model pull          # 시맨틱 검색 모델 bge-m3 ONNX ~2.3GB (1회)
+```
+
+아직 태그 전이라면 `brew install --HEAD neutrospec/tap/canopy`로 main을 빌드합니다.
+
+**소스에서 직접** (개발):
+
 ```bash
 brew install onnxruntime   # 시맨틱 검색용 (libonnxruntime)
-make build                 # -tags ORT; 최초 1회 libtokenizers.a 자동 다운로드
+make build                 # -tags ORT; 버전 각인 + 최초 1회 libtokenizers.a 자동 다운로드
 make install               # ~/.local/bin (없으면 /opt/homebrew/bin)
 ```
 
-임베딩 없이 쓰려면: `make build-lite` — cgo 불필요, keyword 검색만 제공됩니다.
+임베딩 없이 쓰려면: `make build-lite` — cgo 불필요, keyword 검색만 제공됩니다
+(GitHub 릴리스의 `*_lite` 아카이브도 같은 keyword-전용 바이너리입니다).
 
 ## 빠른 시작
 
@@ -135,7 +147,7 @@ canopy serve --addr :8737   # 모든 인터페이스 — 인증 필수 (최초 �
 | `canopy bridge [-n N] [--min-sim 0.7] [--include-linked]` | 유사하지만 연결 안 된 페이지 페어 발견 |
 | `canopy digest [--since 90d]` | 기간 회고 소재: 생성/갱신 페이지, 태그 분포 |
 
-**관리**: `canopy reindex [--no-embed]` · `canopy model pull/status` · `canopy skills install`
+**관리**: `canopy reindex [--no-embed]` · `canopy model pull/status` · `canopy skills install` · `canopy version` · `canopy migrate [status]`
 
 모든 명령이 `--json`을 지원합니다. `--peek`(resurface/bridge)은 상태 기록 없이 미리보기합니다.
 
@@ -169,6 +181,7 @@ canopy skills install --dir <path> # 특정 디렉토리만 (없으면 생성 �
 | `<wiki>/_meta/webui/` | 재현 불가 상태 (읽기 이력·검색 갭) — 위키에 커밋, 기기 간 동기화 |
 | `~/.cache/canopy/index/<해시>.db` | 파생 캐시 (FTS+벡터) — `reindex`로 언제든 재구축 |
 | `~/.config/canopy/config.toml` | 전역 설정 (`default_wiki`) |
+| `~/.config/canopy/state.json` | 데이터 스키마 버전 (마이그레이션 이행 지점) — 머신 로컬, 캐시 삭제·업그레이드에도 생존 |
 | `~/.config/canopy/webauth.json` | 웹 UI 계정 (bcrypt 해시) — 비밀이므로 위키 밖, 머신 로컬 |
 | `~/.local/share/canopy/models/` | ONNX 모델, 빌드용 정적 라이브러리 |
 
@@ -209,6 +222,7 @@ Apple Silicon, int8 양자화 모델 기준:
 
 | 문서 | 내용 |
 |------|------|
+| [docs/versioning.md](docs/versioning.md) | 세 버전 번호·마이그레이션 사다리·릴리스 절차·Homebrew 배포 |
 | [docs/web-ui-plan.md](docs/web-ui-plan.md) | 1차(M1–M4): 검색-우선 뷰어, facet, 웹 편집 |
 | [docs/web-ui-plan-2.md](docs/web-ui-plan-2.md) | 2차(M5–M8): 보안, 읽기 이력·새발견, 제안 링크, 말 거는 홈 |
 | [docs/web-ui-plan-3.md](docs/web-ui-plan-3.md) | 3차(M9–M10+): 현대 뷰어, 지식 그래프, 섬 검출 |
@@ -222,15 +236,17 @@ Apple Silicon, int8 양자화 모델 기준:
 | [docs/invariants.md](docs/invariants.md) | 점검 가능한 불변식 목록(A–I) + 감사 절차 |
 
 기여 규칙 하나: **점검 명령이 없는 주장은 원칙이 아닙니다.** 새 기능은 불변식과
-점검 방법을 invariants.md에 먼저 적고 구현합니다.
+점검 방법을 invariants.md에 먼저 적고 구현합니다. 개발 규칙(빌드·버전·마이그레이션·
+커밋 규약)은 [AGENTS.md](AGENTS.md)에 정리돼 있습니다.
 
 ## 개발 방식에 대하여
 
 이 프로젝트의 코드 대부분은 **AI 지원 코딩**(Claude Code)으로 작성되었습니다.
 방향과 판단은 사람이, 구현·검증은 AI가 맡는 방식으로 — 이 도구가 위키에
 적용하는 "판단은 LLM이, 불변식은 코드가" 원칙과 같은 구도입니다. 각 기능이
-어떤 결정을 거쳐 태어났는지는 위 "설계 기록" 문서들로 추적할 수 있고,
-git 히스토리의 커밋에는 AI 공저자가 표기되어 있습니다.
+어떤 결정을 거쳐 태어났는지는 위 "설계 기록" 문서들로 추적할 수 있습니다.
+이 공개가 곧 귀속이므로, 이후 커밋 메시지에는 AI 공저자 트레일러를 따로 달지
+않습니다(초기 일부 커밋에는 남아 있습니다 — 역사는 다시 쓰지 않습니다).
 
 ## 라이선스
 

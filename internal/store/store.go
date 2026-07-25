@@ -20,9 +20,12 @@ type Store struct {
 	db *sql.DB
 }
 
-// schemaVersion: bump when the layout changes — the DB is a derived
-// cache, so on mismatch we simply drop everything and rebuild.
-const schemaVersion = "2"
+// SchemaVersion is the cache DB's layout version. Bump it when the layout
+// changes: the DB is a derived cache, so on mismatch we simply drop
+// everything and rebuild. This is intentionally NOT a migrate.Migration —
+// migrating a throwaway would be wasted work (see docs/versioning.md and
+// internal/migrate). It is exported so `canopy version` can report it.
+const SchemaVersion = "2"
 
 const schema = `
 CREATE TABLE IF NOT EXISTS pages (
@@ -62,7 +65,7 @@ func Open(path string) (*Store, error) {
 		return nil, fmt.Errorf("migrate: %w", err)
 	}
 	v, _ := s.GetMeta("schema_version")
-	if v != schemaVersion {
+	if v != SchemaVersion {
 		for _, t := range []string{"pages", "fts", "chunks", "meta"} {
 			if _, err := db.Exec("DROP TABLE IF EXISTS " + t); err != nil {
 				db.Close()
@@ -73,7 +76,7 @@ func Open(path string) (*Store, error) {
 			db.Close()
 			return nil, fmt.Errorf("migrate: %w", err)
 		}
-		if err := s.SetMeta("schema_version", schemaVersion); err != nil {
+		if err := s.SetMeta("schema_version", SchemaVersion); err != nil {
 			db.Close()
 			return nil, err
 		}
