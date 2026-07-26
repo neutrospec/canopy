@@ -43,11 +43,14 @@ changelog:
   use: git
   sort: asc
   filters:
+    # Optional-scope form: "chore:" AND "chore(brew):" are both excluded
+    # (v0.2.0 shipped a stray chore(brew) entry — the plain "^chore:"
+    # regex missed the scoped variant).
     exclude:
-      - "^test:"
-      - "^chore:"
-      - "^ci:"
-      - "^style:"
+      - '^test(\(.+\))?:'
+      - '^chore(\(.+\))?:'
+      - '^ci(\(.+\))?:'
+      - '^style(\(.+\))?:'
       - "merge"
   groups:
     - title: Features
