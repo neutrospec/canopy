@@ -1,0 +1,6 @@
+Vendored web fonts (both under SIL Open Font License 1.1):
+
+- PretendardVariable.woff2 — Pretendard, (c) Kil Hyung-jin
+  https://github.com/orioncactus/pretendard (SIL OFL 1.1)
+- MaruBuri-Regular.woff2 / MaruBuri-Bold.woff2 — 마루 부리, (c) NAVER
+  https://hangeul.naver.com (SIL OFL 1.1)

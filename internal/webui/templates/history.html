@@ -17,7 +17,7 @@
       <span class="histtime muted">{{.Time}}</span>
       <span class="chip histkind">{{if .Agent}}🤖 {{end}}{{.Label}}</span>
       {{if .Query}}<a class="histquery" href="/search?q={{.Query}}">“{{.Query}}”</a>
-      {{else if .Title}}<a href="/page/{{.Slug}}">{{.Title}}</a>
+      {{else if .Title}}<a class="wikilink" href="/page/{{.Slug}}" data-slug="{{.Slug}}">{{.Title}}</a>
       {{else}}<span class="muted">{{.Slug}}</span>{{end}}
       {{if gt .Count 1}}<span class="muted">×{{.Count}}</span>{{end}}
     </li>

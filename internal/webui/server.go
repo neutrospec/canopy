@@ -113,6 +113,8 @@ func (s *Server) fail(w http.ResponseWriter, err error) {
 type dirStat struct {
 	Dir   string
 	Count int
+	Read  int // read pages in this dir — fills its canopy-band segment
+	Pct   int // read percentage within the dir
 }
 
 func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
@@ -121,37 +123,76 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	byDir := map[string]int{}
-	for _, p := range scan.Pages {
-		byDir[p.Dir]++
-	}
-	var dirs []dirStat
-	for _, d := range s.w.Cfg.Schema.PageDirs {
-		dirs = append(dirs, dirStat{d, byDir[d]})
-	}
-	recent := append([]*wiki.Page(nil), scan.Pages...)
-	sort.Slice(recent, func(i, j int) bool { return recent[i].Updated > recent[j].Updated })
-	if len(recent) > 10 {
-		recent = recent[:10]
-	}
 	rs, err := reads.Load(s.w)
 	if err != nil {
 		s.fail(w, err)
 		return
 	}
-	discover := s.discoverRanked(scan, rs, time.Now())
+	now := time.Now()
+	byDir := map[string]int{}
+	readByDir := map[string]int{}
+	readTotal := 0
+	for _, p := range scan.Pages {
+		byDir[p.Dir]++
+		if rs.IsRead(p.Slug) {
+			readByDir[p.Dir]++
+			readTotal++
+		}
+	}
+	var dirs []dirStat
+	for _, d := range s.w.Cfg.Schema.PageDirs {
+		st := dirStat{Dir: d, Count: byDir[d], Read: readByDir[d]}
+		if st.Count > 0 {
+			st.Pct = st.Read * 100 / st.Count
+		}
+		dirs = append(dirs, st)
+	}
+
+	// 오늘의 주의: distinct pages touched and searches asked today,
+	// from the local event log (best-effort).
+	todayPages, todaySearches := 0, 0
+	if ev, err := attention.Open(s.w.AttentionDBPath()); err == nil {
+		if events, err := ev.Recent(400); err == nil {
+			day := now.Format("2006-01-02")
+			seen := map[string]bool{}
+			for _, e := range events {
+				t, err := time.Parse(time.RFC3339, e.TS)
+				if err != nil || t.Local().Format("2006-01-02") != day {
+					continue
+				}
+				if e.Kind == attention.KindSearch {
+					todaySearches++
+				} else if !seen[e.Slug] {
+					seen[e.Slug] = true
+					todayPages++
+				}
+			}
+		}
+		ev.Close()
+	}
+
+	recent := append([]*wiki.Page(nil), scan.Pages...)
+	sort.Slice(recent, func(i, j int) bool { return recent[i].Updated > recent[j].Updated })
+	if len(recent) > 10 {
+		recent = recent[:10]
+	}
+	discover := s.discoverRanked(scan, rs, now)
 	if len(discover) > 4 {
 		discover = discover[:4]
 	}
 	pick, bridge := s.todaysCard()
 	s.render(w, http.StatusOK, "home.html", map[string]any{
-		"Title":    "wiki",
-		"Total":    len(scan.Pages),
-		"Dirs":     dirs,
-		"Recent":   recent,
-		"Discover": discover,
-		"Pick":     pick,
-		"Bridge":   bridge,
+		"Title":         "wiki",
+		"Date":          fmt.Sprintf("%s (%s)", now.Format("2006-01-02"), weekdays[now.Weekday()]),
+		"Total":         len(scan.Pages),
+		"ReadTotal":     readTotal,
+		"Dirs":          dirs,
+		"TodayPages":    todayPages,
+		"TodaySearches": todaySearches,
+		"Recent":        recent,
+		"Discover":      discover,
+		"Pick":          pick,
+		"Bridge":        bridge,
 	})
 }
 

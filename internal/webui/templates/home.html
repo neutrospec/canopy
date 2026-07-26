@@ -1,15 +1,20 @@
 {{define "content"}}
 <section class="hero">
-  <h1>🌳 wiki</h1>
+  <p class="eyebrow">{{.Date}}</p>
+  <h1>오늘의 주의</h1>
   <form class="searchbar big" action="/search" method="get">
     <input type="search" name="q" placeholder="무엇이든 검색…" autofocus autocomplete="off">
   </form>
-  <p class="muted">{{.Total}} pages ·
+  <p class="muted herostats">{{.Total}} pages ·
     {{range $i, $d := .Dirs}}{{if $i}} · {{end}}<a class="wikilink" href="/browse?dir={{$d.Dir}}">{{$d.Dir}}</a> {{$d.Count}}{{end}}
   </p>
+  <div class="band" role="img" aria-label="디렉토리별 읽기 진행: 폭은 페이지 수, 채움은 읽은 비율">
+    {{range .Dirs}}<div class="bandseg d-{{.Dir}}" style="flex:{{.Count}}" title="{{.Dir}} {{.Read}}/{{.Count}} 읽음"><i style="width:{{.Pct}}%"></i></div>{{end}}
+  </div>
+  <p class="bandlegend">읽음 {{.ReadTotal}}/{{.Total}}{{if or .TodayPages .TodaySearches}} <span class="today">오늘 {{if .TodayPages}}{{.TodayPages}}페이지{{end}}{{if and .TodayPages .TodaySearches}} · {{end}}{{if .TodaySearches}}검색 {{.TodaySearches}}{{end}}</span>{{end}} · <a class="seeall" href="/history">기록 →</a></p>
 </section>
 {{if .Pick}}
-<section class="card">
+<section class="card warm">
   <h2>오늘의 재발견 <span class="muted">{{.Pick.DaysStale}}일 동안 잊혀 있었어요</span></h2>
   <p><a class="wikilink" href="/page/{{.Pick.Slug}}" data-slug="{{.Pick.Slug}}"><b>{{.Pick.Title}}</b></a></p>
   {{if .Pick.Excerpt}}<p class="excerpt">{{.Pick.Excerpt}}</p>{{end}}
@@ -35,7 +40,7 @@
 {{end}}
 {{if .Discover}}
 <section>
-  <h2>새발견 <a class="muted seeall" href="/special/discover">전체 →</a></h2>
+  <h2>새발견 <a class="seeall" href="/special/discover">전체 →</a></h2>
   <ul class="pagelist">
     {{range .Discover}}
     <li><a class="wikilink" href="/page/{{.Page.Slug}}" data-slug="{{.Page.Slug}}">{{.Page.Title}}</a>
