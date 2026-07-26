@@ -83,6 +83,8 @@ canopy model pull                        # 시맨틱 검색 모델 ~2.3GB (선�
 - 최신 개발 버전을 시험하려면: `brew install --HEAD neutrospec/tap/canopy` (main을 빌드)
 - 업그레이드: `brew upgrade canopy` · 제거: `brew uninstall canopy && brew untap neutrospec/tap`
 - 최초 빌드에 Go·Xcode Command Line Tools가 필요하며 `brew`가 알아서 챙깁니다.
+- 웹 UI를 상시 서비스로: `brew services start canopy` (localhost:8737). 소스/`make install`로
+  쓰던 사용자가 brew로 옮겨오는 절차는 [upgrading.md](upgrading.md).
 
 ---
 

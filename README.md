@@ -218,6 +218,7 @@ Apple Silicon, int8 양자화 모델 기준:
 | 문서 | 내용 |
 |------|------|
 | [docs/getting-started.md](docs/getting-started.md) | 처음 시작하는 사람용 — 개념·용어·15분 튜토리얼·일상 사용 |
+| [docs/upgrading.md](docs/upgrading.md) | 설치·운영 이행 가이드 (소스/make install → Homebrew + brew services, 정기 업그레이드) |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | 자주 만나는 문제 (PATH, 시맨틱 검색, 웹 UI 인증) |
 
 **설계 기록** — 각 기능이 어떤 결정으로 태어났나

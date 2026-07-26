@@ -142,9 +142,16 @@ onnxruntime과 링크된다.
   `/opt/homebrew/lib`·`/usr/local/lib`·`/usr/lib` 순. 표준 brew(Apple Silicon/Intel)는
   자동으로 찾고, Linuxbrew·비표준 prefix는 포뮬러 caveats가 환경변수를 안내한다.
 - **모델**: 설치 후 `canopy model pull`(1회 ~2.3GB)이 필요하다 — 포뮬러 caveats에 명시.
+- **서비스**: 포뮬러의 `service` 블록으로 `brew services start canopy`(웹 UI, localhost:8737).
+  포뮬러만 바뀌고 소스 버전은 그대로인 변경(서비스 블록 추가 등)은 새 태그가 아니라
+  포뮬러의 `revision`을 올린다 — 기존 설치가 `brew upgrade`로 받게.
 
 GoReleaser가 만드는 `*_lite` 아카이브는 **keyword 검색만** 되는 의존성 없는 바이너리다
 (cgo 없음). 시맨틱 검색을 원하면 Homebrew 소스 빌드나 `make build`를 쓴다.
+
+> 설치 방식 자체를 옮기는 것(소스/`make install` → brew, 정기 업그레이드)은 **사용자
+> 이행**이라 별도 문서가 다룬다: [upgrading.md](upgrading.md). 이 문서(versioning)는 왜
+> 이렇게 설계했는지, upgrading은 어떻게 옮기는지를 나눠 담는다.
 
 ## 커밋 규칙
 
