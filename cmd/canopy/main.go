@@ -305,6 +305,7 @@ func cmdReindex() *cobra.Command {
 func cmdSearch() *cobra.Command {
 	var mode string
 	var topK int
+	var noMark bool
 	c := &cobra.Command{
 		Use:   "search <query>",
 		Short: "Search the wiki (hybrid = BM25 keyword + semantic vectors)",
@@ -368,6 +369,20 @@ func cmdSearch() *cobra.Command {
 			case "hybrid":
 				hits = search.Fuse(topK, kw, sem)
 			}
+			if !noMark {
+				// The query is an event (search→read trail); hits are
+				// exposure and never marked (H5). Unanswered queries are
+				// demand — same gap file as the web (H10).
+				attention.LogSearchEvent(w, attention.DoorAgent, query)
+				kwEmpty := mode != "semantic" && len(kw) == 0
+				if len(hits) == 0 || kwEmpty {
+					top := 0.0
+					if len(hits) > 0 {
+						top = hits[0].Score
+					}
+					attention.LogGap(w, attention.DoorAgent, query, len(hits), top)
+				}
+			}
 			if flagJSON {
 				return emitJSON(map[string]any{"query": query, "mode": mode, "hits": hits})
 			}
@@ -386,6 +401,7 @@ func cmdSearch() *cobra.Command {
 	}
 	c.Flags().StringVar(&mode, "mode", "hybrid", "keyword|semantic|hybrid")
 	c.Flags().IntVarP(&topK, "top-k", "k", 10, "number of results")
+	c.Flags().BoolVar(&noMark, "no-mark", false, "search without recording the query event/gap")
 	return c
 }
 

@@ -31,6 +31,8 @@ const (
 	KindView   = "view"   // web: page opened (weaker than a read)
 	KindRead   = "read"   // web: explicit/auto read mark
 	KindReread = "reread" // web: explicit re-read of an already-read page
+	KindSearch = "search" // either door: a query was asked (slug empty —
+	// the query itself is recorded, never the exposed hits, per H5)
 )
 
 // schemaVersion is the event DB's PRAGMA user_version. The DB is
@@ -97,7 +99,7 @@ type Event struct {
 
 // Recent returns the latest n events, newest first.
 func (e *Events) Recent(n int) ([]Event, error) {
-	rows, err := e.db.Query(`SELECT ts, slug, door, kind, meta FROM events ORDER BY id DESC LIMIT ?`, n)
+	rows, err := e.db.Query(`SELECT ts, slug, door, kind, meta FROM events ORDER BY ts DESC, id DESC LIMIT ?`, n)
 	if err != nil {
 		return nil, err
 	}
@@ -119,4 +121,92 @@ func (e *Events) CountBySlug(slug string) (int, error) {
 	var n int
 	err := e.db.QueryRow(`SELECT COUNT(*) FROM events WHERE slug = ?`, strings.ToLower(slug)).Scan(&n)
 	return n, err
+}
+
+// BySlug returns one page's latest events, newest first — the per-page
+// attention panel's raw material.
+func (e *Events) BySlug(slug string, n int) ([]Event, error) {
+	rows, err := e.db.Query(`SELECT ts, slug, door, kind, meta FROM events WHERE slug = ? ORDER BY ts DESC, id DESC LIMIT ?`,
+		strings.ToLower(slug), n)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanEvents(rows)
+}
+
+func scanEvents(rows *sql.Rows) ([]Event, error) {
+	var out []Event
+	for rows.Next() {
+		var ev Event
+		if err := rows.Scan(&ev.TS, &ev.Slug, &ev.Door, &ev.Kind, &ev.Meta); err != nil {
+			return nil, err
+		}
+		out = append(out, ev)
+	}
+	return out, rows.Err()
+}
+
+// Consumed aggregates one page's events for a window — digest's
+// "most consumed" retrospective material (invariant G8).
+type Consumed struct {
+	Slug  string `json:"slug"`
+	Total int    `json:"events"`
+	Web   int    `json:"web_events"`
+	Agent int    `json:"agent_events"`
+}
+
+// TopConsumed ranks pages by access events since the cutoff. Search
+// events carry no slug and are excluded — queries are demand, not
+// consumption.
+func (e *Events) TopConsumed(since time.Time, n int) ([]Consumed, error) {
+	rows, err := e.db.Query(`
+		SELECT slug, COUNT(*),
+		       SUM(door = 'web'), SUM(door = 'agent')
+		FROM events
+		WHERE ts >= ? AND slug <> ''
+		GROUP BY slug
+		ORDER BY COUNT(*) DESC, slug
+		LIMIT ?`, since.Format(time.RFC3339), n)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Consumed
+	for rows.Next() {
+		var c Consumed
+		if err := rows.Scan(&c.Slug, &c.Total, &c.Web, &c.Agent); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
+// WeeklyCounts buckets one page's events into per-week counts covering
+// the last `weeks` weeks, oldest bucket first — the sparkline's data.
+func (e *Events) WeeklyCounts(slug string, weeks int, now time.Time) ([]int, error) {
+	cutoff := now.Add(-time.Duration(weeks) * 7 * 24 * time.Hour)
+	rows, err := e.db.Query(`SELECT ts FROM events WHERE slug = ? AND ts >= ?`,
+		strings.ToLower(slug), cutoff.Format(time.RFC3339))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	counts := make([]int, weeks)
+	for rows.Next() {
+		var ts string
+		if err := rows.Scan(&ts); err != nil {
+			return nil, err
+		}
+		t, err := time.Parse(time.RFC3339, ts)
+		if err != nil {
+			continue
+		}
+		idx := weeks - 1 - int(now.Sub(t).Hours()/(24*7))
+		if idx >= 0 && idx < weeks {
+			counts[idx]++
+		}
+	}
+	return counts, rows.Err()
 }

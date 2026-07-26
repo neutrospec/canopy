@@ -55,5 +55,19 @@
     </ul>
     {{else}}<p class="muted">없음</p>{{end}}
   </footer>
+  {{if .AttnRecent}}
+  <details class="attn">
+    <summary class="muted">접근 기록{{if .Spark}} <span class="sparkwrap">{{.Spark}}</span>{{end}}</summary>
+    <p class="muted attnsum">
+      {{if .Read}}읽음 {{.Read.Count}}회{{if .ReadAgo}} (마지막 {{.ReadAgo}}){{end}}{{else}}아직 안 읽음{{end}}{{if .AgentDays}} · 🤖 에이전트 {{.AgentDays}}일{{end}}
+      · <a href="/history">전체 기록 →</a>
+    </p>
+    <ul class="hist">
+      {{range .AttnRecent}}
+      <li><span class="histtime muted">{{.Time}}</span> <span class="chip histkind">{{if .Agent}}🤖 {{end}}{{.Label}}</span></li>
+      {{end}}
+    </ul>
+  </details>
+  {{end}}
 </article>
 {{end}}

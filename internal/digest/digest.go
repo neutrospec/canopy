@@ -31,6 +31,20 @@ type Result struct {
 	TagCounts    map[string]int `json:"tag_counts"`    // tags of created pages
 	Decisions    []PageRef      `json:"decisions"`     // pages tagged `decision`, whole wiki, chronological
 	Stats        Stats          `json:"stats"`
+	// TopConsumed is attention-fed retrospective material: what was
+	// actually accessed in the window, measured from the machine-local
+	// event log (invariant G8). The cmd layer attaches it — this package
+	// stays a pure scan collector.
+	TopConsumed []Consumed `json:"top_consumed"`
+}
+
+// Consumed is one page's access tally for the window.
+type Consumed struct {
+	Slug   string `json:"slug"`
+	Title  string `json:"title"`
+	Events int    `json:"events"`
+	Web    int    `json:"web_events"`
+	Agent  int    `json:"agent_events"`
 }
 
 type Stats struct {
@@ -69,6 +83,7 @@ func Collect(scan *wiki.ScanResult, since time.Time) *Result {
 		CreatedPages: []PageRef{},
 		UpdatedPages: []PageRef{},
 		Decisions:    []PageRef{},
+		TopConsumed:  []Consumed{},
 	}
 	res.Stats.Total = len(scan.Pages)
 	cutoff := since.Format("2006-01-02")
@@ -155,6 +170,12 @@ func (r *Result) Render() string {
 			parts = append(parts, fmt.Sprintf("%s×%d", t.tag, t.n))
 		}
 		b.WriteString(strings.Join(parts, ", ") + "\n")
+	}
+	if len(r.TopConsumed) > 0 {
+		b.WriteString("\nMOST CONSUMED (web + agent access, this machine)\n")
+		for _, c := range r.TopConsumed {
+			fmt.Fprintf(&b, "  %3d×  %-40s %s\n", c.Events, c.Slug, c.Title)
+		}
 	}
 	if len(r.Decisions) > 0 {
 		b.WriteString("\nDECISION TIMELINE (all time)\n")

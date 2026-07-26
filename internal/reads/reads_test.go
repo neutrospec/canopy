@@ -122,3 +122,19 @@ func TestRenameMovesAgent(t *testing.T) {
 		t.Fatalf("agent record not renamed: %+v", s.Agent)
 	}
 }
+
+// RecentAccessSlugs blends both doors by recency — the discovery
+// affinity signal includes what recall keeps citing (M12).
+func TestRecentAccessSlugs(t *testing.T) {
+	w := &config.Wiki{Root: t.TempDir(), Cfg: config.Default()}
+	s, _ := Load(w)
+	now := time.Date(2026, 7, 26, 9, 0, 0, 0, time.UTC)
+	s.Mark("web-old", "explicit", now.Add(-72*time.Hour))
+	s.MarkAgent("agent-new", now.Add(-1*time.Hour))
+	s.Mark("web-mid", "auto", now.Add(-24*time.Hour))
+	got := s.RecentAccessSlugs(3)
+	want := []string{"agent-new", "web-mid", "web-old"}
+	if len(got) != 3 || got[0] != want[0] || got[1] != want[1] || got[2] != want[2] {
+		t.Fatalf("blend order wrong: got %v want %v", got, want)
+	}
+}

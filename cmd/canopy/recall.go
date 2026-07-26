@@ -102,6 +102,24 @@ func cmdDigest() *cobra.Command {
 				return err
 			}
 			res := digest.Collect(scan, cutoff)
+			// Attach consumption stats from the local event log (G8),
+			// best-effort: no DB yet just means no section. Slugs whose
+			// page no longer exists are dropped — 실존 페이지만.
+			if ev, err := attention.Open(w.AttentionDBPath()); err == nil {
+				if top, err := ev.TopConsumed(cutoff, 10); err == nil {
+					for _, t := range top {
+						p, ok := scan.BySlug[t.Slug]
+						if !ok {
+							continue
+						}
+						res.TopConsumed = append(res.TopConsumed, digest.Consumed{
+							Slug: t.Slug, Title: p.Title,
+							Events: t.Total, Web: t.Web, Agent: t.Agent,
+						})
+					}
+				}
+				ev.Close()
+			}
 			if flagJSON {
 				return emitJSON(res)
 			}

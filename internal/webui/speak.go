@@ -7,12 +7,11 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/attention"
 	"github.com/neutrospec/canopy/internal/reads"
 	"github.com/neutrospec/canopy/internal/resurface"
 	"github.com/neutrospec/canopy/internal/store"
@@ -111,6 +110,8 @@ func (s *Server) handleResurfaceFeedback(w http.ResponseWriter, r *http.Request)
 
 // --- search gap log ---
 
+// gapEntry mirrors attention.Gap for reading the jsonl; kept local so
+// the 점검 page tolerates any line shape it has historically written.
 type gapEntry struct {
 	Time    string  `json:"time"`
 	Query   string  `json:"query"`
@@ -118,13 +119,10 @@ type gapEntry struct {
 	Top     float64 `json:"top_score"`
 }
 
-func gapsPath(w *config.Wiki) string {
-	return filepath.Join(w.Root, "_meta", "webui", "search-gaps.jsonl")
-}
-
 // logSearchGap records deliberate searches the wiki couldn't answer:
 // zero results, or zero keyword hits (the term doesn't exist in the
-// wiki — semantic neighbors notwithstanding).
+// wiki — semantic neighbors notwithstanding). The write goes through
+// the shared door-agnostic writer (invariant H10).
 func (s *Server) logSearchGap(query string, results []result, kwEmpty bool) {
 	if len(results) > 0 && !kwEmpty {
 		return
@@ -133,21 +131,7 @@ func (s *Server) logSearchGap(query string, results []result, kwEmpty bool) {
 	if len(results) > 0 {
 		top = results[0].Score
 	}
-	e := gapEntry{Time: time.Now().Format(time.RFC3339), Query: query, Results: len(results), Top: top}
-	line, err := json.Marshal(e)
-	if err != nil {
-		return
-	}
-	path := gapsPath(s.w)
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return
-	}
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return
-	}
-	defer f.Close()
-	_, _ = f.Write(append(line, '\n'))
+	attention.LogGap(s.w, attention.DoorWeb, query, len(results), top)
 }
 
 func (s *Server) handleGaps(w http.ResponseWriter, r *http.Request) {
@@ -158,7 +142,7 @@ func (s *Server) handleGaps(w http.ResponseWriter, r *http.Request) {
 		Results int
 	}
 	byQuery := map[string]*agg{}
-	if f, err := os.Open(gapsPath(s.w)); err == nil {
+	if f, err := os.Open(attention.GapsPath(s.w)); err == nil {
 		sc := bufio.NewScanner(f)
 		for sc.Scan() {
 			var e gapEntry

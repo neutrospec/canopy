@@ -1,0 +1,28 @@
+{{define "content"}}
+<h1>기록</h1>
+<p class="muted">웹·에이전트 두 문으로 지나간 주의의 타임라인 — 이 머신의 이벤트 로그
+실측입니다. 검색이 어느 열람으로 이어졌는지 궤적이 그대로 보입니다.</p>
+
+{{if not .Days}}
+<p class="muted">아직 기록이 없습니다. 페이지를 읽거나, 에이전트가 <code>show</code>/<code>recall</code>로
+페이지를 소비하면 여기에 쌓입니다.</p>
+{{end}}
+
+{{range .Days}}
+<section class="histday">
+  <h2>{{.Date}}</h2>
+  <ul class="hist">
+    {{range .Entries}}
+    <li>
+      <span class="histtime muted">{{.Time}}</span>
+      <span class="chip histkind">{{if .Agent}}🤖 {{end}}{{.Label}}</span>
+      {{if .Query}}<a class="histquery" href="/search?q={{.Query}}">“{{.Query}}”</a>
+      {{else if .Title}}<a href="/page/{{.Slug}}">{{.Title}}</a>
+      {{else}}<span class="muted">{{.Slug}}</span>{{end}}
+      {{if gt .Count 1}}<span class="muted">×{{.Count}}</span>{{end}}
+    </li>
+    {{end}}
+  </ul>
+</section>
+{{end}}
+{{end}}

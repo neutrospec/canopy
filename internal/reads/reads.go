@@ -220,6 +220,36 @@ func (s *State) Rename(oldSlug, newSlug string) {
 	}
 }
 
+// RecentAccessSlugs returns up to n slugs by most recent access through
+// ANY door — the "current interest" signal for discovery affinity. The
+// agent door counts because the user's questions drive it: what recall
+// keeps citing is what the user is thinking about (web-ui-plan-4 M12).
+func (s *State) RecentAccessSlugs(n int) []string {
+	last := map[string]string{}
+	for slug, r := range s.Reads {
+		last[slug] = r.Last
+	}
+	for slug, a := range s.Agent {
+		if a.Last > last[slug] {
+			last[slug] = a.Last
+		}
+	}
+	type item struct{ slug, ts string }
+	items := make([]item, 0, len(last))
+	for slug, ts := range last {
+		items = append(items, item{slug, ts})
+	}
+	sort.Slice(items, func(i, j int) bool { return items[i].ts > items[j].ts })
+	if len(items) > n {
+		items = items[:n]
+	}
+	out := make([]string, len(items))
+	for i, it := range items {
+		out[i] = it.slug
+	}
+	return out
+}
+
 // RecentSlugs returns up to n read slugs, most recently read first —
 // the "current interest" signal for discovery ranking.
 func (s *State) RecentSlugs(n int) []string {

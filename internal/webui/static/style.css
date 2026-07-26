@@ -227,3 +227,18 @@ h2:hover .hanchor, h3:hover .hanchor, h4:hover .hanchor { opacity: 1; }
 .pagelist li, .results li { margin: .35rem 0; }
 .results .snippet { margin: .15rem 0 0; font-size: .88rem; color: var(--muted); }
 .results .score { margin-left: .4rem; }
+
+/* --- attention instruments (M12, web-ui-plan-4) --- */
+.histday { margin-top: 1.6rem; }
+.histday h2 { font-size: 1rem; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: .3rem; }
+ul.hist { list-style: none; padding-left: 0; }
+ul.hist li { margin: .3rem 0; display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+.histtime { font-variant-numeric: tabular-nums; font-size: .85rem; min-width: 3.2em; }
+.chip.histkind { font-size: .78rem; }
+.histquery { font-style: italic; }
+.attn { margin-top: 1.4rem; border-top: 1px solid var(--line); padding-top: .5rem; }
+.attn summary { cursor: pointer; }
+.attnsum { margin: .5rem 0 .2rem; }
+.sparkwrap { margin-left: .6rem; vertical-align: middle; }
+.spark rect { fill: var(--line); }
+.spark rect.on { fill: var(--accent); opacity: .55; }

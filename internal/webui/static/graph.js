@@ -62,6 +62,7 @@
   }
   function showTip(n) {
     const meta = [n.dir, `링크 ${n.deg}`, n.read ? "읽음" : "안 읽음"];
+    if (n.touches) meta.push(`접근 ${n.touches}회`);
     if (n.island) meta.push("🏝 섬");
     tip.innerHTML = `<b>${esc(n.title)}</b><span class="tipmeta">${esc(meta.join(" · "))}</span>` +
       (n.excerpt ? `<p>${esc(n.excerpt)}</p>` : "");
@@ -75,6 +76,13 @@
     .nodeCanvasObject((n, ctx, scale) => {
       const r = radius(n);
       const dim = highlightNodes.size > 0 && !highlightNodes.has(n.id);
+      if (n.heat > 0) { // attention heat: accessed pages glow (M12)
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r + 1.5 + n.heat * 1.3, 0, 2 * Math.PI);
+        ctx.fillStyle = dirColor[n.dir] || C.muted;
+        ctx.globalAlpha = (dim ? 0.15 : 1) * (0.07 + 0.07 * n.heat);
+        ctx.fill();
+      }
       ctx.globalAlpha = dim ? 0.15 : 1;
       ctx.beginPath();
       ctx.arc(n.x, n.y, r, 0, 2 * Math.PI);

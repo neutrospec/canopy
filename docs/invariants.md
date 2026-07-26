@@ -80,6 +80,7 @@
 | G5 | digest 수치는 실측 | `.stats.created` == `.created_pages \| length` (내부 일관성), created는 frontmatter 기준 |
 | G6 | bridge는 기본적으로 미연결 페어만, --include-linked 시 linked 필드로 구분 | 플래그 없이 → 전부 `linked == false`; 플래그 있이 → linked true/false 혼재 가능하되 필드 존재 |
 | G7 | new의 관련 페이지 제안은 임계값 이상 + 태그 일치 우선 | (임시 위키에서) `canopy new … --json \| jq '.related[].score'` 전부 ≥ 0.8, 최대 5건; 태그가 겹치는 페이지가 앞에 온다 |
+| G8 | digest 소비 통계는 이벤트 로그 실측 | `canopy digest --since 30d --json $W \| jq '.top_consumed[]?.events'` 전부 ≥ 1, 각 `.slug`는 실존 페이지 (`canopy show <slug>` 성공) |
 
 ## H. 웹 UI 상태 (_meta/webui)
 
@@ -93,6 +94,8 @@
 | H6 | resurface는 모든 문(웹·에이전트)의 최근 접근을 존중한다 | 오늘 `canopy show <slug>`(또는 웹 읽음) → `canopy resurface -n 20 --peek --json $W`의 picks에 그 slug 없음 |
 | H7 | agent 접근의 위키 기록은 일 단위 양자화 (읽기마다 커밋 소음 없음) | 같은 날 `canopy show <slug>` 2회 → 2회차 전후 `agent-reads.json` 해시 동일 (이벤트 DB에만 2건) |
 | H8 | 이벤트 DB는 위키 밖 머신-로컬, 위키 안에는 집계 JSON만 | `git -C $W ls-files _meta/attention/` → `agent-reads.json`뿐(*.db 없음) && `ls $XDG_STATE_HOME/canopy/attention/*.db` (기본 ~/.local/state/canopy) 존재 |
+| H9 | 기록 페이지(/history)는 이벤트 로그 실측 | `canopy show <slug>` 후 `curl -s localhost:8737/history` 응답에 그 slug 존재 (serve 실행 상태) |
+| H10 | 검색 갭은 문과 무관하게 한 파일에 쌓인다 | CLI `canopy search "없는단어xyz" $W` → `tail -1 $W/_meta/webui/search-gaps.jsonl`의 `query` 일치·`door == "agent"`; 웹 검색 갭은 같은 파일에 `door == "web"` |
 
 ## I. 웹 UI 쓰기·보안 (serve 실행 상태에서 점검)
 

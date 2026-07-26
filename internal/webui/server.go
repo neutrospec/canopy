@@ -44,7 +44,7 @@ type Server struct {
 func NewServer(w *config.Wiki, eng cembed.Engine) (*Server, error) {
 	s := &Server{w: w, eng: eng, tmpl: map[string]*template.Template{}}
 	funcs := template.FuncMap{"short": short}
-	for _, name := range []string{"home.html", "page.html", "search.html", "browse.html", "recent.html", "attention.html", "edit.html", "login.html", "setup.html", "discover.html", "gaps.html", "graph.html"} {
+	for _, name := range []string{"home.html", "page.html", "search.html", "browse.html", "recent.html", "attention.html", "edit.html", "login.html", "setup.html", "discover.html", "gaps.html", "graph.html", "history.html"} {
 		t, err := template.New("base.html").Funcs(funcs).ParseFS(assets, "templates/base.html", "templates/"+name)
 		if err != nil {
 			return nil, err
@@ -70,6 +70,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /special/random", s.handleRandom)
 	mux.HandleFunc("GET /graph", s.handleGraphPage)
 	mux.HandleFunc("GET /api/graph", s.handleAPIGraph)
+	mux.HandleFunc("GET /history", s.handleHistory)
 	mux.HandleFunc("GET /special/discover", s.handleDiscover)
 	mux.HandleFunc("GET /special/gaps", s.handleGaps)
 	mux.HandleFunc("POST /read/{slug}", s.handleReadMark)
@@ -183,10 +184,25 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 	}
 	// A page open is exposure-plus, not a read (원칙 12): it goes to the
 	// machine-local event log only, never into the read aggregates.
-	s.logEvent(slug, attention.KindView)
+	s.logEvent(slug, attention.KindView, "")
 	var agentDays int
 	if a := rs.Agent[slug]; a != nil {
 		agentDays = a.Days
+	}
+	// Per-page attention panel (M12): recent trail + 12-week sparkline
+	// from the local event log, best-effort.
+	var attnRecent []histEntry
+	var spark template.HTML
+	if ev, err := attention.Open(s.w.AttentionDBPath()); err == nil {
+		if events, err := ev.BySlug(slug, 6); err == nil {
+			for _, e := range events {
+				attnRecent = append(attnRecent, histEntryOf(e, "2006-01-02"))
+			}
+		}
+		if counts, err := ev.WeeklyCounts(slug, 12, time.Now()); err == nil {
+			spark = sparkSVG(counts)
+		}
+		ev.Close()
 	}
 	s.render(w, http.StatusOK, "page.html", map[string]any{
 		"Title":      p.Title,
@@ -198,6 +214,8 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 		"Read":       rs.Get(slug),
 		"ReadAgo":    readAgo(rs.Get(slug), time.Now()),
 		"AgentDays":  agentDays,
+		"AttnRecent": attnRecent,
+		"Spark":      spark,
 		"ReadSecs":   readThresholdSecs(p),
 		"Suggested":  s.suggestLinks(scan, p, backlinks),
 	})
@@ -227,13 +245,13 @@ func readAgo(r *reads.Read, now time.Time) string {
 // logEvent appends a web-door access event to the machine-local log,
 // best-effort: the event DB enriches instruments (web-ui-plan-4.md) but
 // must never break page serving.
-func (s *Server) logEvent(slug, kind string) {
+func (s *Server) logEvent(slug, kind, meta string) {
 	ev, err := attention.Open(s.w.AttentionDBPath())
 	if err != nil {
 		return
 	}
 	defer ev.Close()
-	ev.Log(time.Now(), slug, attention.DoorWeb, kind, "")
+	ev.Log(time.Now(), slug, attention.DoorWeb, kind, meta)
 }
 
 // readThresholdSecs scales the auto-read dwell requirement with page
@@ -344,6 +362,9 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
+	// The query itself is an event (search→read trail on /history);
+	// the exposed hits are never marked (H5).
+	s.logEvent("", attention.KindSearch, query)
 	s.logSearchGap(query, res, kwEmpty)
 	s.render(w, http.StatusOK, "search.html", map[string]any{
 		"Title":   fmt.Sprintf("search: %s", query),

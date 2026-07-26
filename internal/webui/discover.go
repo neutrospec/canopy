@@ -35,7 +35,8 @@ func (s *Server) discoverRanked(scan *wiki.ScanResult, rs *reads.State, now time
 		st.Close()
 	}
 	var recentVecs [][]float32
-	for _, slug := range rs.RecentSlugs(affinityRecentK) {
+	// Affinity blends both doors: recall citations are interest too.
+	for _, slug := range rs.RecentAccessSlugs(affinityRecentK) {
 		if v, ok := vectors[slug]; ok {
 			recentVecs = append(recentVecs, v)
 		}
@@ -105,9 +106,9 @@ func (s *Server) handleReadMark(w http.ResponseWriter, r *http.Request) {
 		// A repeat mark is the "다시 읽음" affordance: count/last advance
 		// and the event log keeps the distinction for instruments.
 		if rs.IsRead(slug) {
-			s.logEvent(slug, attention.KindReread)
+			s.logEvent(slug, attention.KindReread, "")
 		} else {
-			s.logEvent(slug, attention.KindRead)
+			s.logEvent(slug, attention.KindRead, "")
 		}
 		rs.Mark(slug, "explicit", time.Now())
 	}
@@ -139,7 +140,7 @@ func (s *Server) handleReadAuto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !rs.IsRead(slug) {
-		s.logEvent(slug, attention.KindRead)
+		s.logEvent(slug, attention.KindRead, "")
 		rs.Mark(slug, "auto", time.Now())
 		if err := rs.Save(s.w); err != nil {
 			s.fail(w, err)

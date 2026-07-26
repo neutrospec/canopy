@@ -19,6 +19,8 @@ type graphAPINode struct {
 	Deg     int    `json:"deg"`     // total degree — drives node size
 	Read    bool   `json:"read"`    // ties into the read-history loop
 	Island  bool   `json:"island"`  // outside the largest connected component
+	Heat    int    `json:"heat"`    // attention temperature 0–3 (glow strength)
+	Touches int    `json:"touches"` // human read count + agent touch days (tooltip)
 	Excerpt string `json:"excerpt"` // hover tooltip — shipped upfront so the tip never waits
 }
 
@@ -68,6 +70,24 @@ func (s *Server) handleAPIGraph(w http.ResponseWriter, r *http.Request) {
 	nodes := make([]graphAPINode, 0, len(scan.Pages))
 	for _, p := range scan.Pages {
 		slug := strings.ToLower(p.Slug)
+		// Attention heat from the synced aggregates (both doors): the
+		// knowledge graph shows where attention actually goes (M12).
+		touches := 0
+		if r := rs.Get(slug); r != nil {
+			touches += r.Count
+		}
+		if a := rs.Agent[slug]; a != nil {
+			touches += a.Days
+		}
+		heat := 0
+		switch {
+		case touches >= 5:
+			heat = 3
+		case touches >= 2:
+			heat = 2
+		case touches >= 1:
+			heat = 1
+		}
 		nodes = append(nodes, graphAPINode{
 			ID:      slug,
 			Title:   p.Title,
@@ -75,6 +95,8 @@ func (s *Server) handleAPIGraph(w http.ResponseWriter, r *http.Request) {
 			Deg:     deg[slug],
 			Read:    rs.IsRead(slug),
 			Island:  islands[slug],
+			Heat:    heat,
+			Touches: touches,
 			Excerpt: FirstParagraph(p.Body, 160),
 		})
 	}
