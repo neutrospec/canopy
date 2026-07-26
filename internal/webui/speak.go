@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/reads"
 	"github.com/neutrospec/canopy/internal/resurface"
 	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
@@ -50,7 +51,11 @@ func (s *Server) todaysCard() (*resurface.Pick, *resurface.Bridge) {
 	now := time.Now()
 	rng := rand.New(rand.NewSource(now.UnixNano()))
 	changed := false
-	if picks, err := resurface.PickPages(scan, st, "auto", 1, now, rng); err == nil && len(picks) > 0 {
+	rd, err := reads.Load(s.w)
+	if err != nil {
+		rd = nil
+	}
+	if picks, err := resurface.PickPages(scan, st, rd, "auto", 1, now, rng); err == nil && len(picks) > 0 {
 		s.daily.pick = &picks[0]
 		st.MarkShown([]string{picks[0].Slug}, now)
 		changed = true

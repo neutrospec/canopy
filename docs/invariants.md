@@ -88,6 +88,11 @@
 | H1 | 읽기 이력은 위키에 커밋되는 상태다 (파생 캐시 아님) | 읽음 표시 후 `git -C $W status --short` 에 `_meta/webui/reads.json` 등장, `canopy sync` 후 clean |
 | H2 | reads의 source는 explicit\|auto 뿐이고 explicit은 auto로 강등되지 않는다 | `jq -r '.reads[].source' $W/_meta/webui/reads.json \| sort -u` ⊆ {explicit, auto}; 읽음 페이지에서 auto 감지가 다시 와도 source 유지 |
 | H3 | mv는 읽기 이력을 함께 이관한다 | 읽음 표시 → `canopy mv <page> --slug new-name` → reads.json에 새 slug만 존재 |
+| H4 | agent 접근은 human 읽음 등급을 오염시키지 않는다 (unread 배지 유지) | 미읽음 페이지에 `canopy show <slug>` → `jq '.reads' $W/_meta/webui/reads.json`에 해당 slug 없음(또는 기존 source 불변), `_meta/attention/agent-reads.json`에만 기록. 웹에서 여전히 unread |
+| H5 | 검색 노출은 읽음이 아니다 | `canopy search "질의"` 실행 전후 `_meta/webui/reads.json`·`_meta/attention/agent-reads.json` 해시 동일 |
+| H6 | resurface는 모든 문(웹·에이전트)의 최근 접근을 존중한다 | 오늘 `canopy show <slug>`(또는 웹 읽음) → `canopy resurface -n 20 --peek --json $W`의 picks에 그 slug 없음 |
+| H7 | agent 접근의 위키 기록은 일 단위 양자화 (읽기마다 커밋 소음 없음) | 같은 날 `canopy show <slug>` 2회 → 2회차 전후 `agent-reads.json` 해시 동일 (이벤트 DB에만 2건) |
+| H8 | 이벤트 DB는 위키 밖 머신-로컬, 위키 안에는 집계 JSON만 | `git -C $W ls-files _meta/attention/` → `agent-reads.json`뿐(*.db 없음) && `ls $XDG_STATE_HOME/canopy/attention/*.db` (기본 ~/.local/state/canopy) 존재 |
 
 ## I. 웹 UI 쓰기·보안 (serve 실행 상태에서 점검)
 

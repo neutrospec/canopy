@@ -36,10 +36,11 @@ lite 빌드로도 `search --mode hybrid`가 keyword로 강등되며 exit 0(F2).
 | 데이터 스키마 (정수) | 재현 불가 상태를 어디까지 이행했나 | `$XDG_CONFIG_HOME/canopy/state.json` |
 | 캐시 스키마 (`"2"`) | 파생 인덱스 DB 레이아웃 | `internal/store.SchemaVersion` |
 
-### 규칙 1 — 재현 불가 상태를 바꾸면 사다리에 rung을 추가한다
+### 규칙 1 — 재현 불가 **머신-로컬** 상태를 바꾸면 사다리에 rung을 추가한다
 
-전역 설정 형식, 모델·XDG 디렉토리 레이아웃, 위키 `_meta/*` 형식처럼 **마크다운에서
-다시 만들 수 없는** 상태를 옛 데이터가 만족 못 하게 바꾼다면:
+전역 설정 형식, 모델·XDG 디렉토리 레이아웃, `$XDG_STATE_HOME`의 이벤트 DB처럼
+**이 머신에 있고 마크다운에서 다시 만들 수 없는** 상태를 옛 데이터가 만족 못 하게
+바꾼다면:
 
 1. `internal/migrate/migrations.go`의 `ladder` **끝에** `Migration{To: N, …}` 추가.
    **이미 배포된 rung은 절대 수정·삭제·재배열하지 않는다** — 역사적 사실이다.
@@ -52,6 +53,15 @@ lite 빌드로도 `search --mode hybrid`가 keyword로 강등되며 exit 0(F2).
 
 startup에서 `migrate.Ensure()`가 자동으로 도므로, 새 버전 첫 실행이 간극을 밟아
 올라간다. 손으로 확인: `canopy migrate status`.
+
+### 규칙 1b — 위키와 함께 여행하는 파일(`_meta/*`)은 사다리가 아니라 self-version
+
+사다리의 이행 기록은 **머신-로컬**(`state.json`)인데 위키 파일은 git으로 기기 간
+여행한다 — 이행을 마친 머신이 옛 형식의 위키를 clone하면 사다리는 다시 돌지 않는다.
+그래서 `_meta/*` 파일 형식은 **파일 안의 `version` 필드**로 진화한다: Load가 옛
+버전을 관용적으로 읽고, 형식 변경은 additive하게(모르는 필드를 깨뜨리지 않게).
+구버전 canopy가 다시 저장하며 새 필드를 떨어뜨릴 위험이 있으면 **별도 파일**로
+분리한다 (`agent-reads.json`이 본보기 — [docs/web-ui-plan-4.md](docs/web-ui-plan-4.md)).
 
 ### 규칙 2 — 인덱스 DB를 바꾸면 사다리가 아니라 캐시 버전을 올린다
 

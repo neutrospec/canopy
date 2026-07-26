@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/neutrospec/canopy/internal/reads"
 	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
 )
@@ -35,7 +36,12 @@ type Pick struct {
 // PickPages selects up to n resurface candidates.
 // strategy: "random" (forgotten), "hub" (stale-but-important), or
 // "auto" (70% random / 30% hub, per the original design).
-func PickPages(scan *wiki.ScanResult, st *State, strategy string, n int, now time.Time, rng *rand.Rand) ([]Pick, error) {
+//
+// "Forgotten" means no edit AND no access through any door: rd carries
+// the web + agent attention aggregates, so a page read yesterday on the
+// web or cited by recall is not a candidate (invariant H6). rd may be
+// nil (tests, degraded paths) — then edit dates alone decide, as before.
+func PickPages(scan *wiki.ScanResult, st *State, rd *reads.State, strategy string, n int, now time.Time, rng *rand.Rand) ([]Pick, error) {
 	backlinks := scan.Backlinks()
 
 	type cand struct {
@@ -50,6 +56,11 @@ func PickPages(scan *wiki.ScanResult, st *State, strategy string, n int, now tim
 		touched, err := time.Parse("2006-01-02", firstNonEmpty(p.Updated, p.Created))
 		if err != nil {
 			continue // unparseable dates never enter the pool
+		}
+		if rd != nil {
+			if t, ok := rd.LastAccess(p.Slug); ok && t.After(touched) {
+				touched = t
+			}
 		}
 		stale := now.Sub(touched)
 		if stale >= forgottenAfter {
@@ -86,10 +97,12 @@ func PickPages(scan *wiki.ScanResult, st *State, strategy string, n int, now tim
 			Outbound:  c.page.Links,
 			Excerpt:   excerpt(c.page.Body),
 		}
+		// Truthful now that reads feed the pool: "days" really means no
+		// edit and no recorded access (web/agent) for that long.
 		if strat == "stale-hub" {
-			p.Explanation = fmt.Sprintf("%d개 페이지가 여전히 참조하는데 %d일째 갱신이 없음", len(p.Backlinks), days)
+			p.Explanation = fmt.Sprintf("%d개 페이지가 여전히 참조하는데 %d일째 열람·갱신이 없음", len(p.Backlinks), days)
 		} else {
-			p.Explanation = fmt.Sprintf("%d일간 다시 본 적 없는 페이지", days)
+			p.Explanation = fmt.Sprintf("%d일간 열람·갱신이 없던 페이지", days)
 		}
 		picks = append(picks, p)
 	}

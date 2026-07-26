@@ -10,12 +10,14 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/neutrospec/canopy/internal/attention"
 	"github.com/neutrospec/canopy/internal/digest"
 	"github.com/neutrospec/canopy/internal/wiki"
 )
 
 func cmdRecall() *cobra.Command {
 	var topK, perPage int
+	var noMark bool
 	c := &cobra.Command{
 		Use:   "recall <question>",
 		Short: "Chunk-level evidence for a question (agent memory: verbatim chunks + source slugs)",
@@ -47,6 +49,20 @@ so an agent can inject them into context and cite [[slug]] sources.`,
 			if err != nil {
 				return err
 			}
+			// Returned chunks are consumption, not mere exposure: their
+			// text enters the agent's context and gets cited as [[slug]].
+			if !noMark && len(chunks) > 0 {
+				seen := map[string]bool{}
+				var slugs []string
+				for _, h := range chunks {
+					k := strings.ToLower(h.Slug)
+					if !seen[k] {
+						seen[k] = true
+						slugs = append(slugs, h.Slug)
+					}
+				}
+				touchAttention(w, slugs, attention.KindRecall, query)
+			}
 			if flagJSON {
 				return emitJSON(map[string]any{"query": query, "chunks": chunks})
 			}
@@ -62,6 +78,7 @@ so an agent can inject them into context and cite [[slug]] sources.`,
 	}
 	c.Flags().IntVarP(&topK, "top-k", "k", 6, "number of chunks")
 	c.Flags().IntVar(&perPage, "per-page", 2, "max chunks per page (0 = unlimited)")
+	c.Flags().BoolVar(&noMark, "no-mark", false, "read without recording an access (like --peek)")
 	return c
 }
 

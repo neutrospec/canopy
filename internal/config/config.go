@@ -49,6 +49,11 @@ func CacheHome() string { return xdgDir("XDG_CACHE_HOME", ".cache") }
 // DataHome is $XDG_DATA_HOME/canopy (default ~/.local/share/canopy).
 func DataHome() string { return xdgDir("XDG_DATA_HOME", filepath.Join(".local", "share")) }
 
+// StateHome is $XDG_STATE_HOME/canopy (default ~/.local/state/canopy) —
+// machine-local, non-derivable history (the attention event log). Not cache
+// (cannot be rebuilt) and not data (it is history, per the XDG state spec).
+func StateHome() string { return xdgDir("XDG_STATE_HOME", filepath.Join(".local", "state")) }
+
 type Config struct {
 	Schema    Schema    `toml:"schema"`
 	Embedding Embedding `toml:"embedding"`
@@ -125,6 +130,14 @@ type Wiki struct {
 func (w *Wiki) DBPath() string {
 	sum := sha256.Sum256([]byte(w.Root))
 	return filepath.Join(CacheHome(), "index", hex.EncodeToString(sum[:])[:12]+".db")
+}
+
+// AttentionDBPath is the machine-local access-event log for this wiki,
+// keyed like DBPath but under state (it is history, not a rebuildable
+// cache — see docs/web-ui-plan-4.md).
+func (w *Wiki) AttentionDBPath() string {
+	sum := sha256.Sum256([]byte(w.Root))
+	return filepath.Join(StateHome(), "attention", hex.EncodeToString(sum[:])[:12]+".db")
 }
 
 func (w *Wiki) TOMLPath() string    { return filepath.Join(w.Root, "canopy.toml") }

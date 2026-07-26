@@ -48,7 +48,8 @@ Karpathy의 LLM wiki 철학에서 Memex가 못 풀었던 문제는 "누가 유�
 | 지식 (페이지, raw/) | 위키 repo, 커밋 | 원본 — 사람과 LLM의 산출물 |
 | 스키마 (canopy.toml) | 위키 repo, 커밋 | 원본 — 데이터의 규칙은 데이터와 함께 여행 |
 | resurface 상태 (`_meta/resurface/`) | 위키 repo, 커밋 | **재현 불가** 상태 — 기기 간 동기화 필요 |
-| 읽기 이력·검색 갭 (`_meta/webui/`) | 위키 repo, 커밋 | **재현 불가** 상태 — 주의(attention)의 기록도 동기화 필요 (원칙 12) |
+| 읽기 이력·검색 갭 (`_meta/webui/`) · 에이전트 접근 집계 (`_meta/attention/`) | 위키 repo, 커밋 | **재현 불가** 상태 — 주의(attention)의 기록도 동기화 필요 (원칙 12) |
+| 접근 이벤트 상세 | `$XDG_STATE_HOME/canopy/attention/<해시>.db` | 머신-로컬 상태 — 재현 불가지만 로컬-보강. 동기화되는 진실은 위 `_meta` 집계 (원칙 12, [web-ui-plan-4.md](web-ui-plan-4.md)) |
 | 검색 인덱스 | `$XDG_CACHE_HOME/canopy/index/<해시>.db` | 파생 캐시 — 위키 밖, 언제든 재구축 |
 | 웹 인증 (`webauth.json`) | `$XDG_CONFIG_HOME/canopy` | 머신 로컬 **비밀** — git으로 여행하면 안 되는 것 |
 | 전역 설정 / 모델 | `$XDG_CONFIG_HOME/canopy` / `$XDG_DATA_HOME/canopy` | 머신 로컬 (XDG Base Directory 준수) |
@@ -170,12 +171,21 @@ serve의 기본 바인딩은 localhost다. loopback 밖으로 여는 순간 인�
 ### 12. 주의(attention)도 상태다 **[코드]**
 
 무엇을 읽었는가는 재현 불가능한 상태이므로 위키에 커밋되어 동기화된다
-(`_meta/webui/reads.json`). 기록의 등급: **명시(✓ 읽음 버튼)가 1급**이고 자동
-감지(체류+스크롤)는 보조이며, 자동은 명시를 절대 강등하지 못하고 언제든 취소
-가능하다. 스쳐간 방문을 읽음으로 오인하지 않는 보수성이 추천(새발견)의 품질을
-지킨다. 같은 논리로 검색 갭(위키가 답 못한 질의)도 상태로 축적된다.
+(`_meta/webui/reads.json`, `_meta/attention/agent-reads.json`). 주의가 드나드는
+문은 둘이라 가정한다 — **웹**(사람)과 **에이전트**(show/recall) — 그리고 기록의
+등급 사다리는 명확하다: **명시(✓/다시 읽음)가 1급**, 자동 감지(체류+스크롤)는 보조,
+에이전트 소비는 별도 등급으로 **human 등급을 절대 오염시키지 않는다**(recall로
+인용됐다고 unread가 꺼지지 않는다). 반대 방향의 보수성도 지킨다: **노출은 읽음이
+아니다** — 검색 히트 나열·재발견 카드·관련 제안은 기록하지 않는다. 스쳐간 것을
+주의로 오인하지 않는 이 보수성이 추천과 재발견의 품질을 지킨다. 같은 논리로 검색
+갭(위키가 답 못한 질의)도 상태로 축적된다.
 
-- 점검: invariants H1–H3.
+저장은 2계층이다: 동기화되는 진실은 위키 안의 작은 **집계**(JSON, 일 단위 양자화)이고,
+개별 접근 이벤트 전량은 머신-로컬 SQLite(`$XDG_STATE_HOME`)에 남아 리치 UI를
+먹인다 — git이 동기화하는 저장소에 바이너리 DB를 넣지 않기 위한 분리다
+([web-ui-plan-4.md](web-ui-plan-4.md)).
+
+- 점검: invariants H1–H8.
 
 ### 13. 연결성은 도달 가능성까지다 **[검출]**
 

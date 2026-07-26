@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/neutrospec/canopy/internal/attention"
 	"github.com/neutrospec/canopy/internal/reads"
 	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
@@ -101,6 +102,13 @@ func (s *Server) handleReadMark(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("action") == "unread" {
 		rs.Unmark(slug)
 	} else {
+		// A repeat mark is the "다시 읽음" affordance: count/last advance
+		// and the event log keeps the distinction for instruments.
+		if rs.IsRead(slug) {
+			s.logEvent(slug, attention.KindReread)
+		} else {
+			s.logEvent(slug, attention.KindRead)
+		}
 		rs.Mark(slug, "explicit", time.Now())
 	}
 	if err := rs.Save(s.w); err != nil {
@@ -131,6 +139,7 @@ func (s *Server) handleReadAuto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !rs.IsRead(slug) {
+		s.logEvent(slug, attention.KindRead)
 		rs.Mark(slug, "auto", time.Now())
 		if err := rs.Save(s.w); err != nil {
 			s.fail(w, err)

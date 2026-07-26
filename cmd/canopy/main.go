@@ -15,6 +15,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/neutrospec/canopy/internal/attention"
 	"github.com/neutrospec/canopy/internal/buildinfo"
 	"github.com/neutrospec/canopy/internal/config"
 	"github.com/neutrospec/canopy/internal/embed"
@@ -620,7 +621,8 @@ func cmdLint() *cobra.Command {
 }
 
 func cmdShow() *cobra.Command {
-	return &cobra.Command{
+	var noMark bool
+	c := &cobra.Command{
 		Use: "show <page>",
 		// "view" is what agents reach for first; make it just work.
 		Aliases: []string{"view", "cat"},
@@ -643,6 +645,9 @@ func cmdShow() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if !noMark {
+				touchAttention(w, []string{p.Slug}, attention.KindShow, "")
+			}
 			if flagJSON {
 				return emitJSON(map[string]any{"rel_path": p.RelPath, "content": string(data)})
 			}
@@ -650,6 +655,16 @@ func cmdShow() *cobra.Command {
 			fmt.Print(string(data))
 			return nil
 		},
+	}
+	c.Flags().BoolVar(&noMark, "no-mark", false, "read without recording an access (like --peek)")
+	return c
+}
+
+// touchAttention records agent-door consumption, best-effort: a failed
+// mark warns on stderr but never breaks the read that triggered it.
+func touchAttention(w *config.Wiki, slugs []string, kind, meta string) {
+	if err := attention.Touch(w, slugs, kind, meta); err != nil && !flagJSON {
+		fmt.Fprintf(os.Stderr, "attention: %v\n", err)
 	}
 }
 

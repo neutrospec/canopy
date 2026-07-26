@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/neutrospec/canopy/internal/reads"
 	"github.com/neutrospec/canopy/internal/resurface"
 	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
@@ -39,7 +40,13 @@ func cmdResurface() *cobra.Command {
 			}
 			now := time.Now()
 			rng := rand.New(rand.NewSource(now.UnixNano()))
-			picks, err := resurface.PickPages(scan, st, strategy, n, now, rng)
+			// Attention aggregates keep recently-accessed pages out of the
+			// pool (H6); on load failure fall back to edit dates alone.
+			rd, err := reads.Load(w)
+			if err != nil {
+				rd = nil
+			}
+			picks, err := resurface.PickPages(scan, st, rd, strategy, n, now, rng)
 			if err != nil {
 				return err
 			}

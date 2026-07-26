@@ -179,6 +179,8 @@ canopy skills install --dir <path> # 특정 디렉토리만 (없으면 생성 �
 | `<wiki>/canopy.toml` | 위키의 스키마 (타입·태그 taxonomy) — 데이터와 함께 여행하므로 위키에 커밋 |
 | `<wiki>/_meta/resurface/` | 재현 불가 상태 (재발견 노출 이력·피드백) — 위키에 커밋 |
 | `<wiki>/_meta/webui/` | 재현 불가 상태 (읽기 이력·검색 갭) — 위키에 커밋, 기기 간 동기화 |
+| `<wiki>/_meta/attention/` | 재현 불가 상태 (에이전트 접근 집계, 일 단위) — 위키에 커밋 |
+| `~/.local/state/canopy/attention/<해시>.db` | 접근 이벤트 상세 (머신 로컬) — 타임라인 등 리치 UI용 |
 | `~/.cache/canopy/index/<해시>.db` | 파생 캐시 (FTS+벡터) — `reindex`로 언제든 재구축 |
 | `~/.config/canopy/config.toml` | 전역 설정 (`default_wiki`) |
 | `~/.config/canopy/state.json` | 데이터 스키마 버전 (마이그레이션 이행 지점) — 머신 로컬, 캐시 삭제·업그레이드에도 생존 |
@@ -227,6 +229,7 @@ Apple Silicon, int8 양자화 모델 기준:
 | [docs/web-ui-plan.md](docs/web-ui-plan.md) | 1차(M1–M4): 검색-우선 뷰어, facet, 웹 편집 |
 | [docs/web-ui-plan-2.md](docs/web-ui-plan-2.md) | 2차(M5–M8): 보안, 읽기 이력·새발견, 제안 링크, 말 거는 홈 |
 | [docs/web-ui-plan-3.md](docs/web-ui-plan-3.md) | 3차(M9–M10+): 현대 뷰어, 지식 그래프, 섬 검출 |
+| [docs/web-ui-plan-4.md](docs/web-ui-plan-4.md) | 4차(M11–M13): 주의(attention) 2계층 저장, 접근 추적, 계기판·비주얼 리프레시 |
 | [docs/web-ui-write-design.md](docs/web-ui-write-design.md) | 웹 쓰기의 동시성·충돌 설계 (단일 쓰기 파이프라인) |
 | [docs/web-ui-board.md](docs/web-ui-board.md) | 실행 보드 — 마일스톤별 작업·완료 기준(Exit)의 전 기록 |
 

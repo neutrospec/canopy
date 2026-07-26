@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/neutrospec/canopy/internal/attention"
 	"github.com/neutrospec/canopy/internal/config"
 	cembed "github.com/neutrospec/canopy/internal/embed"
 	"github.com/neutrospec/canopy/internal/indexer"
@@ -180,6 +181,13 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
+	// A page open is exposure-plus, not a read (원칙 12): it goes to the
+	// machine-local event log only, never into the read aggregates.
+	s.logEvent(slug, attention.KindView)
+	var agentDays int
+	if a := rs.Agent[slug]; a != nil {
+		agentDays = a.Days
+	}
 	s.render(w, http.StatusOK, "page.html", map[string]any{
 		"Title":      p.Title,
 		"Page":       p,
@@ -188,9 +196,44 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 		"GraphNodes": nodes,
 		"GraphEdges": edges,
 		"Read":       rs.Get(slug),
+		"ReadAgo":    readAgo(rs.Get(slug), time.Now()),
+		"AgentDays":  agentDays,
 		"ReadSecs":   readThresholdSecs(p),
 		"Suggested":  s.suggestLinks(scan, p, backlinks),
 	})
+}
+
+// readAgo renders "when did I last read this" for the page header:
+// 오늘 / 어제 / N일 전.
+func readAgo(r *reads.Read, now time.Time) string {
+	if r == nil {
+		return ""
+	}
+	t, err := time.Parse(time.RFC3339, r.Last)
+	if err != nil {
+		return ""
+	}
+	days := int(now.Sub(t).Hours() / 24)
+	switch {
+	case days <= 0:
+		return "오늘"
+	case days == 1:
+		return "어제"
+	default:
+		return fmt.Sprintf("%d일 전", days)
+	}
+}
+
+// logEvent appends a web-door access event to the machine-local log,
+// best-effort: the event DB enriches instruments (web-ui-plan-4.md) but
+// must never break page serving.
+func (s *Server) logEvent(slug, kind string) {
+	ev, err := attention.Open(s.w.AttentionDBPath())
+	if err != nil {
+		return
+	}
+	defer ev.Close()
+	ev.Log(time.Now(), slug, attention.DoorWeb, kind, "")
 }
 
 // readThresholdSecs scales the auto-read dwell requirement with page

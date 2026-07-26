@@ -10,12 +10,14 @@
     <a class="chip" href="/edit/{{.Page.Slug}}">✎ 편집</a>
     <form method="post" action="/read/{{.Page.Slug}}" class="readform" id="readform">
       {{if .Read}}
-      <span class="chip readmark">✓ 읽음{{if eq .Read.Source "auto"}} <small>자동</small>{{end}}</span>
+      <span class="chip readmark" title="처음 {{.Read.First}}">✓ {{if gt .Read.Count 1}}{{.Read.Count}}회 {{end}}읽음{{if .ReadAgo}} · {{.ReadAgo}}{{end}}{{if eq .Read.Source "auto"}} <small>자동</small>{{end}}</span>
+      <button class="chip" name="action" value="read" title="다시 읽었다고 기록 (횟수·날짜 갱신)">다시 읽음</button>
       <button class="chip" name="action" value="unread" title="읽음 취소">취소</button>
       {{else}}
       <button class="chip" name="action" value="read" title="단축키 r">✓ 읽음</button>
       {{end}}
     </form>
+    {{if .AgentDays}}<span class="muted" title="에이전트(show/recall)가 이 페이지를 소비한 일수">🤖 {{.AgentDays}}일</span>{{end}}
   </div>
   <div class="prose">{{.Body}}</div>
   {{if .GraphNodes}}

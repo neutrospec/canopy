@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/neutrospec/canopy/internal/reads"
 	"github.com/neutrospec/canopy/internal/wiki"
 )
 
@@ -38,7 +39,7 @@ func newState() *State {
 
 func TestPickHub(t *testing.T) {
 	scan := makeScan(t)
-	picks, err := PickPages(scan, newState(), "hub", 1, now, rand.New(rand.NewSource(1)))
+	picks, err := PickPages(scan, newState(), nil, "hub", 1, now, rand.New(rand.NewSource(1)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +56,7 @@ func TestPickRandomExcludesFreshAndCooldown(t *testing.T) {
 	st := newState()
 	rng := rand.New(rand.NewSource(2))
 	for i := 0; i < 20; i++ {
-		picks, err := PickPages(scan, st, "random", 1, now, rng)
+		picks, err := PickPages(scan, st, nil, "random", 1, now, rng)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -68,9 +69,30 @@ func TestPickRandomExcludesFreshAndCooldown(t *testing.T) {
 		st.MarkShown([]string{picks[0].Slug}, now)
 	}
 	// After both old pages are shown, the pool must be empty.
-	picks, _ := PickPages(scan, st, "random", 1, now, rng)
+	picks, _ := PickPages(scan, st, nil, "random", 1, now, rng)
 	if len(picks) != 0 {
 		t.Errorf("cooldown not respected: %+v", picks)
+	}
+}
+
+// A page accessed through any door (web read or agent show/recall) is
+// not "forgotten", no matter how old its updated date — invariant H6.
+func TestAccessExcludesFromPool(t *testing.T) {
+	scan := makeScan(t)
+	rd := &reads.State{Reads: map[string]*reads.Read{}, Agent: map[string]*reads.AgentRead{}}
+	rd.MarkAgent("forgotten", now.Add(-24*time.Hour))  // agent cited it yesterday
+	rd.Mark("hub", "explicit", now.Add(-48*time.Hour)) // human read it on the web
+	rng := rand.New(rand.NewSource(4))
+	for i := 0; i < 20; i++ {
+		picks, err := PickPages(scan, newState(), rd, "auto", 5, now, rng)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, p := range picks {
+			if p.Slug == "forgotten" || p.Slug == "hub" {
+				t.Fatalf("recently accessed page resurfaced: %s", p.Slug)
+			}
+		}
 	}
 }
 
@@ -79,7 +101,7 @@ func TestSnoozeAndDownvote(t *testing.T) {
 	st := newState()
 	st.Snooze("forgotten", 7, now)
 	st.AddFeedback("hub", "down", now)
-	picks, err := PickPages(scan, st, "auto", 5, now, rand.New(rand.NewSource(3)))
+	picks, err := PickPages(scan, st, nil, "auto", 5, now, rand.New(rand.NewSource(3)))
 	if err != nil {
 		t.Fatal(err)
 	}
