@@ -16,6 +16,9 @@ class Canopy < Formula
   url "https://github.com/neutrospec/canopy/archive/refs/tags/v0.2.0.tar.gz"
   sha256 "af629c76144545ba13ece884a852be43f4bc59bdac3a3ac700cc769f0448aece"
   license "MIT"
+  # Bump on formula-only changes that alter the install (same upstream tarball).
+  # rev 1: added the `service` block (brew services support).
+  revision 1
   head "https://github.com/neutrospec/canopy.git", branch: "main"
 
   depends_on "go" => :build
@@ -67,6 +70,20 @@ class Canopy < Formula
     system "go", "build", "-tags", "ORT", "-ldflags", ldflags, "-o", bin/"canopy", "./cmd/canopy"
   end
 
+  # `brew services start canopy` runs the web UI on http://localhost:8737.
+  # It resolves the wiki from default_wiki in ~/.config/canopy/config.toml —
+  # there is no cwd or --wiki here, so that config must be set (see caveats).
+  service do
+    run [opt_bin/"canopy", "serve"]
+    keep_alive true
+    log_path var/"log/canopy.log"
+    error_log_path var/"log/canopy.log"
+    # Under launchd there is no login shell/PATH. canopy already falls back to
+    # /opt/homebrew/lib for libonnxruntime, but pass the prefix so Linuxbrew and
+    # custom prefixes resolve semantic search too.
+    environment_variables HOMEBREW_PREFIX: HOMEBREW_PREFIX
+  end
+
   def caveats
     <<~EOS
       Semantic search uses a local bge-m3 ONNX model (~2.3GB). Download it once:
@@ -74,6 +91,11 @@ class Canopy < Formula
       Keyword search works without it. If the ONNX Runtime library is not found
       automatically (e.g. Linuxbrew or a non-standard prefix), point canopy at it:
         export CANOPY_ONNXRUNTIME_DIR="#{formula_opt_lib("onnxruntime")}"
+
+      To run the web UI as a background service (http://localhost:8737):
+        brew services start canopy
+      It serves the wiki named by default_wiki — set that first if you haven't:
+        echo 'default_wiki = "/path/to/wiki"' > ~/.config/canopy/config.toml
     EOS
   end
 
