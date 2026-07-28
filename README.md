@@ -232,6 +232,7 @@ Apple Silicon, int8 양자화 모델 기준:
 | [docs/web-ui-plan-3.md](docs/web-ui-plan-3.md) | 3차(M9–M10+): 현대 뷰어, 지식 그래프, 섬 검출 |
 | [docs/web-ui-plan-4.md](docs/web-ui-plan-4.md) | 4차(M11–M13): 주의(attention) 2계층 저장, 접근 추적, 계기판·비주얼 리프레시 |
 | [docs/web-ui-write-design.md](docs/web-ui-write-design.md) | 웹 쓰기의 동시성·충돌 설계 (단일 쓰기 파이프라인) |
+| [docs/reconcile-design.md](docs/reconcile-design.md) | 정규화 게이트 설계 — 편집은 어디서든, 정규화는 한 문으로 (모든 문의 변경을 본길이 재판단) |
 | [docs/web-ui-board.md](docs/web-ui-board.md) | 실행 보드 — 마일스톤별 작업·완료 기준(Exit)의 전 기록 |
 
 **검증** — 지금 건강한가
