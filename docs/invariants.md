@@ -117,20 +117,22 @@
 | J5 | 파생 캐시(인덱스 DB)는 마이그레이션 대상이 아니라 재구축 대상이다 (C4 재확인) | `migrate`가 `store`에 의존하지 않음: `grep -rn '"github.com/neutrospec/canopy/internal/store"' internal/migrate/` → 빈 출력. 캐시 손실 복구는 C4가 보증 |
 | J6 | 마이그레이션은 순서대로 적용되고 idempotent하다 | `go test ./internal/migrate/` 전부 통과 (F1에 포함) |
 
-## K. 정규화(reconcile) 게이트 ([reconcile-design.md](reconcile-design.md)) — 설계, 구현 대기
+## K. 정규화(reconcile) 게이트 ([reconcile-design.md](reconcile-design.md))
 
-> "정규화는 한 문으로": main의 진실은 본길의 판단을 거친다. 다른 문(웹·타 클론·
-> Obsidian)의 변경은 정규화 게이트가 재판단한다. 예방이 아니라 [검출]+사후 정규화.
+> "정규화는 한 문으로": 판단을 거친 내용의 해시가 원장(`_meta/reconcile/state.json`)에
+> 실리고 — 파이프라인 쓰기는 자동으로, 뒷길 변경은 검토(`bless`) 후 수동으로 — 원장과
+> 다른 페이지 내용이 곧 미정규화 외부 변경이다. 예방이 아니라 [검출]+사후 정규화.
+> 게이트는 opt-in: `bless --all`로 기준선을 잡기 전에는 침묵한다.
 
 | # | 불변식 | 점검 |
 |---|--------|------|
-| K1 | 정규화 마커는 위키에 커밋되는 상태다 (기기 간 동기화) | 정규화 후 `git -C $W status --short`에 `_meta/reconcile/state.json` 등장, `canopy sync` 후 clean |
-| K2 | 파이프라인 로그가 커버하지 않는 페이지 변경(뒷길)은 후보로 검출된다 | 스크래치 위키에서 페이지 파일 직접 편집 → `canopy reconcile --peek --json $W \| jq '.foreign[].rel_path'`에 그 파일 등장 |
-| K3 | 후보는 결정론적이다 (원칙 6) | 같은 상태에서 `canopy reconcile --peek --json` 반복 → 동일 출력; `.foreign[].dup_candidates[].similarity` 전부 임계값 이상 |
-| K4 | bless/정규화는 마커를 전진시켜 검토한 변경은 다시 뜨지 않는다 | `canopy reconcile bless <path>` 후 `--peek`의 `foreign[]`에서 그 path 사라짐 |
-| K5 | `--peek`은 흔적을 남기지 않는다 (E6와 같은 규율) | `--peek` 실행 전후 `_meta/reconcile/state.json` 해시 동일 |
-| K6 | 미정규화 외부 변경은 sync/status 배너로 노출된다 (원칙 5·2) | 페이지 파일 직접 편집 후 `canopy status $W` → ⚠ 미정규화 N건 배너 |
-| K7 | 정규화의 콘텐츠 수정은 writeops 경유다 (한 복도, 원칙 9) **[협약]** | 정규화로 페이지 수정 후 `logs/*.jsonl`에 엔트리 + `index/*.md` 재생성 (I2와 같은 확인) |
+| K1 | 원장은 위키에 커밋되는 상태다 (기기 간 동기화) | `bless` 후 `git -C $W status --short`에 `_meta/reconcile/state.json` 등장, `canopy sync` 후 clean |
+| K2 | 뒷길 변경은 후보로 검출되고, 파이프라인 쓰기는 후보가 아니다 (자동 축복) | 페이지 파일 직접 편집 → `canopy reconcile --json $W \| jq '.foreign[].rel_path'`에 등장; 이어서 그 페이지를 `canopy update`로 고치면 foreign에서 사라짐 |
+| K3 | 후보는 결정론적이다 (원칙 6) | 같은 상태에서 `canopy reconcile --json` 반복 → 동일 출력; `.foreign[].dup_candidates[].similarity` 전부 ≥ 0.8 |
+| K4 | bless는 현재 내용(부재 포함)을 원장에 기록해, 검토한 변경은 다시 뜨지 않는다 | `canopy reconcile bless <path>` 후 foreign에서 그 path 사라짐; 파일을 지운 뒤 bless → `deleted` 후보도 사라짐 |
+| K5 | 보고(기본 실행)는 흔적을 남기지 않는다 (E6와 같은 규율) | `canopy reconcile` 실행 전후 `_meta/reconcile/state.json` 해시 동일 |
+| K6 | 미정규화 외부 변경은 배너로 노출된다 (게이트 초기화 후; 원칙 5·2) | 페이지 파일 직접 편집 후 `canopy status $W` → stderr에 ⚠ 미정규화 N건 |
+| K7 | 정규화의 콘텐츠 수정은 writeops 경유다 (한 복도, 원칙 9) **[협약]** | 정규화로 페이지 수정 후 `logs/*.jsonl`에 엔트리 + `index/*.md` 재생성 (I2와 같은 확인) — 그 결과는 자동 축복(K2 후단) |
 
 ## 감사 절차
 
@@ -141,7 +143,7 @@
 5. G1–G7 (recall·digest·bridge — 임베딩 인덱스 필요)
 6. H·I는 `canopy serve`를 띄운 상태에서 (I1은 공개 바인딩 별도 기동, I2는 스크래치 위키 권장)
 7. J1–J5는 `canopy version --json` / `canopy migrate status --json`으로 (J6은 1의 `make test`에 포함)
-8. K1–K7은 스크래치 위키에서 파일 직접 편집 후 `canopy reconcile --peek --json`으로 (구현 후)
+8. K1–K7은 스크래치 위키에서 파일 직접 편집 후 `canopy reconcile --json` / `bless`로
 
 > 위반을 발견하면: (1) 그 위반이 **어느 명령을 우회해서** 생겼는지 찾고,
 > (2) 우회 경로를 막는 코드/lint를 추가하고, (3) 필요하면 이 목록에 항목을 늘린다.
