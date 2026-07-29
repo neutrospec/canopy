@@ -269,7 +269,7 @@ func (s *Server) handleSetupForm(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
-	s.render(w, http.StatusOK, "setup.html", map[string]any{"Title": "초기 설정"})
+	s.render(w, r, http.StatusOK, "setup.html", map[string]any{"Title": "초기 설정"})
 }
 
 func (s *Server) handleSetupSave(w http.ResponseWriter, r *http.Request) {
@@ -283,7 +283,7 @@ func (s *Server) handleSetupSave(w http.ResponseWriter, r *http.Request) {
 		r.FormValue("password"),
 	)
 	if err != nil {
-		s.render(w, http.StatusBadRequest, "setup.html", map[string]any{"Title": "초기 설정", "Error": err.Error()})
+		s.render(w, r, http.StatusBadRequest, "setup.html", map[string]any{"Title": "초기 설정", "Error": err.Error()})
 		return
 	}
 	s.setSession(w)
@@ -299,7 +299,7 @@ func (s *Server) handleLoginForm(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup", http.StatusFound)
 		return
 	}
-	s.render(w, http.StatusOK, "login.html", map[string]any{"Title": "로그인"})
+	s.render(w, r, http.StatusOK, "login.html", map[string]any{"Title": "로그인"})
 }
 
 func (s *Server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
@@ -312,7 +312,7 @@ func (s *Server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	s.render(w, http.StatusUnauthorized, "login.html", map[string]any{
+	s.render(w, r, http.StatusUnauthorized, "login.html", map[string]any{
 		"Title": "로그인", "Error": "아이디 또는 비밀번호가 올바르지 않습니다",
 	})
 }

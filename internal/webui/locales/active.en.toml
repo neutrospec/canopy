@@ -1,0 +1,63 @@
+# canopy web UI strings (English). See docs/web-ui-i18n.md. Keep the message
+# ID set identical to active.ko.toml (invariant M2). String messages first;
+# parameterized/plural tables at the end (TOML tables capture following keys).
+
+# --- navigation ---
+nav_browse = "Browse"
+nav_graph = "Graph"
+nav_discover = "Discover"
+nav_history = "History"
+nav_recent = "Recent"
+nav_checks = "Checks"
+nav_random = "Random"
+nav_logout = "Log out"
+
+# --- common ---
+search_placeholder = "Search…"
+lang_switch_label = "Language"
+
+# --- home (strings) ---
+home_title = "Today's attention"
+home_search_placeholder = "Search anything…"
+home_pages_suffix = "pages"
+home_band_aria = "Read progress by directory: width is page count, fill is read ratio"
+home_resurface_title = "Today's rediscovery"
+home_feedback_up = "Helpful"
+home_feedback_down = "Not interested"
+home_feedback_snooze = "Again in 7 days"
+home_bridge_title = "Suggested connection"
+home_bridge_hint = "If related, edit one page to add a [[link]], or ask the agent to \"connect them\"."
+home_discover_title = "Discover"
+home_seeall = "all →"
+home_recent_title = "Recently updated"
+home_history_link = "History →"
+
+# --- weekdays (time.Weekday: Sun=0 … Sat=6) ---
+wd_0 = "Sun"
+wd_1 = "Mon"
+wd_2 = "Tue"
+wd_3 = "Wed"
+wd_4 = "Thu"
+wd_5 = "Fri"
+wd_6 = "Sat"
+
+# --- parameterized / plural (tables — must be at the end) ---
+[home_resurface_stale]
+other = "forgotten for {{.Days}} days"
+
+[home_bridge_sim]
+other = "similarity {{.Sim}} but no link"
+
+[home_read_progress]
+other = "{{.Read}}/{{.Total}} read"
+
+[home_today]
+other = "today {{.Detail}}"
+
+[home_today_pages]
+one = "{{.Count}} page"
+other = "{{.Count}} pages"
+
+[home_today_searches]
+one = "{{.Count}} search"
+other = "{{.Count}} searches"

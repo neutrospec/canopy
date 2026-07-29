@@ -121,7 +121,7 @@ func (s *Server) handleBrowse(w http.ResponseWriter, r *http.Request) {
 		tagFacets = append(tagFacets, facet{t, tagCount[t], false, link(dir, typ, append(append([]string{}, tags...), t))})
 	}
 
-	s.render(w, http.StatusOK, "browse.html", map[string]any{
+	s.render(w, r, http.StatusOK, "browse.html", map[string]any{
 		"Title":    "browse",
 		"Pages":    pages,
 		"Dirs":     dirFacets,
@@ -177,7 +177,7 @@ func (s *Server) handleRecent(w http.ResponseWriter, r *http.Request) {
 			Exists: exists,
 		})
 	}
-	s.render(w, http.StatusOK, "recent.html", map[string]any{"Title": "최근 변경", "Rows": rows})
+	s.render(w, r, http.StatusOK, "recent.html", map[string]any{"Title": "최근 변경", "Rows": rows})
 }
 
 // handleAttention lists orphans and stale pages — the same signals
@@ -215,7 +215,7 @@ func (s *Server) handleAttention(w http.ResponseWriter, r *http.Request) {
 	}
 	sort.Slice(stale, func(i, j int) bool { return stale[i].Days > stale[j].Days })
 
-	s.render(w, http.StatusOK, "attention.html", map[string]any{
+	s.render(w, r, http.StatusOK, "attention.html", map[string]any{
 		"Title":     "점검",
 		"Orphans":   orphans,
 		"Stale":     stale,

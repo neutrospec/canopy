@@ -172,7 +172,7 @@ func (s *Server) handleDiscover(w http.ResponseWriter, r *http.Request) {
 	if len(scan.Pages) > 0 {
 		pct = readCount * 100 / len(scan.Pages)
 	}
-	s.render(w, http.StatusOK, "discover.html", map[string]any{
+	s.render(w, r, http.StatusOK, "discover.html", map[string]any{
 		"Title":     "새발견",
 		"Ranked":    ranked,
 		"ReadCount": readCount,

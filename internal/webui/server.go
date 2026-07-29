@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+
 	"github.com/neutrospec/canopy/internal/attention"
 	"github.com/neutrospec/canopy/internal/config"
 	cembed "github.com/neutrospec/canopy/internal/embed"
@@ -29,10 +31,14 @@ var assets embed.FS
 // Server renders the wiki read-only over HTTP. The engine may be nil,
 // in which case search degrades to keyword-only (same as the CLI).
 type Server struct {
-	w    *config.Wiki
-	eng  cembed.Engine
-	mu   sync.Mutex // serializes engine + store access
-	tmpl map[string]*template.Template
+	w   *config.Wiki
+	eng cembed.Engine
+	mu  sync.Mutex // serializes engine + store access
+	// tmpl is keyed by locale then template name: each locale gets its own
+	// parsed set with `t` bound to that locale's localizer (html/template
+	// binds funcs at parse time). See docs/web-ui-i18n.md.
+	tmpl map[string]map[string]*template.Template
+	i18n *i18nBundle
 
 	auth         *authStore
 	authRequired bool
@@ -41,17 +47,38 @@ type Server struct {
 	daily   daily
 }
 
+var pageTemplates = []string{"home.html", "page.html", "search.html", "browse.html", "recent.html", "attention.html", "edit.html", "login.html", "setup.html", "discover.html", "gaps.html", "graph.html", "history.html"}
+
 func NewServer(w *config.Wiki, eng cembed.Engine) (*Server, error) {
-	s := &Server{w: w, eng: eng, tmpl: map[string]*template.Template{}}
-	funcs := template.FuncMap{"short": short}
-	for _, name := range []string{"home.html", "page.html", "search.html", "browse.html", "recent.html", "attention.html", "edit.html", "login.html", "setup.html", "discover.html", "gaps.html", "graph.html", "history.html"} {
-		t, err := template.New("base.html").Funcs(funcs).ParseFS(assets, "templates/base.html", "templates/"+name)
-		if err != nil {
-			return nil, err
+	ib, err := loadBundle()
+	if err != nil {
+		return nil, err
+	}
+	s := &Server{w: w, eng: eng, i18n: ib, tmpl: map[string]map[string]*template.Template{}}
+	for _, lang := range ib.langs {
+		loc := ib.localizer(lang)
+		funcs := template.FuncMap{"short": short}
+		for k, v := range i18nFuncMap(loc) {
+			funcs[k] = v
 		}
-		s.tmpl[name] = t
+		set := map[string]*template.Template{}
+		for _, name := range pageTemplates {
+			t, err := template.New("base.html").Funcs(funcs).ParseFS(assets, "templates/base.html", "templates/"+name)
+			if err != nil {
+				return nil, err
+			}
+			set[name] = t
+		}
+		s.tmpl[lang] = set
 	}
 	return s, nil
+}
+
+// loc returns the localizer for the request's resolved locale — for Go
+// handlers that build dynamic display strings (invariant M: dynamic strings
+// are localized where the data lives, static labels in templates via {{t}}).
+func (s *Server) loc(r *http.Request) *i18n.Localizer {
+	return s.i18n.localizer(s.i18n.resolveLang(r))
 }
 
 func (s *Server) Handler() http.Handler {
@@ -81,6 +108,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /login", s.handleLoginForm)
 	mux.HandleFunc("POST /login", s.handleLoginSubmit)
 	mux.HandleFunc("POST /logout", s.handleLogout)
+	mux.HandleFunc("GET /setlang", s.handleSetLang)
 	mux.HandleFunc("GET /{$}", s.handleHome)
 	return logRequests(s.guard(mux))
 }
@@ -92,15 +120,40 @@ func logRequests(next http.Handler) http.Handler {
 	})
 }
 
-func (s *Server) render(w http.ResponseWriter, status int, name string, data any) {
+func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name string, data any) {
+	lang := s.i18n.resolveLang(r)
 	if m, ok := data.(map[string]any); ok {
 		m["AuthOn"] = s.authRequired
+		// Language-selector data for base.html (invariant M4: the loaded
+		// locale list drives the menu, so a new file just appears).
+		m["Lang"] = lang
+		m["Langs"] = s.i18n.langs
+		m["Path"] = r.URL.Path
+	}
+	set := s.tmpl[lang]
+	if set == nil {
+		set = s.tmpl[defaultLang]
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
-	if err := s.tmpl[name].ExecuteTemplate(w, "base.html", data); err != nil {
+	if err := set[name].ExecuteTemplate(w, "base.html", data); err != nil {
 		log.Printf("template %s: %v", name, err)
 	}
+}
+
+// handleSetLang is the language selector: set the lang cookie and return to
+// the page the user was on (the one new setting, docs/web-ui-i18n.md).
+func (s *Server) handleSetLang(w http.ResponseWriter, r *http.Request) {
+	lang := r.URL.Query().Get("lang")
+	if !s.i18n.has(lang) {
+		lang = defaultLang
+	}
+	http.SetCookie(w, &http.Cookie{Name: langCookie, Value: lang, Path: "/", MaxAge: 86400 * 365, HttpOnly: true, SameSite: http.SameSiteLaxMode})
+	next := r.URL.Query().Get("next")
+	if next == "" || !strings.HasPrefix(next, "/") {
+		next = "/"
+	}
+	http.Redirect(w, r, next, http.StatusSeeOther)
 }
 
 func (s *Server) fail(w http.ResponseWriter, err error) {
@@ -181,18 +234,35 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 		discover = discover[:4]
 	}
 	pick, bridge := s.todaysCard()
-	s.render(w, http.StatusOK, "home.html", map[string]any{
-		"Title":         "wiki",
-		"Date":          fmt.Sprintf("%s (%s)", now.Format("2006-01-02"), weekdays[now.Weekday()]),
-		"Total":         len(scan.Pages),
-		"ReadTotal":     readTotal,
-		"Dirs":          dirs,
-		"TodayPages":    todayPages,
-		"TodaySearches": todaySearches,
-		"Recent":        recent,
-		"Discover":      discover,
-		"Pick":          pick,
-		"Bridge":        bridge,
+
+	// Locale-dependent display strings are built here, where the data is,
+	// and passed in finished (docs/web-ui-i18n.md); static labels use {{t}}.
+	lc := s.loc(r)
+	date := now.Format("2006-01-02") + " (" + localizeString(lc, "wd_"+strconv.Itoa(int(now.Weekday()))) + ")"
+	readProgress := localizeString(lc, "home_read_progress", "Read", readTotal, "Total", len(scan.Pages))
+	todayLine := ""
+	if todayPages > 0 || todaySearches > 0 {
+		var parts []string
+		if todayPages > 0 {
+			parts = append(parts, localizeString(lc, "home_today_pages", "Count", todayPages))
+		}
+		if todaySearches > 0 {
+			parts = append(parts, localizeString(lc, "home_today_searches", "Count", todaySearches))
+		}
+		todayLine = localizeString(lc, "home_today", "Detail", strings.Join(parts, " · "))
+	}
+
+	s.render(w, r, http.StatusOK, "home.html", map[string]any{
+		"Title":        "wiki",
+		"Date":         date,
+		"Total":        len(scan.Pages),
+		"Dirs":         dirs,
+		"ReadProgress": readProgress,
+		"TodayLine":    todayLine,
+		"Recent":       recent,
+		"Discover":     discover,
+		"Pick":         pick,
+		"Bridge":       bridge,
 	})
 }
 
@@ -208,7 +278,7 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 	p, ok := scan.BySlug[slug]
 	if !ok {
 		// Wikipedia pattern: a missing page is a search, not a dead end.
-		s.searchFallback(w, r.PathValue("slug"))
+		s.searchFallback(w, r, r.PathValue("slug"))
 		return
 	}
 	body, err := RenderPage(p.Body, func(t string) bool { _, ok := scan.BySlug[t]; return ok })
@@ -245,7 +315,7 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 		}
 		ev.Close()
 	}
-	s.render(w, http.StatusOK, "page.html", map[string]any{
+	s.render(w, r, http.StatusOK, "page.html", map[string]any{
 		"Title":      p.Title,
 		"Page":       p,
 		"Body":       body,
@@ -407,7 +477,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	// the exposed hits are never marked (H5).
 	s.logEvent("", attention.KindSearch, query)
 	s.logSearchGap(query, res, kwEmpty)
-	s.render(w, http.StatusOK, "search.html", map[string]any{
+	s.render(w, r, http.StatusOK, "search.html", map[string]any{
 		"Title":   fmt.Sprintf("search: %s", query),
 		"Query":   query,
 		"Mode":    mode,
@@ -465,14 +535,14 @@ func (s *Server) handleAPIPreview(w http.ResponseWriter, r *http.Request) {
 }
 
 // searchFallback renders search results for a slug that has no page.
-func (s *Server) searchFallback(w http.ResponseWriter, raw string) {
+func (s *Server) searchFallback(w http.ResponseWriter, r *http.Request, raw string) {
 	query := strings.ReplaceAll(wiki.NormalizeLink(raw), "-", " ")
 	res, mode, _, err := s.runSearch(query, 20, true)
 	if err != nil {
 		s.fail(w, err)
 		return
 	}
-	s.render(w, http.StatusNotFound, "search.html", map[string]any{
+	s.render(w, r, http.StatusNotFound, "search.html", map[string]any{
 		"Title":   "page not found",
 		"Query":   query,
 		"Mode":    mode,

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="{{.Lang}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,17 +14,18 @@
 <header>
   <a class="brand" href="/">🌳 canopy</a>
   <form class="searchbar" action="/search" method="get">
-    <input type="search" name="q" placeholder="검색…" value="{{.Query}}" autocomplete="off">
+    <input type="search" name="q" placeholder="{{t "search_placeholder"}}" value="{{.Query}}" autocomplete="off">
   </form>
   <nav>
-    <a href="/browse">탐색</a>
-    <a href="/graph">그래프</a>
-    <a href="/special/discover">발견</a>
-    <a href="/history">기록</a>
-    <a href="/special/recent">최근</a>
-    <a href="/special/attention">점검</a>
-    <a href="/special/random">랜덤</a>
-    {{if .AuthOn}}<form method="post" action="/logout" class="logoutform"><button type="submit">로그아웃</button></form>{{end}}
+    <a href="/browse">{{t "nav_browse"}}</a>
+    <a href="/graph">{{t "nav_graph"}}</a>
+    <a href="/special/discover">{{t "nav_discover"}}</a>
+    <a href="/history">{{t "nav_history"}}</a>
+    <a href="/special/recent">{{t "nav_recent"}}</a>
+    <a href="/special/attention">{{t "nav_checks"}}</a>
+    <a href="/special/random">{{t "nav_random"}}</a>
+    {{if .AuthOn}}<form method="post" action="/logout" class="logoutform"><button type="submit">{{t "nav_logout"}}</button></form>{{end}}
+    <span class="langsel" title="{{t "lang_switch_label"}}">{{range .Langs}}{{if eq . $.Lang}}<b>{{.}}</b>{{else}}<a href="/setlang?lang={{.}}&next={{$.Path}}">{{.}}</a>{{end}}{{end}}</span>
   </nav>
 </header>
 <main>

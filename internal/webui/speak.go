@@ -179,5 +179,5 @@ func (s *Server) handleGaps(w http.ResponseWriter, r *http.Request) {
 	for _, a := range rows {
 		a.Last = strings.Replace(strings.SplitN(a.Last, "+", 2)[0], "T", " ", 1)
 	}
-	s.render(w, http.StatusOK, "gaps.html", map[string]any{"Title": "검색 갭", "Rows": rows})
+	s.render(w, r, http.StatusOK, "gaps.html", map[string]any{"Title": "검색 갭", "Rows": rows})
 }

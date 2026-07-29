@@ -1,0 +1,62 @@
+# canopy 웹 UI 문자열 (한국어). 새 언어는 active.<lang>.toml을 추가하면 된다
+# (docs/web-ui-i18n.md). ID는 snake_case 플랫. 주의: TOML은 [table] 헤더 뒤의
+# 모든 키가 그 테이블에 속하므로, 문자열 메시지를 먼저 두고 파라미터·복수형
+# 테이블은 파일 끝에 모은다.
+
+# --- 네비게이션 ---
+nav_browse = "탐색"
+nav_graph = "그래프"
+nav_discover = "발견"
+nav_history = "기록"
+nav_recent = "최근"
+nav_checks = "점검"
+nav_random = "랜덤"
+nav_logout = "로그아웃"
+
+# --- 공통 ---
+search_placeholder = "검색…"
+lang_switch_label = "언어"
+
+# --- 홈 (문자열) ---
+home_title = "오늘의 주의"
+home_search_placeholder = "무엇이든 검색…"
+home_pages_suffix = "pages"
+home_band_aria = "디렉토리별 읽기 진행: 폭은 페이지 수, 채움은 읽은 비율"
+home_resurface_title = "오늘의 재발견"
+home_feedback_up = "유익했어요"
+home_feedback_down = "관심 없어요"
+home_feedback_snooze = "7일 뒤에 다시"
+home_bridge_title = "연결 제안"
+home_bridge_hint = "관련이 있다면 한쪽 페이지를 편집해 [[링크]]를 추가하거나, 에이전트에게 \"연결해줘\"라고 하세요."
+home_discover_title = "새발견"
+home_seeall = "전체 →"
+home_recent_title = "최근 수정"
+home_history_link = "기록 →"
+
+# --- 요일 (time.Weekday: 일=0 … 토=6) ---
+wd_0 = "일"
+wd_1 = "월"
+wd_2 = "화"
+wd_3 = "수"
+wd_4 = "목"
+wd_5 = "금"
+wd_6 = "토"
+
+# --- 파라미터·복수형 (테이블 — 반드시 파일 끝) ---
+[home_resurface_stale]
+other = "{{.Days}}일 동안 잊혀 있었어요"
+
+[home_bridge_sim]
+other = "유사도 {{.Sim}}인데 링크가 없어요"
+
+[home_read_progress]
+other = "읽음 {{.Read}}/{{.Total}}"
+
+[home_today]
+other = "오늘 {{.Detail}}"
+
+[home_today_pages]
+other = "{{.Count}}페이지"
+
+[home_today_searches]
+other = "검색 {{.Count}}"

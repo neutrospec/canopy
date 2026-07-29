@@ -1,46 +1,46 @@
 {{define "content"}}
 <section class="hero">
   <p class="eyebrow">{{.Date}}</p>
-  <h1>오늘의 주의</h1>
+  <h1>{{t "home_title"}}</h1>
   <form class="searchbar big" action="/search" method="get">
-    <input type="search" name="q" placeholder="무엇이든 검색…" autofocus autocomplete="off">
+    <input type="search" name="q" placeholder="{{t "home_search_placeholder"}}" autofocus autocomplete="off">
   </form>
-  <p class="muted herostats">{{.Total}} pages ·
+  <p class="muted herostats">{{.Total}} {{t "home_pages_suffix"}} ·
     {{range $i, $d := .Dirs}}{{if $i}} · {{end}}<a class="wikilink" href="/browse?dir={{$d.Dir}}">{{$d.Dir}}</a> {{$d.Count}}{{end}}
   </p>
-  <div class="band" role="img" aria-label="디렉토리별 읽기 진행: 폭은 페이지 수, 채움은 읽은 비율">
-    {{range .Dirs}}<div class="bandseg d-{{.Dir}}" style="flex:{{.Count}}" title="{{.Dir}} {{.Read}}/{{.Count}} 읽음"><i style="width:{{.Pct}}%"></i></div>{{end}}
+  <div class="band" role="img" aria-label="{{t "home_band_aria"}}">
+    {{range .Dirs}}<div class="bandseg d-{{.Dir}}" style="flex:{{.Count}}" title="{{.Dir}} {{.Read}}/{{.Count}}"><i style="width:{{.Pct}}%"></i></div>{{end}}
   </div>
-  <p class="bandlegend">읽음 {{.ReadTotal}}/{{.Total}}{{if or .TodayPages .TodaySearches}} <span class="today">오늘 {{if .TodayPages}}{{.TodayPages}}페이지{{end}}{{if and .TodayPages .TodaySearches}} · {{end}}{{if .TodaySearches}}검색 {{.TodaySearches}}{{end}}</span>{{end}} · <a class="seeall" href="/history">기록 →</a></p>
+  <p class="bandlegend">{{.ReadProgress}}{{if .TodayLine}} <span class="today">{{.TodayLine}}</span>{{end}} · <a class="seeall" href="/history">{{t "home_history_link"}}</a></p>
 </section>
 {{if .Pick}}
 <section class="card warm">
-  <h2>오늘의 재발견 <span class="muted">{{.Pick.DaysStale}}일 동안 잊혀 있었어요</span></h2>
+  <h2>{{t "home_resurface_title"}} <span class="muted">{{t "home_resurface_stale" "Days" .Pick.DaysStale}}</span></h2>
   <p><a class="wikilink" href="/page/{{.Pick.Slug}}" data-slug="{{.Pick.Slug}}"><b>{{.Pick.Title}}</b></a></p>
   {{if .Pick.Excerpt}}<p class="excerpt">{{.Pick.Excerpt}}</p>{{end}}
   {{if .Pick.Explanation}}<p class="muted">{{.Pick.Explanation}}</p>{{end}}
   <form method="post" action="/resurface/feedback" class="fbrow">
     <input type="hidden" name="slug" value="{{.Pick.Slug}}">
-    <button class="chip" name="action" value="up" title="유익했어요">👍</button>
-    <button class="chip" name="action" value="down" title="관심 없어요">👎</button>
-    <button class="chip" name="action" value="snooze" title="7일 뒤에 다시">😴</button>
+    <button class="chip" name="action" value="up" title="{{t "home_feedback_up"}}">👍</button>
+    <button class="chip" name="action" value="down" title="{{t "home_feedback_down"}}">👎</button>
+    <button class="chip" name="action" value="snooze" title="{{t "home_feedback_snooze"}}">😴</button>
   </form>
 </section>
 {{end}}
 {{if .Bridge}}
 <section class="card">
-  <h2>연결 제안 <span class="muted">유사도 {{printf "%.2f" .Bridge.Similarity}}인데 링크가 없어요</span></h2>
+  <h2>{{t "home_bridge_title"}} <span class="muted">{{t "home_bridge_sim" "Sim" (printf "%.2f" .Bridge.Similarity)}}</span></h2>
   <p>
     <a class="wikilink" href="/page/{{.Bridge.A.Slug}}" data-slug="{{.Bridge.A.Slug}}">{{.Bridge.A.Title}}</a>
     <span class="muted">↔</span>
     <a class="wikilink" href="/page/{{.Bridge.B.Slug}}" data-slug="{{.Bridge.B.Slug}}">{{.Bridge.B.Title}}</a>
   </p>
-  <p class="muted">관련이 있다면 한쪽 페이지를 편집해 [[링크]]를 추가하거나, 에이전트에게 "연결해줘"라고 하세요.</p>
+  <p class="muted">{{t "home_bridge_hint"}}</p>
 </section>
 {{end}}
 {{if .Discover}}
 <section>
-  <h2>새발견 <a class="seeall" href="/special/discover">전체 →</a></h2>
+  <h2>{{t "home_discover_title"}} <a class="seeall" href="/special/discover">{{t "home_seeall"}}</a></h2>
   <ul class="pagelist">
     {{range .Discover}}
     <li><a class="wikilink" href="/page/{{.Page.Slug}}" data-slug="{{.Page.Slug}}">{{.Page.Title}}</a>
@@ -51,7 +51,7 @@
 </section>
 {{end}}
 <section>
-  <h2>최근 수정</h2>
+  <h2>{{t "home_recent_title"}}</h2>
   <ul class="pagelist">
     {{range .Recent}}
     <li><a class="wikilink" href="/page/{{.Slug}}">{{.Title}}</a>

@@ -40,7 +40,7 @@ func (s *Server) handleEditForm(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	s.render(w, http.StatusOK, "edit.html", map[string]any{
+	s.render(w, r, http.StatusOK, "edit.html", map[string]any{
 		"Title": "edit: " + p.Title,
 		"Page":  p,
 		"Body":  p.Body,
@@ -71,7 +71,7 @@ func (s *Server) handleEditSave(w http.ResponseWriter, r *http.Request) {
 	// Optimistic lock: reject if the file changed since the form loaded
 	// (MediaWiki edit-conflict pattern; no auto-merge by design).
 	if r.FormValue("hash") != contentHash(raw) {
-		s.render(w, http.StatusConflict, "edit.html", map[string]any{
+		s.render(w, r, http.StatusConflict, "edit.html", map[string]any{
 			"Title":    "edit: " + p.Title,
 			"Page":     p,
 			"Body":     newBody,
@@ -107,14 +107,14 @@ func (s *Server) handleEditSave(w http.ResponseWriter, r *http.Request) {
 	}
 	dest := "/page/" + p.Slug
 	if len(findings) > 0 {
-		s.renderSaved(w, postScan, p, findings)
+		s.renderSaved(w, r, postScan, p, findings)
 		return
 	}
 	http.Redirect(w, r, dest, http.StatusSeeOther)
 }
 
 // renderSaved shows the updated page with lint notices attached.
-func (s *Server) renderSaved(w http.ResponseWriter, scan *wiki.ScanResult, stale *wiki.Page, findings []string) {
+func (s *Server) renderSaved(w http.ResponseWriter, r *http.Request, scan *wiki.ScanResult, stale *wiki.Page, findings []string) {
 	p, ok := scan.BySlug[wiki.NormalizeLink(stale.Slug)]
 	if !ok {
 		p = stale
@@ -126,7 +126,7 @@ func (s *Server) renderSaved(w http.ResponseWriter, scan *wiki.ScanResult, stale
 	}
 	backlinks := scan.Backlinks()[wiki.NormalizeLink(p.Slug)]
 	nodes, edges := localGraph(scan, p, backlinks)
-	s.render(w, http.StatusOK, "page.html", map[string]any{
+	s.render(w, r, http.StatusOK, "page.html", map[string]any{
 		"Title":      p.Title,
 		"Page":       p,
 		"Body":       body,

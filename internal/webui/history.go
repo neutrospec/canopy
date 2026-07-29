@@ -122,7 +122,7 @@ func (s *Server) handleHistory(w http.ResponseWriter, r *http.Request) {
 		d.Entries = append(d.Entries, &entry)
 	}
 
-	s.render(w, http.StatusOK, "history.html", map[string]any{
+	s.render(w, r, http.StatusOK, "history.html", map[string]any{
 		"Title": "기록",
 		"Days":  days,
 	})
