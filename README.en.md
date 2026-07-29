@@ -1,4 +1,4 @@
-<!-- i18n-source: README.md sha:9da99ce9ded81f7c3ab1c6a7ab645de85c4e2bd3 -->
+<!-- i18n-source: README.md sha:30c872f2dcad63b13577b8a31ecaa8dee851547a -->
 # 🌳 canopy
 
 > [한국어](README.md) · **English**
@@ -251,6 +251,7 @@ implementation without reading code.
 | [docs/web-ui-plan-3.md](docs/web-ui-plan-3.md) | Round 3 (M9–M10+): modern viewer, knowledge graph, island detection |
 | [docs/web-ui-plan-4.md](docs/web-ui-plan-4.md) | Round 4 (M11–M13): two-tier attention storage, access tracking, instruments · visual refresh |
 | [docs/web-ui-write-design.md](docs/web-ui-write-design.md) | Web write concurrency/conflict design (single write pipeline) |
+| [docs/web-ui-i18n.md](docs/web-ui-i18n.md) | Web UI localization — go-i18n, locale negotiation, language selector (invariants M) |
 | [docs/reconcile-design.md](docs/reconcile-design.md) | Canonicalization gate design — edit anywhere, canonicalize through one door (the main road re-judges every door's changes) |
 | [docs/web-ui-board.md](docs/web-ui-board.md) | Execution board — the full record of per-milestone tasks and exit criteria |
 
