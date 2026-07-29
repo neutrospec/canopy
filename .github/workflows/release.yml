@@ -64,9 +64,13 @@ jobs:
           # Derive the tap formula from canopy's source-of-truth template,
           # patching ONLY the top-level (2-space-indented) url + sha256. The
           # 8-space-indented tokenizer resource sha256s are left untouched.
+          # A version bump resets any formula revision by definition, so a
+          # top-level `revision N` left over from formula-only bumps on the
+          # previous version is stripped (v0.3.0 leaked one — 0.3.0_1).
           cp packaging/homebrew/canopy.rb tap/Formula/canopy.rb
           sed -i -E 's|^  url "https://github.com/[^"]*/archive/refs/tags/[^"]*"|  url "'"$url"'"|' tap/Formula/canopy.rb
           sed -i -E 's|^  sha256 "[0-9a-f]{64}"|  sha256 "'"$sha"'"|' tap/Formula/canopy.rb
+          sed -i -E '/^  revision [0-9]+$/d' tap/Formula/canopy.rb
           echo "--- patched formula head ---"
           grep -nE '^  (url|sha256) ' tap/Formula/canopy.rb
       - name: Commit + push the tap
