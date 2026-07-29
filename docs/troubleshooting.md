@@ -1,3 +1,5 @@
+> **한국어** · [English](en/troubleshooting.md)
+
 # 문제 해결
 
 자주 만나는 문제와 진단 명령 모음입니다.
