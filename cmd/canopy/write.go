@@ -25,6 +25,7 @@ import (
 	"github.com/neutrospec/canopy/internal/indexer"
 	"github.com/neutrospec/canopy/internal/logops"
 	"github.com/neutrospec/canopy/internal/reads"
+	"github.com/neutrospec/canopy/internal/reconcile"
 	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
 	"github.com/neutrospec/canopy/internal/writeops"
@@ -107,8 +108,8 @@ func rankRelated(hits []store.Hit, selfSlug string, newTags []string, scan *wiki
 // afterWrite runs the shared invariant pipeline (writeops.Run — same
 // path the web UI editor uses), then the CLI-only tail: optional sync
 // and the NEXT hint.
-func afterWrite(w *config.Wiki, action, relPath string, related []string, note string, syncNow bool, syncMsg string) error {
-	if _, err := writeops.Run(w, action, relPath, related, note); err != nil {
+func afterWrite(w *config.Wiki, action, relPath string, related []string, note string, eff reconcile.Effects, syncNow bool, syncMsg string) error {
+	if _, err := writeops.Run(w, action, relPath, related, note, eff); err != nil {
 		return err
 	}
 	if syncNow {
@@ -299,7 +300,7 @@ func cmdNew() *cobra.Command {
 					fmt.Printf("  [%.2f] %s — %s\n", h.Score, h.Slug, h.Title)
 				}
 			}
-			if err := afterWrite(w, "create", relPath, tags, title, syncNow, syncMsg); err != nil {
+			if err := afterWrite(w, "create", relPath, tags, title, reconcile.Effects{Written: []string{relPath}}, syncNow, syncMsg); err != nil {
 				return err
 			}
 			if flagJSON {
@@ -366,7 +367,7 @@ func cmdUpdate() *cobra.Command {
 			if !flagJSON {
 				fmt.Printf("✓ updated %s\n", p.RelPath)
 			}
-			return afterWrite(w, "update", p.RelPath, p.Tags, "", syncNow, syncMsg)
+			return afterWrite(w, "update", p.RelPath, p.Tags, "", reconcile.Effects{Written: []string{p.RelPath}}, syncNow, syncMsg)
 		},
 	}
 	c.Flags().StringVar(&bodyFile, "body-file", "", "replace the page body from file, or - for stdin")
@@ -439,7 +440,12 @@ func cmdMv() *cobra.Command {
 					return err
 				}
 			}
-			// Retarget inbound links on rename.
+			// Retarget inbound links on rename. Rewritten pages join the
+			// mutation's declared effects so the ledger absorbs them too.
+			eff := reconcile.Effects{Written: []string{newRel}}
+			if newRel != p.RelPath {
+				eff.Removed = []string{p.RelPath}
+			}
 			if !strings.EqualFold(slug, p.Slug) {
 				for _, other := range scan.Pages {
 					if other.Slug == p.Slug {
@@ -455,6 +461,7 @@ func cmdMv() *cobra.Command {
 						if err := os.WriteFile(op, []byte(rewritten), 0o644); err != nil {
 							return err
 						}
+						eff.Written = append(eff.Written, other.RelPath)
 						if !flagJSON {
 							fmt.Printf("  relinked %s\n", other.RelPath)
 						}
@@ -473,7 +480,7 @@ func cmdMv() *cobra.Command {
 			if !flagJSON {
 				fmt.Printf("✓ moved %s → %s\n", p.RelPath, newRel)
 			}
-			return afterWrite(w, "move", newRel, nil, "from "+p.RelPath, syncNow, syncMsg)
+			return afterWrite(w, "move", newRel, nil, "from "+p.RelPath, eff, syncNow, syncMsg)
 		},
 	}
 	c.Flags().StringVar(&newType, "type", "", "new type (changes category directory)")
@@ -512,6 +519,7 @@ func cmdRm() *cobra.Command {
 			if err := os.Remove(filepath.Join(w.Root, p.RelPath)); err != nil {
 				return err
 			}
+			eff := reconcile.Effects{Removed: []string{p.RelPath}}
 			// --force delete: strip now-dangling links.
 			for _, src := range sources {
 				sp := scan.BySlug[strings.ToLower(src)]
@@ -523,11 +531,12 @@ func cmdRm() *cobra.Command {
 				if err := os.WriteFile(path, []byte(wiki.StripLinks(string(b), p.Slug)), 0o644); err != nil {
 					return err
 				}
+				eff.Written = append(eff.Written, sp.RelPath)
 			}
 			if !flagJSON {
 				fmt.Printf("✓ deleted %s\n", p.RelPath)
 			}
-			return afterWrite(w, "delete", p.RelPath, nil, "", syncNow, syncMsg)
+			return afterWrite(w, "delete", p.RelPath, nil, "", eff, syncNow, syncMsg)
 		},
 	}
 	c.Flags().BoolVar(&force, "force", false, "delete even with backlinks (they become plain text)")
@@ -564,6 +573,7 @@ func cmdArchive() *cobra.Command {
 			if err := os.Rename(filepath.Join(w.Root, p.RelPath), filepath.Join(dstDir, filepath.Base(p.RelPath))); err != nil {
 				return err
 			}
+			eff := reconcile.Effects{Removed: []string{p.RelPath}}
 			for _, src := range scan.Backlinks()[strings.ToLower(p.Slug)] {
 				sp := scan.BySlug[strings.ToLower(src)]
 				path := filepath.Join(w.Root, sp.RelPath)
@@ -574,6 +584,7 @@ func cmdArchive() *cobra.Command {
 				if err := os.WriteFile(path, []byte(wiki.StripLinks(string(b), p.Slug)), 0o644); err != nil {
 					return err
 				}
+				eff.Written = append(eff.Written, sp.RelPath)
 				if !flagJSON {
 					fmt.Printf("  unlinked in %s\n", sp.RelPath)
 				}
@@ -581,7 +592,7 @@ func cmdArchive() *cobra.Command {
 			if !flagJSON {
 				fmt.Printf("✓ archived %s → _archive/%s\n", p.RelPath, p.RelPath)
 			}
-			return afterWrite(w, "archive", p.RelPath, nil, "", syncNow, syncMsg)
+			return afterWrite(w, "archive", p.RelPath, nil, "", eff, syncNow, syncMsg)
 		},
 	}
 	c.Flags().BoolVar(&syncNow, "sync", false, "run canopy sync right after")

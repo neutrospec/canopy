@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/neutrospec/canopy/internal/lint"
+	"github.com/neutrospec/canopy/internal/reconcile"
 	"github.com/neutrospec/canopy/internal/wiki"
 	"github.com/neutrospec/canopy/internal/writeops"
 )
@@ -92,7 +93,7 @@ func (s *Server) handleEditSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Same pipeline as every CLI mutation.
-	postScan, err := writeops.Run(s.w, "update", p.RelPath, p.Tags, "web edit")
+	postScan, err := writeops.Run(s.w, "update", p.RelPath, p.Tags, "web edit", reconcile.Effects{Written: []string{p.RelPath}})
 	if err != nil {
 		s.fail(w, err)
 		return

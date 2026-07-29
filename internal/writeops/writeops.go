@@ -11,6 +11,7 @@ import (
 	"github.com/neutrospec/canopy/internal/genindex"
 	"github.com/neutrospec/canopy/internal/indexer"
 	"github.com/neutrospec/canopy/internal/logops"
+	"github.com/neutrospec/canopy/internal/reconcile"
 	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
 )
@@ -19,7 +20,15 @@ import (
 // scan (after the mutation) and uses it for both index regeneration and
 // reindexing — genindex only touches index/ files which are outside
 // governed dirs, so the page set is unchanged.
-func Run(w *config.Wiki, action, relPath string, related []string, note string) (*wiki.ScanResult, error) {
+//
+// eff declares what the mutation wrote/removed so the reconcile ledger
+// absorbs it (자동 축복, invariant K2): pipeline products never surface
+// as foreign changes. Callers must be complete — mv lists the rewritten
+// inbound pages, rm/archive the link-stripped sources.
+func Run(w *config.Wiki, action, relPath string, related []string, note string, eff reconcile.Effects) (*wiki.ScanResult, error) {
+	if err := reconcile.Record(w, eff); err != nil {
+		return nil, err
+	}
 	scan, err := wiki.Scan(w)
 	if err != nil {
 		return nil, err
