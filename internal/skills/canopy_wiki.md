@@ -109,12 +109,32 @@ canopy bridge --dismiss a:b                      # 사용자가 "관련 없다"�
 ## 건강 검사
 
 ```bash
-canopy status          # 페이지 수, git 상태
+canopy status          # 페이지 수, git 상태, 미정규화 외부 변경 수
 canopy lint            # broken link, orphan, island, 스키마 위반, stale (--json으로 파싱)
 canopy backlinks --orphans
 ```
 
 주기 점검(cron)은 `canopy lint --json` + `canopy status --json`을 쓰고 결과를 보고하라.
+
+## 정규화(reconcile) — 뒷길 변경의 검토
+
+canopy 명령을 거치지 않은 편집(Obsidian, 다른 clone, 직접 파일 수정)은 배너에
+"⚠ 미정규화 외부 변경 N건"으로 뜬다. **후보는 canopy가, 판단은 네가 한다**:
+
+```bash
+canopy reconcile --json    # 후보 목록: kind(edited|new|deleted) + dup_candidates + issues
+```
+
+각 후보에 대한 판단 규칙(위 콘텐츠 판단 기준과 동일):
+- **dup_candidates가 높으면**(≥0.8) 새 페이지로 두지 말고 기존 페이지에 **통합**
+  (`canopy update <기존페이지>` 후 뒷길 파일은 삭제하고 `bless`로 삭제 수용).
+- **기존 내용과 모순**이면 조용히 덮지 말고 날짜·출처와 함께 병기.
+- **issues**(끊긴 링크·스키마 위반)는 canopy 명령으로 수정.
+- 수정은 반드시 `canopy update/new/mv`로 — 그 결과는 자동으로 검토됨 처리된다.
+- **문제 없으면** `canopy reconcile bless <path>` 로 이대로 수용.
+
+검토를 마치면 `canopy sync` (원장 `_meta/reconcile/`이 위키와 함께 커밋된다).
+`bless --all`은 전량 수용이므로 개별 판단을 건너뛸 때만 — 남용 금지.
 
 `island` finding = 서로는 링크돼 있지만 본토(최대 연결 성분)와 끊어진 클러스터.
 고아 검사는 통과하므로 별도 처리 필요: **finding에 나열된 섬 구성원과 본토 페이지

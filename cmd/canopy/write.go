@@ -144,6 +144,11 @@ func runSync(w *config.Wiki, message string) error {
 	committed := false
 	dirtyCount := st.Dirty
 	if st.Dirty > 0 {
+		// Non-blocking by design (reconcile-design.md): warn, never gate —
+		// but a forgotten judgment must not pass silently into main (K6).
+		if n, ok, err := reconcile.Count(w); err == nil && ok && n > 0 && !flagJSON {
+			fmt.Fprintf(os.Stderr, "⚠ 미정규화 외부 변경 %d건이 함께 커밋됩니다 — 검토는 `canopy reconcile`\n", n)
+		}
 		if message == "" {
 			message = autoMessage(st.Changed)
 		}

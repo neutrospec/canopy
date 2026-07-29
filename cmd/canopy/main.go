@@ -23,6 +23,7 @@ import (
 	"github.com/neutrospec/canopy/internal/indexer"
 	"github.com/neutrospec/canopy/internal/lint"
 	"github.com/neutrospec/canopy/internal/migrate"
+	"github.com/neutrospec/canopy/internal/reconcile"
 	"github.com/neutrospec/canopy/internal/search"
 	"github.com/neutrospec/canopy/internal/skills"
 	"github.com/neutrospec/canopy/internal/store"
@@ -62,7 +63,7 @@ func main() {
 	root.AddCommand(cmdInit(), cmdStatus(), cmdReindex(), cmdSearch(), cmdBacklinks(), cmdLint(), cmdShow(), cmdList(), cmdTags(), cmdModel(),
 		cmdNew(), cmdUpdate(), cmdMv(), cmdRm(), cmdArchive(), cmdSync(), cmdSkills(),
 		cmdResurface(), cmdBridge(), cmdRecall(), cmdDigest(), cmdServe(),
-		cmdVersion(), cmdMigrate())
+		cmdVersion(), cmdMigrate(), cmdReconcile())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
@@ -99,7 +100,9 @@ func migrateCtx() *migrate.Context {
 }
 
 // banner prints the unsynced-state warning to stderr on every command,
-// so a forgotten `canopy sync` is impossible to miss.
+// so a forgotten `canopy sync` is impossible to miss. When the reconcile
+// gate is on, unjudged back-door changes surface the same way (K6) —
+// noise-free hash walk, silent until the gate is opted into.
 func banner(w *config.Wiki) {
 	if flagJSON {
 		return
@@ -110,6 +113,9 @@ func banner(w *config.Wiki) {
 	}
 	if b := st.Banner(); b != "" {
 		fmt.Fprintln(os.Stderr, b)
+	}
+	if n, ok, err := reconcile.Count(w); err == nil && ok && n > 0 {
+		fmt.Fprintf(os.Stderr, "⚠ 미정규화 외부 변경 %d건 — `canopy reconcile`로 검토\n", n)
 	}
 }
 
@@ -214,14 +220,19 @@ func cmdStatus() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			recN, recOn, _ := reconcile.Count(w)
 			if flagJSON {
-				return emitJSON(map[string]any{
+				out := map[string]any{
 					"root":        w.Root,
 					"pages":       len(scan.Pages),
 					"stray_root":  scan.StrayRoot,
 					"git":         git,
 					"initialized": w.HasTOML,
-				})
+				}
+				if recOn {
+					out["unreconciled"] = recN
+				}
+				return emitJSON(out)
 			}
 			fmt.Printf("wiki:  %s\n", w.Root)
 			fmt.Printf("pages: %d", len(scan.Pages))
@@ -244,6 +255,9 @@ func cmdStatus() *cobra.Command {
 				} else {
 					fmt.Println("✓ fully synced")
 				}
+			}
+			if recOn && recN > 0 {
+				fmt.Printf("⚠ 미정규화 외부 변경 %d건 — `canopy reconcile`로 검토\n", recN)
 			}
 			return nil
 		},
