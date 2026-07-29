@@ -69,6 +69,15 @@ startup에서 `migrate.Ensure()`가 자동으로 도므로, 새 버전 첫 실�
 레이아웃을 바꿀 땐 `internal/store.SchemaVersion`을 올린다 — 불일치 시 코드가
 drop 후 재생성한다. **사다리에 넣지 마라.** 던져버릴 것을 이행하는 건 낭비다.
 
+## 다국어 문서
+
+README와 사용자 문서(`getting-started`·`troubleshooting`·`upgrading`)는 한국어(소스)와
+영어(`README.en.md`, `docs/en/*.md`) 미러를 둔다. **한국어 소스를 고치면 같은 변경에서
+영어 번역도 갱신**하고, 번역 1행의 `<!-- i18n-source: <path> sha:… -->` 마커를 새
+`git hash-object <source>`로 맞춘다. `make i18n-check`가 초록이어야 한다(CI 포함) —
+낡은 번역은 STALE로 빨강. 코드펜스 안(명령·경로·식별자)은 번역하지 않는다. 설계 기록은
+번역 대상이 아니다. 방법론: [docs/i18n.md](docs/i18n.md), 불변식: invariants L.
+
 ## 커밋 규칙
 
 - **Conventional Commits**: `feat: …`, `fix: …`, `docs: …`, `refactor:`, `test:`,

@@ -20,7 +20,7 @@ DATE    ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 PKG     := github.com/neutrospec/canopy/internal/buildinfo
 LDFLAGS := -X $(PKG).version=$(VERSION) -X $(PKG).commit=$(COMMIT) -X $(PKG).date=$(DATE)
 
-.PHONY: build build-lite test fmt deps install release-check release-tag
+.PHONY: build build-lite test fmt deps install release-check release-tag i18n-check
 
 build: deps
 	go build -tags ORT -ldflags "$(LDFLAGS)" -o canopy ./cmd/canopy
@@ -34,6 +34,11 @@ test:
 
 fmt:
 	gofmt -w .
+
+# Verify translated docs (README.en.md, docs/en/*) are current with their
+# Korean sources — invariants L1-L3, see docs/i18n.md.
+i18n-check:
+	scripts/i18n-check.sh
 
 deps: $(LIBDIR)/libtokenizers.a
 

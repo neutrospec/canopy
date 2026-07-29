@@ -134,6 +134,17 @@
 | K6 | 미정규화 외부 변경은 배너로 노출된다 (게이트 초기화 후; 원칙 5·2) | 페이지 파일 직접 편집 후 `canopy status $W` → stderr에 ⚠ 미정규화 N건 |
 | K7 | 정규화의 콘텐츠 수정은 writeops 경유다 (한 복도, 원칙 9) **[협약]** | 정규화로 페이지 수정 후 `logs/*.jsonl`에 엔트리 + `index/*.md` 재생성 (I2와 같은 확인) — 그 결과는 자동 축복(K2 후단) |
 
+## L. 다국어 문서 (i18n) ([i18n.md](i18n.md))
+
+> 소스는 한국어 하나, 영어는 파생. 파생의 낡음은 검출 가능해야 한다(원칙 8) — 소스
+> 해시가 바뀌면 번역이 STALE. reconcile 원장과 같은 "소스 해시 vs 기록" 메커니즘.
+
+| # | 불변식 | 점검 |
+|---|--------|------|
+| L1 | 모든 번역은 소스와 소스 버전을 기록한다 | 각 `README.en.md`·`docs/en/*.md` 1행에 `<!-- i18n-source: <path> sha:<40hex> -->`; `make i18n-check`가 없으면 MISSING |
+| L2 | 번역은 소스와 동기 상태다 (낡지 않음) | `make i18n-check` → 기록 sha == `git hash-object <source>`; 불일치는 STALE. CI(ci.yml) 포함 |
+| L3 | 코드·명령·경로는 번역하지 않는다 (바이트 동일) **[협약]** | 번역은 코드펜스 안을 건드리지 않는다 — 부분 점검으로 소스·번역의 ` ``` ` 개수 일치(FENCE MISMATCH가 아니어야) |
+
 ## 감사 절차
 
 1. `make test && gofmt -l .` (F)
@@ -144,6 +155,7 @@
 6. H·I는 `canopy serve`를 띄운 상태에서 (I1은 공개 바인딩 별도 기동, I2는 스크래치 위키 권장)
 7. J1–J5는 `canopy version --json` / `canopy migrate status --json`으로 (J6은 1의 `make test`에 포함)
 8. K1–K7은 스크래치 위키에서 파일 직접 편집 후 `canopy reconcile --json` / `bless`로
+9. L1–L3은 `make i18n-check` (1의 CI에도 포함)
 
 > 위반을 발견하면: (1) 그 위반이 **어느 명령을 우회해서** 생겼는지 찾고,
 > (2) 우회 경로를 막는 코드/lint를 추가하고, (3) 필요하면 이 목록에 항목을 늘린다.

@@ -1,5 +1,7 @@
 # 🌳 canopy
 
+> **한국어** · [English](README.en.md)
+
 **마크다운 위키를 위한 로컬 지식 관리 도구.** 스키마 검증·검색·웹 UI·재발견 루프를
 단일 Go 바이너리로 제공합니다. 사람과 LLM 에이전트가 같은 위키를 함께 가꿀 수 있도록,
 "판단은 LLM이, 불변식은 코드가" 원칙으로 설계되었습니다.
@@ -226,6 +228,7 @@ Apple Silicon, int8 양자화 모델 기준:
 | 문서 | 내용 |
 |------|------|
 | [docs/versioning.md](docs/versioning.md) | 세 버전 번호·마이그레이션 사다리·릴리스 절차·Homebrew 배포 |
+| [docs/i18n.md](docs/i18n.md) | 다국어 문서 관리 — 소스/번역, staleness 점검(invariants L) |
 | [docs/homebrew-guide.md](docs/homebrew-guide.md) | Homebrew 배포·릴리스 실습 가이드 (처음 하는 사람용) |
 | [docs/web-ui-plan.md](docs/web-ui-plan.md) | 1차(M1–M4): 검색-우선 뷰어, facet, 웹 편집 |
 | [docs/web-ui-plan-2.md](docs/web-ui-plan-2.md) | 2차(M5–M8): 보안, 읽기 이력·새발견, 제안 링크, 말 거는 홈 |
