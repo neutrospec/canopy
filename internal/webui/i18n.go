@@ -17,6 +17,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
+	"golang.org/x/text/language/display"
 )
 
 //go:embed locales/*.toml
@@ -105,6 +106,33 @@ func (ib *i18nBundle) has(lang string) bool {
 		}
 	}
 	return false
+}
+
+// LangOption is one entry in the language selector: the locale code and
+// its endonym (the language's name in its own script — 한국어, English),
+// which is how good multilingual sites label the switcher.
+type LangOption struct {
+	Code string
+	Name string
+}
+
+// endonym returns a language's self-name, falling back to the code.
+func endonym(code string) string {
+	if tag, err := language.Parse(code); err == nil {
+		if n := display.Self.Name(tag); n != "" {
+			return n
+		}
+	}
+	return code
+}
+
+// options lists the loaded locales for the selector, endonym-labeled.
+func (ib *i18nBundle) options() []LangOption {
+	out := make([]LangOption, 0, len(ib.langs))
+	for _, code := range ib.langs {
+		out = append(out, LangOption{Code: code, Name: endonym(code)})
+	}
+	return out
 }
 
 // tFunc returns the `t` template function bound to a locale: {{t "id"}} for

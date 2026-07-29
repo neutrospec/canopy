@@ -25,8 +25,13 @@
     <a href="/special/attention">{{t "nav_checks"}}</a>
     <a href="/special/random">{{t "nav_random"}}</a>
     {{if .AuthOn}}<form method="post" action="/logout" class="logoutform"><button type="submit">{{t "nav_logout"}}</button></form>{{end}}
-    <span class="langsel" title="{{t "lang_switch_label"}}">{{range .Langs}}{{if eq . $.Lang}}<b>{{.}}</b>{{else}}<a href="/setlang?lang={{.}}&next={{$.Path}}">{{.}}</a>{{end}}{{end}}</span>
   </nav>
+  <details class="langsel">
+    <summary aria-label="{{t "lang_switch_label"}}"><span class="globe" aria-hidden="true">🌐</span>{{.LangName}}</summary>
+    <div class="langmenu" role="menu">
+      {{range .Langs}}{{if eq .Code $.Lang}}<span class="on" role="menuitemradio" aria-checked="true">{{.Name}}</span>{{else}}<a role="menuitem" href="/setlang?lang={{.Code}}&next={{$.Path}}">{{.Name}}</a>{{end}}{{end}}
+    </div>
+  </details>
 </header>
 <main>
 {{template "content" .}}

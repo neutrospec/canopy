@@ -127,7 +127,8 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name
 		// Language-selector data for base.html (invariant M4: the loaded
 		// locale list drives the menu, so a new file just appears).
 		m["Lang"] = lang
-		m["Langs"] = s.i18n.langs
+		m["LangName"] = endonym(lang)
+		m["Langs"] = s.i18n.options()
 		m["Path"] = r.URL.Path
 	}
 	set := s.tmpl[lang]

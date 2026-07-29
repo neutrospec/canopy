@@ -213,4 +213,15 @@
       }, 1000);
     }
   }
+
+  // --- language dropdown: close on outside click / Escape ----------------
+  const langsel = document.querySelector("details.langsel");
+  if (langsel) {
+    document.addEventListener("click", (e) => {
+      if (langsel.open && !langsel.contains(e.target)) langsel.open = false;
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && langsel.open) langsel.open = false;
+    });
+  }
 })();
