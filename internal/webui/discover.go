@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/neutrospec/canopy/internal/attention"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+
 	"github.com/neutrospec/canopy/internal/reads"
 	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
@@ -26,7 +28,7 @@ type discovery struct {
 
 const affinityRecentK = 10
 
-func (s *Server) discoverRanked(scan *wiki.ScanResult, rs *reads.State, now time.Time) []discovery {
+func (s *Server) discoverRanked(scan *wiki.ScanResult, rs *reads.State, now time.Time, loc *i18n.Localizer) []discovery {
 	// Vectors are best-effort: without the embedding index the
 	// affinity signal is 0 and newness+hubness still rank.
 	var vectors map[string][]float32
@@ -72,15 +74,16 @@ func (s *Server) discoverRanked(scan *wiki.ScanResult, rs *reads.State, now time
 		if score <= 0 {
 			continue
 		}
-		reason := "새 페이지"
+		reasonID := "reason_new"
 		switch {
 		case affinity >= newness && 0.3*affinity >= 0.3*hub && affinity > 0:
-			reason = "최근 읽은 주제와 유사"
+			reasonID = "reason_affinity"
 		case 0.3*hub > 0.4*newness && hub > 0:
-			reason = "링크가 모이는 허브"
+			reasonID = "reason_hub"
 		case newness == 0:
-			reason = "아직 안 읽음"
+			reasonID = "reason_unread"
 		}
+		reason := localizeString(loc, reasonID)
 		out = append(out, discovery{Page: p, Score: score, Reason: reason, Days: days})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Score > out[j].Score })
@@ -161,7 +164,8 @@ func (s *Server) handleDiscover(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	ranked := s.discoverRanked(scan, rs, time.Now())
+	loc := s.loc(r)
+	ranked := s.discoverRanked(scan, rs, time.Now(), loc)
 	readCount := 0
 	for _, p := range scan.Pages {
 		if rs.IsRead(p.Slug) {
@@ -173,7 +177,7 @@ func (s *Server) handleDiscover(w http.ResponseWriter, r *http.Request) {
 		pct = readCount * 100 / len(scan.Pages)
 	}
 	s.render(w, r, http.StatusOK, "discover.html", map[string]any{
-		"Title":     "새발견",
+		"Title":     localizeString(loc, "title_discover"),
 		"Ranked":    ranked,
 		"ReadCount": readCount,
 		"Total":     len(scan.Pages),

@@ -106,8 +106,12 @@ func TestLocaleCookieOverride(t *testing.T) {
 var hangul = regexp.MustCompile(`\p{Hangul}`)
 
 func TestNoHardcodedUIStrings(t *testing.T) {
-	converted := []string{"base.html", "home.html"}
-	for _, name := range converted {
+	entries, err := fs.ReadDir(assets, "templates")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		name := e.Name()
 		b, err := fs.ReadFile(assets, "templates/"+name)
 		if err != nil {
 			t.Fatal(err)

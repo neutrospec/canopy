@@ -42,7 +42,112 @@ wd_4 = "목"
 wd_5 = "금"
 wd_6 = "토"
 
-# --- 파라미터·복수형 (테이블 — 반드시 파일 끝) ---
+
+# --- 템플릿·핸들러 문자열 (추출) ---
+page_saved_prefix = "저장되었습니다. 커밋은"
+page_saved_suffix = "로."
+page_edit = "편집"
+page_read_label = "읽음"
+page_auto = "자동"
+page_reread_title = "다시 읽었다고 기록 (횟수·날짜 갱신)"
+page_reread = "다시 읽음"
+page_unread_title = "읽음 취소"
+page_cancel = "취소"
+page_read_shortcut = "단축키 r"
+page_read_button = "읽음"
+page_agent_days_title = "에이전트(show/recall)가 이 페이지를 소비한 일수"
+page_local_graph = "로컬 그래프"
+page_suggested_title = "제안 링크"
+page_suggested_hint = "유사하지만 아직 연결 안 됨"
+page_backlinks_title = "여기를 링크한 페이지"
+page_none = "없음"
+page_access_log = "접근 기록"
+page_not_read = "아직 안 읽음"
+page_full_log = "전체 기록 →"
+attn_title = "점검"
+attn_gaps_link = "검색 갭 →"
+attn_gaps_hint = "위키가 답하지 못한 질의(페이지 생성 후보)"
+attn_islands_title = "섬 클러스터"
+attn_islands_hint = "서로는 링크돼 있지만 본토(최대 연결 성분)와 끊어진 클러스터 — 고아 검사는 통과하지만 그래프에서 고립돼 있습니다."
+attn_bridge_connects = "이 링크 하나면 섬이 연결됩니다."
+attn_bridge_edit = "바로 편집 →"
+attn_bridge_none = "다리 제안 없음 (임베딩 인덱스 필요 —"
+attn_orphans_title = "고아 페이지"
+attn_orphans_hint = "어느 페이지도 링크하지 않는 페이지 — 연결하거나 정리할 후보."
+attn_stale_title = "오래된 페이지"
+graph_find_placeholder = "노드 찾기…"
+graph_legend_unread = "안 읽음"
+graph_legend_island = "섬"
+browse_title = "탐색"
+browse_filter_clear_hint = "활성 필터를 클릭하면 해제"
+edit_heading = "편집:"
+edit_conflict_lead = "⚠ 이 페이지가 다른 곳(CLI/에이전트/다른 탭)에서 수정되었습니다. 아래는"
+edit_conflict_yours = "당신의 편집본"
+edit_conflict_tail = "입니다 — 현재 저장된 내용과 비교해 필요한 부분을 반영한 뒤 다시 저장하세요."
+edit_conflict_view_current = "현재 버전 보기"
+edit_help_lead = "본문만 편집합니다 (frontmatter·페이지 생성/이동/삭제는 CLI로). 저장하면"
+edit_help_tail = "날짜가 갱신되고 인덱스·로그가 자동 처리됩니다."
+edit_save = "저장"
+edit_cancel = "취소"
+setup_title = "초기 설정"
+setup_intro = "이 주소는 외부에서 접근 가능하므로 계정이 필요합니다."
+setup_code_label = "설정 코드"
+setup_code_desc_a = "는"
+setup_code_desc_b = "를 실행한 터미널에 출력되어 있습니다."
+setup_code_placeholder = "설정 코드 (터미널 확인)"
+setup_id_placeholder = "사용할 아이디"
+setup_password_placeholder = "비밀번호 (8자 이상)"
+setup_submit = "계정 만들기"
+login_id_placeholder = "아이디"
+login_password_placeholder = "비밀번호"
+login_submit = "로그인"
+gaps_title = "검색 갭"
+gaps_intro_pre = "위키가 답하지 못한 검색 — 결과가 없거나 키워드 매치가 0건이던 질의입니다. 반복되는 질의는 곧"
+gaps_intro_candidate = "페이지 생성 후보"
+gaps_intro_mid = "입니다 ("
+gaps_intro_post = " 또는 에이전트에게 요청)."
+gaps_col_query = "질의"
+gaps_col_count = "횟수"
+gaps_col_last = "마지막"
+gaps_search_again = "다시 검색"
+gaps_empty = "기록 없음 — 모든 검색이 결과를 찾았습니다."
+hist_title = "기록"
+hist_intro = "웹·에이전트 두 문으로 지나간 주의의 타임라인 — 이 머신의 이벤트 로그 실측입니다. 검색이 어느 열람으로 이어졌는지 궤적이 그대로 보입니다."
+hist_empty_pre = "아직 기록이 없습니다. 페이지를 읽거나, 에이전트가"
+hist_empty_post = "로 페이지를 소비하면 여기에 쌓입니다."
+disc_title = "새발견"
+disc_intro = "아직 읽지 않은 페이지를 새 페이지·허브·최근 관심과의 유사도로 랭킹합니다. 읽기 진행률:"
+disc_all_read = "전부 읽으셨습니다 🎉"
+search_no_results = "결과 없음"
+recent_title = "최근 변경"
+recent_col_time = "시각"
+recent_col_action = "동작"
+recent_col_page = "페이지"
+recent_col_note = "메모"
+title_discover = "새발견"
+title_history = "기록"
+title_recent = "최근 변경"
+title_checks = "점검"
+title_graph = "그래프"
+title_setup = "초기 설정"
+title_login = "로그인"
+title_gaps = "검색 갭"
+reason_new = "새 페이지"
+reason_affinity = "최근 읽은 주제와 유사"
+reason_hub = "링크가 모이는 허브"
+reason_unread = "아직 안 읽음"
+kind_reread = "다시 읽음"
+kind_read = "읽음"
+kind_recall = "인용"
+kind_view = "열람"
+kind_search = "검색"
+spark_aria = "주간 접근 추이"
+readago_today = "오늘"
+readago_yesterday = "어제"
+auth_bad_code = "설정 코드가 올바르지 않습니다 (serve를 실행한 터미널에 출력됩니다)"
+auth_bad_creds = "아이디는 1자 이상, 비밀번호는 8자 이상이어야 합니다"
+auth_login_failed = "아이디 또는 비밀번호가 올바르지 않습니다"
+
 [home_resurface_stale]
 other = "{{.Days}}일 동안 잊혀 있었어요"
 
@@ -60,3 +165,46 @@ other = "{{.Count}}페이지"
 
 [home_today_searches]
 other = "검색 {{.Count}}"
+
+# --- 템플릿 파라미터/복수형 ---
+[page_read_first]
+other = "처음 {{.First}}"
+
+[page_read_times]
+other = "{{.Count}}회"
+
+[page_agent_days]
+other = "{{.Days}}일"
+
+[page_similarity]
+other = "유사도 {{.Sim}}"
+
+[page_tags_shared]
+other = "태그 {{.Count}}개 공유"
+
+[page_read_times_full]
+other = "읽음 {{.Count}}회"
+
+[page_last]
+other = "마지막 {{.Ago}}"
+
+[page_agent_days_full]
+other = "에이전트 {{.Days}}일"
+
+[attn_bridge_label]
+other = "다리 제안 (유사도 {{.Sim}}):"
+
+[attn_stale_hint]
+other = "{{.Days}}일 이상 수정되지 않은 페이지."
+
+[attn_days_ago]
+other = "{{.Days}}일 전"
+
+[search_missing]
+other = "“{{.Name}}” 페이지는 없습니다. 대신 검색 결과를 보여드립니다."
+
+[search_results_title]
+other = "“{{.Query}}” 검색 결과"
+
+[readago_days]
+other = "{{.Days}}일 전"

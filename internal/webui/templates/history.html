@@ -1,11 +1,9 @@
 {{define "content"}}
-<h1>기록</h1>
-<p class="muted">웹·에이전트 두 문으로 지나간 주의의 타임라인 — 이 머신의 이벤트 로그
-실측입니다. 검색이 어느 열람으로 이어졌는지 궤적이 그대로 보입니다.</p>
+<h1>{{t "hist_title"}}</h1>
+<p class="muted">{{t "hist_intro"}}</p>
 
 {{if not .Days}}
-<p class="muted">아직 기록이 없습니다. 페이지를 읽거나, 에이전트가 <code>show</code>/<code>recall</code>로
-페이지를 소비하면 여기에 쌓입니다.</p>
+<p class="muted">{{t "hist_empty_pre"}} <code>show</code>/<code>recall</code>{{t "hist_empty_post"}}</p>
 {{end}}
 
 {{range .Days}}

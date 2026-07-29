@@ -1,7 +1,7 @@
 {{define "content"}}
-<h1>최근 변경</h1>
+<h1>{{t "recent_title"}}</h1>
 <table class="logtable">
-  <thead><tr><th>시각</th><th>동작</th><th>페이지</th><th>메모</th></tr></thead>
+  <thead><tr><th>{{t "recent_col_time"}}</th><th>{{t "recent_col_action"}}</th><th>{{t "recent_col_page"}}</th><th>{{t "recent_col_note"}}</th></tr></thead>
   <tbody>
   {{range .Rows}}
   <tr>

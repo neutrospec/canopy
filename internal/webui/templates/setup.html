@@ -1,14 +1,14 @@
 {{define "content"}}
 <section class="hero">
-  <h1>🌳 초기 설정</h1>
-  <p class="muted">이 주소는 외부에서 접근 가능하므로 계정이 필요합니다.<br>
-  <b>설정 코드</b>는 <code>canopy serve</code>를 실행한 터미널에 출력되어 있습니다.</p>
+  <h1>🌳 {{t "setup_title"}}</h1>
+  <p class="muted">{{t "setup_intro"}}<br>
+  <b>{{t "setup_code_label"}}</b>{{t "setup_code_desc_a"}} <code>canopy serve</code>{{t "setup_code_desc_b"}}</p>
   {{if .Error}}<p class="notice conflict">{{.Error}}</p>{{end}}
   <form class="authform" method="post" action="/setup">
-    <input type="text" name="code" placeholder="설정 코드 (터미널 확인)" autofocus required>
-    <input type="text" name="id" placeholder="사용할 아이디" autocomplete="username" required>
-    <input type="password" name="password" placeholder="비밀번호 (8자 이상)" autocomplete="new-password" minlength="8" required>
-    <button type="submit">계정 만들기</button>
+    <input type="text" name="code" placeholder="{{t "setup_code_placeholder"}}" autofocus required>
+    <input type="text" name="id" placeholder="{{t "setup_id_placeholder"}}" autocomplete="username" required>
+    <input type="password" name="password" placeholder="{{t "setup_password_placeholder"}}" autocomplete="new-password" minlength="8" required>
+    <button type="submit">{{t "setup_submit"}}</button>
   </form>
 </section>
 {{end}}

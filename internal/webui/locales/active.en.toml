@@ -41,7 +41,112 @@ wd_4 = "Thu"
 wd_5 = "Fri"
 wd_6 = "Sat"
 
-# --- parameterized / plural (tables — must be at the end) ---
+
+# --- template/handler strings (extracted) ---
+page_saved_prefix = "Saved. Commit with"
+page_saved_suffix = "."
+page_edit = "Edit"
+page_read_label = "read"
+page_auto = "auto"
+page_reread_title = "Mark as read again (updates count & date)"
+page_reread = "Read again"
+page_unread_title = "Undo read"
+page_cancel = "Cancel"
+page_read_shortcut = "Shortcut: r"
+page_read_button = "Read"
+page_agent_days_title = "Days the agent (show/recall) consumed this page"
+page_local_graph = "Local graph"
+page_suggested_title = "Suggested links"
+page_suggested_hint = "similar but not yet linked"
+page_backlinks_title = "Pages linking here"
+page_none = "None"
+page_access_log = "Access log"
+page_not_read = "Not read yet"
+page_full_log = "Full log →"
+attn_title = "Checks"
+attn_gaps_link = "Search gaps →"
+attn_gaps_hint = "Queries the wiki couldn't answer (candidates for new pages)"
+attn_islands_title = "Island clusters"
+attn_islands_hint = "Clusters linked to each other but cut off from the mainland (largest connected component) — they pass the orphan check but are isolated in the graph."
+attn_bridge_connects = "This one link connects the island."
+attn_bridge_edit = "Edit now →"
+attn_bridge_none = "No bridge suggestion (embedding index required —"
+attn_orphans_title = "Orphan pages"
+attn_orphans_hint = "Pages that no page links to — candidates to connect or clean up."
+attn_stale_title = "Stale pages"
+graph_find_placeholder = "Find node…"
+graph_legend_unread = "Unread"
+graph_legend_island = "Island"
+browse_title = "Browse"
+browse_filter_clear_hint = "Click an active filter to clear it"
+edit_heading = "Edit:"
+edit_conflict_lead = "⚠ This page was modified elsewhere (CLI/agent/another tab). Below is"
+edit_conflict_yours = "your edit"
+edit_conflict_tail = "— compare it with the currently saved version, merge what you need, then save again."
+edit_conflict_view_current = "View current version"
+edit_help_lead = "Edits the body only (frontmatter, page create/move/delete via the CLI). On save, the"
+edit_help_tail = "date is refreshed and the index and log are updated automatically."
+edit_save = "Save"
+edit_cancel = "Cancel"
+setup_title = "Initial setup"
+setup_intro = "This address is reachable externally, so an account is required."
+setup_code_label = "Setup code"
+setup_code_desc_a = "is printed in the terminal where you ran"
+setup_code_desc_b = "."
+setup_code_placeholder = "Setup code (check the terminal)"
+setup_id_placeholder = "Choose a username"
+setup_password_placeholder = "Password (8+ characters)"
+setup_submit = "Create account"
+login_id_placeholder = "Username"
+login_password_placeholder = "Password"
+login_submit = "Log in"
+gaps_title = "Search gaps"
+gaps_intro_pre = "Searches the wiki couldn't answer — queries that returned nothing or zero keyword matches. Recurring queries are soon"
+gaps_intro_candidate = "candidates for a new page"
+gaps_intro_mid = " ("
+gaps_intro_post = " or ask the agent)."
+gaps_col_query = "Query"
+gaps_col_count = "Count"
+gaps_col_last = "Last"
+gaps_search_again = "Search again"
+gaps_empty = "No records — every search found results."
+hist_title = "History"
+hist_intro = "A timeline of attention that passed through both doors, web and agent — the ground-truth event log on this machine. You can trace which search led to which read."
+hist_empty_pre = "No history yet. As you read pages, or the agent consumes them with"
+hist_empty_post = ", entries accumulate here."
+disc_title = "Discover"
+disc_intro = "Ranks unread pages by similarity to new pages, hubs, and recent interests. Read progress:"
+disc_all_read = "You've read everything 🎉"
+search_no_results = "No results"
+recent_title = "Recent changes"
+recent_col_time = "Time"
+recent_col_action = "Action"
+recent_col_page = "Page"
+recent_col_note = "Note"
+title_discover = "Discover"
+title_history = "History"
+title_recent = "Recent changes"
+title_checks = "Checks"
+title_graph = "Graph"
+title_setup = "Setup"
+title_login = "Log in"
+title_gaps = "Search gaps"
+reason_new = "New page"
+reason_affinity = "Similar to what you read recently"
+reason_hub = "A hub where links gather"
+reason_unread = "Not read yet"
+kind_reread = "re-read"
+kind_read = "read"
+kind_recall = "cited"
+kind_view = "viewed"
+kind_search = "search"
+spark_aria = "Weekly access trend"
+readago_today = "today"
+readago_yesterday = "yesterday"
+auth_bad_code = "The setup code is incorrect (it is printed to the terminal where you ran serve)"
+auth_bad_creds = "The id must be at least 1 character and the password at least 8"
+auth_login_failed = "Incorrect id or password"
+
 [home_resurface_stale]
 other = "forgotten for {{.Days}} days"
 
@@ -61,3 +166,46 @@ other = "{{.Count}} pages"
 [home_today_searches]
 one = "{{.Count}} search"
 other = "{{.Count}} searches"
+
+# --- template parameterized/plural ---
+[page_read_first]
+other = "first {{.First}}"
+
+[page_read_times]
+other = "{{.Count}}×"
+
+[page_agent_days]
+other = "{{.Days}}d"
+
+[page_similarity]
+other = "similarity {{.Sim}}"
+
+[page_tags_shared]
+other = "{{.Count}} tags shared"
+
+[page_read_times_full]
+other = "read {{.Count}} times"
+
+[page_last]
+other = "last {{.Ago}}"
+
+[page_agent_days_full]
+other = "agent {{.Days}}d"
+
+[attn_bridge_label]
+other = "Bridge suggestion (similarity {{.Sim}}):"
+
+[attn_stale_hint]
+other = "Pages not modified in over {{.Days}} days."
+
+[attn_days_ago]
+other = "{{.Days}} days ago"
+
+[search_missing]
+other = "There's no page “{{.Name}}”. Showing search results instead."
+
+[search_results_title]
+other = "Search results for “{{.Query}}”"
+
+[readago_days]
+other = "{{.Days}} days ago"

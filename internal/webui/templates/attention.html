@@ -1,34 +1,33 @@
 {{define "content"}}
-<h1>점검</h1>
-<p class="muted"><a class="wikilink" href="/special/gaps">검색 갭 →</a> 위키가 답하지 못한 질의(페이지 생성 후보)</p>
+<h1>{{t "attn_title"}}</h1>
+<p class="muted"><a class="wikilink" href="/special/gaps">{{t "attn_gaps_link"}}</a> {{t "attn_gaps_hint"}}</p>
 {{if .Islands}}
 <section>
-  <h2>섬 클러스터 ({{len .Islands}})</h2>
-  <p class="muted">서로는 링크돼 있지만 본토(최대 연결 성분)와 끊어진 클러스터 —
-  고아 검사는 통과하지만 그래프에서 고립돼 있습니다.</p>
+  <h2>{{t "attn_islands_title"}} ({{len .Islands}})</h2>
+  <p class="muted">{{t "attn_islands_hint"}}</p>
   {{range .Islands}}
   <div class="card">
     <p>
       {{range $i, $p := .Pages}}{{if $i}} · {{end}}<a class="wikilink" href="/page/{{$p.Slug}}" data-slug="{{$p.Slug}}">{{$p.Slug}}</a>{{end}}
     </p>
     {{if .HasSuggestion}}
-    <p class="muted">🌉 다리 제안 (유사도 {{printf "%.2f" .Sim}}):
+    <p class="muted">🌉 {{t "attn_bridge_label" "Sim" (printf "%.2f" .Sim)}}
       <a class="wikilink" href="/page/{{.BridgeA}}" data-slug="{{.BridgeA}}">{{.BridgeATitle}}</a>
       ↔
       <a class="wikilink" href="/page/{{.BridgeB}}" data-slug="{{.BridgeB}}">{{.BridgeBTitle}}</a>
-      — 이 링크 하나면 섬이 연결됩니다.
-      <a class="wikilink" href="/edit/{{.BridgeA}}">바로 편집 →</a>
+      — {{t "attn_bridge_connects"}}
+      <a class="wikilink" href="/edit/{{.BridgeA}}">{{t "attn_bridge_edit"}}</a>
     </p>
     {{else}}
-    <p class="muted">다리 제안 없음 (임베딩 인덱스 필요 — <code>canopy reindex</code>)</p>
+    <p class="muted">{{t "attn_bridge_none"}} <code>canopy reindex</code>)</p>
     {{end}}
   </div>
   {{end}}
 </section>
 {{end}}
 <section>
-  <h2>고아 페이지 ({{len .Orphans}})</h2>
-  <p class="muted">어느 페이지도 링크하지 않는 페이지 — 연결하거나 정리할 후보.</p>
+  <h2>{{t "attn_orphans_title"}} ({{len .Orphans}})</h2>
+  <p class="muted">{{t "attn_orphans_hint"}}</p>
   <ul class="pagelist">
     {{range .Orphans}}
     <li><a class="wikilink" href="/page/{{.Slug}}" data-slug="{{.Slug}}">{{.Title}}</a>
@@ -37,12 +36,12 @@
   </ul>
 </section>
 <section>
-  <h2>오래된 페이지 ({{len .Stale}})</h2>
-  <p class="muted">{{.StaleDays}}일 이상 수정되지 않은 페이지.</p>
+  <h2>{{t "attn_stale_title"}} ({{len .Stale}})</h2>
+  <p class="muted">{{t "attn_stale_hint" "Days" .StaleDays}}</p>
   <ul class="pagelist">
     {{range .Stale}}
     <li><a class="wikilink" href="/page/{{.Page.Slug}}" data-slug="{{.Page.Slug}}">{{.Page.Title}}</a>
-        <span class="muted">{{.Days}}일 전 · {{.Page.Dir}}</span></li>
+        <span class="muted">{{t "attn_days_ago" "Days" .Days}} · {{.Page.Dir}}</span></li>
     {{end}}
   </ul>
 </section>

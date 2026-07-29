@@ -3,9 +3,9 @@
   <h1>🌳 canopy</h1>
   {{if .Error}}<p class="notice conflict">{{.Error}}</p>{{end}}
   <form class="authform" method="post" action="/login">
-    <input type="text" name="id" placeholder="아이디" autofocus autocomplete="username" required>
-    <input type="password" name="password" placeholder="비밀번호" autocomplete="current-password" required>
-    <button type="submit">로그인</button>
+    <input type="text" name="id" placeholder="{{t "login_id_placeholder"}}" autofocus autocomplete="username" required>
+    <input type="password" name="password" placeholder="{{t "login_password_placeholder"}}" autocomplete="current-password" required>
+    <button type="submit">{{t "login_submit"}}</button>
   </form>
 </section>
 {{end}}

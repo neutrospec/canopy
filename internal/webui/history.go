@@ -9,8 +9,11 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 
 	"github.com/neutrospec/canopy/internal/attention"
 	"github.com/neutrospec/canopy/internal/wiki"
@@ -33,15 +36,16 @@ type histDay struct {
 	Entries []*histEntry
 }
 
-// kindLabel maps event kinds to display labels; kindRank orders them so
-// a day's strongest interaction with a page wins the fold.
-var kindLabel = map[string]string{
-	attention.KindReread: "다시 읽음",
-	attention.KindRead:   "읽음",
-	attention.KindRecall: "인용",
-	attention.KindShow:   "열람",
-	attention.KindView:   "열람",
-	attention.KindSearch: "검색",
+// kindLabelID maps event kinds to message ids; kindRank orders them so a
+// day's strongest interaction with a page wins the fold. Labels are
+// localized per request (invariant M).
+var kindLabelID = map[string]string{
+	attention.KindReread: "kind_reread",
+	attention.KindRead:   "kind_read",
+	attention.KindRecall: "kind_recall",
+	attention.KindShow:   "kind_view",
+	attention.KindView:   "kind_view",
+	attention.KindSearch: "kind_search",
 }
 
 var kindRank = map[string]int{
@@ -54,9 +58,9 @@ var kindRank = map[string]int{
 
 // histEntryOf shapes one raw event for display; timeFmt picks how much
 // of the timestamp to show (clock on the timeline, date in the panel).
-func histEntryOf(e attention.Event, timeFmt string) histEntry {
-	h := histEntry{Slug: e.Slug, Label: kindLabel[e.Kind], Agent: e.Door == attention.DoorAgent, Count: 1, kind: e.Kind}
-	if h.Label == "" {
+func histEntryOf(e attention.Event, timeFmt string, loc *i18n.Localizer) histEntry {
+	h := histEntry{Slug: e.Slug, Label: localizeString(loc, kindLabelID[e.Kind]), Agent: e.Door == attention.DoorAgent, Count: 1, kind: e.Kind}
+	if kindLabelID[e.Kind] == "" {
 		h.Label = e.Kind
 	}
 	if e.Kind == attention.KindSearch {
@@ -68,9 +72,8 @@ func histEntryOf(e attention.Event, timeFmt string) histEntry {
 	return h
 }
 
-var weekdays = [...]string{"일", "월", "화", "수", "목", "금", "토"}
-
 func (s *Server) handleHistory(w http.ResponseWriter, r *http.Request) {
+	loc := s.loc(r)
 	scan, err := wiki.Scan(s.w)
 	if err != nil {
 		s.fail(w, err)
@@ -98,7 +101,7 @@ func (s *Server) handleHistory(w http.ResponseWriter, r *http.Request) {
 		date := lt.Format("2006-01-02")
 		d, ok := dayIdx[date]
 		if !ok {
-			d = &histDay{Date: fmt.Sprintf("%s (%s)", date, weekdays[lt.Weekday()])}
+			d = &histDay{Date: date + " (" + localizeString(loc, "wd_"+strconv.Itoa(int(lt.Weekday()))) + ")"}
 			dayIdx[date] = d
 			days = append(days, d)
 		}
@@ -109,12 +112,12 @@ func (s *Server) handleHistory(w http.ResponseWriter, r *http.Request) {
 		if f, ok := folded[key]; ok {
 			f.Count++
 			if kindRank[e.Kind] > kindRank[f.kind] {
-				f.kind, f.Label = e.Kind, kindLabel[e.Kind]
+				f.kind, f.Label = e.Kind, localizeString(loc, kindLabelID[e.Kind])
 				f.Agent = e.Door == attention.DoorAgent
 			}
 			continue
 		}
-		entry := histEntryOf(e, "15:04")
+		entry := histEntryOf(e, "15:04", loc)
 		if p, ok := scan.BySlug[e.Slug]; ok {
 			entry.Title = p.Title
 		}
@@ -123,14 +126,14 @@ func (s *Server) handleHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.render(w, r, http.StatusOK, "history.html", map[string]any{
-		"Title": "기록",
+		"Title": localizeString(loc, "title_history"),
 		"Days":  days,
 	})
 }
 
 // sparkSVG renders weekly access counts as a tiny inline SVG bar row —
 // server-side, no JS, vendored-assets rule trivially satisfied.
-func sparkSVG(counts []int) template.HTML {
+func sparkSVG(counts []int, aria string) template.HTML {
 	max := 1
 	for _, c := range counts {
 		if c > max {
@@ -140,7 +143,7 @@ func sparkSVG(counts []int) template.HTML {
 	const bw, gap, h = 7, 2, 18
 	total := len(counts)*(bw+gap) - gap
 	var b strings.Builder
-	fmt.Fprintf(&b, `<svg class="spark" width="%d" height="%d" viewBox="0 0 %d %d" role="img" aria-label="주간 접근 추이">`, total, h, total, h)
+	fmt.Fprintf(&b, `<svg class="spark" width="%d" height="%d" viewBox="0 0 %d %d" role="img" aria-label="%s">`, total, h, total, h, template.HTMLEscapeString(aria))
 	for i, c := range counts {
 		bh := 2 // baseline tick so empty weeks stay visible
 		if c > 0 {

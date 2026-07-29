@@ -104,5 +104,5 @@ func (s *Server) handleAPIGraph(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGraphPage(w http.ResponseWriter, r *http.Request) {
-	s.render(w, r, http.StatusOK, "graph.html", map[string]any{"Title": "그래프"})
+	s.render(w, r, http.StatusOK, "graph.html", map[string]any{"Title": localizeString(s.loc(r), "title_graph")})
 }

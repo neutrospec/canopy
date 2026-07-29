@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -18,6 +19,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/neutrospec/canopy/internal/config"
+)
+
+// Auth errors carried as sentinels so the HTTP handler can localize them
+// (the store layer has no locale); see docs/web-ui-i18n.md.
+var (
+	errBadSetupCode = errors.New("bad setup code")
+	errBadCreds     = errors.New("bad credentials")
 )
 
 // Auth protects non-loopback serving (docs/web-ui-plan-2.md D1/D2).
@@ -103,10 +111,10 @@ func (a *authStore) register(code, id, pw string) error {
 		return fmt.Errorf("account already exists")
 	}
 	if a.setupCode == "" || subtle.ConstantTimeCompare([]byte(code), []byte(a.setupCode)) != 1 {
-		return fmt.Errorf("설정 코드가 올바르지 않습니다 (serve를 실행한 터미널에 출력됩니다)")
+		return errBadSetupCode
 	}
 	if len(id) < 1 || len(pw) < 8 {
-		return fmt.Errorf("아이디는 1자 이상, 비밀번호는 8자 이상이어야 합니다")
+		return errBadCreds
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
 	if err != nil {
@@ -269,7 +277,7 @@ func (s *Server) handleSetupForm(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
-	s.render(w, r, http.StatusOK, "setup.html", map[string]any{"Title": "초기 설정"})
+	s.render(w, r, http.StatusOK, "setup.html", map[string]any{"Title": localizeString(s.loc(r), "title_setup")})
 }
 
 func (s *Server) handleSetupSave(w http.ResponseWriter, r *http.Request) {
@@ -283,7 +291,15 @@ func (s *Server) handleSetupSave(w http.ResponseWriter, r *http.Request) {
 		r.FormValue("password"),
 	)
 	if err != nil {
-		s.render(w, r, http.StatusBadRequest, "setup.html", map[string]any{"Title": "초기 설정", "Error": err.Error()})
+		loc := s.loc(r)
+		msg := err.Error()
+		switch {
+		case errors.Is(err, errBadSetupCode):
+			msg = localizeString(loc, "auth_bad_code")
+		case errors.Is(err, errBadCreds):
+			msg = localizeString(loc, "auth_bad_creds")
+		}
+		s.render(w, r, http.StatusBadRequest, "setup.html", map[string]any{"Title": localizeString(loc, "title_setup"), "Error": msg})
 		return
 	}
 	s.setSession(w)
@@ -299,7 +315,7 @@ func (s *Server) handleLoginForm(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup", http.StatusFound)
 		return
 	}
-	s.render(w, r, http.StatusOK, "login.html", map[string]any{"Title": "로그인"})
+	s.render(w, r, http.StatusOK, "login.html", map[string]any{"Title": localizeString(s.loc(r), "title_login")})
 }
 
 func (s *Server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
@@ -312,8 +328,9 @@ func (s *Server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+	loc := s.loc(r)
 	s.render(w, r, http.StatusUnauthorized, "login.html", map[string]any{
-		"Title": "로그인", "Error": "아이디 또는 비밀번호가 올바르지 않습니다",
+		"Title": localizeString(loc, "title_login"), "Error": localizeString(loc, "auth_login_failed"),
 	})
 }
 

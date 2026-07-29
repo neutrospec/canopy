@@ -229,15 +229,15 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	if len(recent) > 10 {
 		recent = recent[:10]
 	}
-	discover := s.discoverRanked(scan, rs, now)
+	// Locale-dependent display strings are built here, where the data is,
+	// and passed in finished (docs/web-ui-i18n.md); static labels use {{t}}.
+	lc := s.loc(r)
+	discover := s.discoverRanked(scan, rs, now, lc)
 	if len(discover) > 4 {
 		discover = discover[:4]
 	}
 	pick, bridge := s.todaysCard()
 
-	// Locale-dependent display strings are built here, where the data is,
-	// and passed in finished (docs/web-ui-i18n.md); static labels use {{t}}.
-	lc := s.loc(r)
 	date := now.Format("2006-01-02") + " (" + localizeString(lc, "wd_"+strconv.Itoa(int(now.Weekday()))) + ")"
 	readProgress := localizeString(lc, "home_read_progress", "Read", readTotal, "Total", len(scan.Pages))
 	todayLine := ""
@@ -302,16 +302,17 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 	}
 	// Per-page attention panel (M12): recent trail + 12-week sparkline
 	// from the local event log, best-effort.
+	lc := s.loc(r)
 	var attnRecent []histEntry
 	var spark template.HTML
 	if ev, err := attention.Open(s.w.AttentionDBPath()); err == nil {
 		if events, err := ev.BySlug(slug, 6); err == nil {
 			for _, e := range events {
-				attnRecent = append(attnRecent, histEntryOf(e, "2006-01-02"))
+				attnRecent = append(attnRecent, histEntryOf(e, "2006-01-02", lc))
 			}
 		}
 		if counts, err := ev.WeeklyCounts(slug, 12, time.Now()); err == nil {
-			spark = sparkSVG(counts)
+			spark = sparkSVG(counts, localizeString(lc, "spark_aria"))
 		}
 		ev.Close()
 	}
@@ -323,7 +324,7 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 		"GraphNodes": nodes,
 		"GraphEdges": edges,
 		"Read":       rs.Get(slug),
-		"ReadAgo":    readAgo(rs.Get(slug), time.Now()),
+		"ReadAgo":    readAgo(rs.Get(slug), time.Now(), lc),
 		"AgentDays":  agentDays,
 		"AttnRecent": attnRecent,
 		"Spark":      spark,
@@ -334,7 +335,7 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 
 // readAgo renders "when did I last read this" for the page header:
 // 오늘 / 어제 / N일 전.
-func readAgo(r *reads.Read, now time.Time) string {
+func readAgo(r *reads.Read, now time.Time, loc *i18n.Localizer) string {
 	if r == nil {
 		return ""
 	}
@@ -345,11 +346,11 @@ func readAgo(r *reads.Read, now time.Time) string {
 	days := int(now.Sub(t).Hours() / 24)
 	switch {
 	case days <= 0:
-		return "오늘"
+		return localizeString(loc, "readago_today")
 	case days == 1:
-		return "어제"
+		return localizeString(loc, "readago_yesterday")
 	default:
-		return fmt.Sprintf("%d일 전", days)
+		return localizeString(loc, "readago_days", "Days", days)
 	}
 }
 

@@ -177,7 +177,7 @@ func (s *Server) handleRecent(w http.ResponseWriter, r *http.Request) {
 			Exists: exists,
 		})
 	}
-	s.render(w, r, http.StatusOK, "recent.html", map[string]any{"Title": "최근 변경", "Rows": rows})
+	s.render(w, r, http.StatusOK, "recent.html", map[string]any{"Title": localizeString(s.loc(r), "title_recent"), "Rows": rows})
 }
 
 // handleAttention lists orphans and stale pages — the same signals
@@ -216,7 +216,7 @@ func (s *Server) handleAttention(w http.ResponseWriter, r *http.Request) {
 	sort.Slice(stale, func(i, j int) bool { return stale[i].Days > stale[j].Days })
 
 	s.render(w, r, http.StatusOK, "attention.html", map[string]any{
-		"Title":     "점검",
+		"Title":     localizeString(s.loc(r), "title_checks"),
 		"Orphans":   orphans,
 		"Stale":     stale,
 		"StaleDays": staleDays,

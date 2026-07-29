@@ -1,5 +1,5 @@
 {{define "content"}}
-<h1>탐색</h1>
+<h1>{{t "browse_title"}}</h1>
 <div class="facets">
   <div class="facetrow"><span class="facetlabel">dir</span>
     {{range .Dirs}}<a class="chip{{if .Active}} active{{end}}" href="{{.Href}}">{{.Value}} <small>{{.Count}}</small></a>{{end}}
@@ -11,7 +11,7 @@
     {{range .Tags}}<a class="chip tag{{if .Active}} active{{end}}" href="{{.Href}}">{{.Value}} <small>{{.Count}}</small></a>{{end}}
   </div>
 </div>
-<p class="muted">{{len .Pages}} page(s){{if .Filtered}} — 활성 필터를 클릭하면 해제{{end}}</p>
+<p class="muted">{{len .Pages}} page(s){{if .Filtered}} — {{t "browse_filter_clear_hint"}}{{end}}</p>
 <ul class="pagelist">
   {{range .Pages}}
   <li><a class="wikilink" href="/page/{{.Slug}}" data-slug="{{.Slug}}">{{.Title}}</a>

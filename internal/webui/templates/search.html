@@ -1,8 +1,8 @@
 {{define "content"}}
 {{if .Missing}}
-<p class="notice">“{{.Missing}}” 페이지는 없습니다. 대신 검색 결과를 보여드립니다.</p>
+<p class="notice">{{t "search_missing" "Name" .Missing}}</p>
 {{end}}
-<h1>“{{.Query}}” 검색 결과 <span class="muted">({{.Mode}})</span></h1>
+<h1>{{t "search_results_title" "Query" .Query}} <span class="muted">({{.Mode}})</span></h1>
 {{if .Results}}
 <ol class="results">
   {{range .Results}}
@@ -14,6 +14,6 @@
   {{end}}
 </ol>
 {{else}}
-<p class="muted">결과 없음</p>
+<p class="muted">{{t "search_no_results"}}</p>
 {{end}}
 {{end}}

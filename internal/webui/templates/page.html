@@ -1,28 +1,28 @@
 {{define "content"}}
 <article data-slug="{{.Page.Slug}}" {{if not .Read}}data-read-secs="{{.ReadSecs}}"{{end}}>
-  {{if .Saved}}<p class="notice">✓ 저장되었습니다. 커밋은 <code>canopy sync</code>로.</p>{{end}}
+  {{if .Saved}}<p class="notice">✓ {{t "page_saved_prefix"}} <code>canopy sync</code>{{t "page_saved_suffix"}}</p>{{end}}
   {{range .Lint}}<p class="notice conflict">lint: {{.}}</p>{{end}}
   <h1>{{.Page.Title}}</h1>
   <div class="metacard">
     <a class="chip" href="/browse?type={{.Page.Type}}">{{.Page.Type}}</a>
     {{range .Page.Tags}}<a class="chip tag" href="/tag/{{.}}">{{.}}</a>{{end}}
     <span class="muted">updated {{.Page.Updated}} · {{.Page.RelPath}}</span>
-    <a class="chip" href="/edit/{{.Page.Slug}}">✎ 편집</a>
+    <a class="chip" href="/edit/{{.Page.Slug}}">✎ {{t "page_edit"}}</a>
     <form method="post" action="/read/{{.Page.Slug}}" class="readform" id="readform">
       {{if .Read}}
-      <span class="chip readmark" title="처음 {{.Read.First}}">✓ {{if gt .Read.Count 1}}{{.Read.Count}}회 {{end}}읽음{{if .ReadAgo}} · {{.ReadAgo}}{{end}}{{if eq .Read.Source "auto"}} <small>자동</small>{{end}}</span>
-      <button class="chip" name="action" value="read" title="다시 읽었다고 기록 (횟수·날짜 갱신)">다시 읽음</button>
-      <button class="chip" name="action" value="unread" title="읽음 취소">취소</button>
+      <span class="chip readmark" title="{{t "page_read_first" "First" .Read.First}}">✓ {{if gt .Read.Count 1}}{{t "page_read_times" "Count" .Read.Count}} {{end}}{{t "page_read_label"}}{{if .ReadAgo}} · {{.ReadAgo}}{{end}}{{if eq .Read.Source "auto"}} <small>{{t "page_auto"}}</small>{{end}}</span>
+      <button class="chip" name="action" value="read" title="{{t "page_reread_title"}}">{{t "page_reread"}}</button>
+      <button class="chip" name="action" value="unread" title="{{t "page_unread_title"}}">{{t "page_cancel"}}</button>
       {{else}}
-      <button class="chip" name="action" value="read" title="단축키 r">✓ 읽음</button>
+      <button class="chip" name="action" value="read" title="{{t "page_read_shortcut"}}">✓ {{t "page_read_button"}}</button>
       {{end}}
     </form>
-    {{if .AgentDays}}<span class="muted" title="에이전트(show/recall)가 이 페이지를 소비한 일수">🤖 {{.AgentDays}}일</span>{{end}}
+    {{if .AgentDays}}<span class="muted" title="{{t "page_agent_days_title"}}">🤖 {{t "page_agent_days" "Days" .AgentDays}}</span>{{end}}
   </div>
   <div class="prose">{{.Body}}</div>
   {{if .GraphNodes}}
   <details class="graph">
-    <summary class="muted">로컬 그래프 ({{len .GraphEdges}} connections)</summary>
+    <summary class="muted">{{t "page_local_graph"}} ({{len .GraphEdges}} connections)</summary>
     <svg viewBox="0 0 640 260" role="img" aria-label="local link graph">
       {{range .GraphEdges}}<line x1="{{.X1}}" y1="{{.Y1}}" x2="{{.X2}}" y2="{{.Y2}}"/>{{end}}
       {{range $i, $n := .GraphNodes}}
@@ -37,30 +37,30 @@
   {{end}}
   {{if .Suggested}}
   <section class="suggested">
-    <h2>제안 링크 <span class="muted">— 유사하지만 아직 연결 안 됨</span></h2>
+    <h2>{{t "page_suggested_title"}} <span class="muted">— {{t "page_suggested_hint"}}</span></h2>
     <div class="suggestrow">
       {{range .Suggested}}
       <a class="chip suggest" href="/page/{{.Slug}}" data-slug="{{.Slug}}"
-         title="유사도 {{printf "%.2f" .Sim}}{{if .Tags}} · 태그 {{.Tags}}개 공유{{end}}">{{.Title}}
+         title="{{t "page_similarity" "Sim" (printf "%.2f" .Sim)}}{{if .Tags}} · {{t "page_tags_shared" "Count" .Tags}}{{end}}">{{.Title}}
         <small>{{printf "%.2f" .Sim}}</small></a>
       {{end}}
     </div>
   </section>
   {{end}}
   <footer class="backlinks">
-    <h2>여기를 링크한 페이지 ({{len .Backlinks}})</h2>
+    <h2>{{t "page_backlinks_title"}} ({{len .Backlinks}})</h2>
     {{if .Backlinks}}
     <ul>
       {{range .Backlinks}}<li><a class="wikilink" href="/page/{{.}}">{{.}}</a></li>{{end}}
     </ul>
-    {{else}}<p class="muted">없음</p>{{end}}
+    {{else}}<p class="muted">{{t "page_none"}}</p>{{end}}
   </footer>
   {{if .AttnRecent}}
   <details class="attn">
-    <summary class="muted">접근 기록{{if .Spark}} <span class="sparkwrap">{{.Spark}}</span>{{end}}</summary>
+    <summary class="muted">{{t "page_access_log"}}{{if .Spark}} <span class="sparkwrap">{{.Spark}}</span>{{end}}</summary>
     <p class="muted attnsum">
-      {{if .Read}}읽음 {{.Read.Count}}회{{if .ReadAgo}} (마지막 {{.ReadAgo}}){{end}}{{else}}아직 안 읽음{{end}}{{if .AgentDays}} · 🤖 에이전트 {{.AgentDays}}일{{end}}
-      · <a href="/history">전체 기록 →</a>
+      {{if .Read}}{{t "page_read_times_full" "Count" .Read.Count}}{{if .ReadAgo}} ({{t "page_last" "Ago" .ReadAgo}}){{end}}{{else}}{{t "page_not_read"}}{{end}}{{if .AgentDays}} · 🤖 {{t "page_agent_days_full" "Days" .AgentDays}}{{end}}
+      · <a href="/history">{{t "page_full_log"}}</a>
     </p>
     <ul class="hist">
       {{range .AttnRecent}}

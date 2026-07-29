@@ -1,12 +1,12 @@
 {{define "content"}}
 <div class="graphwrap">
   <div class="graphtools">
-    <input type="search" id="graphfind" placeholder="노드 찾기…" autocomplete="off">
+    <input type="search" id="graphfind" placeholder="{{t "graph_find_placeholder"}}" autocomplete="off">
     <span class="legend"><i class="dot d-entities"></i>entities
       <i class="dot d-concepts"></i>concepts
       <i class="dot d-comparisons"></i>comparisons
-      <i class="dot d-unread"></i>안 읽음
-      <i class="dot d-island"></i>섬</span>
+      <i class="dot d-unread"></i>{{t "graph_legend_unread"}}
+      <i class="dot d-island"></i>{{t "graph_legend_island"}}</span>
   </div>
   <div id="graph"></div>
 </div>
