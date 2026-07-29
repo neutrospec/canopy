@@ -145,6 +145,19 @@
 | L2 | 번역은 소스와 동기 상태다 (낡지 않음) | `make i18n-check` → 기록 sha == `git hash-object <source>`; 불일치는 STALE. CI(ci.yml) 포함 |
 | L3 | 코드·명령·경로는 번역하지 않는다 (바이트 동일) **[협약]** | 번역은 코드펜스 안을 건드리지 않는다 — 부분 점검으로 소스·번역의 ` ``` ` 개수 일치(FENCE MISMATCH가 아니어야) |
 
+## M. 웹 UI 다국어 (i18n) ([web-ui-i18n.md](web-ui-i18n.md))
+
+> UI chrome만 로케일별로 스왑, 데이터·동작은 불변. go-i18n + `active.<lang>.toml`.
+> 위키 페이지 내용은 번역 대상이 아니다(사용자 마크다운 그대로).
+
+| # | 불변식 | 점검 |
+|---|--------|------|
+| M1 | 템플릿에 하드코딩된 UI-언어 리터럴이 없다 | `grep -lP '[\x{AC00}-\x{D7A3}]' internal/webui/templates/*.html` → 빈 출력. `go test ./internal/webui/`의 `TestNoHardcodedUIStrings` |
+| M2 | 모든 로케일이 같은 메시지 ID 집합을 정의한다 | `go test`의 `TestLocaleKeyParity` — `active.en.toml` ID == `active.ko.toml` ID (F1에 포함) |
+| M3 | 안전한 폴백 (모르는 언어→기본, 없는 ID→ID 반환, 크래시·빈칸 없음) | `go test`의 `TestLocaleFallback`; 그리고 `curl -H 'Accept-Language: xx' localhost:8737/` → 200 (기본 로케일) |
+| M4 | 로케일 파일 추가 = 언어 추가 (코드 변경 0) | `active.<new>.toml` 임베드 후 재빌드 → 언어 선택에 등장; 로더는 `locales/*.toml` 글로브 |
+| M5 | 로케일은 데이터를 바꾸지 않는다 (chrome만) | `curl -H 'Accept-Language: en' .../api/search?q=x`와 `ko` 결과 JSON 동일 (serve 실행 상태) |
+
 ## 감사 절차
 
 1. `make test && gofmt -l .` (F)
@@ -156,6 +169,7 @@
 7. J1–J5는 `canopy version --json` / `canopy migrate status --json`으로 (J6은 1의 `make test`에 포함)
 8. K1–K7은 스크래치 위키에서 파일 직접 편집 후 `canopy reconcile --json` / `bless`로
 9. L1–L3은 `make i18n-check` (1의 CI에도 포함)
+10. M1–M5는 `make test`(M1·M2·M3 테스트) + serve 실행 상태(M3·M5 curl)
 
 > 위반을 발견하면: (1) 그 위반이 **어느 명령을 우회해서** 생겼는지 찾고,
 > (2) 우회 경로를 막는 코드/lint를 추가하고, (3) 필요하면 이 목록에 항목을 늘린다.
