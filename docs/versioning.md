@@ -126,6 +126,19 @@ scripts/brew-sha256.sh v0.1.0      # 소스 tarball의 url+sha256 출력
 `make`가 각인한다(`make build` 하나로 태그 빌드는 `v0.1.0`, 태그 사이는
 `v0.1.0-3-gabc1234`, dirty면 `-dirty`).
 
+### 릴리스는 main 위에서만 (불변식 J7)
+
+`git`에서 **태그와 브랜치는 따로 push된다.** 태그를 push하면 그 커밋 객체는 원격에
+올라가지만 `origin/main` 포인터는 움직이지 않는다 — 그래서 옛 `release-tag`처럼 태그만
+밀면, 릴리스된 코드가 원격에 존재해도 `origin/main`은 옛 커밋에 머문다(v0.4.1이 이렇게
+나갔다: 태그는 `a1760b2`, `origin/main`은 두 커밋 뒤 `dda8930`). worktree/feature
+브랜치에서 릴리스하면 더 나쁘다 — 태그가 **main에 없는 커밋**을 가리킨다.
+
+그래서 `make release-tag`는 (1) **main에서만** 실행을 허용하고, (2) `git push origin
+main`을 **태그보다 먼저** 한다. 브랜치 push가 non-fast-forward로 막히면 태그를 만들기
+전에 멈춘다. 사후 점검은 **J7**: `make release-lineage-check`가 모든 릴리스 태그가
+`origin/main`의 조상인지 확인하고, `release.yml`이 릴리스마다 GoReleaser 앞에서 돌린다.
+
 ## Homebrew 배포
 
 전체 빌드(시맨틱 검색)는 ONNX Runtime과 네이티브 tokenizer 라이브러리를 빌드 시점에

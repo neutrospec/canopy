@@ -21,6 +21,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # full history so the changelog can be built
+      - name: release tag is on origin/main (invariant J7)
+        run: bash scripts/release-lineage-check.sh
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod

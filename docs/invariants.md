@@ -116,6 +116,7 @@
 | J4 | 데이터가 바이너리보다 새로우면 거부한다 (다운그레이드 가드) | `state.json`의 `schema_version`을 `schema_target`보다 크게 써두고 아무 명령 실행 → 에러로 종료. `go test`의 `TestDowngradeGuard` |
 | J5 | 파생 캐시(인덱스 DB)는 마이그레이션 대상이 아니라 재구축 대상이다 (C4 재확인) | `migrate`가 `store`에 의존하지 않음: `grep -rn '"github.com/neutrospec/canopy/internal/store"' internal/migrate/` → 빈 출력. 캐시 손실 복구는 C4가 보증 |
 | J6 | 마이그레이션은 순서대로 적용되고 idempotent하다 | `go test ./internal/migrate/` 전부 통과 (F1에 포함) |
+| J7 | 모든 릴리스 태그가 가리키는 커밋은 `origin/main`의 조상이다(자기 자신 포함) — 태그만 push되고 브랜치가 뒤처지거나(v0.4.1이 그랬다), force-push로 릴리스 커밋이 유실되는 걸 잡는다 | `make release-lineage-check` (`scripts/release-lineage-check.sh`); `release.yml`이 릴리스마다 GoReleaser 전에 실행. 위반 예방은 `Makefile`의 `release-tag`가 강제 — `main에서만` + `git push origin main`을 태그보다 **먼저** |
 
 ## K. 정규화(reconcile) 게이트 ([reconcile-design.md](reconcile-design.md))
 
@@ -166,7 +167,7 @@
 4. E는 `--peek`으로 안전하게
 5. G1–G7 (recall·digest·bridge — 임베딩 인덱스 필요)
 6. H·I는 `canopy serve`를 띄운 상태에서 (I1은 공개 바인딩 별도 기동, I2는 스크래치 위키 권장)
-7. J1–J5는 `canopy version --json` / `canopy migrate status --json`으로 (J6은 1의 `make test`에 포함)
+7. J1–J5는 `canopy version --json` / `canopy migrate status --json`으로 (J6은 1의 `make test`에 포함, J7은 `make release-lineage-check`)
 8. K1–K7은 스크래치 위키에서 파일 직접 편집 후 `canopy reconcile --json` / `bless`로
 9. L1–L3은 `make i18n-check` (1의 CI에도 포함)
 10. M1–M5는 `make test`(M1·M2·M3 테스트) + serve 실행 상태(M3·M5 curl)

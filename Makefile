@@ -20,7 +20,7 @@ DATE    ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 PKG     := github.com/neutrospec/canopy/internal/buildinfo
 LDFLAGS := -X $(PKG).version=$(VERSION) -X $(PKG).commit=$(COMMIT) -X $(PKG).date=$(DATE)
 
-.PHONY: build build-lite test fmt deps install release-check release-tag i18n-check
+.PHONY: build build-lite test fmt deps install release-check release-tag i18n-check release-lineage-check
 
 build: deps
 	go build -tags ORT -ldflags "$(LDFLAGS)" -o canopy ./cmd/canopy
@@ -39,6 +39,11 @@ fmt:
 # Korean sources — invariants L1-L3, see docs/i18n.md.
 i18n-check:
 	scripts/i18n-check.sh
+
+# Every release tag must sit on origin/main (invariant J7). CI runs this on
+# each release; run it by hand to audit lineage anytime.
+release-lineage-check:
+	scripts/release-lineage-check.sh
 
 deps: $(LIBDIR)/libtokenizers.a
 
@@ -62,8 +67,18 @@ release-check:
 # tag into a GitHub release with a generated changelog. Then refresh the
 # Homebrew formula url+sha256 (scripts/brew-sha256.sh v$(V)) and push it to the
 # neutrospec/homebrew-tap repo.
+#
+# Releases are cut from main only (invariant J7). We push the branch BEFORE the
+# tag so origin/main can never fall behind the tag: pushing a tag also uploads
+# its commit objects but leaves origin/main pointing at the old commit, which is
+# how v0.4.1 shipped while origin/main still lagged. `git push origin main`
+# first fails fast (non-fast-forward) if someone else advanced main, aborting
+# before any tag exists.
 release-tag: release-check
 	@test -n "$(V)" || { echo "usage: make release-tag V=0.1.0"; exit 1; }
+	@test "$$(git rev-parse --abbrev-ref HEAD)" = "main" || \
+		{ echo "릴리스는 main에서만 (현재: $$(git rev-parse --abbrev-ref HEAD))"; exit 1; }
+	git push origin main
 	git tag -a v$(V) -m "canopy v$(V)"
 	git push origin v$(V)
 	@echo "✓ tagged v$(V) — next: goreleaser release, then bump the Homebrew formula"
