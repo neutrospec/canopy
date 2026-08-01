@@ -68,16 +68,25 @@ release-check:
 # Homebrew formula url+sha256 (scripts/brew-sha256.sh v$(V)) and push it to the
 # neutrospec/homebrew-tap repo.
 #
-# Releases are cut from main only (invariant J7). We push the branch BEFORE the
-# tag so origin/main can never fall behind the tag: pushing a tag also uploads
-# its commit objects but leaves origin/main pointing at the old commit, which is
-# how v0.4.1 shipped while origin/main still lagged. `git push origin main`
-# first fails fast (non-fast-forward) if someone else advanced main, aborting
-# before any tag exists.
-release-tag: release-check
+# Releases are cut from main only (invariant J7). Guard order matters:
+#   1. cheap guards first (V set, on main) — fail before the test suite runs;
+#   2. fetch + require local main to CONTAIN origin/main — an outdated clone
+#      would otherwise tag an old commit that still passes J7 (an old commit
+#      is an ancestor of origin/main too) and ship stale code under a new
+#      version number. The fetch is not optional: releasing offline is wrong
+#      anyway since the pushes below would fail;
+#   3. push the branch BEFORE the tag so origin/main can never fall behind
+#      the tag: pushing a tag uploads its commit objects but leaves
+#      origin/main pointing at the old commit, which is how v0.4.1 shipped
+#      while origin/main still lagged.
+release-tag:
 	@test -n "$(V)" || { echo "usage: make release-tag V=0.1.0"; exit 1; }
 	@test "$$(git rev-parse --abbrev-ref HEAD)" = "main" || \
 		{ echo "릴리스는 main에서만 (현재: $$(git rev-parse --abbrev-ref HEAD))"; exit 1; }
+	git fetch origin main
+	@git merge-base --is-ancestor origin/main main || \
+		{ echo "로컬 main이 origin/main을 포함하지 않음 (뒤처짐/분기) — git pull --rebase 먼저"; exit 1; }
+	@$(MAKE) release-check
 	git push origin main
 	git tag -a v$(V) -m "canopy v$(V)"
 	git push origin v$(V)

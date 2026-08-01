@@ -115,7 +115,7 @@ canopy에는 **세 개의 버전 번호**가 있고, 서로 다른 것을 센다
 
 ```bash
 make release-check                 # 트리 clean·테스트·gofmt 게이트 (F1/F3)
-make release-tag V=0.1.0           # v0.1.0 태그 + push
+make release-tag V=0.1.0           # main 가드(J7) → main push → v0.1.0 태그 push
 goreleaser release --clean         # GitHub 릴리스 + 변경로그 + lite 아카이브
 scripts/brew-sha256.sh v0.1.0      # 소스 tarball의 url+sha256 출력
 #   → packaging/homebrew/canopy.rb 의 url/sha256에 붙여넣고
@@ -134,10 +134,24 @@ scripts/brew-sha256.sh v0.1.0      # 소스 tarball의 url+sha256 출력
 나갔다: 태그는 `a1760b2`, `origin/main`은 두 커밋 뒤 `dda8930`). worktree/feature
 브랜치에서 릴리스하면 더 나쁘다 — 태그가 **main에 없는 커밋**을 가리킨다.
 
-그래서 `make release-tag`는 (1) **main에서만** 실행을 허용하고, (2) `git push origin
+그래서 `make release-tag`는 (1) **main에서만** 실행을 허용하고, (2) fetch 후 로컬
+main이 `origin/main`을 **포함**하는지 확인하고 — 뒤처진 clone에서 릴리스하면 태그가
+옛 커밋에 붙는데, 옛 커밋도 조상이라 J7만으로는 못 잡는다 — (3) `git push origin
 main`을 **태그보다 먼저** 한다. 브랜치 push가 non-fast-forward로 막히면 태그를 만들기
 전에 멈춘다. 사후 점검은 **J7**: `make release-lineage-check`가 모든 릴리스 태그가
-`origin/main`의 조상인지 확인하고, `release.yml`이 릴리스마다 GoReleaser 앞에서 돌린다.
+`origin/main`의 조상인지 확인한다. `ci.yml`이 매 push마다, `release.yml`이 릴리스마다
+GoReleaser 앞에서 돌린다.
+
+**J7이 빨강일 때(잘못된 태그가 이미 원격에 있음) 복구:**
+
+```bash
+git push origin --delete vX.Y.Z    # 원격 태그 삭제 (릴리스 전이면 안전)
+git tag -d vX.Y.Z                  # 로컬 태그 삭제
+# 커밋을 main에 올린 뒤 (merge/rebase) make release-tag V=X.Y.Z 재실행
+```
+
+GoReleaser가 이미 GitHub Release까지 만든 뒤라면 태그를 옮기지 말고 — 배포된 태그는
+불변이다(사다리 rung과 같은 원칙) — 다음 패치 버전으로 새로 릴리스한다.
 
 ## Homebrew 배포
 

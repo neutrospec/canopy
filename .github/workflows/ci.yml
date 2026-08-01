@@ -14,6 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history + tags: the release-lineage check below walks every
+          # v* tag against origin/main. A shallow checkout has no tags, which
+          # would make that check silently vacuous (zero tags = pass).
+          fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
@@ -32,3 +37,5 @@ jobs:
         run: make build-lite
       - name: translations current (invariant L)
         run: make i18n-check
+      - name: release tags on origin/main (invariant J7)
+        run: make release-lineage-check

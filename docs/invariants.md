@@ -116,7 +116,7 @@
 | J4 | 데이터가 바이너리보다 새로우면 거부한다 (다운그레이드 가드) | `state.json`의 `schema_version`을 `schema_target`보다 크게 써두고 아무 명령 실행 → 에러로 종료. `go test`의 `TestDowngradeGuard` |
 | J5 | 파생 캐시(인덱스 DB)는 마이그레이션 대상이 아니라 재구축 대상이다 (C4 재확인) | `migrate`가 `store`에 의존하지 않음: `grep -rn '"github.com/neutrospec/canopy/internal/store"' internal/migrate/` → 빈 출력. 캐시 손실 복구는 C4가 보증 |
 | J6 | 마이그레이션은 순서대로 적용되고 idempotent하다 | `go test ./internal/migrate/` 전부 통과 (F1에 포함) |
-| J7 | 모든 릴리스 태그가 가리키는 커밋은 `origin/main`의 조상이다(자기 자신 포함) — 태그만 push되고 브랜치가 뒤처지거나(v0.4.1이 그랬다), force-push로 릴리스 커밋이 유실되는 걸 잡는다 | `make release-lineage-check` (`scripts/release-lineage-check.sh`); `release.yml`이 릴리스마다 GoReleaser 전에 실행. 위반 예방은 `Makefile`의 `release-tag`가 강제 — `main에서만` + `git push origin main`을 태그보다 **먼저** |
+| J7 | 모든 릴리스 태그가 가리키는 커밋은 `origin/main`의 조상이다(자기 자신 포함) — 태그만 push되고 브랜치가 뒤처지거나(v0.4.1이 그랬다), force-push로 릴리스 커밋이 유실되는 걸 잡는다 | `make release-lineage-check` (`scripts/release-lineage-check.sh`); `ci.yml`이 매 push마다(fetch-depth 0 필수 — shallow면 태그 0개로 공허 통과), `release.yml`이 릴리스마다 GoReleaser 전에 실행. 위반 예방은 `Makefile`의 `release-tag` 3중 가드 — `main에서만` + 로컬 main이 `origin/main` **포함**(뒤처진 clone 차단; 옛 커밋도 조상이라 J7만으론 못 잡음) + `git push origin main`을 태그보다 **먼저**. 위반 복구는 versioning.md "릴리스는 main 위에서만" |
 
 ## K. 정규화(reconcile) 게이트 ([reconcile-design.md](reconcile-design.md))
 

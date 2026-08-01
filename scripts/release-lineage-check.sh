@@ -14,7 +14,9 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-git fetch origin main --quiet 2>/dev/null || true
+if ! git fetch origin main --quiet 2>/dev/null; then
+  echo "release-lineage: warning — origin fetch 실패, 로컬에 기록된 origin/main 기준으로 점검함 (낡았을 수 있음)" >&2
+fi
 if ! git rev-parse --verify --quiet origin/main >/dev/null; then
   echo "release-lineage: origin/main 을 확인할 수 없음 — 먼저 fetch 하라" >&2
   exit 1
