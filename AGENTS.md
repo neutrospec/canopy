@@ -78,6 +78,20 @@ README와 사용자 문서(`getting-started`·`troubleshooting`·`upgrading`)는
 낡은 번역은 STALE로 빨강. 코드펜스 안(명령·경로·식별자)은 번역하지 않는다. 설계 기록은
 번역 대상이 아니다. 방법론: [docs/i18n.md](docs/i18n.md), 불변식: invariants L.
 
+## 문서 작성 — 구조는 mermaid로
+
+구조·관계·흐름이 핵심인 대목(상태 전이, 결정 트리, 파이프라인, 행위자 간 시퀀스,
+저장소·컴포넌트 경계)은 산문이나 ASCII 아트로 늘어놓지 말고 **mermaid 코드펜스로
+그린다.** GitHub와 웹 UI(내장 렌더러)가 모두 렌더하고, ASCII처럼 정렬이 깨지지
+않는다. 단 **뜻을 더 명확히 할 때만** — 장식용 남발 금지. 점검 명령 목록·비교표처럼
+표가 본질인 것은 표로 두고(invariants.md가 본보기), 독립 조건들의 나열을 억지로
+if-else 사슬 순서도로 만들지 않는다 (canopy-wiki 스킬이 위키 페이지에 요구하는
+기준과 동일).
+
+번역되는 문서(invariants **L** 대상)에 다이어그램을 넣을 땐: mermaid 문법·노드 ID·
+명령·경로는 L3대로 그대로 두고 **라벨의 산문만 번역**한다. 펜스 개수가 유지되므로
+`make i18n-check`의 FENCE 검사와 정합.
+
 ## 커밋 규칙
 
 - **Conventional Commits**: `feat: …`, `fix: …`, `docs: …`, `refactor:`, `test:`,

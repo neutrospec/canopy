@@ -42,13 +42,20 @@ make release-tag V=0.2.0      # ③ 태그 v0.2.0 생성+push → 나머지는 �
 
 ### 우리 구조 (그림)
 
-```
-canopy 저장소                              homebrew-tap 저장소
-─────────────                              ───────────────────
-packaging/homebrew/canopy.rb   ── 릴리스 ──▶  Formula/canopy.rb   ── 사용자 ──▶  brew install
-   (포뮬러 원본 = 진실의 소스)      워크플로우     (배포되는 포뮬러)
-.goreleaser.yaml (릴리스 빌드)                README.md (설치 안내)
-.github/workflows/release.yml                .github/workflows/audit.yml
+```mermaid
+flowchart LR
+    subgraph SRC_REPO["canopy 저장소"]
+        SRC["packaging/homebrew/canopy.rb<br/>(포뮬러 원본 = 진실의 소스)"]
+        GR[".goreleaser.yaml — 릴리스 빌드"]
+        WF[".github/workflows/release.yml"]
+    end
+    subgraph TAP_REPO["homebrew-tap 저장소"]
+        FORM["Formula/canopy.rb<br/>(배포되는 포뮬러 — 손대지 말 것)"]
+        RD["README.md — 설치 안내"]
+        AUD[".github/workflows/audit.yml"]
+    end
+    SRC -- "릴리스 워크플로우가 복사<br/>(url·sha256만 갱신)" --> FORM
+    FORM -- "brew install neutrospec/tap/canopy" --> USER["사용자"]
 ```
 
 핵심: **포뮬러는 canopy 저장소의 `packaging/homebrew/canopy.rb` 한 곳에서만 고칩니다.**

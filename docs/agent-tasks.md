@@ -41,6 +41,16 @@
 
 ### 라이프사이클: `pending → done | dismissed`
 
+```mermaid
+stateDiagram-v2
+    [*] --> pending : 접수 (웹 버튼·에디터·CLI) — 페이지 무변경 (T6)
+    pending --> done : tasks done — Verifier 통과 시에만 (T2)
+    pending --> dismissed : tasks dismiss — 하지 않기로 판단
+    done --> [*] : tasks gc
+    dismissed --> [*] : tasks gc
+    note right of dismissed : connect의 dismissed는 재접수해도 부활하지 않는다 (T4)
+```
+
 - **pending**: 문(웹 버튼, CLI)이 접수만 한다. **접수는 페이지를 수정하지 않는다**(T6)
   — 수행은 판단 이후의 일이고, 판단은 에이전트의 몫이다.
 - **done**: 수행 완료. 단, **done은 에이전트의 주장이 아니라 코드의 확인이다** —

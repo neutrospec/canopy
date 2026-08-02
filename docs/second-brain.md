@@ -11,12 +11,28 @@
 
 ## 역할 분담 (philosophy.md 원칙 6)
 
-```
-canopy  (결정론, 코드)          에이전트 (판단, LLM)             사용자
-─────────────────────          ─────────────────────           ──────────
-resurface: 잊힌/허브 후보   →   후보 중 오늘 보낼 것 판단    →   Telegram 수신
-bridge:   유사-미연결 페어  →   "왜 관련 있는지" 문장화       →   👍/👎/링크 결정
-state:    노출/피드백 기록  ←   feedback 명령으로 기록        ←   반응
+```mermaid
+flowchart LR
+    subgraph C["canopy (결정론, 코드)"]
+        R["resurface: 잊힌/허브 후보"]
+        B["bridge: 유사-미연결 페어"]
+        S[("state: 노출·피드백 기록")]
+    end
+    subgraph A["에이전트 (판단, LLM)"]
+        J["후보 중 오늘 보낼 것 판단,<br/>왜 관련 있는지 문장화"]
+        F["resurface feedback /<br/>bridge --dismiss"]
+    end
+    subgraph U["사용자"]
+        T["Telegram 수신 / 웹 카드"]
+        RE["👍 / 👎 / 😴 / 링크 결정"]
+    end
+    R --> J
+    B --> J
+    J --> T
+    T --> RE
+    RE --> F
+    F --> S
+    S -. "쿨다운·스누즈로 재노출 억제" .-> R
 ```
 
 canopy는 절대 메시지를 만들지 않고, 에이전트는 절대 후보를 임의로 고르지 않는다.
