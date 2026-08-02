@@ -1,7 +1,6 @@
 {{define "content"}}
 <article data-slug="{{.Page.Slug}}" {{if not .Read}}data-read-secs="{{.ReadSecs}}"{{end}}>
-  {{if .Saved}}<p class="notice">✓ {{t "page_saved_prefix"}} <code>canopy sync</code>{{t "page_saved_suffix"}}</p>{{end}}
-  {{range .Lint}}<p class="notice conflict">lint: {{.}}</p>{{end}}
+  {{if .Tasked}}<p class="notice">✓ {{t "task_filed_notice"}}</p>{{end}}
   <h1>{{.Page.Title}}</h1>
   <div class="metacard">
     <a class="chip" href="/browse?type={{.Page.Type}}">{{.Page.Type}}</a>
@@ -40,13 +39,42 @@
     <h2>{{t "page_suggested_title"}} <span class="muted">— {{t "page_suggested_hint"}}</span></h2>
     <div class="suggestrow">
       {{range .Suggested}}
-      <a class="chip suggest" href="/page/{{.Slug}}" data-slug="{{.Slug}}"
-         title="{{t "page_similarity" "Sim" (printf "%.2f" .Sim)}}{{if .Tags}} · {{t "page_tags_shared" "Count" .Tags}}{{end}}">{{.Title}}
-        <small>{{printf "%.2f" .Sim}}</small></a>
+      <span class="suggestitem">
+        <a class="chip suggest" href="/page/{{.Slug}}" data-slug="{{.Slug}}"
+           title="{{t "page_similarity" "Sim" (printf "%.2f" .Sim)}}{{if .Tags}} · {{t "page_tags_shared" "Count" .Tags}}{{end}}">{{.Title}}
+          <small>{{printf "%.2f" .Sim}}</small></a>
+        {{if .Requested}}<span class="chip reason" title="{{t "task_requested_title"}}">⏳ {{t "task_requested"}}</span>
+        {{else}}<form method="post" action="/task/connect" class="inlineform">
+          <input type="hidden" name="a" value="{{$.Page.Slug}}">
+          <input type="hidden" name="b" value="{{.Slug}}">
+          <input type="hidden" name="sim" value="{{printf "%.2f" .Sim}}">
+          <button class="chip" title="{{t "task_connect_title"}}">🔗 {{t "task_connect_button"}}</button>
+        </form>{{end}}
+      </span>
       {{end}}
     </div>
   </section>
   {{end}}
+  <section class="tasks">
+    <h2>{{t "task_section_title"}}{{if .Tasks}} ({{len .Tasks}}){{end}} <span class="muted">— {{t "task_section_hint"}}</span></h2>
+    {{if .Tasks}}
+    <ul class="tasklist">
+      {{range .Tasks}}
+      <li><span class="chip histkind">{{.TypeLabel}}</span>
+        {{if .Other}}<a class="wikilink" href="/page/{{.Other}}">{{.Other}}</a>{{end}}
+        {{if .Request}}{{.Request}}{{end}}
+        <span class="muted">· {{.Created}}</span></li>
+      {{end}}
+    </ul>
+    {{end}}
+    <details class="taskform">
+      <summary class="muted">🤖 {{t "task_edit_summary"}}</summary>
+      <form method="post" action="/task/edit/{{.Page.Slug}}">
+        <textarea name="request" rows="3" required placeholder="{{t "task_edit_placeholder"}}"></textarea>
+        <p><button class="chip">{{t "task_edit_submit"}}</button></p>
+      </form>
+    </details>
+  </section>
   <footer class="backlinks">
     <h2>{{t "page_backlinks_title"}} ({{len .Backlinks}})</h2>
     {{if .Backlinks}}

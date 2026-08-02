@@ -237,6 +237,7 @@ Apple Silicon, int8 양자화 모델 기준:
 | [docs/web-ui-write-design.md](docs/web-ui-write-design.md) | 웹 쓰기의 동시성·충돌 설계 (단일 쓰기 파이프라인) |
 | [docs/web-ui-i18n.md](docs/web-ui-i18n.md) | 웹 UI 다국어 — go-i18n, 로케일 협상, 언어 선택 (invariants M) |
 | [docs/reconcile-design.md](docs/reconcile-design.md) | 정규화 게이트 설계 — 편집은 어디서든, 정규화는 한 문으로 (모든 문의 변경을 본길이 재판단) |
+| [docs/agent-tasks.md](docs/agent-tasks.md) | 에이전트 태스크 큐 — 웹의 위임(연결·수정 요청)을 파일 큐로, 완료는 유형별 코드 검증으로 (invariants T) |
 | [docs/web-ui-board.md](docs/web-ui-board.md) | 실행 보드 — 마일스톤별 작업·완료 기준(Exit)의 전 기록 |
 
 **검증** — 지금 건강한가

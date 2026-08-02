@@ -1,4 +1,4 @@
-<!-- i18n-source: README.md sha:30c872f2dcad63b13577b8a31ecaa8dee851547a -->
+<!-- i18n-source: README.md sha:8a13a270092fa6203dff2eaa4fccd3d90fc004de -->
 # 🌳 canopy
 
 > [한국어](README.md) · **English**
@@ -253,6 +253,7 @@ implementation without reading code.
 | [docs/web-ui-write-design.md](docs/web-ui-write-design.md) | Web write concurrency/conflict design (single write pipeline) |
 | [docs/web-ui-i18n.md](docs/web-ui-i18n.md) | Web UI localization — go-i18n, locale negotiation, language selector (invariants M) |
 | [docs/reconcile-design.md](docs/reconcile-design.md) | Canonicalization gate design — edit anywhere, canonicalize through one door (the main road re-judges every door's changes) |
+| [docs/agent-tasks.md](docs/agent-tasks.md) | Agent task queue — web delegations (link/edit requests) as a file queue, closed only by per-type code verification (invariants T) |
 | [docs/web-ui-board.md](docs/web-ui-board.md) | Execution board — the full record of per-milestone tasks and exit criteria |
 
 **Verify** — is it healthy now

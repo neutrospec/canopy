@@ -47,7 +47,7 @@ type Server struct {
 	daily   daily
 }
 
-var pageTemplates = []string{"home.html", "page.html", "search.html", "browse.html", "recent.html", "attention.html", "edit.html", "login.html", "setup.html", "discover.html", "gaps.html", "graph.html", "history.html"}
+var pageTemplates = []string{"home.html", "page.html", "search.html", "browse.html", "recent.html", "attention.html", "edit.html", "login.html", "setup.html", "discover.html", "gaps.html", "graph.html", "history.html", "tasks.html"}
 
 func NewServer(w *config.Wiki, eng cembed.Engine) (*Server, error) {
 	ib, err := loadBundle()
@@ -103,6 +103,10 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /read/{slug}", s.handleReadMark)
 	mux.HandleFunc("POST /api/read/{slug}", s.handleReadAuto)
 	mux.HandleFunc("POST /resurface/feedback", s.handleResurfaceFeedback)
+	mux.HandleFunc("POST /task/connect", s.handleTaskConnect)
+	mux.HandleFunc("POST /task/edit/{slug}", s.handleTaskEdit)
+	mux.HandleFunc("POST /task/cancel/{id}", s.handleTaskCancel)
+	mux.HandleFunc("GET /special/tasks", s.handleTasksPage)
 	mux.HandleFunc("GET /setup", s.handleSetupForm)
 	mux.HandleFunc("POST /setup", s.handleSetupSave)
 	mux.HandleFunc("GET /login", s.handleLoginForm)
@@ -317,6 +321,14 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 		}
 		ev.Close()
 	}
+	// Delegated-task wiring (docs/agent-tasks.md): pending tasks show as
+	// the page's todo list, and suggestions with a filed connect task
+	// swap their button for a "requested" marker.
+	pageTasks, filed := s.pageTasks(slug, lc)
+	suggested := s.suggestLinks(scan, p, backlinks)
+	for i := range suggested {
+		suggested[i].Requested = filed[strings.ToLower(suggested[i].Slug)]
+	}
 	s.render(w, r, http.StatusOK, "page.html", map[string]any{
 		"Title":      p.Title,
 		"Page":       p,
@@ -330,7 +342,9 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 		"AttnRecent": attnRecent,
 		"Spark":      spark,
 		"ReadSecs":   readThresholdSecs(p),
-		"Suggested":  s.suggestLinks(scan, p, backlinks),
+		"Suggested":  suggested,
+		"Tasks":      pageTasks,
+		"Tasked":     r.URL.Query().Get("tasked") == "1",
 	})
 }
 

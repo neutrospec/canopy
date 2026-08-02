@@ -326,6 +326,19 @@ h2:hover .hanchor, h3:hover .hanchor, h4:hover .hanchor { opacity: 1; }
 .suggested { margin-top: 2.2rem; border-top: 1px solid var(--line); padding-top: .5rem; }
 .suggested h2 { font-size: 1rem; color: var(--muted); }
 .suggestrow { display: flex; flex-wrap: wrap; gap: .45rem; }
+.suggestitem { display: inline-flex; align-items: center; gap: .3rem; }
+.inlineform { display: inline; }
+.inlineform button.chip, .taskform button.chip { cursor: pointer; border: 1px solid var(--line); font-family: inherit; }
+.inlineform button.chip:hover, .taskform button.chip:hover { border-color: var(--accent); }
+.tasklist { list-style: none; padding: 0; margin: .5rem 0; }
+.tasklist li { margin: .3rem 0; }
+.taskform textarea { width: 100%; box-sizing: border-box; margin-top: .5rem; font: inherit;
+  background: var(--chip); color: inherit; border: 1px solid var(--line); border-radius: 6px; padding: .5rem; }
+.proposal { margin: .35rem 0 .1rem 1.6rem; }
+.proposal pre { max-height: 18rem; overflow: auto; background: var(--chip);
+  border: 1px solid var(--line); border-radius: 6px; padding: .6rem; font-size: .82rem; }
+.proposenote { width: 100%; box-sizing: border-box; margin-top: .5rem; font: inherit;
+  background: var(--chip); color: inherit; border: 1px solid var(--line); border-radius: 6px; padding: .45rem .6rem; }
 .chip.suggest { background: none; border: 1px dashed var(--muted); color: var(--link); padding: .18rem .8rem; }
 .chip.suggest:hover { border-color: var(--accent); }
 .chip.suggest small { color: var(--muted); margin-left: .25rem; }

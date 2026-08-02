@@ -27,6 +27,7 @@ import (
 	"github.com/neutrospec/canopy/internal/search"
 	"github.com/neutrospec/canopy/internal/skills"
 	"github.com/neutrospec/canopy/internal/store"
+	"github.com/neutrospec/canopy/internal/tasks"
 	"github.com/neutrospec/canopy/internal/wiki"
 )
 
@@ -63,7 +64,7 @@ func main() {
 	root.AddCommand(cmdInit(), cmdStatus(), cmdReindex(), cmdSearch(), cmdBacklinks(), cmdLint(), cmdShow(), cmdList(), cmdTags(), cmdModel(),
 		cmdNew(), cmdUpdate(), cmdMv(), cmdRm(), cmdArchive(), cmdSync(), cmdSkills(),
 		cmdResurface(), cmdBridge(), cmdRecall(), cmdDigest(), cmdServe(),
-		cmdVersion(), cmdMigrate(), cmdReconcile())
+		cmdVersion(), cmdMigrate(), cmdReconcile(), cmdTasks())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
@@ -116,6 +117,11 @@ func banner(w *config.Wiki) {
 	}
 	if n, ok, err := reconcile.Count(w); err == nil && ok && n > 0 {
 		fmt.Fprintf(os.Stderr, "⚠ 미정규화 외부 변경 %d건 — `canopy reconcile`로 검토\n", n)
+	}
+	// Pending delegated tasks surface on every command (invariant T7,
+	// 원칙 5) — an agent session that sees the banner can run the loop.
+	if n, err := tasks.PendingCount(w); err == nil && n > 0 {
+		fmt.Fprintf(os.Stderr, "⚑ 위임 태스크 %d건 대기 — `canopy tasks list`로 확인\n", n)
 	}
 }
 
@@ -221,13 +227,15 @@ func cmdStatus() *cobra.Command {
 				return err
 			}
 			recN, recOn, _ := reconcile.Count(w)
+			taskN, _ := tasks.PendingCount(w)
 			if flagJSON {
 				out := map[string]any{
-					"root":        w.Root,
-					"pages":       len(scan.Pages),
-					"stray_root":  scan.StrayRoot,
-					"git":         git,
-					"initialized": w.HasTOML,
+					"root":          w.Root,
+					"pages":         len(scan.Pages),
+					"stray_root":    scan.StrayRoot,
+					"git":           git,
+					"initialized":   w.HasTOML,
+					"tasks_pending": taskN,
 				}
 				if recOn {
 					out["unreconciled"] = recN
@@ -258,6 +266,9 @@ func cmdStatus() *cobra.Command {
 			}
 			if recOn && recN > 0 {
 				fmt.Printf("⚠ 미정규화 외부 변경 %d건 — `canopy reconcile`로 검토\n", recN)
+			}
+			if taskN > 0 {
+				fmt.Printf("⚑ 위임 태스크 %d건 대기 — `canopy tasks list`로 확인\n", taskN)
 			}
 			return nil
 		},

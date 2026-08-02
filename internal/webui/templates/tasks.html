@@ -1,0 +1,35 @@
+{{define "content"}}
+<h1>{{t "tasks_title"}}</h1>
+<p class="muted">🤖 {{t "tasks_hint"}}</p>
+{{if .Pending}}
+<h2>{{t "tasks_pending_title"}} ({{len .Pending}})</h2>
+<ul class="tasklist">
+  {{range .Pending}}
+  <li>
+    <span class="chip histkind">{{.TypeLabel}}</span>
+    {{range .Pages}}<a class="wikilink" href="/page/{{.}}">{{.}}</a> {{end}}
+    {{if .Request}}{{.Request}}{{end}}
+    <span class="muted">· {{.Created}}{{if .Door}} · {{.Door}}{{end}}</span>
+    {{if .CanCancel}}<form method="post" action="/task/cancel/{{.ID}}" class="inlineform"><button class="chip" title="{{t "tasks_cancel_title"}}">{{t "tasks_cancel"}}</button></form>{{end}}
+    {{if .Body}}<details class="proposal"><summary class="muted">{{t "tasks_proposal_view"}}</summary><pre>{{.Body}}</pre></details>{{end}}
+  </li>
+  {{end}}
+</ul>
+{{else}}
+<p class="muted">✓ {{t "tasks_none"}}</p>
+{{end}}
+{{if .Closed}}
+<h2>{{t "tasks_closed_title"}}</h2>
+<ul class="tasklist closedtasks">
+  {{range .Closed}}
+  <li>
+    <span class="chip histkind">{{.TypeLabel}}</span>
+    <span class="chip reason">{{.StatusLabel}}</span>
+    {{range .Pages}}<a class="wikilink" href="/page/{{.}}">{{.}}</a> {{end}}
+    {{if .Request}}{{.Request}}{{end}}
+    <span class="muted">· {{.Closed}}{{if .Note}} · {{.Note}}{{end}}</span>
+  </li>
+  {{end}}
+</ul>
+{{end}}
+{{end}}

@@ -1,14 +1,11 @@
 {{define "content"}}
 <h1>{{t "edit_heading"}} {{.Page.Title}}</h1>
-{{if .Conflict}}
-<p class="notice conflict">{{t "edit_conflict_lead"}} <b>{{t "edit_conflict_yours"}}</b>{{t "edit_conflict_tail"}} <a class="wikilink" href="/page/{{.Page.Slug}}" target="_blank">{{t "edit_conflict_view_current"}}</a></p>
-{{end}}
-<p class="muted">{{t "edit_help_lead"}} <code>updated</code> {{t "edit_help_tail"}}</p>
+<p class="muted">🤖 {{t "edit_propose_help"}}</p>
 <form class="editform" method="post" action="/edit/{{.Page.Slug}}">
-  <input type="hidden" name="hash" value="{{.Hash}}">
   <textarea name="body" spellcheck="false">{{.Body}}</textarea>
+  <input type="text" name="note" class="proposenote" placeholder="{{t "edit_note_placeholder"}}">
   <div class="editactions">
-    <button type="submit">{{t "edit_save"}}</button>
+    <button type="submit">{{t "edit_propose_submit"}}</button>
     <a class="wikilink" href="/page/{{.Page.Slug}}">{{t "edit_cancel"}}</a>
   </div>
 </form>

@@ -102,7 +102,7 @@
 | # | 불변식 | 점검 |
 |---|--------|------|
 | I1 | 공개 바인딩은 무인증으로 어떤 페이지도 서빙하지 않는다 (philosophy 원칙 11) | `canopy serve --addr :8737` 후 무인증 `curl -s -o /dev/null -w '%{http_code}' http://<LAN-IP>:8737/page/anything` → 302 (로그인/설정으로 리다이렉트, 본문 없음) |
-| I2 | 웹 편집은 CLI `update`와 같은 파이프라인이다 (philosophy 원칙 9) | 스크래치 위키에서 웹 편집 1회 vs `canopy update` 1회 → 파일(updated 갱신·본문 교체), logs 엔트리 형태, `index/*.md` 재생성, keyword 검색 반영이 모두 동일 |
+| I2 | 웹 편집은 파일을 쓰지 않는다 — 저장은 edit **제안 태스크** 접수다 (제안 경로, [agent-tasks.md](agent-tasks.md); 파일 쓰기는 에이전트가 CLI 파이프라인으로) | `POST /edit/{slug}` 후 페이지 파일 해시 **동일** + `_meta/tasks/`에 `body` 실린 edit 태스크 생성. 코드 감사: `grep -rn "os.WriteFile" internal/webui/ \| grep -v _test \| grep -v auth.go` → 빈 출력 |
 | I3 | 계정 등록은 터미널의 설정 코드 없이는 불가 | 공개 바인딩·무계정 상태에서 코드 없이 `POST /setup` → 400 |
 | I4 | 교차 출처 변조 거부 | `curl -X POST -H "Origin: https://evil.example" http://localhost:8737/logout` → 403 |
 
@@ -133,7 +133,7 @@
 | K4 | bless는 현재 내용(부재 포함)을 원장에 기록해, 검토한 변경은 다시 뜨지 않는다 | `canopy reconcile bless <path>` 후 foreign에서 그 path 사라짐; 파일을 지운 뒤 bless → `deleted` 후보도 사라짐 |
 | K5 | 보고(기본 실행)는 흔적을 남기지 않는다 (E6와 같은 규율) | `canopy reconcile` 실행 전후 `_meta/reconcile/state.json` 해시 동일 |
 | K6 | 미정규화 외부 변경은 배너로 노출된다 (게이트 초기화 후; 원칙 5·2) | 페이지 파일 직접 편집 후 `canopy status $W` → stderr에 ⚠ 미정규화 N건 |
-| K7 | 정규화의 콘텐츠 수정은 writeops 경유다 (한 복도, 원칙 9) **[협약]** | 정규화로 페이지 수정 후 `logs/*.jsonl`에 엔트리 + `index/*.md` 재생성 (I2와 같은 확인) — 그 결과는 자동 축복(K2 후단) |
+| K7 | 정규화의 콘텐츠 수정은 writeops 경유다 (한 복도, 원칙 9) **[협약]** | 정규화로 페이지 수정 후 `logs/*.jsonl`에 엔트리 + `index/*.md` 재생성 — 그 결과는 자동 축복(K2 후단) |
 
 ## L. 다국어 문서 (i18n) ([i18n.md](i18n.md))
 
@@ -159,6 +159,25 @@
 | M4 | 로케일 파일 추가 = 언어 추가 (코드 변경 0) | `active.<new>.toml` 임베드 후 재빌드 → 언어 선택에 등장; 로더는 `locales/*.toml` 글로브 |
 | M5 | 로케일은 데이터를 바꾸지 않는다 (chrome만) | `curl -H 'Accept-Language: en' .../api/search?q=x`와 `ko` 결과 JSON 동일 (serve 실행 상태) |
 
+## T. 에이전트 태스크 큐 ([agent-tasks.md](agent-tasks.md))
+
+> 위임은 파일로(`_meta/tasks/<id>.json`, 태스크당 하나), 완료는 검증으로:
+> done은 에이전트의 주장이 아니라 코드의 확인이다. 접수(문)와 수행(에이전트)과
+> 검증(canopy)의 분담 — 원칙 6의 태스크판.
+
+| # | 불변식 | 점검 |
+|---|--------|------|
+| T1 | 태스크는 위키와 함께 여행하는 self-versioned 상태다 | 접수 후 `git -C $W status --short _meta/tasks/` 등장, 파일에 `"version"` 필드; `canopy sync` 후 clean |
+| T2 | done은 유형별 검증을 통과해야만 닫힌다 | 미링크 페어로 `canopy tasks add connect a b $W` → `canopy tasks done <id>` **에러** (exit != 0); 양쪽에 `[[상호 링크]]` 추가 + `canopy update` 후 done 성공 |
+| T3 | 닫힌 태스크는 기본 목록에 안 나온다 (loop 재수행 없음) | done/dismiss 후 `canopy tasks list --json $W` 에 그 id 미출현; `--all` 에는 status와 함께 표시 |
+| T4 | 같은 connect 페어의 재접수는 중복 태스크를 만들지 않는다 (dismissed 포함 — 기각 판단 존중) | 같은 페어 접수 2회 → `_meta/tasks/` 에 파일 1개; dismiss 후 재접수해도 pending으로 안 살아남 |
+| T5 | 모르는 유형은 done이 거부된다 (혼합 버전 안전) — list·dismiss는 동작 | `type:"미래유형"` 태스크 파일을 심고 → `canopy tasks list` 정상 표시, `tasks done <id>` 에러, `tasks dismiss <id>` 성공 |
+| T6 | 접수는 페이지를 수정하지 않는다 (수행은 에이전트 판단 이후) | `POST /task/edit/{slug}` (또는 `tasks add`) 전후 그 페이지 파일 해시 동일 |
+| T7 | pending은 노출된다 (원칙 5) | pending 1건 이상일 때 `canopy status $W` 출력에 tasks 라인, `--json`에 `tasks_pending` ≥ 1 |
+| T8 | gc는 pending을 절대 지우지 않는다 | pending + 오래된 done 혼재 상태에서 `canopy tasks gc --days 0` → done만 삭제, pending 잔존 |
+| T9 | 웹 편집 제안은 제출 본문 전문을 태스크에 보존한다 (diff 아님 — 에이전트가 base 대비 비교) | 웹 편집 저장 후 태스크 JSON의 `body` == 제출 본문(개행 정규화 제외), `base` == 접수 시점 파일 sha256. `go test ./internal/webui/`의 `TestWebEditFilesProposalNotFile` |
+| T10 | 큐는 웹에서 열람 가능하고, 철회는 pending edit에 한한다 (connect 기각은 에이전트 판단 — T4의 영구 억제 때문) | serve 상태에서 `/special/tasks`에 pending 표시; edit 태스크 철회 버튼 → dismissed; connect에 `POST /task/cancel/<id>` → 400. `TestTasksScreenAndWithdraw` |
+
 ## 감사 절차
 
 1. `make test && gofmt -l .` (F)
@@ -171,6 +190,7 @@
 8. K1–K7은 스크래치 위키에서 파일 직접 편집 후 `canopy reconcile --json` / `bless`로
 9. L1–L3은 `make i18n-check` (1의 CI에도 포함)
 10. M1–M5는 `make test`(M1·M2·M3 테스트) + serve 실행 상태(M3·M5 curl)
+11. T1–T10은 스크래치 위키에서 `canopy tasks add/done/dismiss/gc`로 (T6·T7은 파일 해시·status 확인, T9·T10은 `go test ./internal/webui/` + serve 상태)
 
 > 위반을 발견하면: (1) 그 위반이 **어느 명령을 우회해서** 생겼는지 찾고,
 > (2) 우회 경로를 막는 코드/lint를 추가하고, (3) 필요하면 이 목록에 항목을 늘린다.

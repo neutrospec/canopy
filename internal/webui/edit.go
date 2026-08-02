@@ -3,21 +3,23 @@ package webui
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
-	"github.com/neutrospec/canopy/internal/lint"
-	"github.com/neutrospec/canopy/internal/reconcile"
+	"github.com/neutrospec/canopy/internal/tasks"
 	"github.com/neutrospec/canopy/internal/wiki"
-	"github.com/neutrospec/canopy/internal/writeops"
 )
 
-// Web editing mirrors `canopy update --body-file` exactly: body replace
-// + updated bump, then the shared writeops.Run pipeline. Frontmatter
-// stays CLI-only (docs/web-ui-write-design.md).
+// The web editor is a proposal door, not a write door (docs/agent-tasks.md
+// "웹 편집 = 제안"; the 2026-07-24 위상 재평가 in web-ui-write-design.md,
+// executed): saving files an edit task carrying the submitted body in
+// full, and the agent judges and integrates it through the CLI pipeline.
+// The page file is never touched here (invariant I2/T6) — which also
+// dissolves the old optimistic-lock conflict handling: two proposals
+// are just two tasks.
 
 func contentHash(b []byte) string {
 	h := sha256.Sum256(b)
@@ -35,22 +37,14 @@ func (s *Server) handleEditForm(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	raw, err := os.ReadFile(filepath.Join(s.w.Root, p.RelPath))
-	if err != nil {
-		s.fail(w, err)
-		return
-	}
 	s.render(w, r, http.StatusOK, "edit.html", map[string]any{
 		"Title": "edit: " + p.Title,
 		"Page":  p,
 		"Body":  p.Body,
-		"Hash":  contentHash(raw),
 	})
 }
 
 func (s *Server) handleEditSave(w http.ResponseWriter, r *http.Request) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	scan, err := wiki.Scan(s.w)
 	if err != nil {
 		s.fail(w, err)
@@ -61,79 +55,22 @@ func (s *Server) handleEditSave(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	path := filepath.Join(s.w.Root, p.RelPath)
-	raw, err := os.ReadFile(path)
+	// Browsers submit textarea content with CRLF line endings.
+	body := strings.ReplaceAll(r.FormValue("body"), "\r\n", "\n")
+	note := strings.TrimSpace(r.FormValue("note"))
+	// An unchanged body with no note is a no-op, not a proposal.
+	if strings.TrimSpace(body) == strings.TrimSpace(p.Body) && note == "" {
+		http.Redirect(w, r, "/page/"+p.Slug, http.StatusSeeOther)
+		return
+	}
+	raw, err := os.ReadFile(filepath.Join(s.w.Root, p.RelPath))
 	if err != nil {
 		s.fail(w, err)
 		return
 	}
-	newBody := r.FormValue("body")
-	// Optimistic lock: reject if the file changed since the form loaded
-	// (MediaWiki edit-conflict pattern; no auto-merge by design).
-	if r.FormValue("hash") != contentHash(raw) {
-		s.render(w, r, http.StatusConflict, "edit.html", map[string]any{
-			"Title":    "edit: " + p.Title,
-			"Page":     p,
-			"Body":     newBody,
-			"Hash":     contentHash(raw),
-			"Conflict": true,
-		})
-		return
-	}
-	content := wiki.ReplaceBody(string(raw), newBody)
-	content = wiki.SetFrontmatterField(content, "updated", time.Now().Format("2006-01-02"))
-	// Defensive: body replace cannot break frontmatter, but verify
-	// before writing rather than after.
-	if parsed := wiki.Parse(p.RelPath, []byte(content)); parsed.FMErr != "" {
-		s.fail(w, fmt.Errorf("frontmatter would break: %s", parsed.FMErr))
-		return
-	}
-	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+	if _, err := tasks.FileEdit(s.w, p.Slug, note, body, contentHash(raw), "web", time.Now()); err != nil {
 		s.fail(w, err)
 		return
 	}
-	// Same pipeline as every CLI mutation.
-	postScan, err := writeops.Run(s.w, "update", p.RelPath, p.Tags, "web edit", reconcile.Effects{Written: []string{p.RelPath}})
-	if err != nil {
-		s.fail(w, err)
-		return
-	}
-	// Lint findings for this page only, shown once on the result view.
-	var findings []string
-	for _, f := range lint.Run(s.w, postScan).Findings {
-		if f.Page == p.RelPath {
-			findings = append(findings, fmt.Sprintf("[%s] %s", f.Kind, f.Message))
-		}
-	}
-	dest := "/page/" + p.Slug
-	if len(findings) > 0 {
-		s.renderSaved(w, r, postScan, p, findings)
-		return
-	}
-	http.Redirect(w, r, dest, http.StatusSeeOther)
-}
-
-// renderSaved shows the updated page with lint notices attached.
-func (s *Server) renderSaved(w http.ResponseWriter, r *http.Request, scan *wiki.ScanResult, stale *wiki.Page, findings []string) {
-	p, ok := scan.BySlug[wiki.NormalizeLink(stale.Slug)]
-	if !ok {
-		p = stale
-	}
-	body, err := RenderPage(p.Body, func(t string) bool { _, ok := scan.BySlug[t]; return ok })
-	if err != nil {
-		s.fail(w, err)
-		return
-	}
-	backlinks := scan.Backlinks()[wiki.NormalizeLink(p.Slug)]
-	nodes, edges := localGraph(scan, p, backlinks)
-	s.render(w, r, http.StatusOK, "page.html", map[string]any{
-		"Title":      p.Title,
-		"Page":       p,
-		"Body":       body,
-		"Backlinks":  backlinks,
-		"GraphNodes": nodes,
-		"GraphEdges": edges,
-		"Lint":       findings,
-		"Saved":      true,
-	})
+	http.Redirect(w, r, "/page/"+p.Slug+"?tasked=1", http.StatusSeeOther)
 }

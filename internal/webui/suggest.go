@@ -23,6 +23,10 @@ type suggestion struct {
 	Title string
 	Sim   float64
 	Tags  int // shared-tag count (ranking boost, shown as context)
+	// Requested marks a suggestion whose connect task is already filed
+	// (any status) — the button becomes a "requested" chip so dismissed
+	// pairs are not re-offered (invariant T4).
+	Requested bool
 }
 
 func (s *Server) suggestLinks(scan *wiki.ScanResult, p *wiki.Page, backlinks []string) []suggestion {
