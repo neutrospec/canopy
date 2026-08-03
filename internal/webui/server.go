@@ -210,7 +210,8 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	// from the local event log (best-effort).
 	todayPages, todaySearches := 0, 0
 	if ev, err := attention.Open(s.w.AttentionDBPath()); err == nil {
-		if events, err := ev.Recent(400); err == nil {
+		// AttnOnly: lifecycle events (task/sync) are not attention (N3).
+		if events, err := ev.Query(attention.Filter{Limit: 400, AttnOnly: true}); err == nil {
 			day := now.Format("2006-01-02")
 			seen := map[string]bool{}
 			for _, e := range events {

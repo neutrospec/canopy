@@ -159,6 +159,21 @@
 | M4 | 로케일 파일 추가 = 언어 추가 (코드 변경 0) | `active.<new>.toml` 임베드 후 재빌드 → 언어 선택에 등장; 로더는 `locales/*.toml` 글로브 |
 | M5 | 로케일은 데이터를 바꾸지 않는다 (chrome만) | `curl -H 'Accept-Language: en' .../api/search?q=x`와 `ko` 결과 JSON 동일 (serve 실행 상태) |
 
+## N. 이벤트 로그 일반화 ([events.md](events.md))
+
+> 머신-로컬 sqlite 이벤트 DB($XDG_STATE_HOME)는 주의 + 라이프사이클(task/sync/
+> reconcile)의 관측 타임라인이다. 관측이지 진실이 아니다 — 위키는 이 DB 없이도
+> 완전하다.
+
+| # | 불변식 | 점검 |
+|---|--------|------|
+| N1 | 이벤트 DB는 비권위 — 지워도 판단·상태가 보존된다 (이력 계기판만 빈다) | DB 삭제(`rm $XDG_STATE_HOME/canopy/attention/*.db`) 후 `canopy status --json`·`tasks list --json`·`reconcile --json` 출력이 삭제 전과 동일 |
+| N2 | 기록은 best-effort — 실패해도 원 작업은 성공한다 | `XDG_STATE_HOME`을 쓰기 불가 경로로 두고 `canopy tasks add …` → exit 0, 태스크 파일 생성됨 |
+| N3 | 라이프사이클 이벤트는 주의 계기판을 오염시키지 않는다 | `canopy tasks add` 직후 `canopy digest --json`의 `top_consumed`에 그 페이지 미출현(태스크 사유로는), `/history`·홈 "오늘의 주의"에 task 행 없음. `go test ./internal/attention/`의 lifecycle 필터 테스트 |
+| N4 | kind 어휘 규칙 — 라이프사이클은 `도메인.동작`(점 포함), 주의는 무점 | `canopy events -n 500 --json \| jq -r '.events[].kind' \| sort -u` 가 events.md §2 표의 부분집합 |
+| N5 | events gc는 머신-로컬만 지우고 보존 창을 존중한다 | `canopy events gc --days 0` 전후 `git -C $W status --short` 동일(위키 무접촉), `--days 365`면 최근 이벤트 잔존 |
+| N6 | 위키 진실은 이벤트로 복사하지 않는다 (포인터만) **[협약]** | `task.*` 이벤트의 meta가 task id/사유뿐(본문 없음); `write.*` kind 부재 (`canopy events --kind 'write.*' --json` → 0건) |
+
 ## T. 에이전트 태스크 큐 ([agent-tasks.md](agent-tasks.md))
 
 > 위임은 파일로(`_meta/tasks/<id>.json`, 태스크당 하나), 완료는 검증으로:
@@ -191,6 +206,7 @@
 9. L1–L3은 `make i18n-check` (1의 CI에도 포함)
 10. M1–M5는 `make test`(M1·M2·M3 테스트) + serve 실행 상태(M3·M5 curl)
 11. T1–T10은 스크래치 위키에서 `canopy tasks add/done/dismiss/gc`로 (T6·T7은 파일 해시·status 확인, T9·T10은 `go test ./internal/webui/` + serve 상태)
+12. N1–N6은 스크래치 위키 + 임시 `XDG_STATE_HOME`에서 `canopy events`/`tasks`로 (N3은 1의 `make test`에도 포함)
 
 > 위반을 발견하면: (1) 그 위반이 **어느 명령을 우회해서** 생겼는지 찾고,
 > (2) 우회 경로를 막는 코드/lint를 추가하고, (3) 필요하면 이 목록에 항목을 늘린다.

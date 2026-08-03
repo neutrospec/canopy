@@ -141,12 +141,16 @@ canopy sync
 ## 건강 검사
 
 ```bash
-canopy status          # 페이지 수, git 상태, 미정규화 외부 변경 수
+canopy status          # 페이지 수, git 상태, 미정규화 외부 변경 수, 대기 태스크 수
 canopy lint            # broken link, orphan, island, 스키마 위반, stale (--json으로 파싱)
 canopy backlinks --orphans
+canopy events --since 7d --json          # 이 머신의 최근 활동 타임라인 (열람·검색·태스크·sync)
+canopy events --kind task.* --json       # 태스크 라이프사이클만 (verify 거부 사유 포함)
 ```
 
 주기 점검(cron)은 `canopy lint --json` + `canopy status --json`을 쓰고 결과를 보고하라.
+"최근 무슨 일이 있었나"가 필요하면 `canopy events`가 한 호출 — 이벤트는 관측일 뿐
+진실이 아니니(큐·읽기 이력의 진실은 위키 파일) 참고 자료로만 쓰라.
 
 ## 정규화(reconcile) — 뒷길 변경의 검토
 

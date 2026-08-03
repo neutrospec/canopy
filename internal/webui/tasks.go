@@ -169,7 +169,7 @@ func (s *Server) handleTaskCancel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "only pending edit requests can be withdrawn here", http.StatusBadRequest)
 		return
 	}
-	if _, err := tasks.Close(s.w, nil, t.ID, tasks.StatusDismissed, "웹에서 철회", time.Now()); err != nil {
+	if _, err := tasks.Close(s.w, nil, t.ID, tasks.StatusDismissed, "웹에서 철회", "web", time.Now()); err != nil {
 		s.fail(w, err)
 		return
 	}

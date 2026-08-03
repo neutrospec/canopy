@@ -64,7 +64,7 @@ func main() {
 	root.AddCommand(cmdInit(), cmdStatus(), cmdReindex(), cmdSearch(), cmdBacklinks(), cmdLint(), cmdShow(), cmdList(), cmdTags(), cmdModel(),
 		cmdNew(), cmdUpdate(), cmdMv(), cmdRm(), cmdArchive(), cmdSync(), cmdSkills(),
 		cmdResurface(), cmdBridge(), cmdRecall(), cmdDigest(), cmdServe(),
-		cmdVersion(), cmdMigrate(), cmdReconcile(), cmdTasks())
+		cmdVersion(), cmdMigrate(), cmdReconcile(), cmdTasks(), cmdEvents())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)

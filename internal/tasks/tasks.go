@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/neutrospec/canopy/internal/attention"
 	"github.com/neutrospec/canopy/internal/config"
 	"github.com/neutrospec/canopy/internal/wiki"
 )
@@ -174,7 +175,11 @@ func FileConnect(w *config.Wiki, a, b string, sim float64, door string, now time
 		Version: FormatVersion, ID: id, Type: TypeConnect, Status: StatusPending,
 		Door: door, Created: now.Format(time.RFC3339), Pages: []string{a, b}, Sim: sim,
 	}
-	return t, true, writeTask(w, id, t)
+	if err := writeTask(w, id, t); err != nil {
+		return nil, false, err
+	}
+	attention.LogLifecycle(w, now, "", door, attention.KindTaskFiled, id)
+	return t, true, nil
 }
 
 // FileEdit files an edit request: an instruction (request), a proposed
@@ -199,15 +204,20 @@ func FileEdit(w *config.Wiki, slug, request, body, base, door string, now time.T
 		Door: door, Created: now.Format(time.RFC3339), Pages: []string{slug},
 		Request: request, Base: base, Body: body,
 	}
-	return t, writeTask(w, id, t)
+	if err := writeTask(w, id, t); err != nil {
+		return nil, err
+	}
+	attention.LogLifecycle(w, now, "", door, attention.KindTaskFiled, id)
+	return t, nil
 }
 
 // Close marks a task done or dismissed. done must pass the type's
 // Verifier (T2); an unknown type refuses done but allows dismiss —
 // dismiss records a judgment, done claims an outcome (T5). The write
 // patches the raw JSON so fields this binary doesn't know survive a
-// mixed-version fleet (규칙 1b).
-func Close(w *config.Wiki, scan *wiki.ScanResult, id, status, note string, now time.Time) (*Task, error) {
+// mixed-version fleet (규칙 1b). door tags the lifecycle event only —
+// the task file keeps its filing door.
+func Close(w *config.Wiki, scan *wiki.ScanResult, id, status, note, door string, now time.Time) (*Task, error) {
 	if status != StatusDone && status != StatusDismissed {
 		return nil, fmt.Errorf("invalid status %q", status)
 	}
@@ -231,6 +241,9 @@ func Close(w *config.Wiki, scan *wiki.ScanResult, id, status, note string, now t
 			return nil, fmt.Errorf("unknown task type %q — filed by a newer canopy; upgrade before closing as done (dismiss is allowed)", t.Type)
 		}
 		if err := v(w, scan, t); err != nil {
+			// The one signal the task file never keeps: a rejected done
+			// attempt (docs/events.md §2).
+			attention.LogLifecycle(w, now, "", door, attention.KindTaskRejected, id+": "+err.Error())
 			return nil, fmt.Errorf("done rejected (%s): %w", t.Type, err)
 		}
 	}
@@ -244,7 +257,15 @@ func Close(w *config.Wiki, scan *wiki.ScanResult, id, status, note string, now t
 		t.Note = note
 		raw["note"] = note
 	}
-	return t, writeTask(w, id, raw)
+	if err := writeTask(w, id, raw); err != nil {
+		return nil, err
+	}
+	kind := attention.KindTaskDone
+	if status == StatusDismissed {
+		kind = attention.KindTaskDismissed
+	}
+	attention.LogLifecycle(w, now, "", door, kind, id)
+	return t, nil
 }
 
 // GC removes closed tasks whose Closed time is older than keep.
@@ -267,6 +288,9 @@ func GC(w *config.Wiki, keep time.Duration, now time.Time) (int, error) {
 			return removed, err
 		}
 		removed++
+	}
+	if removed > 0 {
+		attention.LogLifecycle(w, now, "", attention.DoorAgent, attention.KindTaskGC, fmt.Sprintf("%d", removed))
 	}
 	return removed, nil
 }

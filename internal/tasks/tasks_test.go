@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/neutrospec/canopy/internal/attention"
 	"github.com/neutrospec/canopy/internal/config"
 	"github.com/neutrospec/canopy/internal/wiki"
 )
@@ -54,7 +55,7 @@ func TestConnectDoneRequiresMutualLinks(t *testing.T) {
 		t.Fatalf("id not deterministic/sorted: %s", task.ID)
 	}
 
-	if _, err := Close(w, scan(t, w), task.ID, StatusDone, "", now); err == nil {
+	if _, err := Close(w, scan(t, w), task.ID, StatusDone, "", "agent", now); err == nil {
 		t.Fatal("done must be rejected while links are missing")
 	}
 	if got, _ := Get(w, task.ID); got.Status != StatusPending {
@@ -63,12 +64,12 @@ func TestConnectDoneRequiresMutualLinks(t *testing.T) {
 
 	// one-directional link is not enough
 	write(t, w, "concepts/alpha.md", "see [[beta]]")
-	if _, err := Close(w, scan(t, w), task.ID, StatusDone, "", now); err == nil {
+	if _, err := Close(w, scan(t, w), task.ID, StatusDone, "", "agent", now); err == nil {
 		t.Fatal("done must require BOTH directions")
 	}
 
 	write(t, w, "concepts/beta.md", "see [[alpha]]")
-	closed, err := Close(w, scan(t, w), task.ID, StatusDone, "linked", now)
+	closed, err := Close(w, scan(t, w), task.ID, StatusDone, "linked", "agent", now)
 	if err != nil {
 		t.Fatalf("done with mutual links: %v", err)
 	}
@@ -76,7 +77,7 @@ func TestConnectDoneRequiresMutualLinks(t *testing.T) {
 		t.Fatalf("close fields: %+v", closed)
 	}
 
-	if _, err := Close(w, scan(t, w), task.ID, StatusDone, "", now); err == nil {
+	if _, err := Close(w, scan(t, w), task.ID, StatusDone, "", "agent", now); err == nil {
 		t.Fatal("closing twice must fail")
 	}
 }
@@ -99,7 +100,7 @@ func TestConnectFilingIsIdempotent(t *testing.T) {
 		t.Fatalf("want 1 task file, got %d", len(entries))
 	}
 
-	if _, err := Close(w, scan(t, w), ConnectID("a", "b"), StatusDismissed, "unrelated", now); err != nil {
+	if _, err := Close(w, scan(t, w), ConnectID("a", "b"), StatusDismissed, "unrelated", "agent", now); err != nil {
 		t.Fatal(err)
 	}
 	got, _, err := FileConnect(w, "a", "b", 0.9, "web", now.Add(2*time.Hour))
@@ -124,11 +125,11 @@ func TestEditDoneRequiresChange(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Close(w, scan(t, w), task.ID, StatusDone, "", now); err == nil {
+	if _, err := Close(w, scan(t, w), task.ID, StatusDone, "", "agent", now); err == nil {
 		t.Fatal("done must be rejected while the page is unchanged")
 	}
 	write(t, w, "concepts/topic.md", "original + the table")
-	if _, err := Close(w, scan(t, w), task.ID, StatusDone, "done", now); err != nil {
+	if _, err := Close(w, scan(t, w), task.ID, StatusDone, "done", "agent", now); err != nil {
 		t.Fatalf("done after change: %v", err)
 	}
 }
@@ -159,7 +160,7 @@ func TestEditProposalCarriesBody(t *testing.T) {
 		t.Fatalf("proposed body not preserved verbatim:\n%q", got.Body)
 	}
 	// same verification as any edit: done needs the page to have moved
-	if _, err := Close(w, scan(t, w), task.ID, StatusDone, "", now); err == nil {
+	if _, err := Close(w, scan(t, w), task.ID, StatusDone, "", "agent", now); err == nil {
 		t.Fatal("done must be rejected while the page is unchanged")
 	}
 }
@@ -180,10 +181,10 @@ func TestUnknownTypeMixedVersionSafety(t *testing.T) {
 	if err != nil || len(list) != 1 {
 		t.Fatalf("unknown type must still list: %v %d", err, len(list))
 	}
-	if _, err := Close(w, scan(t, w), "future-1", StatusDone, "", now); err == nil {
+	if _, err := Close(w, scan(t, w), "future-1", StatusDone, "", "agent", now); err == nil {
 		t.Fatal("done on unknown type must be refused")
 	}
-	if _, err := Close(w, scan(t, w), "future-1", StatusDismissed, "can't judge here", now); err != nil {
+	if _, err := Close(w, scan(t, w), "future-1", StatusDismissed, "can't judge here", "agent", now); err != nil {
 		t.Fatalf("dismiss on unknown type must work: %v", err)
 	}
 	data, _ := os.ReadFile(filepath.Join(Dir(w), "future-1.json"))
@@ -208,7 +209,7 @@ func TestGCNeverRemovesPending(t *testing.T) {
 	if _, _, err := FileConnect(w, "a", "b", 0.9, "cli", now.Add(-48*time.Hour)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Close(w, scan(t, w), ConnectID("a", "b"), StatusDone, "", now.Add(-24*time.Hour)); err != nil {
+	if _, err := Close(w, scan(t, w), ConnectID("a", "b"), StatusDone, "", "agent", now.Add(-24*time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := FileEdit(w, "a", "still open", "", "", "cli", now.Add(-72*time.Hour)); err != nil {
@@ -256,5 +257,60 @@ func TestFilingDoesNotEditPages(t *testing.T) {
 		if !strings.HasPrefix(task.Created, "2026-") {
 			t.Fatalf("task %s missing created", task.ID)
 		}
+	}
+}
+
+// Task actions leave a lifecycle trail in the event DB (docs/events.md):
+// filed/done/dismissed plus verify_rejected — the one signal the task
+// file never keeps. Meta carries the task id only, never wiki content (N6).
+func TestLifecycleEventsLogged(t *testing.T) {
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+	w := testWiki(t)
+	write(t, w, "concepts/a.md", "x")
+	write(t, w, "concepts/b.md", "y")
+
+	if _, _, err := FileConnect(w, "a", "b", 0.9, "web", now); err != nil {
+		t.Fatal(err)
+	}
+	id := ConnectID("a", "b")
+	if _, err := Close(w, scan(t, w), id, StatusDone, "", "agent", now); err == nil {
+		t.Fatal("done should have been rejected")
+	}
+	write(t, w, "concepts/a.md", "see [[b]]")
+	write(t, w, "concepts/b.md", "see [[a]]")
+	if _, err := Close(w, scan(t, w), id, StatusDone, "", "agent", now); err != nil {
+		t.Fatal(err)
+	}
+
+	ev, err := attention.Open(w.AttentionDBPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ev.Close()
+	events, err := ev.Query(attention.Filter{Kind: "task.*"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	kinds := map[string]int{}
+	for _, e := range events {
+		kinds[e.Kind]++
+		if !strings.Contains(e.Meta, id) {
+			t.Fatalf("meta must point at the task id, got %q", e.Meta)
+		}
+	}
+	if kinds[attention.KindTaskFiled] != 1 || kinds[attention.KindTaskRejected] != 1 || kinds[attention.KindTaskDone] != 1 {
+		t.Fatalf("lifecycle trail wrong: %v", kinds)
+	}
+}
+
+// Logging is best-effort (N2): an unwritable state home must not break
+// the operation being observed.
+func TestLoggingFailureDoesNotBreakFiling(t *testing.T) {
+	t.Setenv("XDG_STATE_HOME", "/dev/null/nope")
+	w := testWiki(t)
+	write(t, w, "concepts/a.md", "x")
+	write(t, w, "concepts/b.md", "y")
+	if _, created, err := FileConnect(w, "a", "b", 0.9, "web", now); err != nil || !created {
+		t.Fatalf("filing must survive a dead event DB: created=%v err=%v", created, err)
 	}
 }

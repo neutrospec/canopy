@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/neutrospec/canopy/internal/attention"
 	"github.com/neutrospec/canopy/internal/tasks"
 	"github.com/neutrospec/canopy/internal/wiki"
 )
@@ -224,7 +225,7 @@ func cmdTasksClose(use, status string) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			t, err := tasks.Close(w, scan, args[0], status, note, time.Now())
+			t, err := tasks.Close(w, scan, args[0], status, note, attention.DoorAgent, time.Now())
 			if err != nil {
 				return err
 			}

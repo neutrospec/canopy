@@ -19,6 +19,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/neutrospec/canopy/internal/attention"
 	"github.com/neutrospec/canopy/internal/config"
 	"github.com/neutrospec/canopy/internal/embed"
 	"github.com/neutrospec/canopy/internal/gitops"
@@ -172,6 +173,8 @@ func runSync(w *config.Wiki, message string) error {
 		}
 		pushed = true
 	}
+	attention.LogLifecycle(w, time.Now(), "", attention.DoorAgent, attention.KindSyncDone,
+		fmt.Sprintf("committed=%v pushed=%v", committed, pushed))
 	if flagJSON {
 		return emitJSON(map[string]any{"committed": committed, "pushed": pushed, "message": message})
 	}

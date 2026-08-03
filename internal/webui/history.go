@@ -81,7 +81,9 @@ func (s *Server) handleHistory(w http.ResponseWriter, r *http.Request) {
 	}
 	var events []attention.Event
 	if ev, err := attention.Open(s.w.AttentionDBPath()); err == nil {
-		events, _ = ev.Recent(500)
+		// The attention timeline: lifecycle events live in `canopy events`,
+		// not here (N3) — a filed task is not a page access.
+		events, _ = ev.Query(attention.Filter{Limit: 500, AttnOnly: true})
 		ev.Close()
 	}
 

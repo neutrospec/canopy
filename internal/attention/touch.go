@@ -15,6 +15,18 @@ import (
 // Touch is best-effort by design — it returns the first error for the
 // caller to mention on stderr, but a failed touch must never break the
 // read that triggered it.
+// LogLifecycle appends one lifecycle event (task/sync/reconcile —
+// docs/events.md §2), best-effort: it never returns an error because a
+// failed observation must never break the operation it observes (N2).
+func LogLifecycle(w *config.Wiki, now time.Time, slug, door, kind, meta string) {
+	ev, err := Open(w.AttentionDBPath())
+	if err != nil {
+		return
+	}
+	defer ev.Close()
+	ev.Log(now, slug, door, kind, meta)
+}
+
 func Touch(w *config.Wiki, slugs []string, kind, meta string) error {
 	if len(slugs) == 0 {
 		return nil

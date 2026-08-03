@@ -9,9 +9,11 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/neutrospec/canopy/internal/attention"
 	"github.com/neutrospec/canopy/internal/config"
 	"github.com/neutrospec/canopy/internal/embed"
 	"github.com/neutrospec/canopy/internal/lint"
@@ -110,6 +112,8 @@ func cmdReconcileBless() *cobra.Command {
 				if err != nil {
 					return err
 				}
+				attention.LogLifecycle(w, time.Now(), "", attention.DoorAgent,
+					attention.KindBless, fmt.Sprintf("all:%d", n))
 				if flagJSON {
 					return emitJSON(map[string]any{"blessed": n, "initialized_now": !initialized})
 				}
@@ -142,6 +146,10 @@ func cmdReconcileBless() *cobra.Command {
 			}
 			if err := reconcile.BlessPaths(w, rels); err != nil {
 				return err
+			}
+			for _, rel := range rels {
+				slug := wiki.NormalizeLink(rel)
+				attention.LogLifecycle(w, time.Now(), slug, attention.DoorAgent, attention.KindBless, rel)
 			}
 			n, _, err := reconcile.Count(w)
 			if err != nil {
