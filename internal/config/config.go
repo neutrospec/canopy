@@ -62,8 +62,19 @@ type Config struct {
 type Schema struct {
 	// Types allowed in frontmatter `type:`.
 	Types []string `toml:"types"`
-	// Tags is the allowed taxonomy for frontmatter `tags:`.
-	Tags []string `toml:"tags"`
+	// Topics is the subject facet of the tag taxonomy — an open set that
+	// grows on demand and shrinks on disuse (docs/taxonomy.md).
+	Topics []string `toml:"topics"`
+	// Forms is the page-kind facet (method, review, timeline, …) — a
+	// closed set, exempt from the growth/pressure rules.
+	Forms []string `toml:"forms"`
+	// Tags is the legacy single-list taxonomy. Read tolerantly (treated
+	// as the whole taxonomy when topics/forms are absent); new configs
+	// declare topics/forms instead.
+	Tags []string `toml:"tags,omitempty"`
+	// BroadTopicPct flags a topic used by more than this percentage of
+	// pages as having lost discriminating power (invariant S4). 0 disables.
+	BroadTopicPct int `toml:"broad_topic_pct"`
 	// PageDirs are directories whose *.md files are schema-governed pages.
 	PageDirs []string `toml:"page_dirs"`
 	// RootFiles are the only .md files allowed in the wiki root.
@@ -74,6 +85,22 @@ type Schema struct {
 	MaxLines int `toml:"max_lines"`
 	// StaleDays flags pages not updated for this many days.
 	StaleDays int `toml:"stale_days"`
+}
+
+// AllTags is the valid-tag set that validation (new/lint) enforces:
+// topics ∪ forms ∪ legacy tags, deduplicated, declaration order kept.
+func (s *Schema) AllTags() []string {
+	seen := map[string]bool{}
+	var all []string
+	for _, group := range [][]string{s.Topics, s.Forms, s.Tags} {
+		for _, t := range group {
+			if !seen[t] {
+				seen[t] = true
+				all = append(all, t)
+			}
+		}
+	}
+	return all
 }
 
 type Embedding struct {
@@ -92,19 +119,22 @@ func Default() *Config {
 			RootFiles: []string{
 				"index.md", "SCHEMA.md",
 			},
-			Tags: []string{
+			Topics: []string{
 				"person", "company", "community",
 				"ai-ml", "science", "philosophy", "history", "language", "math", "politics",
 				"health", "psychology", "fitness", "nutrition", "sleep",
 				"business", "finance", "career", "productivity", "startup",
 				"book", "movie", "music", "travel", "cooking", "hobby",
 				"programming", "tool", "hardware", "infrastructure", "hacking",
+			},
+			Forms: []string{
 				"comparison", "timeline", "controversy", "prediction", "method",
 				"definition", "decision", "review", "debugging",
 			},
-			MinWikilinks: 2,
-			MaxLines:     1000,
-			StaleDays:    90,
+			BroadTopicPct: 25,
+			MinWikilinks:  2,
+			MaxLines:      1000,
+			StaleDays:     90,
 		},
 		Embedding: Embedding{
 			// Model defaults to the fp32 directory that `canopy model pull`
@@ -123,6 +153,10 @@ type Wiki struct {
 	Cfg  *Config
 	// HasTOML reports whether <root>/canopy.toml exists (i.e. init was run).
 	HasTOML bool
+	// LegacyTags reports that canopy.toml declares the old single `tags`
+	// list without the topic/form facets — read tolerantly (the list is
+	// the whole taxonomy); `canopy tags --audit` recommends migrating.
+	LegacyTags bool
 }
 
 // DBPath keys the derived index cache by wiki path so multiple wikis
@@ -164,10 +198,20 @@ func Resolve(explicit string) (*Wiki, error) {
 	w := &Wiki{Root: root, Cfg: Default()}
 	tomlPath := w.TOMLPath()
 	if _, err := os.Stat(tomlPath); err == nil {
-		if _, err := toml.DecodeFile(tomlPath, w.Cfg); err != nil {
+		md, err := toml.DecodeFile(tomlPath, w.Cfg)
+		if err != nil {
 			return nil, fmt.Errorf("parse %s: %w", tomlPath, err)
 		}
 		w.HasTOML = true
+		// Legacy single-list taxonomy: the file's `tags` IS the whole
+		// taxonomy — drop the built-in topic/form defaults so validation
+		// enforces exactly what the wiki declared (rule 1b: tolerant read).
+		if md.IsDefined("schema", "tags") &&
+			!md.IsDefined("schema", "topics") && !md.IsDefined("schema", "forms") {
+			w.LegacyTags = true
+			w.Cfg.Schema.Topics = nil
+			w.Cfg.Schema.Forms = nil
+		}
 	}
 	return w, nil
 }
@@ -205,6 +249,8 @@ func (w *Wiki) WriteTOML() error {
 	defer f.Close()
 	fmt.Fprintln(f, "# canopy configuration — machine-readable schema for this wiki.")
 	fmt.Fprintln(f, "# Tag taxonomy source of truth lives here; SCHEMA.md is the human narrative.")
+	fmt.Fprintln(f, "# topics = subject facet (open set, demand-driven); forms = page-kind facet")
+	fmt.Fprintln(f, "# (closed set, frozen). Governance rules: docs/taxonomy.md in the canopy repo.")
 	fmt.Fprintln(f)
 	return toml.NewEncoder(f).Encode(w.Cfg)
 }

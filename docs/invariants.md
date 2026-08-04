@@ -174,6 +174,20 @@
 | N5 | events gc는 머신-로컬만 지우고 보존 창을 존중한다 | `canopy events gc --days 0` 전후 `git -C $W status --short` 동일(위키 무접촉), `--days 365`면 최근 이벤트 잔존 |
 | N6 | 위키 진실은 이벤트로 복사하지 않는다 (포인터만) **[협약]** | `task.*` 이벤트의 meta가 task id/사유뿐(본문 없음); `write.*` kind 부재 (`canopy events --kind 'write.*' --json` → 0건) |
 
+## S. 태그 taxonomy 거버넌스 ([taxonomy.md](taxonomy.md))
+
+> taxonomy는 실측 사용의 반영이지 희망사항 목록이 아니다. 태그는 주제(topic,
+> 열린 집합·수요 기반)와 형식(form, 닫힌 집합·동결) 두 facet으로 분리 선언하고,
+> 증감 압력은 topic에만 건다. 판단(동의어·분할 설계·회수 확정)은 LLM, 실측은 코드.
+
+| # | 불변식 | 점검 |
+|---|--------|------|
+| S1 | taxonomy는 topic/form 두 facet으로 분리 선언된다 (구형식 단일 `tags`는 관용 읽기 + audit가 이행 권고) | `canopy tags --json $W \| jq '(.topics\|length) > 0 and (.forms\|length) > 0'` == true; 구형식이면 `canopy tags --audit --json $W \| jq .legacy` == true 로 검출 |
+| S2 | 검증(new/lint)의 유효 태그는 topics ∪ forms 합집합이고 CLI 조회와 같은 소스다 (A5·A7 재확인) | `canopy tags --json $W \| jq '.tags\|length'` == `(.topics\|length)+(.forms\|length)` (구형식 제외), taxonomy 밖 태그로 `canopy new` → 에러 |
+| S3 | 사용 0회 topic 없음 — 추가는 수요(페이지 ≥ 3) 증명 후 **[협약]**, 사후 하한은 사용 ≥ 1 | `canopy tags --audit --json $W \| jq '.unused_topics\|length'` == 0 |
+| S4 | 분별력 잃은 topic 없음 — 한 topic이 전체 페이지의 `broad_topic_pct`%(기본 25, 0=끔)를 초과하면 분할 검토 대상. form은 면제(형식의 본성) | `canopy tags --audit --json $W \| jq '.overbroad_topics\|length'` == 0 |
+| S5 | audit는 보고만 한다 — 흔적 없음 (E6·K5와 같은 규율) | `canopy tags --audit $W` 실행 전후 `git -C $W status --short` 동일, exit 0 |
+
 ## T. 에이전트 태스크 큐 ([agent-tasks.md](agent-tasks.md))
 
 > 위임은 파일로(`_meta/tasks/<id>.json`, 태스크당 하나), 완료는 검증으로:
@@ -207,6 +221,7 @@
 10. M1–M5는 `make test`(M1·M2·M3 테스트) + serve 실행 상태(M3·M5 curl)
 11. T1–T10은 스크래치 위키에서 `canopy tasks add/done/dismiss/gc`로 (T6·T7은 파일 해시·status 확인, T9·T10은 `go test ./internal/webui/` + serve 상태)
 12. N1–N6은 스크래치 위키 + 임시 `XDG_STATE_HOME`에서 `canopy events`/`tasks`로 (N3은 1의 `make test`에도 포함)
+13. S1–S5는 `canopy tags --json` / `canopy tags --audit --json`으로 (jq 확인)
 
 > 위반을 발견하면: (1) 그 위반이 **어느 명령을 우회해서** 생겼는지 찾고,
 > (2) 우회 경로를 막는 코드/lint를 추가하고, (3) 필요하면 이 목록에 항목을 늘린다.

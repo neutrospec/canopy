@@ -48,7 +48,7 @@ func dirForType(w *config.Wiki, typ string) (string, error) {
 
 func validateTags(w *config.Wiki, tags []string) error {
 	allowed := map[string]bool{}
-	for _, t := range w.Cfg.Schema.Tags {
+	for _, t := range w.Cfg.Schema.AllTags() {
 		allowed[t] = true
 	}
 	var bad []string
@@ -58,7 +58,7 @@ func validateTags(w *config.Wiki, tags []string) error {
 		}
 	}
 	if len(bad) > 0 {
-		return fmt.Errorf("tags not in taxonomy: %s (see `canopy tags` for the valid list; extend canopy.toml first if genuinely new)", strings.Join(bad, ", "))
+		return fmt.Errorf("tags not in taxonomy: %s (see `canopy tags` for the valid list; a topic is added to canopy.toml only when ≥3 pages demand it — docs/taxonomy.md)", strings.Join(bad, ", "))
 	}
 	return nil
 }

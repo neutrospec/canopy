@@ -761,26 +761,85 @@ func cmdList() *cobra.Command {
 
 // cmdTags exposes the taxonomy that validation enforces, from the same
 // source (canopy.toml / defaults) — no need to parse the TOML by hand.
+// --audit measures the taxonomy against actual usage (invariants S3–S5):
+// report only, no side effects.
 func cmdTags() *cobra.Command {
-	return &cobra.Command{
+	var audit bool
+	c := &cobra.Command{
 		Use:   "tags",
-		Short: "Show the valid types and tag taxonomy for this wiki",
+		Short: "Show the valid types and tag taxonomy; --audit measures usage",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			w, err := loadWiki()
 			if err != nil {
 				return err
 			}
+			if audit {
+				scan, err := wiki.Scan(w)
+				if err != nil {
+					return err
+				}
+				rep := lint.TagAudit(w, scan)
+				if flagJSON {
+					return emitJSON(rep)
+				}
+				printTagAudit(rep)
+				return nil
+			}
 			if flagJSON {
 				return emitJSON(map[string]any{
-					"types": w.Cfg.Schema.Types,
-					"tags":  w.Cfg.Schema.Tags,
+					"types":  w.Cfg.Schema.Types,
+					"topics": w.Cfg.Schema.Topics,
+					"forms":  w.Cfg.Schema.Forms,
+					// union, same source validation enforces (A7/S2);
+					// also where a legacy single-list taxonomy shows up
+					"tags": w.Cfg.Schema.AllTags(),
 				})
 			}
-			fmt.Printf("types: %s\n", strings.Join(w.Cfg.Schema.Types, ", "))
-			fmt.Printf("tags:  %s\n", strings.Join(w.Cfg.Schema.Tags, ", "))
-			fmt.Fprintln(os.Stderr, "(source: canopy.toml — extend it there before using a new tag)")
+			fmt.Printf("types:  %s\n", strings.Join(w.Cfg.Schema.Types, ", "))
+			if w.LegacyTags {
+				fmt.Printf("tags:   %s\n", strings.Join(w.Cfg.Schema.Tags, ", "))
+				fmt.Fprintln(os.Stderr, "(legacy single-list taxonomy — split into topics/forms in canopy.toml; see `canopy tags --audit`)")
+			} else {
+				fmt.Printf("topics: %s\n", strings.Join(w.Cfg.Schema.Topics, ", "))
+				fmt.Printf("forms:  %s\n", strings.Join(w.Cfg.Schema.Forms, ", "))
+			}
+			fmt.Fprintln(os.Stderr, "(source: canopy.toml — a new topic needs ≥3 pages demanding it; forms are frozen)")
 			return nil
 		},
+	}
+	c.Flags().BoolVar(&audit, "audit", false, "measure taxonomy against usage: unused/overbroad topics, unknown tags")
+	return c
+}
+
+func printTagAudit(rep *lint.TagAuditReport) {
+	fmt.Printf("pages: %d\n", rep.TotalPages)
+	if rep.Legacy {
+		fmt.Println("⚠ legacy single-list taxonomy — split canopy.toml `tags` into `topics`/`forms` (S1)")
+	}
+	section := func(title string, us []lint.TagUsage) {
+		fmt.Printf("\n%s:\n", title)
+		for _, u := range us {
+			fmt.Printf("  %4d  %4.1f%%  %s\n", u.Count, u.Pct, u.Tag)
+		}
+	}
+	section("topics", rep.Topics)
+	section("forms", rep.Forms)
+	if len(rep.UnusedTopics) > 0 {
+		fmt.Printf("\n⚠ unused topics (reclaim candidates, S3): %s\n", strings.Join(rep.UnusedTopics, ", "))
+	}
+	for _, u := range rep.OverbroadTopics {
+		fmt.Printf("⚠ overbroad topic (>%d%% of pages — consider splitting, S4): %s (%d pages, %.1f%%)\n",
+			rep.BroadTopicPct, u.Tag, u.Count, u.Pct)
+	}
+	if len(rep.UnknownTags) > 0 {
+		var names []string
+		for _, u := range rep.UnknownTags {
+			names = append(names, u.Tag)
+		}
+		fmt.Printf("⚠ tags on pages but not in taxonomy (lint A5): %s\n", strings.Join(names, ", "))
+	}
+	if len(rep.UnusedTopics) == 0 && len(rep.OverbroadTopics) == 0 && len(rep.UnknownTags) == 0 && !rep.Legacy {
+		fmt.Println("\n✓ taxonomy matches usage")
 	}
 }
 

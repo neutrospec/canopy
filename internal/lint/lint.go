@@ -41,7 +41,7 @@ func Run(w *config.Wiki, scan *wiki.ScanResult) *Report {
 	}
 
 	allowedTags := map[string]bool{}
-	for _, t := range w.Cfg.Schema.Tags {
+	for _, t := range w.Cfg.Schema.AllTags() {
 		allowedTags[t] = true
 	}
 	allowedTypes := map[string]bool{}

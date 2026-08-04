@@ -52,7 +52,13 @@ echo "$BODY" | canopy new "제목" --type concept --tags ai-ml,tool \
 ```
 
 - `--type`: entity(사람/조직/제품/하드웨어) | concept(개념/방법/가이드) | comparison(비교)
-- `--tags`: taxonomy에 있는 것만 — 목록은 `canopy tags --json`으로 확인 (위반 시 명령이 거부한다; 새 태그가 정말 필요하면 canopy.toml 수정이 먼저)
+- `--tags`: taxonomy에 있는 것만 — 목록은 `canopy tags --json`으로 확인 (위반 시 명령이 거부한다).
+  태그는 두 facet: **topic**(주제 — 열린 집합)과 **form**(글의 형식: method/review/… — 동결).
+  거부당했을 때의 순서: (1) 기존 태그의 동의어면 그 태그를 쓴다 (2) 형식이면 기존 form을
+  재검토한다 — form은 정말 새 형식일 때만 는다 (3) 새 주제라도 **그 태그를 달 페이지가
+  이미 3개 이상일 때만** canopy.toml `topics`에 추가하고, 같은 커밋에서 기존 페이지를
+  retag한다; 수요가 안 쌓였으면 가장 가까운 기존 topic을 쓴다. 건강 점검은
+  `canopy tags --audit` (0회 topic = 회수 후보, 25% 초과 topic = 분할 후보)
 - 제목이 한글뿐이면 `--slug english-slug` 필수 (파일명은 영문 강제)
 - 본문에 `<`/`>`가 들어가면(`<password>`, `<path>` 등) `echo … | --body-file -`
   파이프가 셸 리다이렉션으로 오해석되어 본문이 조용히 잘릴 수 있다 —
