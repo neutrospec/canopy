@@ -88,6 +88,11 @@ README와 사용자 문서(`getting-started`·`troubleshooting`·`upgrading`)는
 if-else 사슬 순서도로 만들지 않는다 (canopy-wiki 스킬이 위키 페이지에 요구하는
 기준과 동일).
 
+문법 함정(라벨은 큰따옴표로, 소문자 `end`·`o`/`x` 노드 ID 금지, entity code,
+v11 Markdown Strings 등)을 피하는 세부 규칙은
+[internal/skills/canopy_wiki.md](internal/skills/canopy_wiki.md)의 mermaid 절을
+따른다 — 저장소 문서의 다이어그램에도 동일하게 적용.
+
 번역되는 문서(invariants **L** 대상)에 다이어그램을 넣을 땐: mermaid 문법·노드 ID·
 명령·경로는 L3대로 그대로 두고 **라벨의 산문만 번역**한다. 펜스 개수가 유지되므로
 `make i18n-check`의 FENCE 검사와 정합.

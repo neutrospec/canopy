@@ -25,6 +25,7 @@ import (
 	"github.com/neutrospec/canopy/internal/gitops"
 	"github.com/neutrospec/canopy/internal/indexer"
 	"github.com/neutrospec/canopy/internal/logops"
+	"github.com/neutrospec/canopy/internal/mermaid"
 	"github.com/neutrospec/canopy/internal/reads"
 	"github.com/neutrospec/canopy/internal/reconcile"
 	"github.com/neutrospec/canopy/internal/store"
@@ -59,6 +60,30 @@ func validateTags(w *config.Wiki, tags []string) error {
 	}
 	if len(bad) > 0 {
 		return fmt.Errorf("tags not in taxonomy: %s (see `canopy tags` for the valid list; a topic is added to canopy.toml only when ≥3 pages demand it — docs/taxonomy.md)", strings.Join(bad, ", "))
+	}
+	return nil
+}
+
+// validateMermaid rejects content whose ```mermaid blocks fail the
+// renderer's own parser (invariant P2) — a broken diagram would render
+// as an error box, so it never lands on disk through canopy. Sandbox
+// faults are not the diagram's fault and fail open with a warning (P4).
+// Line numbers are relative to the final file content passed in.
+func validateMermaid(content string) error {
+	blocks := mermaid.Blocks(content)
+	if len(blocks) == 0 {
+		return nil
+	}
+	v := mermaid.NewValidator()
+	for _, b := range blocks {
+		bad, err := v.Validate(b.Source)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "⚠ mermaid block (line %d) could not be validated (environment, not the diagram): %v\n", b.Line, err)
+			continue
+		}
+		if bad != nil {
+			return fmt.Errorf("mermaid block at line %d fails the renderer's parser — fix the diagram and retry (syntax rules: canopy-wiki skill):\n%s", b.Line, bad.Message)
+		}
 	}
 	return nil
 }
@@ -274,6 +299,9 @@ func cmdNew() *cobra.Command {
 			}
 			today := time.Now().Format("2006-01-02")
 			content := wiki.NewPageContent(title, typ, today, tags, links, body)
+			if err := validateMermaid(content); err != nil {
+				return err
+			}
 			relPath := filepath.Join(dir, slug+".md")
 			// Fresh wikis start without category directories.
 			if err := os.MkdirAll(filepath.Join(w.Root, dir), 0o755); err != nil {
@@ -369,6 +397,11 @@ func cmdUpdate() *cobra.Command {
 				content = wiki.ReplaceBody(content, string(data))
 			}
 			content = wiki.SetFrontmatterField(content, "updated", time.Now().Format("2006-01-02"))
+			// Gate replaced bodies AND direct file edits being normalized —
+			// both surface the parse error to the agent who can fix it now.
+			if err := validateMermaid(content); err != nil {
+				return err
+			}
 			if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 				return err
 			}

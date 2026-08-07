@@ -22,6 +22,7 @@ import (
 	"github.com/neutrospec/canopy/internal/gitops"
 	"github.com/neutrospec/canopy/internal/indexer"
 	"github.com/neutrospec/canopy/internal/lint"
+	"github.com/neutrospec/canopy/internal/mermaid"
 	"github.com/neutrospec/canopy/internal/migrate"
 	"github.com/neutrospec/canopy/internal/reconcile"
 	"github.com/neutrospec/canopy/internal/search"
@@ -635,7 +636,7 @@ func cmdLint() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			rep := lint.Run(w, scan)
+			rep := lint.Run(w, scan, mermaid.NewValidator())
 			if flagJSON {
 				return emitJSON(rep)
 			}

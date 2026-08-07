@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"bytes"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -19,6 +20,7 @@ import (
 	"github.com/neutrospec/canopy/internal/config"
 	cembed "github.com/neutrospec/canopy/internal/embed"
 	"github.com/neutrospec/canopy/internal/indexer"
+	"github.com/neutrospec/canopy/internal/mermaid"
 	"github.com/neutrospec/canopy/internal/reads"
 	"github.com/neutrospec/canopy/internal/search"
 	"github.com/neutrospec/canopy/internal/store"
@@ -84,6 +86,13 @@ func (s *Server) loc(r *http.Request) *i18n.Localizer {
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("GET /static/", http.FileServerFS(assets))
+	// The mermaid bundle lives in internal/mermaid (which validates wiki
+	// diagrams with it); serving that same copy keeps parser and renderer
+	// in lockstep (invariant P3). More specific pattern wins over /static/.
+	mux.HandleFunc("GET /static/vendor/mermaid.min.js", func(rw http.ResponseWriter, r *http.Request) {
+		rw.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+		http.ServeContent(rw, r, "mermaid.min.js", time.Time{}, bytes.NewReader(mermaid.Bundle))
+	})
 	mux.HandleFunc("GET /page/{slug}", s.handlePage)
 	mux.HandleFunc("GET /search", s.handleSearch)
 	mux.HandleFunc("GET /api/search", s.handleAPISearch)

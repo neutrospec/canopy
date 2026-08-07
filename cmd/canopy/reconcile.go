@@ -17,6 +17,7 @@ import (
 	"github.com/neutrospec/canopy/internal/config"
 	"github.com/neutrospec/canopy/internal/embed"
 	"github.com/neutrospec/canopy/internal/lint"
+	"github.com/neutrospec/canopy/internal/mermaid"
 	"github.com/neutrospec/canopy/internal/reconcile"
 	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
@@ -202,7 +203,7 @@ func enrichForeign(w *config.Wiki, cands []reconcile.Candidate) []foreignReport 
 	defer st.Close()
 
 	issuesByPage := map[string][]string{}
-	for _, f := range lint.Run(w, scan).Findings {
+	for _, f := range lint.Run(w, scan, mermaid.NewValidator()).Findings {
 		issuesByPage[f.Page] = append(issuesByPage[f.Page], f.Kind+": "+f.Message)
 	}
 	pageByRel := map[string]*wiki.Page{}

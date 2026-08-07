@@ -174,6 +174,20 @@
 | N5 | events gc는 머신-로컬만 지우고 보존 창을 존중한다 | `canopy events gc --days 0` 전후 `git -C $W status --short` 동일(위키 무접촉), `--days 365`면 최근 이벤트 잔존 |
 | N6 | 위키 진실은 이벤트로 복사하지 않는다 (포인터만) **[협약]** | `task.*` 이벤트의 meta가 task id/사유뿐(본문 없음); `write.*` kind 부재 (`canopy events --kind 'write.*' --json` → 0건) |
 
+## P. Mermaid 다이어그램 검증
+
+> 위키의 mermaid 블록은 웹 UI가 렌더하는 **바로 그 파서**(내장 mermaid.min.js를
+> goja로 구동)로 검증한다 — 휴리스틱이 아니라 실제 문법 검사이므로 렌더러와
+> 판정이 어긋날 수 없다. 파서가 못 잡는 의미상 함정(예: sequence 메시지의
+> 따옴표)은 스킬 지침이 담당한다.
+
+| # | 불변식 | 점검 |
+|---|--------|------|
+| P1 | 모든 mermaid 블록은 렌더러 파서를 통과한다 | `canopy lint $W --json \| jq '.counts["invalid-mermaid"] // 0'` == 0 |
+| P2 | 깨진 mermaid는 쓰기 시점에 거부된다 (A6과 같은 규율) — 거부 메시지에 파서의 줄 번호 포함 | 깨진 블록 본문으로 `canopy new t --type concept $W` → **에러** (exit != 0), stderr에 `Parse error` |
+| P3 | 검증 파서와 웹 렌더러는 같은 번들이다 (버전 스큐 없음) | `internal/mermaid`가 번들을 소유(embed)하고 webui가 그것을 서빙 — `go test ./internal/webui/`의 번들 서빙 테스트 + `grep -rn "mermaid.min.js" internal/webui/static/vendor/` 빈 출력 |
+| P4 | 검증 환경의 결함(JS 셔임 갭·미해결 promise)은 **fail-open** — 다이어그램 탓으로 돌리지 않는다 | `go test ./internal/mermaid/`의 에러 분류 테스트; env 갭은 lint에서 `mermaid-unchecked`(info)로 가시화, 쓰기는 통과 |
+
 ## S. 태그 taxonomy 거버넌스 ([taxonomy.md](taxonomy.md))
 
 > taxonomy는 실측 사용의 반영이지 희망사항 목록이 아니다. 태그는 주제(topic,
@@ -222,6 +236,8 @@
 11. T1–T10은 스크래치 위키에서 `canopy tasks add/done/dismiss/gc`로 (T6·T7은 파일 해시·status 확인, T9·T10은 `go test ./internal/webui/` + serve 상태)
 12. N1–N6은 스크래치 위키 + 임시 `XDG_STATE_HOME`에서 `canopy events`/`tasks`로 (N3은 1의 `make test`에도 포함)
 13. S1–S5는 `canopy tags --json` / `canopy tags --audit --json`으로 (jq 확인)
+14. P1–P4는 스크래치 위키에서 깨진 mermaid 블록으로 `canopy new`(P2 거부)·파일 직접
+    심기 후 `canopy lint --json`(P1)으로, P3·P4는 1의 `make test`에 포함
 
 > 위반을 발견하면: (1) 그 위반이 **어느 명령을 우회해서** 생겼는지 찾고,
 > (2) 우회 경로를 막는 코드/lint를 추가하고, (3) 필요하면 이 목록에 항목을 늘린다.

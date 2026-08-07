@@ -9,8 +9,20 @@ import (
 	"time"
 
 	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/mermaid"
 	"github.com/neutrospec/canopy/internal/wiki"
 )
+
+// condense flattens mermaid's multi-line diagnostics (caret art and all)
+// into one bounded finding message; the full text reappears at write time
+// where the agent is fixing the block.
+func condense(msg string) string {
+	msg = strings.Join(strings.Fields(msg), " ")
+	if r := []rune(msg); len(r) > 200 {
+		msg = string(r[:200]) + "…"
+	}
+	return msg
+}
 
 type Severity string
 
@@ -33,12 +45,18 @@ type Report struct {
 	Counts     map[string]int `json:"counts"`
 }
 
-func Run(w *config.Wiki, scan *wiki.ScanResult) *Report {
+// Run checks the wiki. mv validates mermaid blocks with the renderer's
+// own parser (invariant P1); nil skips that check. The validator boots
+// lazily, so wikis without diagrams pay nothing.
+func Run(w *config.Wiki, scan *wiki.ScanResult, mv *mermaid.Validator) *Report {
 	r := &Report{TotalPages: len(scan.Pages), Counts: map[string]int{}}
 	add := func(sev Severity, kind, page, msg string) {
 		r.Findings = append(r.Findings, Finding{sev, kind, page, msg})
 		r.Counts[kind]++
 	}
+	// A systemic sandbox fault (e.g. the bundle fails to load) repeats
+	// verbatim for every block — surface it once, not per diagram (P4).
+	envSeen := map[string]bool{}
 
 	allowedTags := map[string]bool{}
 	for _, t := range w.Cfg.Schema.AllTags() {
@@ -106,6 +124,23 @@ func Run(w *config.Wiki, scan *wiki.ScanResult) *Report {
 
 		if w.Cfg.Schema.MaxLines > 0 && p.Lines > w.Cfg.Schema.MaxLines {
 			add(Warning, "large-page", p.RelPath, fmt.Sprintf("%d lines (max %d); consider splitting", p.Lines, w.Cfg.Schema.MaxLines))
+		}
+
+		if mv != nil {
+			for _, b := range mermaid.Blocks(p.Body) {
+				bad, err := mv.Validate(b.Source)
+				switch {
+				case bad != nil:
+					add(Critical, "invalid-mermaid", p.RelPath,
+						fmt.Sprintf("mermaid block (body line %d) fails the renderer's parser: %s", b.Line, condense(bad.Message)))
+				case err != nil:
+					if msg := condense(err.Error()); !envSeen[msg] {
+						envSeen[msg] = true
+						add(Info, "mermaid-unchecked", p.RelPath,
+							"mermaid block could not be validated (environment, not the diagram): "+msg)
+					}
+				}
+			}
 		}
 	}
 

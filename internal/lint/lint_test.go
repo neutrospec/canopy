@@ -1,10 +1,13 @@
 package lint
 
 import (
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/mermaid"
 	"github.com/neutrospec/canopy/internal/wiki"
 )
 
@@ -18,7 +21,7 @@ func TestRunFixture(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rep := Run(w, scan)
+	rep := Run(w, scan, mermaid.NewValidator())
 
 	want := map[string]int{
 		"stray-root":     1, // stray-page.md
@@ -31,6 +34,51 @@ func TestRunFixture(t *testing.T) {
 		if rep.Counts[kind] != n {
 			t.Errorf("%s: got %d, want %d\nfindings: %+v", kind, rep.Counts[kind], n, rep.Findings)
 		}
+	}
+}
+
+// P1: a mermaid block the renderer would choke on is a critical finding;
+// valid blocks and non-mermaid fences stay silent. nil validator skips.
+func TestMermaidFindings(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "concepts")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	fm := "---\ntitle: %s\ntype: concept\ncreated: 2026-01-01\nupdated: 2026-01-01\ntags: []\n---\n\n"
+	pages := map[string]string{
+		"good.md": "본문 [[bad]]\n\n```mermaid\nflowchart LR\n  A[\"시작\"] --> B[\"끝\"]\n```\n\n```bash\necho '[not mermaid'\n```\n",
+		"bad.md":  "본문 [[good]]\n\n```mermaid\nflowchart LR\n  A[깨진 (괄호)] --> end\n```\n",
+	}
+	for name, body := range pages {
+		content := strings.Replace(fm, "%s", strings.TrimSuffix(name, ".md"), 1) + body
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	w := &config.Wiki{Root: root, Cfg: config.Default()}
+	scan, err := wiki.Scan(w)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rep := Run(w, scan, mermaid.NewValidator())
+	if rep.Counts["invalid-mermaid"] != 1 {
+		t.Errorf("invalid-mermaid = %d, want 1\nfindings: %+v", rep.Counts["invalid-mermaid"], rep.Findings)
+	}
+	for _, f := range rep.Findings {
+		if f.Kind == "invalid-mermaid" {
+			if f.Page != "concepts/bad.md" {
+				t.Errorf("finding on %s, want concepts/bad.md", f.Page)
+			}
+			if !strings.Contains(f.Message, "Parse error") {
+				t.Errorf("message lacks parser diagnostic: %s", f.Message)
+			}
+		}
+	}
+
+	if rep := Run(w, scan, nil); rep.Counts["invalid-mermaid"] != 0 {
+		t.Errorf("nil validator must skip mermaid checks, got %d", rep.Counts["invalid-mermaid"])
 	}
 }
 
