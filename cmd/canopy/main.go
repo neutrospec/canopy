@@ -210,11 +210,23 @@ func cmdInit() *cobra.Command {
 				return err
 			}
 			defer st.Close()
+			// So canopy works from any cwd afterwards (F4) — agents that
+			// must cd into the wiki to run commands end up treating it as
+			// a workspace (docs/checkout-design.md §2).
+			adopted, adoptErr := config.AdoptAsDefaultWiki(w.Root)
 			if flagJSON {
-				return emitJSON(map[string]any{"root": w.Root, "pages": len(scan.Pages), "db": w.DBPath()})
+				return emitJSON(map[string]any{"root": w.Root, "pages": len(scan.Pages), "db": w.DBPath(),
+					"default_wiki_set": adopted})
 			}
 			fmt.Printf("✓ initialized %s\n", w.Root)
 			fmt.Printf("  canopy.toml written, %d pages indexed → %s\n", len(scan.Pages), w.DBPath())
+			switch {
+			case adoptErr != nil:
+				fmt.Fprintf(os.Stderr, "  (default_wiki 기록 실패: %v — 어느 cwd에서든 쓰려면 %s에 직접 설정)\n",
+					adoptErr, filepath.Join(config.ConfigHome(), "config.toml"))
+			case adopted:
+				fmt.Printf("  default_wiki 설정됨 → 이제 어느 디렉토리에서든 canopy 실행 가능 (cd 불필요)\n")
+			}
 			return nil
 		},
 	}

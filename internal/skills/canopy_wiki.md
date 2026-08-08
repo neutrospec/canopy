@@ -9,7 +9,11 @@ category: note-taking
 위키의 모든 조작은 **`canopy` CLI 하나로** 한다. 과거의 수동 체크리스트(index.md 갱신,
 JSONL 로그, 임베딩 동기화, 스키마 검증)는 전부 canopy가 자동 수행한다 — 손으로 하지 마라.
 
-- Wiki 경로: `~/workspace/wiki` (`canopy.toml`이 있는 곳). 다르면 `--wiki <path>`.
+- **canopy는 어느 디렉토리에서든 동작한다 — 위키 디렉토리로 `cd` 하지 마라.**
+  위키는 작업 공간이 아니라 canopy 뒤의 저장소다 (cwd가 위키 안이면 네 파일
+  도구가 위키 파일을 겨냥하게 되고, 스크래치 파일 하나가 lint·git을 오염시킨다).
+  기본 위키는 `canopy init`이 기록한 `default_wiki`가 정한다. 다른 위키를 겨냥할
+  때만 `--wiki <path>`. "no wiki found" 에러가 나면 cd가 아니라 `--wiki`를 써라.
 - 모든 명령은 `--json` 지원 (파싱해서 쓸 것).
 - `index.md`, `index/*.md`, `logs/*.jsonl`은 **canopy 생성물 — 절대 직접 편집 금지.**
 - 이 SKILL.md도 canopy가 설치·갱신한다 (`canopy skills install`이 덮어쓴다).

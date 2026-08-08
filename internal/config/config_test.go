@@ -109,3 +109,52 @@ func TestDBPathStablePerWiki(t *testing.T) {
 		t.Errorf("DBPath not under cache home: %s", a.DBPath())
 	}
 }
+
+// F4: init adopts the wiki as the default so later commands work from
+// any cwd — without it agents `cd` into the wiki and treat it as their
+// workspace. An existing default belongs to the first wiki and stays.
+func TestAdoptAsDefaultWiki(t *testing.T) {
+	cfgHome := filepath.Join(t.TempDir(), "cfg")
+	t.Setenv("XDG_CONFIG_HOME", cfgHome)
+
+	adopted, err := AdoptAsDefaultWiki("/Users/x/wiki-a")
+	if err != nil || !adopted {
+		t.Fatalf("first adopt: got (%v, %v), want (true, nil)", adopted, err)
+	}
+	// Resolution from an unrelated cwd now finds it.
+	t.Setenv("CANOPY_WIKI", "")
+	root, err := findRoot("")
+	if err != nil || root != "/Users/x/wiki-a" {
+		t.Fatalf("findRoot = %q (%v), want the adopted wiki", root, err)
+	}
+
+	adopted, err = AdoptAsDefaultWiki("/Users/x/wiki-b")
+	if err != nil || adopted {
+		t.Errorf("second adopt: got (%v, %v), want (false, nil) — must not steal the default", adopted, err)
+	}
+	if root, _ := findRoot(""); root != "/Users/x/wiki-a" {
+		t.Errorf("default changed to %q", root)
+	}
+}
+
+// A config file that exists but doesn't parse is the user's to fix —
+// never silently rewritten (it may hold settings we don't model).
+func TestAdoptLeavesUnparsableConfigAlone(t *testing.T) {
+	cfgHome := filepath.Join(t.TempDir(), "cfg")
+	t.Setenv("XDG_CONFIG_HOME", cfgHome)
+	path := filepath.Join(cfgHome, "canopy", "config.toml")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	junk := []byte("this is not = valid toml [[[\n")
+	if err := os.WriteFile(path, junk, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if adopted, err := AdoptAsDefaultWiki("/Users/x/wiki-a"); adopted || err != nil {
+		t.Errorf("got (%v, %v), want (false, nil)", adopted, err)
+	}
+	got, _ := os.ReadFile(path)
+	if string(got) != string(junk) {
+		t.Errorf("unparsable config was rewritten:\n%s", got)
+	}
+}

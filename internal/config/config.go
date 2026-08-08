@@ -190,6 +190,33 @@ type globalConfig struct {
 	DefaultWiki string `toml:"default_wiki"`
 }
 
+// AdoptAsDefaultWiki records root as the fallback wiki when no default
+// is set yet. Without it, running canopy outside a wiki tree fails and
+// agents learn to `cd` into the wiki — making the wiki their workspace,
+// which is exactly what the checkout boundary exists to avoid. An
+// existing default is never overwritten: a second wiki must not steal
+// the first one's spot (pass --wiki or set CANOPY_WIKI for those).
+// Reports whether it wrote.
+func AdoptAsDefaultWiki(root string) (bool, error) {
+	path := filepath.Join(ConfigHome(), "config.toml")
+	gc := globalConfig{}
+	if _, err := toml.DecodeFile(path, &gc); err == nil && gc.DefaultWiki != "" {
+		return false, nil
+	} else if err != nil && !os.IsNotExist(err) {
+		// A config that exists but doesn't parse is the user's to fix;
+		// silently rewriting it would lose whatever else is in there.
+		return false, nil
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return false, err
+	}
+	body := fmt.Sprintf("default_wiki = %q\n", root)
+	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Resolve finds the wiki root and loads its config.
 func Resolve(explicit string) (*Wiki, error) {
 	root, err := findRoot(explicit)
