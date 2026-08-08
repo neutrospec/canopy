@@ -17,6 +17,7 @@ import (
 
 	"github.com/neutrospec/canopy/internal/attention"
 	"github.com/neutrospec/canopy/internal/buildinfo"
+	"github.com/neutrospec/canopy/internal/checkout"
 	"github.com/neutrospec/canopy/internal/config"
 	"github.com/neutrospec/canopy/internal/embed"
 	"github.com/neutrospec/canopy/internal/gitops"
@@ -63,7 +64,7 @@ func main() {
 	}
 
 	root.AddCommand(cmdInit(), cmdStatus(), cmdReindex(), cmdSearch(), cmdBacklinks(), cmdLint(), cmdShow(), cmdList(), cmdTags(), cmdModel(),
-		cmdNew(), cmdUpdate(), cmdMv(), cmdRm(), cmdArchive(), cmdSync(), cmdSkills(),
+		cmdNew(), cmdUpdate(), cmdCheckout(), cmdCheckin(), cmdGrep(), cmdMv(), cmdRm(), cmdArchive(), cmdSync(), cmdSkills(),
 		cmdResurface(), cmdBridge(), cmdRecall(), cmdDigest(), cmdServe(),
 		cmdVersion(), cmdMigrate(), cmdReconcile(), cmdTasks(), cmdEvents())
 
@@ -123,6 +124,17 @@ func banner(w *config.Wiki) {
 	// 원칙 5) — an agent session that sees the banner can run the loop.
 	if n, err := tasks.PendingCount(w); err == nil && n > 0 {
 		fmt.Fprintf(os.Stderr, "⚑ 위임 태스크 %d건 대기 — `canopy tasks list`로 확인\n", n)
+	}
+	// A forgotten checkin strands edits outside the wiki where reconcile
+	// can't see them — visibility is the mitigation (invariant R6).
+	if open, err := checkout.Open(w); err == nil && len(open) > 0 {
+		mod := 0
+		for _, o := range open {
+			if o.Modified {
+				mod++
+			}
+		}
+		fmt.Fprintf(os.Stderr, "✎ 열린 checkout %d건(수정됨 %d건) — 편집을 마쳤으면 `canopy checkin <page>`\n", len(open), mod)
 	}
 }
 
@@ -229,14 +241,16 @@ func cmdStatus() *cobra.Command {
 			}
 			recN, recOn, _ := reconcile.Count(w)
 			taskN, _ := tasks.PendingCount(w)
+			openCO, _ := checkout.Open(w)
 			if flagJSON {
 				out := map[string]any{
-					"root":          w.Root,
-					"pages":         len(scan.Pages),
-					"stray_root":    scan.StrayRoot,
-					"git":           git,
-					"initialized":   w.HasTOML,
-					"tasks_pending": taskN,
+					"root":           w.Root,
+					"pages":          len(scan.Pages),
+					"stray_root":     scan.StrayRoot,
+					"git":            git,
+					"initialized":    w.HasTOML,
+					"tasks_pending":  taskN,
+					"checkouts_open": len(openCO),
 				}
 				if recOn {
 					out["unreconciled"] = recN
@@ -270,6 +284,13 @@ func cmdStatus() *cobra.Command {
 			}
 			if taskN > 0 {
 				fmt.Printf("⚑ 위임 태스크 %d건 대기 — `canopy tasks list`로 확인\n", taskN)
+			}
+			for _, o := range openCO {
+				state := "unmodified"
+				if o.Modified {
+					state = "modified"
+				}
+				fmt.Printf("✎ checkout %s (%s) — `canopy checkin %s`\n", o.Slug, state, o.Slug)
 			}
 			return nil
 		},
@@ -664,11 +685,12 @@ func cmdLint() *cobra.Command {
 
 func cmdShow() *cobra.Command {
 	var noMark bool
+	var linesSpec, section string
 	c := &cobra.Command{
 		Use: "show <page>",
 		// "view" is what agents reach for first; make it just work.
 		Aliases: []string{"view", "cat"},
-		Short:   "Print a page (path header on stderr, content on stdout)",
+		Short:   "Print a page — whole, --lines N-M, or --section \"heading\" (path header on stderr)",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			w, err := loadWiki()
@@ -690,6 +712,30 @@ func cmdShow() *cobra.Command {
 			if !noMark {
 				touchAttention(w, []string{p.Slug}, attention.KindShow, "")
 			}
+			// Partial reads carry line numbers so a follow-up --lines or
+			// checkout edit can address what it just saw.
+			if linesSpec != "" || section != "" {
+				if linesSpec != "" && section != "" {
+					return fmt.Errorf("--lines and --section are exclusive")
+				}
+				var sel []string
+				var start int
+				if linesSpec != "" {
+					sel, start, err = sliceLines(string(data), linesSpec)
+				} else {
+					sel, start, err = sliceSection(string(data), section)
+				}
+				if err != nil {
+					return err
+				}
+				if flagJSON {
+					return emitJSON(map[string]any{"rel_path": p.RelPath, "start_line": start,
+						"end_line": start + len(sel) - 1, "content": strings.Join(sel, "\n")})
+				}
+				fmt.Fprintf(os.Stderr, "— %s (%d–%d of %d lines) —\n", p.RelPath, start, start+len(sel)-1, strings.Count(string(data), "\n")+1)
+				printNumbered(sel, start)
+				return nil
+			}
 			if flagJSON {
 				return emitJSON(map[string]any{"rel_path": p.RelPath, "content": string(data)})
 			}
@@ -699,6 +745,8 @@ func cmdShow() *cobra.Command {
 		},
 	}
 	c.Flags().BoolVar(&noMark, "no-mark", false, "read without recording an access (like --peek)")
+	c.Flags().StringVar(&linesSpec, "lines", "", "print only lines N-M (1-based, file lines)")
+	c.Flags().StringVar(&section, "section", "", "print only the section whose heading contains this text")
 	return c
 }
 

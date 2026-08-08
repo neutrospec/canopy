@@ -96,6 +96,7 @@
 | H8 | 이벤트 DB는 위키 밖 머신-로컬, 위키 안에는 집계 JSON만 | `git -C $W ls-files _meta/attention/` → `agent-reads.json`뿐(*.db 없음) && `ls $XDG_STATE_HOME/canopy/attention/*.db` (기본 ~/.local/state/canopy) 존재 |
 | H9 | 기록 페이지(/history)는 이벤트 로그 실측 | `canopy show <slug>` 후 `curl -s localhost:8737/history` 응답에 그 slug 존재 (serve 실행 상태) |
 | H10 | 검색 갭은 문과 무관하게 한 파일에 쌓인다 | CLI `canopy search "없는단어xyz" $W` → `tail -1 $W/_meta/webui/search-gaps.jsonl`의 `query` 일치·`door == "agent"`; 웹 검색 갭은 같은 파일에 `door == "web"` |
+| H11 | grep은 검색이지 읽음이 아니다 (H5와 같은 규율) | `canopy grep "패턴" $W` 실행 전후 `_meta/attention/agent-reads.json` 해시 동일 |
 
 ## I. 웹 UI 쓰기·보안 (serve 실행 상태에서 점검)
 
@@ -188,6 +189,23 @@
 | P3 | 검증 파서와 웹 렌더러는 같은 번들이다 (버전 스큐 없음) | `internal/mermaid`가 번들을 소유(embed)하고 webui가 그것을 서빙 — `go test ./internal/webui/`의 번들 서빙 테스트 + `grep -rn "mermaid.min.js" internal/webui/static/vendor/` 빈 출력 |
 | P4 | 검증 환경의 결함(JS 셔임 갭·미해결 promise)은 **fail-open** — 다이어그램 탓으로 돌리지 않는다 | `go test ./internal/mermaid/`의 에러 분류 테스트; env 갭은 lint에서 `mermaid-unchecked`(info)로 가시화, 쓰기는 통과 |
 
+## R. 체크아웃 편집 ([checkout-design.md](checkout-design.md))
+
+> 수술적 편집은 에이전트의 네이티브 도구가 제일 잘한다 — canopy는 경쟁하는 대신
+> **파일을 빌려주고**(checkout, 위키 밖 working copy) 되돌려받을 때 검증한다
+> (checkin = 게이트 + base 대조). 위키 트리는 에이전트에게 읽기 전용이 될 수 있다.
+
+| # | 불변식 | 점검 |
+|---|--------|------|
+| R1 | checkout은 위키를 수정하지 않는다 (접근 기록만 남는다) | `canopy checkout <slug> $W` 전후 `git -C $W status --short` 동일 |
+| R2 | working copy는 위키 밖 머신-로컬 — git·reconcile이 보지 못한다 (H8과 같은 규율) | 사본 경로가 `$XDG_STATE_HOME/canopy/checkout/` 아래, `git -C $W ls-files \| grep checkout` 빈 출력, 편집해도 `canopy reconcile --json` 후보 0건 |
+| R3 | checkin은 쓰기 게이트를 전부 통과해야 반영된다 (A·P 재사용) | 사본에 깨진 mermaid/무효 태그를 넣고 `canopy checkin <slug>` → **에러** (exit != 0), 위키 파일 불변 |
+| R4 | base 불일치는 거부 — 조용한 merge 없음 (T9의 base와 같은 개념) | checkout 후 위키 파일을 직접 바꾸고 checkin → 에러 + 재checkout 안내 |
+| R5 | checkin·discard는 working copy를 회수한다 (rm 불필요) | checkin 성공 후 사본·메타 부재; `--discard`도 동일 |
+| R6 | 열린 checkout은 노출된다 (T7과 같은 원칙) | 열린 상태에서 아무 canopy 명령 → 배너에 `✎ … N건`, `canopy status --json \| jq .checkouts_open` ≥ 1 |
+| R7 | type·created 변경은 checkin이 거부한다 (type 이동은 `canopy mv`가 유일 경로) | 사본의 type을 바꿔 checkin → 에러 |
+| R8 | 무변경 checkin은 no-op + 회수 | 편집 없이 checkin → 위키 파일 해시 동일, 사본 회수, exit 0 |
+
 ## S. 태그 taxonomy 거버넌스 ([taxonomy.md](taxonomy.md))
 
 > taxonomy는 실측 사용의 반영이지 희망사항 목록이 아니다. 태그는 주제(topic,
@@ -238,6 +256,9 @@
 13. S1–S5는 `canopy tags --json` / `canopy tags --audit --json`으로 (jq 확인)
 14. P1–P4는 스크래치 위키에서 깨진 mermaid 블록으로 `canopy new`(P2 거부)·파일 직접
     심기 후 `canopy lint --json`(P1)으로, P3·P4는 1의 `make test`에 포함
+15. R1–R8은 스크래치 위키 + 임시 `XDG_STATE_HOME`에서 `canopy checkout/checkin`
+    사이클로 (R3은 사본 오염 후, R4는 위키 파일 병행 수정 후), H11은 grep 전후
+    agent-reads.json 해시로
 
 > 위반을 발견하면: (1) 그 위반이 **어느 명령을 우회해서** 생겼는지 찾고,
 > (2) 우회 경로를 막는 코드/lint를 추가하고, (3) 필요하면 이 목록에 항목을 늘린다.

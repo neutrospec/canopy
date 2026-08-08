@@ -21,11 +21,18 @@ JSONL 로그, 임베딩 동기화, 스키마 검증)는 전부 canopy가 자동 
 ```bash
 canopy search "질의"                  # hybrid: 키워드 + 시맨틱 (bge-m3 내장, 외부 서버 없음)
 canopy search "질의" --mode keyword   # 빠름 (모델 로드 없음), 정확한 용어 매칭
+canopy grep "패턴" [page]             # 줄번호 정규식 검색 (slug:line: text) — 파일 경로 불필요
 canopy list [--type T] [--tag t]     # 전체 페이지 목록 (slug/type/title) — ls로 훑지 마라
 canopy backlinks <page>               # 이 페이지를 참조하는 페이지들
-canopy show <page>                    # 페이지 내용 확인 (view도 동작; 경로 헤더는 stderr, 본문만 stdout)
+canopy show <page>                    # 페이지 전체 (view도 동작; 경로 헤더는 stderr)
+canopy show <page> --section "배포"   # 그 제목이 포함된 섹션만 (줄번호 포함)
+canopy show <page> --lines 306-340    # 줄 범위만
 canopy tags                           # 유효 type·태그 taxonomy (new가 검증에 쓰는 목록 그대로)
 ```
+
+위키 파일을 경로로 직접 read/grep 하지 마라 — 위 동사가 같은 일을 더 싸게 하고
+(slug 주소, 필요한 범위만), canopy 경유 읽기만 attention 루프(resurface/digest)에
+관측된다. grep은 검색이라 읽음으로 기록되지 않는다.
 
 시맨틱/hybrid 검색의 첫 호출은 모델 로드가 선행된다 (워밍업 후 ~0.5s, 콜드 캐시면
 수 초). 로드가 부담스러운 단순 조회는 `--mode keyword`나 `list`를 써라.
@@ -68,18 +75,37 @@ echo "$BODY" | canopy new "제목" --type concept --tags ai-ml,tool \
   것만 골라라 — 유사도가 높아도 주제가 다르면 버려라, 억지 연결 금지
 - 성공 시 index/log/임베딩 자동 처리됨
 
-## 수정 / 이동 / 삭제
+## 수정 — checkout / checkin (수술적 편집의 표준 경로)
+
+**위키 트리의 페이지 파일을 직접 열어 고치지 마라** (raw/ 신규 저장은 ingest 절차의
+예외). 부분 수정은 checkout으로 사본을 받아
+**네 네이티브 도구(read/grep/edit)로 편집**하고 checkin으로 되돌린다:
 
 ```bash
-canopy update <page> --body-file -   # 본문 교체 + updated 갱신 (파일 직접 편집했다면 body-file 없이 실행)
+canopy checkout <page> --json   # working copy 경로 + base 반환 (위키 밖 사본)
+# → 그 경로의 파일을 read/grep/edit 도구로 자유롭게 수정 (frontmatter의 title·tags 포함)
+canopy checkin <page>           # 검증(스키마·mermaid·base 충돌) 통과 시 위키 반영 + 사본 회수
+canopy checkin <page> --discard # 편집 포기 (위키 무접촉)
+canopy checkout --list          # 열린 checkout 확인
+```
+
+- checkin이 거부하면 메시지대로 **사본을** 고쳐 재시도. **base 충돌**(그새 다른
+  머신·웹 편집이 같은 페이지를 바꿈)이면 재checkout 후 변경을 다시 적용 —
+  자동 merge는 없다.
+- type 변경은 checkin이 거부한다 — `canopy mv <page> --type …`가 유일 경로.
+- 사본 삭제에 rm은 불필요 — checkin/discard가 회수한다.
+- 열린 checkout은 배너에 ✎로 보인다. **편집을 마쳤으면 반드시 checkin** —
+  사본에 남은 편집은 위키 밖이라 sync도 reconcile도 보지 못한다.
+
+## 전체 교체 / 이동 / 삭제
+
+```bash
+canopy update <page> --body-file -   # 본문 전체 교체 + updated 갱신 (부분 수정은 checkout)
 canopy mv <page> --slug new-slug     # 개명 — 인바운드 위키링크 자동 재작성
 canopy mv <page> --type comparison   # 카테고리 이동
 canopy archive <page>                # 완전 대체된 페이지 → _archive/
 canopy rm <page>                     # 백링크 있으면 거부됨 (archive를 먼저 고려)
 ```
-
-파일을 에디터/스크립트로 직접 고쳤을 때도 마지막에 `canopy update <page>`를 실행해
-updated 날짜·인덱스·임베딩을 갱신하라.
 
 ## Sync (작업 마무리 — 잊지 마라)
 
@@ -108,8 +134,8 @@ canopy bridge --dismiss a:b                      # 사용자가 "관련 없다"�
 
 - cron 저널/하이라이트: 후보의 excerpt/explanation을 바탕으로 짧게 문장화해 Telegram 전송,
   끝에 `canopy sync -m "resurface state"`.
-- 사용자가 bridge에 "연결해"라고 하면: 두 페이지의 관련 섹션에 [[상호 링크]]를 추가하고
-  각각 `canopy update <page>` 실행.
+- 사용자가 bridge에 "연결해"라고 하면: 두 페이지를 각각 checkout → 관련 섹션에
+  [[상호 링크]] 삽입 → checkin.
 - 미리보기만 필요하면 `--peek` (state 무기록).
 
 ## 태스크 큐 — 위임된 작업 처리 (주기 루프)
@@ -128,8 +154,8 @@ canopy sync
 
 유형별 수행:
 - **connect** (`pages`의 두 페이지 연결): 두 페이지를 읽고 **관련이 진짜인지 판단** —
-  맞으면 각 페이지의 관련 문맥에 `[[상호 링크]]`를 자연스럽게 넣고 각각
-  `canopy update <page>` (bridge 수락과 같은 절차). 사용자가 버튼을 눌러 접수한
+  맞으면 각 페이지를 checkout → 관련 문맥에 `[[상호 링크]]`를 자연스럽게 삽입 →
+  checkin (bridge 수락과 같은 절차). 사용자가 버튼을 눌러 접수한
   것이라도 문장화·위치는 네 판단이다. 아니라고 판단되면 dismiss.
 - **edit**: 두 형태가 있다.
   - `request`만 있으면 = 지시("이렇게 고쳐줘"). 페이지를 읽고 콘텐츠 판단
@@ -172,7 +198,8 @@ canopy reconcile --json    # 후보 목록: kind(edited|new|deleted) + dup_candi
   (`canopy update <기존페이지>` 후 뒷길 파일은 삭제하고 `bless`로 삭제 수용).
 - **기존 내용과 모순**이면 조용히 덮지 말고 날짜·출처와 함께 병기.
 - **issues**(끊긴 링크·스키마 위반)는 canopy 명령으로 수정.
-- 수정은 반드시 `canopy update/new/mv`로 — 그 결과는 자동으로 검토됨 처리된다.
+- 수정은 반드시 `canopy checkout+checkin / update / new / mv`로 — 그 결과는
+  자동으로 검토됨 처리된다.
 - **문제 없으면** `canopy reconcile bless <path>` 로 이대로 수용.
 
 검토를 마치면 `canopy sync` (원장 `_meta/reconcile/`이 위키와 함께 커밋된다).

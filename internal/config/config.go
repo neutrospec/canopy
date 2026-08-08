@@ -174,6 +174,14 @@ func (w *Wiki) AttentionDBPath() string {
 	return filepath.Join(StateHome(), "attention", hex.EncodeToString(sum[:])[:12]+".db")
 }
 
+// CheckoutDir holds working copies materialized for agent editing —
+// machine-local state OUTSIDE the wiki tree, so git and reconcile never
+// see an edit in progress (invariant R2). Keyed like DBPath.
+func (w *Wiki) CheckoutDir() string {
+	sum := sha256.Sum256([]byte(w.Root))
+	return filepath.Join(StateHome(), "checkout", hex.EncodeToString(sum[:])[:12])
+}
+
 func (w *Wiki) TOMLPath() string    { return filepath.Join(w.Root, "canopy.toml") }
 func (w *Wiki) LogsDir() string     { return filepath.Join(w.Root, "logs") }
 func (w *Wiki) IndexMDPath() string { return filepath.Join(w.Root, "index.md") }
