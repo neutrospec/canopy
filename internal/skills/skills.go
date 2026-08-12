@@ -7,6 +7,13 @@
 // extra care: first priority in auto-detection, its category layout
 // (note-taking/<skill>/SKILL.md), and cleanup hints for the legacy
 // prose-checklist skills that canopy superseded.
+//
+// pi (pi-coding-agent) is detected by mirroring pi's own home
+// resolution: $PI_CODING_AGENT_DIR wins, else ~/.pi/agent. Its skills
+// live in <agent dir>/skills, which may not exist yet on a working pi
+// install — so presence of the agent dir (not the skills dir) is the
+// detection signal, and install creates skills/ on demand. No agent
+// dir → pi is absent → skipped.
 package skills
 
 import (
@@ -33,35 +40,90 @@ var Superseded = []string{
 	"research/llm-wiki",
 }
 
-// KnownSkillsDirs returns the agent skills directories canopy can
-// auto-detect, in priority order.
-func KnownSkillsDirs() ([]string, error) {
+// candidate is one auto-detectable agent skills directory. marker is
+// the path whose existence proves the agent is installed — usually the
+// skills dir itself, but pi's skills dir is created lazily so its
+// marker is the agent home instead.
+type candidate struct {
+	skillsDir string
+	marker    string
+}
+
+// expandTilde resolves a leading ~/ the way pi's own config loader
+// does, so a PI_CODING_AGENT_DIR like "~/.config/pi/agent" matches.
+func expandTilde(p string) (string, error) {
+	if p != "~" && !strings.HasPrefix(p, "~/") {
+		return p, nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, strings.TrimPrefix(p, "~")), nil
+}
+
+// piAgentDir mirrors pi's getAgentDir: $PI_CODING_AGENT_DIR if set,
+// else ~/.pi/agent. Never both — an env override must not leak
+// installs into a stale default dir.
+func piAgentDir() (string, error) {
+	if env := os.Getenv("PI_CODING_AGENT_DIR"); env != "" {
+		return expandTilde(env)
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".pi", "agent"), nil
+}
+
+func knownCandidates() ([]candidate, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
-	return []string{
-		filepath.Join(home, ".hermes", "skills"), // hermes
-		filepath.Join(home, ".claude", "skills"), // Claude Code
-	}, nil
+	hermes := filepath.Join(home, ".hermes", "skills")
+	claude := filepath.Join(home, ".claude", "skills")
+	cands := []candidate{
+		{skillsDir: hermes, marker: hermes}, // hermes
+		{skillsDir: claude, marker: claude}, // Claude Code
+	}
+	if agent, err := piAgentDir(); err == nil {
+		cands = append(cands, candidate{skillsDir: filepath.Join(agent, "skills"), marker: agent}) // pi
+	}
+	return cands, nil
 }
 
-// DetectSkillsDirs returns every known agent skills directory that
-// exists on this machine, in priority order.
-func DetectSkillsDirs() ([]string, error) {
-	candidates, err := KnownSkillsDirs()
+// KnownSkillsDirs returns the agent skills directories canopy can
+// auto-detect, in priority order.
+func KnownSkillsDirs() ([]string, error) {
+	cands, err := knownCandidates()
 	if err != nil {
 		return nil, err
 	}
-	var found []string
-	for _, dir := range candidates {
-		if fi, err := os.Stat(dir); err == nil && fi.IsDir() {
-			found = append(found, dir)
+	dirs := make([]string, len(cands))
+	for i, c := range cands {
+		dirs[i] = c.skillsDir
+	}
+	return dirs, nil
+}
+
+// DetectSkillsDirs returns every known agent skills directory whose
+// agent exists on this machine, in priority order.
+func DetectSkillsDirs() ([]string, error) {
+	cands, err := knownCandidates()
+	if err != nil {
+		return nil, err
+	}
+	var found, looked []string
+	for _, c := range cands {
+		looked = append(looked, c.skillsDir)
+		if fi, err := os.Stat(c.marker); err == nil && fi.IsDir() {
+			found = append(found, c.skillsDir)
 		}
 	}
 	if len(found) == 0 {
 		return nil, fmt.Errorf("no agent skills directory found (looked for %s) — pass --dir",
-			strings.Join(candidates, ", "))
+			strings.Join(looked, ", "))
 	}
 	return found, nil
 }

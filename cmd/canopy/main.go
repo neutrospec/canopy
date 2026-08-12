@@ -531,9 +531,11 @@ func cmdSkills() *cobra.Command {
 		Use:   "install",
 		Short: "Install/refresh the canopy-wiki / canopy-ingest skills for every detected agent",
 		Long: `Installs the two embedded skills into every known agent skills
-directory that exists (~/.hermes/skills, ~/.claude/skills), so one
-command after a canopy upgrade refreshes every agent. Use --dir to
-target a single directory (it is created if missing).`,
+directory that exists (~/.hermes/skills, ~/.claude/skills, and pi's
+<agent dir>/skills — $PI_CODING_AGENT_DIR or ~/.pi/agent), so one
+command after a canopy upgrade refreshes every agent. Agents that are
+not installed are skipped. Use --dir to target a single directory (it
+is created if missing).`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// --dir targets exactly one directory (and can bootstrap it);
 			// the default sweeps every detected agent.

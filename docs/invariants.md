@@ -68,6 +68,7 @@
 | F3 | 포맷 준수 | `gofmt -l .` 출력 없음 |
 | F4 | 어떤 cwd에서도 동작 — 위키로 `cd` 할 이유가 없다 (에이전트가 위키를 작업 공간으로 삼는 것을 막는다) | `which canopy && cd /tmp && canopy status` 성공. 신선한 환경에서도 성립: `init`이 비어 있는 `default_wiki`를 채운다 (`canopy init --json \| jq .default_wiki_set`, 기존 값은 불변) — `go test ./internal/config/`의 adopt 테스트 |
 | F5 | 스킬 설치는 멱등·재현 가능 | `canopy skills install --dir /tmp/sc` 2회 실행 → 동일 내용, exit 0 |
+| F6 | pi 감지는 pi 자신의 home 해석을 그대로 따른다 — `$PI_CODING_AGENT_DIR` 우선, 없으면 `~/.pi/agent`; agent 디렉토리가 없는 머신에선 pi에 설치하지 않는다 (skills/ 하위는 설치가 만든다) | `h=$(mktemp -d); mkdir -p "$h/pi-home" "$h/.claude/skills"; HOME=$h PI_CODING_AGENT_DIR=$h/pi-home canopy skills install >/dev/null; test -f "$h/pi-home/skills/canopy-wiki/SKILL.md" && test ! -e "$h/.pi"` — `go test ./internal/skills/`의 pi 감지 테스트 |
 
 ## G. 에이전트 메모리 / 회고 (recall · digest · semantic 후보)
 
