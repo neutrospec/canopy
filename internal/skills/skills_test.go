@@ -6,6 +6,35 @@ import (
 	"testing"
 )
 
+func TestInstallRefreshesEmbeddedSkills(t *testing.T) {
+	dir := t.TempDir()
+	want := map[string]string{
+		"canopy-wiki/SKILL.md":   canopyWiki,
+		"canopy-ingest/SKILL.md": canopyIngest,
+	}
+	if _, err := Install(dir); err != nil {
+		t.Fatal(err)
+	}
+	// An upgrade restores both installed files to the binary's sources.
+	for rel := range want {
+		if err := os.WriteFile(filepath.Join(dir, rel), []byte("old skill"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for i := 0; i < 2; i++ {
+		written, err := Install(dir)
+		if err != nil || len(written) != len(want) {
+			t.Fatalf("install: %v, %v", written, err)
+		}
+		for rel, content := range want {
+			got, err := os.ReadFile(filepath.Join(dir, rel))
+			if err != nil || string(got) != content {
+				t.Fatalf("%s does not match the embedded skill: %v", rel, err)
+			}
+		}
+	}
+}
+
 func TestDetectAndInstallAll(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
