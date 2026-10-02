@@ -1,21 +1,24 @@
 {{define "content"}}
-<h1>{{t "browse_title"}}</h1>
-<div class="facets">
-  <div class="facetrow"><span class="facetlabel">dir</span>
-    {{range .Dirs}}<a class="chip{{if .Active}} active{{end}}" href="{{.Href}}">{{.Value}} <small>{{.Count}}</small></a>{{end}}
+<section class="pagehead"><div><h1>{{t "browse_title"}}</h1><p class="muted">{{t "browse_intro"}}</p></div>{{if .Filtered}}<a class="chip" href="/browse">{{t "browse_clear"}}</a>{{end}}</section>
+<section class="panel facets">
+  <div class="facetrow"><span class="facetlabel">{{t "facet_dir"}}</span>
+    {{range .Dirs}}<a class="chip{{if .Active}} active{{end}}" href="{{.Href}}"{{if .Active}} aria-current="true"{{end}}>{{.Value}} <small>{{.Count}}</small></a>{{end}}
   </div>
-  <div class="facetrow"><span class="facetlabel">type</span>
-    {{range .Types}}<a class="chip{{if .Active}} active{{end}}" href="{{.Href}}">{{.Value}} <small>{{.Count}}</small></a>{{end}}
+  <div class="facetrow"><span class="facetlabel">{{t "facet_type"}}</span>
+    {{range .Types}}<a class="chip{{if .Active}} active{{end}}" href="{{.Href}}"{{if .Active}} aria-current="true"{{end}}>{{.Value}} <small>{{.Count}}</small></a>{{end}}
   </div>
-  <div class="facetrow"><span class="facetlabel">tag</span>
-    {{range .Tags}}<a class="chip tag{{if .Active}} active{{end}}" href="{{.Href}}">{{.Value}} <small>{{.Count}}</small></a>{{end}}
+  <div class="facetrow"><span class="facetlabel">{{t "facet_tag"}}</span>
+    {{range .Tags}}<a class="chip tag{{if .Active}} active{{end}}" href="{{.Href}}"{{if .Active}} aria-current="true"{{end}}>{{.Value}} <small>{{.Count}}</small></a>{{end}}
   </div>
-</div>
-<p class="muted">{{len .Pages}} page(s){{if .Filtered}} — {{t "browse_filter_clear_hint"}}{{end}}</p>
-<ul class="pagelist">
-  {{range .Pages}}
-  <li><a class="wikilink" href="/page/{{.Slug}}" data-slug="{{.Slug}}">{{.Title}}</a>
-      <span class="muted">{{.Updated}} · {{.Dir}}{{range .Tags}} #{{.}}{{end}}</span></li>
-  {{end}}
-</ul>
+</section>
+<section class="panel">
+  <div class="sectionhead"><h2>{{t "pages_count" "Count" (len .Pages)}}</h2>{{if .Filtered}}<span class="muted">{{t "browse_filter_clear_hint"}}</span>{{end}}</div>
+  {{if .Pages}}
+  <ul class="pagelist">
+    {{range .Pages}}
+    <li><div class="row-main"><a class="wikilink" href="/page/{{.Slug}}" data-slug="{{.Slug}}">{{or .Title .Slug}}</a><div class="row-meta"><span class="dirlabel d-{{.Dir}}">{{.Dir}}</span>{{range .Tags}}<a href="/tag/{{.}}">#{{.}}</a>{{end}}</div></div><time class="row-date">{{.Updated}}</time></li>
+    {{end}}
+  </ul>
+  {{else}}<p class="empty">{{t "browse_empty"}}</p>{{end}}
+</section>
 {{end}}

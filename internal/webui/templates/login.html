@@ -3,8 +3,8 @@
   <h1>🌳 canopy</h1>
   {{if .Error}}<p class="notice conflict">{{.Error}}</p>{{end}}
   <form class="authform" method="post" action="/login">
-    <input type="text" name="id" placeholder="{{t "login_id_placeholder"}}" autofocus autocomplete="username" required>
-    <input type="password" name="password" placeholder="{{t "login_password_placeholder"}}" autocomplete="current-password" required>
+    <input type="text" name="id" aria-label="{{t "login_id_placeholder"}}" placeholder="{{t "login_id_placeholder"}}" autofocus autocomplete="username" required>
+    <input type="password" name="password" aria-label="{{t "login_password_placeholder"}}" placeholder="{{t "login_password_placeholder"}}" autocomplete="current-password" required>
     <button type="submit">{{t "login_submit"}}</button>
   </form>
 </section>

@@ -6,6 +6,10 @@
   const el = document.getElementById("graph");
   if (!el || typeof ForceGraph === "undefined") return;
 
+  const messages = JSON.parse(document.getElementById("ui-messages")?.textContent || "{}");
+  const t = (id) => messages[id] || id;
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
   const css = getComputedStyle(document.documentElement);
   const C = {
     bg: css.getPropertyValue("--bg").trim(),
@@ -16,7 +20,7 @@
     link: css.getPropertyValue("--link").trim(),
     missing: css.getPropertyValue("--missing").trim(),
   };
-  const dirColor = { entities: C.link, concepts: C.accent, comparisons: "#c586c0" };
+  const dirColor = { entities: C.link, concepts: C.accent, comparisons: "#ac83b9" };
 
   const graph = ForceGraph()(el)
     .backgroundColor(C.bg)
@@ -24,7 +28,7 @@
     .nodeLabel(null)
     .linkColor(() => C.line)
     .linkWidth((l) => (highlightLinks.has(l) ? 2 : 1))
-    .linkDirectionalParticles((l) => (highlightLinks.has(l) ? 2 : 0))
+    .linkDirectionalParticles((l) => (!reducedMotion && highlightLinks.has(l) ? 2 : 0))
     .linkDirectionalParticleWidth(2.5)
     .cooldownTicks(200)
     .d3VelocityDecay(0.25);
@@ -34,6 +38,8 @@
   const highlightLinks = new Set();
   const neighbors = new Map(); // id -> Set(ids)
   const nodeLinks = new Map(); // id -> Set(link objects)
+  let labelRects = [];
+  graph.onRenderFramePre(() => { labelRects = []; });
 
   // Rich hover tooltip: zoomed out the dots carry no information, so
   // the hovered node always gets a card (instant metadata, excerpt
@@ -61,9 +67,9 @@
     tip.style.top = Math.max(8, y) + "px";
   }
   function showTip(n) {
-    const meta = [n.dir, `링크 ${n.deg}`, n.read ? "읽음" : "안 읽음"];
-    if (n.touches) meta.push(`접근 ${n.touches}회`);
-    if (n.island) meta.push("🏝 섬");
+    const meta = [n.dir, `${t("graph_links")} ${n.deg}`, n.read ? t("page_read_label") : t("graph_legend_unread")];
+    if (n.touches) meta.push(`${t("graph_touches")} ${n.touches}`);
+    if (n.island) meta.push(t("graph_legend_island"));
     tip.innerHTML = `<b>${esc(n.title)}</b><span class="tipmeta">${esc(meta.join(" · "))}</span>` +
       (n.excerpt ? `<p>${esc(n.excerpt)}</p>` : "");
     tip.hidden = false;
@@ -109,7 +115,16 @@
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
         ctx.fillStyle = dim ? C.muted : C.fg;
-        ctx.fillText(n.title, n.x, n.y + r + 1.5 / scale);
+        const width = ctx.measureText(n.title).width;
+        const y = n.y + r + 1.5 / scale;
+        const rect = { left: n.x - width / 2, right: n.x + width / 2, top: y, bottom: y + size * 1.3 };
+        const overlaps = labelRects.some((other) => rect.left < other.right && rect.right > other.left && rect.top < other.bottom && rect.bottom > other.top);
+        // Dense neighborhoods should remain legible. The hovered page
+        // always gets its label; its full title is also in the tooltip.
+        if (!overlaps || hoverNode === n) {
+          ctx.fillText(n.title, n.x, y);
+          labelRects.push(rect);
+        }
       }
       ctx.globalAlpha = 1;
     })
@@ -158,7 +173,7 @@
       nodeLinks.get(a).add(l);
       nodeLinks.get(b).add(l);
     }
-    graph.onEngineStop(() => graph.zoomToFit(400, 40));
+    graph.onEngineStop(() => graph.zoomToFit(reducedMotion ? 0 : 400, 40));
 
     // find box: fly to the best-matching node and light up its neighborhood
     const find = document.getElementById("graphfind");
@@ -170,8 +185,8 @@
       const hit = nodes.find((n) => n.id === q) ||
         nodes.find((n) => n.title.toLowerCase().includes(q) || n.id.includes(q));
       if (!hit) return;
-      graph.centerAt(hit.x, hit.y, 600);
-      graph.zoom(4, 600);
+      graph.centerAt(hit.x, hit.y, reducedMotion ? 0 : 600);
+      graph.zoom(4, reducedMotion ? 0 : 600);
       highlightNodes.clear();
       highlightLinks.clear();
       hoverNode = hit;
@@ -180,7 +195,7 @@
       (nodeLinks.get(hit.id) || []).forEach((l) => highlightLinks.add(l));
     });
   }).catch(() => {
-    el.textContent = "그래프 데이터를 불러오지 못했습니다";
+    el.textContent = t("graph_load_failed");
   });
 
   // Debug/power-user hook (also used by automated UI tests).

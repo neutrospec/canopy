@@ -67,7 +67,7 @@
 | F2 | 임베딩 없는 환경에서도 동작(우아한 강등) | `make build-lite` 바이너리로 `search --mode hybrid` → keyword로 강등 + 경고, exit 0 |
 | F3 | 포맷 준수 | `gofmt -l .` 출력 없음 |
 | F4 | 어떤 cwd에서도 동작 — 위키로 `cd` 할 이유가 없다 (에이전트가 위키를 작업 공간으로 삼는 것을 막는다) | `which canopy && cd /tmp && canopy status` 성공. 신선한 환경에서도 성립: `init`이 비어 있는 `default_wiki`를 채운다 (`canopy init --json \| jq .default_wiki_set`, 기존 값은 불변) — `go test ./internal/config/`의 adopt 테스트 |
-| F5 | 스킬 설치는 멱등·재현 가능 | `canopy skills install --dir /tmp/sc` 2회 실행 → 동일 내용, exit 0 |
+| F5 | 스킬 설치는 멱등·재현 가능하며 기존 설치를 내장 원문으로 갱신한다 | `canopy skills install --dir /tmp/sc` 2회 실행 → 동일 내용, exit 0; `go test ./internal/skills/ -run TestInstallRefreshesEmbeddedSkills` |
 | F6 | pi 감지는 pi 자신의 home 해석을 그대로 따른다 — `$PI_CODING_AGENT_DIR` 우선, 없으면 `~/.pi/agent`; agent 디렉토리가 없는 머신에선 pi에 설치하지 않는다 (skills/ 하위는 설치가 만든다) | `h=$(mktemp -d); mkdir -p "$h/pi-home" "$h/.claude/skills"; HOME=$h PI_CODING_AGENT_DIR=$h/pi-home canopy skills install >/dev/null; test -f "$h/pi-home/skills/canopy-wiki/SKILL.md" && test ! -e "$h/.pi"` — `go test ./internal/skills/`의 pi 감지 테스트 |
 
 ## G. 에이전트 메모리 / 회고 (recall · digest · semantic 후보)
@@ -160,6 +160,8 @@
 | M3 | 안전한 폴백 (모르는 언어→기본, 없는 ID→ID 반환, 크래시·빈칸 없음) | `go test`의 `TestLocaleFallback`; 그리고 `curl -H 'Accept-Language: xx' localhost:8737/` → 200 (기본 로케일) |
 | M4 | 로케일 파일 추가 = 언어 추가 (코드 변경 0) | `active.<new>.toml` 임베드 후 재빌드 → 언어 선택에 등장; 로더는 `locales/*.toml` 글로브 |
 | M5 | 로케일은 데이터를 바꾸지 않는다 (chrome만) | `curl -H 'Accept-Language: en' .../api/search?q=x`와 `ko` 결과 JSON 동일 (serve 실행 상태) |
+| M6 | 클라이언트가 추가하는 복사·읽음·그래프 UI도 현재 로케일을 따른다 | `go test ./internal/webui/ -run TestClientMessagesLocalized` — 로케일별 메시지 전달과 HTML 안전성; `make test-ui` — 복사·자동 읽음 표시 검증 |
+| M7 | 언어 변경은 검색어·필터를 보존하며 같은 사이트 안으로만 돌아간다 | `go test ./internal/webui/ -run 'TestLanguageSwitchPreservesQuery\|TestLanguageSwitchRejectsExternalRedirect'` |
 
 ## N. 이벤트 로그 일반화 ([events.md](events.md))
 
@@ -240,6 +242,17 @@
 | T9 | 웹 편집 제안은 제출 본문 전문을 태스크에 보존한다 (diff 아님 — 에이전트가 base 대비 비교) | 웹 편집 저장 후 태스크 JSON의 `body` == 제출 본문(개행 정규화 제외), `base` == 접수 시점 파일 sha256. `go test ./internal/webui/`의 `TestWebEditFilesProposalNotFile` |
 | T10 | 큐는 웹에서 열람 가능하고, 철회는 pending edit에 한한다 (connect 기각은 에이전트 판단 — T4의 영구 억제 때문) | serve 상태에서 `/special/tasks`에 pending 표시; edit 태스크 철회 버튼 → dismissed; connect에 `POST /task/cancel/<id>` → 400. `TestTasksScreenAndWithdraw` |
 
+## U. 웹 작업 공간
+
+| # | 불변식 | 점검 |
+|---|--------|------|
+| U1 | 탐색 메뉴에 있는 화면은 해당 항목에 현재 위치를 표시하고, 모바일에서도 키보드로 메뉴·검색에 접근할 수 있다 | `go test ./internal/webui/ -run TestWorkspaceNavigation`; `make test-ui` — 메뉴 토글·Escape·검색 단축키 검증 |
+| U2 | 홈의 페이지·읽음·미읽음·대기 작업 수는 위키 상태의 실측이며 열람만으로 읽음 처리하지 않는다 | `go test ./internal/webui/ -run TestWorkspaceSummary` — 빈 위키·페이지·읽음·닫힌 태스크 포함 |
+| U3 | 자동완성은 현재 질의의 응답만 표시하고, 지우기·Escape·IME 조합 중에는 이전 응답이 다시 열리지 않는다 | `make test-ui` — 응답 순서 역전·입력 지우기·Escape·한글 조합·키보드 이동 검증 |
+| U4 | 읽음 표시와 복사 완료는 실제 작업 성공 뒤에만 표시된다 | `make test-ui` — HTTP 실패·네트워크 실패·클립보드 실패 검증 |
+| U5 | 360px 화면에서 페이지 전체가 가로로 넘치지 않고, 넓은 표·코드·그래프는 자체 영역에서 스크롤된다 | `canopy serve` 후 브라우저의 360px·1280px 뷰포트에서 홈·탐색·페이지·그래프 확인; 콘솔 `document.documentElement.scrollWidth <= window.innerWidth` → `true` (폭이 넓은 표·코드 포함) |
+| U6 | 본문 첫 제목이 표시 제목과 정확히 같을 때만 중복 표시를 접는다 (원문 보존) | `make test-ui` — 동일 제목·다른 제목 표시 검증 |
+
 ## 감사 절차
 
 1. `make test && gofmt -l .` (F)
@@ -251,7 +264,7 @@
 7. J1–J5는 `canopy version --json` / `canopy migrate status --json`으로 (J6은 1의 `make test`에 포함, J7은 `make release-lineage-check`)
 8. K1–K7은 스크래치 위키에서 파일 직접 편집 후 `canopy reconcile --json` / `bless`로
 9. L1–L3은 `make i18n-check` (1의 CI에도 포함)
-10. M1–M5는 `make test`(M1·M2·M3 테스트) + serve 실행 상태(M3·M5 curl)
+10. M1–M7은 `make test`(M1·M2·M3·M6·M7 테스트) + serve 실행 상태(M3·M5 curl)
 11. T1–T10은 스크래치 위키에서 `canopy tasks add/done/dismiss/gc`로 (T6·T7은 파일 해시·status 확인, T9·T10은 `go test ./internal/webui/` + serve 상태)
 12. N1–N6은 스크래치 위키 + 임시 `XDG_STATE_HOME`에서 `canopy events`/`tasks`로 (N3은 1의 `make test`에도 포함)
 13. S1–S5는 `canopy tags --json` / `canopy tags --audit --json`으로 (jq 확인)
@@ -260,6 +273,8 @@
 15. R1–R8은 스크래치 위키 + 임시 `XDG_STATE_HOME`에서 `canopy checkout/checkin`
     사이클로 (R3은 사본 오염 후, R4는 위키 파일 병행 수정 후), H11은 grep 전후
     agent-reads.json 해시로
+16. U1–U6은 `make test-ui`와 `go test ./internal/webui/`로 확인하고, U5는 360px·1280px
+    브라우저에서 긴 제목·표·코드를 포함한 페이지로 점검한다.
 
 > 위반을 발견하면: (1) 그 위반이 **어느 명령을 우회해서** 생겼는지 찾고,
 > (2) 우회 경로를 막는 코드/lint를 추가하고, (3) 필요하면 이 목록에 항목을 늘린다.

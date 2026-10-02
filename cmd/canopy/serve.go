@@ -19,11 +19,11 @@ func cmdServe() *cobra.Command {
 	var addr string
 	c := &cobra.Command{
 		Use:   "serve",
-		Short: "Serve the wiki as a website (search-first browsing + body editing)",
+		Short: "Serve the wiki as a website (search, browsing, and edit proposals)",
 		Long: `Serve renders the wiki over HTTP for humans: page views with
 backlinks, hybrid search, faceted browsing, and Wikipedia-style
-missing-page fallback. The body editor runs the exact CLI update
-pipeline (writeops.Run); frontmatter and page lifecycle stay CLI-only.`,
+missing-page fallback. The body editor files proposals for an agent to
+review and apply through the CLI; it never writes wiki pages directly.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			w, err := loadWiki()
 			if err != nil {

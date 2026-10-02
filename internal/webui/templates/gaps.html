@@ -2,6 +2,7 @@
 <h1>{{t "gaps_title"}}</h1>
 <p class="muted">{{t "gaps_intro_pre"}} <b>{{t "gaps_intro_candidate"}}</b>{{t "gaps_intro_mid"}}<code>canopy new</code>{{t "gaps_intro_post"}}</p>
 {{if .Rows}}
+<div class="tablewrap panel">
 <table class="logtable">
   <thead><tr><th>{{t "gaps_col_query"}}</th><th>{{t "gaps_col_count"}}</th><th>{{t "gaps_col_last"}}</th><th></th></tr></thead>
   <tbody>
@@ -15,6 +16,7 @@
   {{end}}
   </tbody>
 </table>
+</div>
 {{else}}
 <p class="muted">{{t "gaps_empty"}}</p>
 {{end}}

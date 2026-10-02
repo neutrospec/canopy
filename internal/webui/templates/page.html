@@ -1,12 +1,14 @@
 {{define "content"}}
 <article data-slug="{{.Page.Slug}}" {{if not .Read}}data-read-secs="{{.ReadSecs}}"{{end}}>
   {{if .Tasked}}<p class="notice">✓ {{t "task_filed_notice"}}</p>{{end}}
-  <h1>{{.Page.Title}}</h1>
+  <div class="pagehead"><h1>{{.Page.Title}}</h1></div>
   <div class="metacard">
     <a class="chip" href="/browse?type={{.Page.Type}}">{{.Page.Type}}</a>
     {{range .Page.Tags}}<a class="chip tag" href="/tag/{{.}}">{{.}}</a>{{end}}
-    <span class="muted">updated {{.Page.Updated}} · {{.Page.RelPath}}</span>
-    <a class="chip" href="/edit/{{.Page.Slug}}">✎ {{t "page_edit"}}</a>
+    <span class="muted">{{t "page_updated"}} {{.Page.Updated}} · {{.Page.RelPath}}</span>
+  </div>
+  <div class="pageactions">
+    <a class="chip action-primary" href="/edit/{{.Page.Slug}}">{{t "page_edit"}}</a>
     <form method="post" action="/read/{{.Page.Slug}}" class="readform" id="readform">
       {{if .Read}}
       <span class="chip readmark" title="{{t "page_read_first" "First" .Read.First}}">✓ {{if gt .Read.Count 1}}{{t "page_read_times" "Count" .Read.Count}} {{end}}{{t "page_read_label"}}{{if .ReadAgo}} · {{.ReadAgo}}{{end}}{{if eq .Read.Source "auto"}} <small>{{t "page_auto"}}</small>{{end}}</span>
@@ -18,11 +20,13 @@
     </form>
     {{if .AgentDays}}<span class="muted" title="{{t "page_agent_days_title"}}">🤖 {{t "page_agent_days" "Days" .AgentDays}}</span>{{end}}
   </div>
+  <div class="readinglayout">
+  <div class="readingbody">
   <div class="prose">{{.Body}}</div>
   {{if .GraphNodes}}
   <details class="graph">
-    <summary class="muted">{{t "page_local_graph"}} ({{len .GraphEdges}} connections)</summary>
-    <svg viewBox="0 0 640 260" role="img" aria-label="local link graph">
+    <summary class="muted">{{t "page_local_graph"}} · {{t "page_connections_count" "Count" (len .GraphEdges)}}</summary>
+    <svg viewBox="0 0 640 260" role="img" aria-label="{{t "page_graph_label"}}">
       {{range .GraphEdges}}<line x1="{{.X1}}" y1="{{.Y1}}" x2="{{.X2}}" y2="{{.Y2}}"/>{{end}}
       {{range $i, $n := .GraphNodes}}
       <a href="/page/{{$n.Slug}}"><g>
@@ -70,7 +74,7 @@
     <details class="taskform">
       <summary class="muted">🤖 {{t "task_edit_summary"}}</summary>
       <form method="post" action="/task/edit/{{.Page.Slug}}">
-        <textarea name="request" rows="3" required placeholder="{{t "task_edit_placeholder"}}"></textarea>
+        <textarea name="request" rows="3" required aria-label="{{t "task_edit_summary"}}" placeholder="{{t "task_edit_placeholder"}}"></textarea>
         <p><button class="chip">{{t "task_edit_submit"}}</button></p>
       </form>
     </details>
@@ -97,5 +101,10 @@
     </ul>
   </details>
   {{end}}
+  </div>
+  <aside class="pageoutline" id="pageoutline" hidden>
+    <nav aria-labelledby="toc-title"><h2 id="toc-title">{{t "page_toc_title"}}</h2><ol id="page-toc"></ol></nav>
+  </aside>
+  </div>
 </article>
 {{end}}

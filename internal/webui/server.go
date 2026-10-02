@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"embed"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -24,6 +23,7 @@ import (
 	"github.com/neutrospec/canopy/internal/reads"
 	"github.com/neutrospec/canopy/internal/search"
 	"github.com/neutrospec/canopy/internal/store"
+	"github.com/neutrospec/canopy/internal/tasks"
 	"github.com/neutrospec/canopy/internal/wiki"
 )
 
@@ -142,7 +142,17 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name
 		m["Lang"] = lang
 		m["LangName"] = endonym(lang)
 		m["Langs"] = s.i18n.options()
-		m["Path"] = r.URL.Path
+		m["Path"] = r.URL.RequestURI()
+		m["View"] = strings.TrimSuffix(name, ".html")
+		m["ActiveNav"] = activeNav(name)
+		messages := map[string]string{}
+		lc := s.i18n.localizer(lang)
+		for _, id := range clientMessageIDs {
+			messages[id] = localizeString(lc, id)
+		}
+		// html/template serializes this map in the JSON script context,
+		// including escaping any HTML embedded in translations.
+		m["ClientMessages"] = messages
 	}
 	set := s.tmpl[lang]
 	if set == nil {
@@ -155,6 +165,24 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name
 	}
 }
 
+var clientMessageIDs = []string{
+	"copy_button", "copy_done", "copy_failed", "heading_link", "page_toc_title",
+	"page_read_label", "page_auto", "page_reread", "page_reread_title",
+	"page_cancel", "page_unread_title", "graph_links", "graph_touches",
+	"graph_legend_unread", "graph_legend_island", "graph_load_failed",
+}
+
+func activeNav(name string) string {
+	switch name {
+	case "page.html", "edit.html":
+		return "browse"
+	case "gaps.html":
+		return "attention"
+	default:
+		return strings.TrimSuffix(name, ".html")
+	}
+}
+
 // handleSetLang is the language selector: set the lang cookie and return to
 // the page the user was on (the one new setting, docs/web-ui-i18n.md).
 func (s *Server) handleSetLang(w http.ResponseWriter, r *http.Request) {
@@ -164,7 +192,7 @@ func (s *Server) handleSetLang(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &http.Cookie{Name: langCookie, Value: lang, Path: "/", MaxAge: 86400 * 365, HttpOnly: true, SameSite: http.SameSiteLaxMode})
 	next := r.URL.Query().Get("next")
-	if next == "" || !strings.HasPrefix(next, "/") {
+	if next == "" || !strings.HasPrefix(next, "/") || strings.HasPrefix(next, "//") || strings.ContainsAny(next, "\\\r\n") {
 		next = "/"
 	}
 	http.Redirect(w, r, next, http.StatusSeeOther)
@@ -252,6 +280,10 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 		discover = discover[:4]
 	}
 	pick, bridge := s.todaysCard()
+	pendingCount, tasksErr := tasks.PendingCount(s.w)
+	if tasksErr != nil {
+		log.Printf("home task summary: %v", tasksErr)
+	}
 
 	date := now.Format("2006-01-02") + " (" + localizeString(lc, "wd_"+strconv.Itoa(int(now.Weekday()))) + ")"
 	readProgress := localizeString(lc, "home_read_progress", "Read", readTotal, "Total", len(scan.Pages))
@@ -268,16 +300,20 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.render(w, r, http.StatusOK, "home.html", map[string]any{
-		"Title":        "wiki",
-		"Date":         date,
-		"Total":        len(scan.Pages),
-		"Dirs":         dirs,
-		"ReadProgress": readProgress,
-		"TodayLine":    todayLine,
-		"Recent":       recent,
-		"Discover":     discover,
-		"Pick":         pick,
-		"Bridge":       bridge,
+		"Title":          localizeString(lc, "nav_home"),
+		"Date":           date,
+		"Total":          len(scan.Pages),
+		"ReadTotal":      readTotal,
+		"UnreadTotal":    len(scan.Pages) - readTotal,
+		"PendingCount":   pendingCount,
+		"TasksAvailable": tasksErr == nil,
+		"Dirs":           dirs,
+		"ReadProgress":   readProgress,
+		"TodayLine":      todayLine,
+		"Recent":         recent,
+		"Discover":       discover,
+		"Pick":           pick,
+		"Bridge":         bridge,
 	})
 }
 
@@ -504,7 +540,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	s.logEvent("", attention.KindSearch, query)
 	s.logSearchGap(query, res, kwEmpty)
 	s.render(w, r, http.StatusOK, "search.html", map[string]any{
-		"Title":   fmt.Sprintf("search: %s", query),
+		"Title":   localizeString(s.loc(r), "search_results_title", "Query", query),
 		"Query":   query,
 		"Mode":    mode,
 		"Results": res,
@@ -569,7 +605,7 @@ func (s *Server) searchFallback(w http.ResponseWriter, r *http.Request, raw stri
 		return
 	}
 	s.render(w, r, http.StatusNotFound, "search.html", map[string]any{
-		"Title":   "page not found",
+		"Title":   localizeString(s.loc(r), "search_results_title", "Query", query),
 		"Query":   query,
 		"Mode":    mode,
 		"Results": res,

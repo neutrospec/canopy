@@ -1,62 +1,67 @@
 {{define "content"}}
-<section class="hero">
-  <p class="eyebrow">{{.Date}}</p>
-  <h1>{{t "home_title"}}</h1>
-  <form class="searchbar big" action="/search" method="get">
-    <input type="search" name="q" placeholder="{{t "home_search_placeholder"}}" autofocus autocomplete="off">
-  </form>
-  <p class="muted herostats">{{.Total}} {{t "home_pages_suffix"}} ·
-    {{range $i, $d := .Dirs}}{{if $i}} · {{end}}<a class="wikilink" href="/browse?dir={{$d.Dir}}">{{$d.Dir}}</a> {{$d.Count}}{{end}}
-  </p>
-  <div class="band" role="img" aria-label="{{t "home_band_aria"}}">
-    {{range .Dirs}}<div class="bandseg d-{{.Dir}}" style="flex:{{.Count}}" title="{{.Dir}} {{.Read}}/{{.Count}}"><i style="width:{{.Pct}}%"></i></div>{{end}}
+<section class="pagehead">
+  <div><p class="eyebrow">{{t "home_eyebrow"}}</p><h1>{{t "home_title"}}</h1><p class="muted">{{t "home_intro"}}</p></div>
+  <time class="head-date">{{.Date}}</time>
+</section>
+<section class="statsgrid" aria-label="{{t "home_summary_label"}}">
+  <a class="stat" href="/browse"><span>{{t "home_total_label"}}</span><strong id="stat-total">{{.Total}}</strong><small>{{t "home_total_hint"}}</small></a>
+  <a class="stat" href="/history"><span>{{t "home_read_label"}}</span><strong id="stat-read">{{.ReadTotal}}</strong><small>{{t "home_read_hint"}}</small></a>
+  <a class="stat" href="/special/discover"><span>{{t "home_unread_label"}}</span><strong id="stat-unread">{{.UnreadTotal}}</strong><small>{{t "home_unread_hint"}}</small></a>
+  <a class="stat" href="/special/tasks"><span>{{t "home_pending_label"}}</span><strong id="stat-pending">{{if .TasksAvailable}}{{.PendingCount}}{{else}}—{{end}}</strong><small>{{if .TasksAvailable}}{{t "home_pending_hint"}}{{else}}{{t "home_tasks_unavailable"}}{{end}}</small></a>
+</section>
+<div class="dashboardgrid">
+  <div class="dashboard-main">
+    <section class="panel">
+      <div class="sectionhead"><h2>{{t "home_recent_title"}}</h2><a class="seeall" href="/special/recent">{{t "home_seeall"}} {{template "icon" "arrow"}}</a></div>
+      {{if .Recent}}
+      <ul class="pagelist">
+        {{range .Recent}}
+        <li><div class="row-main"><a class="wikilink" href="/page/{{.Slug}}" data-slug="{{.Slug}}">{{or .Title .Slug}}</a><div class="row-meta"><span class="dirlabel d-{{.Dir}}">{{.Dir}}</span>{{range $i, $tag := .Tags}}{{if lt $i 2}}<span>#{{$tag}}</span>{{end}}{{end}}</div></div><time class="row-date">{{.Updated}}</time></li>
+        {{end}}
+      </ul>
+      {{else}}<p class="empty">{{t "home_empty"}}</p>{{end}}
+    </section>
+    <section class="panel">
+      <div class="sectionhead"><h2>{{t "home_discover_title"}}</h2><a class="seeall" href="/special/discover">{{t "home_seeall"}} {{template "icon" "arrow"}}</a></div>
+      {{if .Discover}}
+      <ul class="pagelist">
+        {{range .Discover}}
+        <li><div class="row-main"><a class="wikilink" href="/page/{{.Page.Slug}}" data-slug="{{.Page.Slug}}">{{.Page.Title}}</a><div class="row-meta"><span class="dirlabel d-{{.Page.Dir}}">{{.Page.Dir}}</span></div></div><span class="chip reason">{{.Reason}}</span></li>
+        {{end}}
+      </ul>
+      {{else}}<p class="empty">{{if .Total}}{{t "disc_all_read"}}{{else}}{{t "home_empty"}}{{end}}</p>{{end}}
+    </section>
   </div>
-  <p class="bandlegend">{{.ReadProgress}}{{if .TodayLine}} <span class="today">{{.TodayLine}}</span>{{end}} · <a class="seeall" href="/history">{{t "home_history_link"}}</a></p>
-</section>
-{{if .Pick}}
-<section class="card warm">
-  <h2>{{t "home_resurface_title"}} <span class="muted">{{t "home_resurface_stale" "Days" .Pick.DaysStale}}</span></h2>
-  <p><a class="wikilink" href="/page/{{.Pick.Slug}}" data-slug="{{.Pick.Slug}}"><b>{{.Pick.Title}}</b></a></p>
-  {{if .Pick.Excerpt}}<p class="excerpt">{{.Pick.Excerpt}}</p>{{end}}
-  {{if .Pick.Explanation}}<p class="muted">{{.Pick.Explanation}}</p>{{end}}
-  <form method="post" action="/resurface/feedback" class="fbrow">
-    <input type="hidden" name="slug" value="{{.Pick.Slug}}">
-    <button class="chip" name="action" value="up" title="{{t "home_feedback_up"}}">👍</button>
-    <button class="chip" name="action" value="down" title="{{t "home_feedback_down"}}">👎</button>
-    <button class="chip" name="action" value="snooze" title="{{t "home_feedback_snooze"}}">😴</button>
-  </form>
-</section>
-{{end}}
-{{if .Bridge}}
-<section class="card">
-  <h2>{{t "home_bridge_title"}} <span class="muted">{{t "home_bridge_sim" "Sim" (printf "%.2f" .Bridge.Similarity)}}</span></h2>
-  <p>
-    <a class="wikilink" href="/page/{{.Bridge.A.Slug}}" data-slug="{{.Bridge.A.Slug}}">{{.Bridge.A.Title}}</a>
-    <span class="muted">↔</span>
-    <a class="wikilink" href="/page/{{.Bridge.B.Slug}}" data-slug="{{.Bridge.B.Slug}}">{{.Bridge.B.Title}}</a>
-  </p>
-  <p class="muted">{{t "home_bridge_hint"}}</p>
-</section>
-{{end}}
-{{if .Discover}}
-<section>
-  <h2>{{t "home_discover_title"}} <a class="seeall" href="/special/discover">{{t "home_seeall"}}</a></h2>
-  <ul class="pagelist">
-    {{range .Discover}}
-    <li><a class="wikilink" href="/page/{{.Page.Slug}}" data-slug="{{.Page.Slug}}">{{.Page.Title}}</a>
-        <span class="chip reason">{{.Reason}}</span>
-        <span class="muted">{{.Page.Dir}}</span></li>
+  <div class="dashboard-side">
+    <section class="panel coverage">
+      <div class="sectionhead"><h2>{{t "home_coverage_title"}}</h2><span class="muted">{{.ReadProgress}}</span></div>
+      <div class="band" role="img" aria-label="{{t "home_band_aria"}}">
+        {{range .Dirs}}<div class="bandseg d-{{.Dir}}" style="flex:{{.Count}}" title="{{.Dir}} {{.Read}}/{{.Count}}"><i style="width:{{.Pct}}%"></i></div>{{end}}
+      </div>
+      <ul class="dirlist">{{range .Dirs}}<li><a class="dirlabel d-{{.Dir}}" href="/browse?dir={{.Dir}}">{{.Dir}}</a><span>{{.Read}} <span class="muted">/ {{.Count}}</span></span></li>{{end}}</ul>
+      {{if .TodayLine}}<p class="today">{{.TodayLine}}</p>{{end}}
+    </section>
+    {{if .Pick}}
+    <section class="panel warm">
+      <div class="sectionhead"><h2>{{t "home_resurface_title"}}</h2>{{template "icon" "discover"}}</div>
+      <p class="pick-title"><a class="wikilink" href="/page/{{.Pick.Slug}}" data-slug="{{.Pick.Slug}}">{{.Pick.Title}}</a></p>
+      {{if .Pick.Excerpt}}<p class="excerpt">{{.Pick.Excerpt}}</p>{{end}}
+      <p class="muted">{{t "home_resurface_stale" "Days" .Pick.DaysStale}}</p>
+      <form method="post" action="/resurface/feedback" class="fbrow">
+        <input type="hidden" name="slug" value="{{.Pick.Slug}}">
+        <button class="chip" name="action" value="up">{{t "home_feedback_up"}}</button>
+        <button class="chip" name="action" value="down">{{t "home_feedback_down"}}</button>
+        <button class="chip" name="action" value="snooze">{{t "home_feedback_snooze"}}</button>
+      </form>
+    </section>
     {{end}}
-  </ul>
-</section>
-{{end}}
-<section>
-  <h2>{{t "home_recent_title"}}</h2>
-  <ul class="pagelist">
-    {{range .Recent}}
-    <li><a class="wikilink" href="/page/{{.Slug}}">{{.Title}}</a>
-        <span class="muted">{{.Updated}} · {{.Dir}}</span></li>
+    {{if .Bridge}}
+    <section class="panel">
+      <div class="sectionhead"><h2>{{t "home_bridge_title"}}</h2>{{template "icon" "graph"}}</div>
+      <div class="bridgepair"><a class="wikilink" href="/page/{{.Bridge.A.Slug}}" data-slug="{{.Bridge.A.Slug}}">{{.Bridge.A.Title}}</a><span class="muted">↕</span><a class="wikilink" href="/page/{{.Bridge.B.Slug}}" data-slug="{{.Bridge.B.Slug}}">{{.Bridge.B.Title}}</a></div>
+      <p class="muted">{{t "home_bridge_hint"}}</p>
+    </section>
     {{end}}
-  </ul>
-</section>
+  </div>
+</div>
 {{end}}

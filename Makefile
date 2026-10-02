@@ -20,7 +20,7 @@ DATE    ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 PKG     := github.com/neutrospec/canopy/internal/buildinfo
 LDFLAGS := -X $(PKG).version=$(VERSION) -X $(PKG).commit=$(COMMIT) -X $(PKG).date=$(DATE)
 
-.PHONY: build build-lite test fmt deps install release-check release-tag i18n-check release-lineage-check
+.PHONY: build build-lite test test-ui fmt deps install release-check release-tag i18n-check release-lineage-check
 
 build: deps
 	go build -tags ORT -ldflags "$(LDFLAGS)" -o canopy ./cmd/canopy
@@ -31,6 +31,11 @@ build-lite:
 
 test:
 	go test ./internal/...
+
+# Client interaction checks use Node's built-in runner, without npm packages.
+# Node is a development-only dependency; the binary still embeds all UI assets.
+test-ui:
+	node --test internal/webui/uitest/*.test.cjs
 
 fmt:
 	gofmt -w .

@@ -3,40 +3,76 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#f6f7f3" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121714" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141816" media="(prefers-color-scheme: dark)">
 <title>{{.Title}} · canopy</title>
 <link rel="preload" href="/static/vendor/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/static/style.css">
 <link rel="stylesheet" href="/static/chroma.css">
+<script src="/static/app.js" defer></script>
 </head>
-<body>
-<header>
-  <a class="brand" href="/">🌳 canopy</a>
-  <form class="searchbar" action="/search" method="get">
-    <input type="search" name="q" placeholder="{{t "search_placeholder"}}" value="{{.Query}}" autocomplete="off">
+<body data-view="{{.View}}">
+<svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+  <symbol id="icon-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/></symbol>
+  <symbol id="icon-pages" viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5Z"/><path d="M14 3v5h5M9 12h6M9 16h6"/></symbol>
+  <symbol id="icon-graph" viewBox="0 0 24 24"><circle cx="5" cy="6" r="3"/><circle cx="19" cy="6" r="3"/><circle cx="12" cy="19" r="3"/><path d="M8 6h8M7 9l4 7M17 9l-4 7"/></symbol>
+  <symbol id="icon-discover" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m16 8-2 6-6 2 2-6Z"/></symbol>
+  <symbol id="icon-tasks" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 12 3 3 5-6"/></symbol>
+  <symbol id="icon-history" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="icon-recent" viewBox="0 0 24 24"><path d="M5 6h15M5 12h10M5 18h7M18 15v6M15 18h6"/></symbol>
+  <symbol id="icon-checks" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6Z"/><path d="m8 12 3 3 5-6"/></symbol>
+  <symbol id="icon-random" viewBox="0 0 24 24"><path d="M3 6h3c5 0 7 12 12 12h3M3 18h3c2 0 4-3 6-6s4-6 6-6h3M18 3l3 3-3 3M18 15l3 3-3 3"/></symbol>
+  <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+  <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+  <symbol id="icon-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></symbol>
+</defs></svg>
+<script type="application/json" id="ui-messages">{{.ClientMessages}}</script>
+<a class="skiplink" href="#main-content">{{t "skip_to_content"}}</a>
+<header class="topbar">
+  <div class="brandrow">
+    <button class="navtoggle iconbutton" id="navtoggle" type="button" aria-label="{{t "nav_toggle"}}" aria-controls="site-nav" aria-expanded="true" hidden>{{template "icon" "menu"}}</button>
+    <a class="brand" href="/" aria-label="{{t "nav_home"}} · canopy">
+      <svg class="brandmark" viewBox="0 0 28 28" aria-hidden="true"><path d="M14 23V12M14 17C7 17 4 13 5 6c6 0 9 4 9 11ZM14 13c0-6 3-9 9-9 1 7-2 10-9 10"/></svg>
+      canopy
+    </a>
+  </div>
+  <form class="searchbar" role="search" action="/search" method="get" aria-label="{{t "search_label"}}">
+    {{template "icon" "search"}}
+    <input id="wiki-search" type="search" name="q" aria-label="{{t "search_label"}}" placeholder="{{t "search_placeholder"}}" value="{{.Query}}" autocomplete="off">
+    <button class="searchfocus" type="button" title="{{t "search_shortcut"}}" aria-label="{{t "search_shortcut"}}"><kbd>/</kbd></button>
   </form>
-  <nav>
-    <a href="/browse">{{t "nav_browse"}}</a>
-    <a href="/graph">{{t "nav_graph"}}</a>
-    <a href="/special/discover">{{t "nav_discover"}}</a>
-    <a href="/history">{{t "nav_history"}}</a>
-    <a href="/special/recent">{{t "nav_recent"}}</a>
-    <a href="/special/attention">{{t "nav_checks"}}</a>
-    <a href="/special/tasks">{{t "nav_tasks"}}</a>
-    <a href="/special/random">{{t "nav_random"}}</a>
-    {{if .AuthOn}}<form method="post" action="/logout" class="logoutform"><button type="submit">{{t "nav_logout"}}</button></form>{{end}}
-  </nav>
+  <span class="location">{{.Title}}</span>
   <details class="langsel">
-    <summary aria-label="{{t "lang_switch_label"}}"><span class="globe" aria-hidden="true">🌐</span>{{.LangName}}</summary>
-    <div class="langmenu" role="menu">
-      {{range .Langs}}{{if eq .Code $.Lang}}<span class="on" role="menuitemradio" aria-checked="true">{{.Name}}</span>{{else}}<a role="menuitem" href="/setlang?lang={{.Code}}&next={{$.Path}}">{{.Name}}</a>{{end}}{{end}}
+    <summary aria-label="{{t "lang_switch_label"}}">{{template "icon" "globe"}}<span>{{.LangName}}</span></summary>
+    <div class="langmenu">
+      {{range .Langs}}{{if eq .Code $.Lang}}<span class="on" lang="{{.Code}}" aria-current="true">{{.Name}}</span>{{else}}<a lang="{{.Code}}" href="/setlang?lang={{.Code}}&amp;next={{$.Path}}">{{.Name}}</a>{{end}}{{end}}
     </div>
   </details>
 </header>
-<main>
+<nav class="sidebar" id="site-nav" aria-label="{{t "nav_label"}}">
+  <div class="navgroup">
+    <p class="navheading">{{t "nav_knowledge"}}</p>
+    <a href="/"{{if eq .ActiveNav "home"}} aria-current="page"{{end}}>{{template "icon" "home"}}{{t "nav_home"}}</a>
+    <a href="/browse"{{if eq .ActiveNav "browse"}} aria-current="page"{{end}}>{{template "icon" "pages"}}{{t "nav_browse"}}</a>
+    <a href="/graph"{{if eq .ActiveNav "graph"}} aria-current="page"{{end}}>{{template "icon" "graph"}}{{t "nav_graph"}}</a>
+    <a href="/special/discover"{{if eq .ActiveNav "discover"}} aria-current="page"{{end}}>{{template "icon" "discover"}}{{t "nav_discover"}}</a>
+  </div>
+  <div class="navgroup">
+    <p class="navheading">{{t "nav_activity"}}</p>
+    <a href="/special/tasks"{{if eq .ActiveNav "tasks"}} aria-current="page"{{end}}>{{template "icon" "tasks"}}{{t "nav_tasks"}}</a>
+    <a href="/history"{{if eq .ActiveNav "history"}} aria-current="page"{{end}}>{{template "icon" "history"}}{{t "nav_history"}}</a>
+    <a href="/special/recent"{{if eq .ActiveNav "recent"}} aria-current="page"{{end}}>{{template "icon" "recent"}}{{t "nav_recent"}}</a>
+    <a href="/special/attention"{{if eq .ActiveNav "attention"}} aria-current="page"{{end}}>{{template "icon" "checks"}}{{t "nav_checks"}}</a>
+  </div>
+  <div class="navfoot">
+    <a href="/special/random">{{template "icon" "random"}}{{t "nav_random"}}</a>
+    {{if .AuthOn}}<form method="post" action="/logout" class="logoutform"><button type="submit">{{t "nav_logout"}}</button></form>{{end}}
+  </div>
+</nav>
+<main id="main-content" class="main-{{.View}}" tabindex="-1">
 {{template "content" .}}
 </main>
-<script src="/static/app.js" defer></script>
 </body>
 </html>
+{{define "icon"}}<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#icon-{{.}}"></use></svg>{{end}}

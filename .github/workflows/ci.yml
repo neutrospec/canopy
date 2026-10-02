@@ -33,6 +33,11 @@ jobs:
         run: go vet ./...
       - name: tests (invariant F1)
         run: go test ./internal/...
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: client interactions (invariants U, M6)
+        run: make test-ui
       - name: lite build (CGO-free path, invariant F2)
         run: make build-lite
       - name: translations current (invariant L)

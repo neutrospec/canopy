@@ -1,5 +1,7 @@
 {{define "content"}}
 <h1>{{t "recent_title"}}</h1>
+{{if .Rows}}
+<div class="tablewrap panel">
 <table class="logtable">
   <thead><tr><th>{{t "recent_col_time"}}</th><th>{{t "recent_col_action"}}</th><th>{{t "recent_col_page"}}</th><th>{{t "recent_col_note"}}</th></tr></thead>
   <tbody>
@@ -13,4 +15,6 @@
   {{end}}
   </tbody>
 </table>
+</div>
+{{else}}<p class="panel empty">{{t "recent_empty"}}</p>{{end}}
 {{end}}

@@ -1,7 +1,7 @@
 {{define "content"}}
 <div class="graphwrap">
   <div class="graphtools">
-    <input type="search" id="graphfind" placeholder="{{t "graph_find_placeholder"}}" autocomplete="off">
+    <input type="search" id="graphfind" aria-label="{{t "graph_find_placeholder"}}" placeholder="{{t "graph_find_placeholder"}}" autocomplete="off">
     <span class="legend"><i class="dot d-entities"></i>entities
       <i class="dot d-concepts"></i>concepts
       <i class="dot d-comparisons"></i>comparisons
@@ -9,6 +9,7 @@
       <i class="dot d-island"></i>{{t "graph_legend_island"}}</span>
   </div>
   <div id="graph"></div>
+  <p class="graphhelp">{{t "graph_help"}}</p>
 </div>
 <script src="/static/vendor/force-graph.min.js" defer></script>
 <script src="/static/graph.js" defer></script>

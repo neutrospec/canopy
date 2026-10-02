@@ -122,7 +122,7 @@ func (s *Server) handleBrowse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.render(w, r, http.StatusOK, "browse.html", map[string]any{
-		"Title":    "browse",
+		"Title":    localizeString(s.loc(r), "browse_title"),
 		"Pages":    pages,
 		"Dirs":     dirFacets,
 		"Types":    typeFacets,

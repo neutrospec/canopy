@@ -1,6 +1,6 @@
 # 웹 UI 다국어(i18n) 설계
 
-> 상태: **구현 완료** (전 템플릿 13개 + Go 표시 문자열 추출, en·ko). 원칙: **UI chrome만
+> 상태: **구현 완료** (전 템플릿 14개 + Go·클라이언트 표시 문자열, en·ko). 원칙: **UI chrome만
 > 로케일별로 스왑, 데이터·동작은 불변.**
 > 위키 페이지 *내용*(사용자 마크다운)은 절대 번역하지 않는다 — 앱의 UI 텍스트(nav·버튼·
 > 카드·배너)만. 불변식·점검: [invariants.md](invariants.md) **M 섹션**.
@@ -20,9 +20,12 @@ staleness, 이건 `canopy serve`가 렌더하는 웹 UI *문자열*의 런타임
 
 ## 구조
 
-```
-internal/webui/locales/active.en.toml     //go:embed locales/*.toml
-internal/webui/locales/active.ko.toml
+```mermaid
+flowchart LR
+    Catalog["locales/active.*.toml"] -->|"임베드 · 로케일 선택"| Server["Go 렌더러"]
+    Server -->|"t 함수"| Template["HTML 템플릿"]
+    Server -->|"안전한 JSON 직렬화"| Messages["ui-messages"]
+    Messages --> Client["app.js · graph.js"]
 ```
 
 메시지 ID는 snake_case 플랫(점 표기는 TOML에서 중첩 테이블이 되므로 피한다):
@@ -67,11 +70,17 @@ other = "{{.Count}} pages"
   데이터가 있는 **Go 핸들러에서 localizer로 번역**해 넘긴다 — 템플릿엔 완성된 문자열.
 - `t`는 없는 ID·오류 시 **ID를 그대로 반환**(빈칸·panic 금지, M3). key parity(M2)가
   누락을 애초에 막는다.
+- **클라이언트 문자열**(복사 결과·자동 읽음·그래프 툴팁)은 같은 카탈로그에서 읽어
+  `ui-messages` JSON으로 전달한다. `html/template`이 script 문맥에 맞춰 이스케이프하므로
+  번역 문자열이 HTML로 실행되지 않는다. JS는 전달된 메시지를 표시하고, 본문이나 검색
+  결과를 번역하지 않는다 (M6).
 
 ## 그 하나의 설정 — 언어 선택 메뉴
 
-nav에 `EN · 한국어` 링크. `GET /setlang?lang=en&next=<현재경로>` 핸들러가 `lang`
-쿠키를 굽고 `next`로 리다이렉트. 서버사이드, JS 불필요.
+헤더의 언어 선택 메뉴는 각 언어의 자칭 이름(한국어·English)을 표시한다.
+`GET /setlang?lang=en&next=<현재경로와쿼리>`가 `lang` 쿠키를 설정하고 같은 페이지로
+돌아간다. 검색어와 탐색 필터를 보존하며, 외부 주소로 향하는 `next`는 `/`로 대체한다
+(M7). 언어 전환은 서버사이드이며 JS 없이도 동작한다.
 
 ## 기능 변화 없음 (보증)
 
@@ -86,8 +95,12 @@ nav에 `EN · 한국어` 링크. `GET /setlang?lang=en&next=<현재경로>` 핸�
 - **M3** 안전한 폴백 — 모르는 Accept-Language→기본, 없는 ID→ID 반환(빈칸·크래시 금지).
 - **M4** 로케일 파일 추가 = 언어 추가 (코드 변경 0, 임베드 글로브가 로드).
 - **M5** 로케일은 데이터를 바꾸지 않는다 (같은 검색/페이지 결과, chrome만 다름).
+- **M6** 클라이언트가 추가하는 UI도 현재 로케일을 따른다.
+- **M7** 언어 변경은 쿼리를 보존하고 같은 사이트 안으로 돌아간다.
 
-M1·M2는 Go 테스트로(embed FS 워크 + TOML 파스, `make test`에 포함), M3·M5는 동작 테스트로.
+Go 테스트가 카탈로그·메시지 전달·언어 전환을 확인한다 (`make test`).
+클라이언트의 상호작용과 실패 처리는 Node 내장 테스트 러너로 확인한다 (`make test-ui`,
+npm 의존성 없음). Node는 개발·CI에서만 사용하며 웹 UI는 기존처럼 Go 바이너리에 내장된다.
 
 ## 비-목표
 
