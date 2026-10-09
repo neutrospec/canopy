@@ -46,12 +46,21 @@ type Server struct {
 	tmpl map[string]map[string]*template.Template
 	i18n *i18nBundle
 
-	auth         *authStore
-	authRequired bool
-	hosts        *hostPolicy
-	searchSlots  chan struct{}
-	indexSlot    chan struct{}
-	staticTags   map[string]string
+	auth           *authStore
+	authRequired   bool
+	hosts          *hostPolicy
+	searchSlots    chan struct{}
+	indexSlot      chan struct{}
+	staticTags     map[string]string
+	cacheMu        sync.Mutex // serializes cache initialization, never inference
+	workMu         sync.Mutex
+	workCtx        context.Context
+	workCancel     context.CancelFunc
+	workWG         sync.WaitGroup
+	closed         bool
+	refreshing     bool
+	refreshPending bool
+	searches       int
 
 	dailyMu sync.Mutex
 	daily   daily
@@ -99,7 +108,18 @@ func NewServer(w *config.Wiki, eng cembed.Engine) (*Server, error) {
 		}
 		s.tmpl[lang] = set
 	}
+	s.workCtx, s.workCancel = context.WithCancel(context.Background())
 	return s, nil
+}
+
+// Close cancels server-owned inference at its next boundary and joins all
+// engine consumers. The caller may close the borrowed engine afterwards.
+func (s *Server) Close() {
+	s.workMu.Lock()
+	s.closed = true
+	s.workCancel()
+	s.workMu.Unlock()
+	s.workWG.Wait()
 }
 
 // loc returns the localizer for the request's resolved locale — for Go
@@ -559,13 +579,51 @@ type result struct {
 // withCurrentIndex serializes access without making canceled requests wait on
 // a mutex and then start inference. The queue has a separate bounded budget;
 // native work already running can outlive cancellation until its next boundary.
-func (s *Server) withCurrentIndex(ctx context.Context, scan *wiki.ScanResult, use func(context.Context, *store.Store, *indexer.Result) error) error {
+func (s *Server) withCurrentIndex(ctx context.Context, scan *wiki.ScanResult, use func(context.Context, *store.Store, *indexer.Result, bool) error) error {
+	s.workMu.Lock()
+	if s.closed {
+		s.workMu.Unlock()
+		return context.Canceled
+	}
+	s.workWG.Add(1)
+	s.searches++
+	background := s.refreshing
+	acquired := false
+	if !background {
+		select {
+		case s.indexSlot <- struct{}{}:
+			acquired = true
+		default:
+		}
+	}
+	s.workMu.Unlock()
+	defer func() {
+		s.workMu.Lock()
+		s.searches--
+		pending := s.refreshPending && s.searches == 0
+		s.workMu.Unlock()
+		if pending {
+			s.refreshIndex()
+		}
+		s.workWG.Done()
+	}()
+	ctx, cancelWork := context.WithCancel(ctx)
+	stopOnClose := context.AfterFunc(s.workCtx, cancelWork)
+	defer stopOnClose()
+	defer cancelWork()
+	if background {
+		return s.withCachedIndex(ctx, scan, func(work context.Context, st *store.Store, current *indexer.Result) error {
+			return use(work, st, current, false)
+		})
+	}
 	queued, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	select {
-	case s.indexSlot <- struct{}{}:
-	case <-queued.Done():
-		return queued.Err()
+	if !acquired {
+		select {
+		case s.indexSlot <- struct{}{}:
+		case <-queued.Done():
+			return queued.Err()
+		}
 	}
 	defer func() { <-s.indexSlot }()
 	if err := queued.Err(); err != nil {
@@ -573,7 +631,7 @@ func (s *Server) withCurrentIndex(ctx context.Context, scan *wiki.ScanResult, us
 	}
 	work, stop := context.WithTimeout(ctx, 30*time.Second)
 	defer stop()
-	st, err := store.Open(s.w.DBPath())
+	st, err := s.openIndex()
 	if err != nil {
 		return err
 	}
@@ -585,7 +643,72 @@ func (s *Server) withCurrentIndex(ctx context.Context, scan *wiki.ScanResult, us
 	if err := work.Err(); err != nil {
 		return err
 	}
-	return use(work, st, current)
+	return use(work, st, current, true)
+}
+
+func (s *Server) openIndex() (*store.Store, error) {
+	s.cacheMu.Lock()
+	defer s.cacheMu.Unlock()
+	return store.Open(s.w.DBPath())
+}
+
+func (s *Server) withCachedIndex(ctx context.Context, scan *wiki.ScanResult, use func(context.Context, *store.Store, *indexer.Result) error) error {
+	st, err := s.openIndex()
+	if err != nil {
+		return err
+	}
+	defer st.Close()
+	current, err := indexer.InspectCurrentContext(ctx, s.w, st, scan, s.eng)
+	if err != nil {
+		return err
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return use(ctx, st, current)
+}
+
+// A refresh borrows the inference slot only when it is idle. Navigation never
+// queues behind it. Remember demand while a search holds the slot, since that
+// request may leave or hit its deadline before it finishes filling the cache.
+func (s *Server) refreshIndex() {
+	s.workMu.Lock()
+	if s.closed || s.refreshing || s.eng == nil {
+		s.workMu.Unlock()
+		return
+	}
+	if s.searches != 0 {
+		s.refreshPending = true
+		s.workMu.Unlock()
+		return
+	}
+	select {
+	case s.indexSlot <- struct{}{}:
+	default:
+		s.workMu.Unlock()
+		return
+	}
+	s.refreshing = true
+	s.refreshPending = false
+	s.workWG.Add(1)
+	s.workMu.Unlock()
+	go func() {
+		defer s.workWG.Done()
+		defer func() {
+			s.workMu.Lock()
+			s.refreshing = false
+			<-s.indexSlot
+			s.workMu.Unlock()
+		}()
+		st, err := s.openIndex()
+		if err == nil {
+			defer st.Close()
+			_, err = indexer.EnsureCurrentContext(s.workCtx, s.w, st, nil, s.eng, nil)
+		}
+		if err != nil && s.workCtx.Err() == nil {
+			log.Printf("background index: %v", err)
+		}
+	}()
 }
 
 // currentVectors is the shared evidence boundary for discovery, bridges, and
@@ -594,15 +717,34 @@ func (s *Server) withCurrentIndex(ctx context.Context, scan *wiki.ScanResult, us
 func (s *Server) currentVectors(ctx context.Context, scan *wiki.ScanResult) (map[string][]float32, *indexer.Result, error) {
 	var vectors map[string][]float32
 	var current *indexer.Result
-	err := s.withCurrentIndex(ctx, scan, func(_ context.Context, st *store.Store, res *indexer.Result) error {
+	err := s.withCachedIndex(ctx, scan, func(_ context.Context, st *store.Store, res *indexer.Result) error {
 		current = res
 		if !res.SemanticReady {
 			return nil
 		}
 		var err error
-		vectors, err = st.PageVectors()
+		vectors, err = st.PageVectorsFor(scan.Pages)
+		if err == nil {
+			expected := 0
+			for _, p := range scan.Pages {
+				if strings.TrimSpace(p.Body) != "" {
+					expected++
+				}
+			}
+			// A concurrent metadata refresh can invalidate a page after the
+			// inspection. Never label the resulting partial map complete.
+			current.EmbeddedPages = len(vectors)
+			current.NeedsReindex = expected - len(vectors)
+			current.SemanticReady = current.NeedsReindex == 0
+			if !current.SemanticReady {
+				vectors = nil
+			}
+		}
 		return err
 	})
+	if err == nil && current != nil && !current.SemanticReady {
+		s.refreshIndex()
+	}
 	return vectors, current, err
 }
 
@@ -616,7 +758,7 @@ type searchOutcome struct {
 func (s *Server) runSearch(ctx context.Context, query string, k int) (searchOutcome, error) {
 	out := searchOutcome{Results: []result{}, Mode: "keyword"}
 	scan := &wiki.ScanResult{}
-	err := s.withCurrentIndex(ctx, scan, func(work context.Context, st *store.Store, current *indexer.Result) error {
+	err := s.withCurrentIndex(ctx, scan, func(work context.Context, st *store.Store, current *indexer.Result, semanticQuery bool) error {
 		out.Index = current
 		kw, err := st.SearchKeyword(query, k)
 		if err != nil {
@@ -625,7 +767,7 @@ func (s *Server) runSearch(ctx context.Context, query string, k int) (searchOutc
 		out.KeywordEmpty = len(kw) == 0
 		hits := kw
 		chunkText := map[string]string{}
-		if s.eng != nil && current.SemanticReady {
+		if semanticQuery && s.eng != nil && current.SemanticReady {
 			qv, err := cembed.EmbedContext(work, s.eng, []string{query})
 			if err != nil {
 				return err

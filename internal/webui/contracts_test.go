@@ -282,6 +282,9 @@ func TestColdSearchAndEveryVectorConsumerRefreshCurrentEvidence(t *testing.T) {
 		if rec.Code != 200 && rec.Code != 302 {
 			t.Fatalf("%s: %d %s", path, rec.Code, rec.Body)
 		}
+		// HTML validates immediately, then refreshes missing vectors in the
+		// background. Search may refresh synchronously when the slot is idle.
+		s.workWG.Wait()
 		if engine.calls.Load() <= before {
 			t.Fatalf("%s consumed an unrefreshed cache", path)
 		}

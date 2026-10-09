@@ -122,6 +122,47 @@ func TestConcurrentStoreProfileSwapRejectsOldQuery(t *testing.T) {
 	}
 }
 
+func TestPageVectorsForBindsObservedSource(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "db")
+	a, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer a.Close()
+	b, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer b.Close()
+	old := []*wiki.Page{{Slug: "a", RelPath: "concepts/a.md", Body: "old claim"}}
+	current := []*wiki.Page{{Slug: "a", RelPath: "concepts/a.md", Body: "corrected claim"}}
+	if err := a.RebuildPages(old); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.SetProfile("same-profile"); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.ReplaceChunks("a", []int{0}, []string{"old"}, []string{"old claim"}, [][]float32{{1, 0}}); err != nil {
+		t.Fatal(err)
+	}
+	if vectors, err := a.PageVectorsFor(old); err != nil || len(vectors) != 1 {
+		t.Fatalf("current snapshot control: %v %v", vectors, err)
+	}
+	// A second refresh replaces the source after the first caller inspected it.
+	if err := b.RebuildPages(current); err != nil {
+		t.Fatal(err)
+	}
+	if err := b.ReplaceChunks("a", []int{0}, []string{"new"}, []string{"corrected claim"}, [][]float32{{0, 1}}); err != nil {
+		t.Fatal(err)
+	}
+	if vectors, err := a.PageVectorsFor(old); err != nil || len(vectors) != 0 {
+		t.Fatalf("mixed a new vector with the old source: %v %v", vectors, err)
+	}
+	if vectors, err := a.PageVectorsFor(current); err != nil || len(vectors) != 1 || vectors["a"][1] != 1 {
+		t.Fatalf("new snapshot control: %v %v", vectors, err)
+	}
+}
+
 func TestRetrievalBounds(t *testing.T) {
 	st, err := Open(filepath.Join(t.TempDir(), "db"))
 	if err != nil {

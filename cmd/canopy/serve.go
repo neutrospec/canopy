@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -48,6 +49,7 @@ review and apply through the CLI; it never writes wiki pages directly.`,
 			if err != nil {
 				return err
 			}
+			defer srv.Close()
 			// Non-loopback binds require the auth wall (plan-2 D1/D2):
 			// a public address can never serve the wiki unauthenticated.
 			if !webui.IsLoopbackAddr(addr) {
@@ -74,7 +76,7 @@ review and apply through the CLI; it never writes wiki pages directly.`,
 				return err
 			}
 			hs := &http.Server{Addr: addr, Handler: srv.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 32 << 10}
-			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt)
+			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 			defer stop()
 			go func() {
 				<-ctx.Done()

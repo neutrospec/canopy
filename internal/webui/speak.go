@@ -27,9 +27,10 @@ import (
 // daily caches today's pick so reloading the home page doesn't burn
 // through the resurface pool (each pick is marked shown, 45d cooldown).
 type daily struct {
-	date   string
-	pick   *resurface.Pick
-	bridge *resurface.Bridge
+	date          string
+	pick          *resurface.Pick
+	bridge        *resurface.Bridge
+	bridgeChecked bool
 }
 
 func (s *Server) todaysCard(scan *wiki.ScanResult, rd *reads.State, vectors map[string][]float32) (*resurface.Pick, *resurface.Bridge) {
@@ -37,6 +38,28 @@ func (s *Server) todaysCard(scan *wiki.ScanResult, rd *reads.State, vectors map[
 	defer s.dailyMu.Unlock()
 	today := time.Now().Format("2006-01-02")
 	if s.daily.date == today {
+		// A cold first visit already consumed today's reading card, but could
+		// not choose a semantic bridge. Fill that part once the cache is ready.
+		if !s.daily.bridgeChecked && vectors != nil {
+			st, err := resurface.LoadState(s.w)
+			if err != nil {
+				log.Printf("resurface state: %v", err)
+			} else {
+				now := time.Now()
+				bridges := resurface.PickBridges(scan, vectors, st, 0.7, 1, false, now)
+				if len(bridges) == 0 {
+					s.daily.bridgeChecked = true
+				} else {
+					st.MarkPairShown(strings.ToLower(bridges[0].A.Slug), strings.ToLower(bridges[0].B.Slug), now)
+					if err := st.Save(s.w); err != nil {
+						log.Printf("resurface state save: %v", err)
+					} else {
+						s.daily.bridge = &bridges[0]
+						s.daily.bridgeChecked = true
+					}
+				}
+			}
+		}
 		// Render copies: a concurrent home response may still be reading the
 		// cached objects. Refresh labels without mutating shared card data.
 		var pick *resurface.Pick
@@ -67,7 +90,7 @@ func (s *Server) todaysCard(scan *wiki.ScanResult, rd *reads.State, vectors map[
 		log.Printf("resurface state: %v", err)
 		return nil, nil
 	}
-	next := daily{date: today}
+	next := daily{date: today, bridgeChecked: vectors != nil}
 	now := time.Now()
 	rng := rand.New(rand.NewSource(now.UnixNano()))
 	changed := false

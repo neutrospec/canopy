@@ -35,13 +35,24 @@ func Reindex(w *config.Wiki, st *store.Store, scan *wiki.ScanResult, eng embed.E
 }
 
 // EnsureCurrent bootstraps cold keyword caches and invalidates stale vectors
-// even when eng is nil. All cached-vector consumers must call this with a
-// current scan before searching or computing related/bridge candidates.
+// even when eng is nil. Cached-vector consumers must use this or
+// InspectCurrentContext before searching or computing related candidates.
 func EnsureCurrent(w *config.Wiki, st *store.Store, scan *wiki.ScanResult, eng embed.Engine, progress func(string)) (*Result, error) {
 	return EnsureCurrentContext(context.Background(), w, st, scan, eng, progress)
 }
 
 func EnsureCurrentContext(ctx context.Context, w *config.Wiki, st *store.Store, scan *wiki.ScanResult, eng embed.Engine, progress func(string)) (*Result, error) {
+	return refresh(ctx, w, st, scan, eng, progress, true)
+}
+
+// InspectCurrentContext validates the same source/profile boundary without
+// running inference. Incomplete coverage is a normal result: callers can render
+// non-semantic information while another job fills the missing embeddings.
+func InspectCurrentContext(ctx context.Context, w *config.Wiki, st *store.Store, scan *wiki.ScanResult, eng embed.Engine) (*Result, error) {
+	return refresh(ctx, w, st, scan, eng, nil, false)
+}
+
+func refresh(ctx context.Context, w *config.Wiki, st *store.Store, scan *wiki.ScanResult, eng embed.Engine, progress func(string), inferMissing bool) (*Result, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -104,6 +115,9 @@ func EnsureCurrentContext(ctx context.Context, w *config.Wiki, st *store.Store, 
 		if err = ctx.Err(); err != nil {
 			return nil, err
 		}
+		if eng == nil || !inferMissing {
+			continue
+		}
 		title := p.Title
 		if title == "" {
 			title = p.Slug
@@ -113,9 +127,6 @@ func EnsureCurrentContext(ctx context.Context, w *config.Wiki, st *store.Store, 
 			continue
 		}
 		expected++
-		if eng == nil {
-			continue
-		}
 		hashes := make([]string, len(chunks))
 		for i, c := range chunks {
 			hashes[i] = c.Hash
@@ -205,7 +216,7 @@ func EnsureCurrentContext(ctx context.Context, w *config.Wiki, st *store.Store, 
 	}
 	res.NeedsReindex = expected - res.EmbeddedPages
 	res.SemanticReady = res.NeedsReindex == 0
-	if eng != nil && !res.SemanticReady {
+	if inferMissing && eng != nil && !res.SemanticReady {
 		return nil, fmt.Errorf("source changed during index refresh; retry reindex (%d pages need embedding)", res.NeedsReindex)
 	}
 	return res, nil

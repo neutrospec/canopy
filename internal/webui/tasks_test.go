@@ -29,6 +29,7 @@ func taskTestServer(t *testing.T) (*Server, *config.Wiki) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(s.Close)
 	return s, w
 }
 

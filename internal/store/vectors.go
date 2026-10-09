@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/neutrospec/canopy/internal/embed"
+	"github.com/neutrospec/canopy/internal/wiki"
 )
 
 // SetProfile invalidates incompatible vectors before any inference. The
@@ -360,11 +361,27 @@ func (s *Store) SearchSemantic(query []float32, k int) ([]Hit, error) {
 
 // PageVectors only combines vectors of the current revision and profile.
 func (s *Store) PageVectors() (map[string][]float32, error) {
+	return s.pageVectors(nil)
+}
+
+// PageVectorsFor additionally binds vectors to the caller's source snapshot.
+// Another metadata refresh may have changed revisions since its inspection.
+func (s *Store) PageVectorsFor(pages []*wiki.Page) (map[string][]float32, error) {
+	revisions := make(map[string]string, len(pages))
+	for _, p := range pages {
+		if strings.TrimSpace(p.Body) != "" {
+			revisions[p.Slug] = SourceRevision(p)
+		}
+	}
+	return s.pageVectors(revisions)
+}
+
+func (s *Store) pageVectors(revisions map[string]string) (map[string][]float32, error) {
 	profile, err := s.expectedProfile()
 	if err != nil {
 		return nil, err
 	}
-	rows, err := s.db.Query(`SELECT c.slug,c.vector FROM chunks c JOIN pages p ON p.slug=c.slug AND p.revision=c.revision WHERE c.profile=? AND c.profile=COALESCE((SELECT value FROM meta WHERE key='embedding_profile'),'') ORDER BY c.slug,c.seq`, profile)
+	rows, err := s.db.Query(`SELECT c.slug,c.vector,c.revision FROM chunks c JOIN pages p ON p.slug=c.slug AND p.revision=c.revision WHERE c.profile=? AND c.profile=COALESCE((SELECT value FROM meta WHERE key='embedding_profile'),'') ORDER BY c.slug,c.seq`, profile)
 	if err != nil {
 		return nil, err
 	}
@@ -372,10 +389,13 @@ func (s *Store) PageVectors() (map[string][]float32, error) {
 	sums := map[string][]float64{}
 	dimension := 0
 	for rows.Next() {
-		var slug string
+		var slug, revision string
 		var blob []byte
-		if err = rows.Scan(&slug, &blob); err != nil {
+		if err = rows.Scan(&slug, &blob, &revision); err != nil {
 			return nil, err
+		}
+		if revisions != nil && revisions[slug] != revision {
+			continue
 		}
 		vec, err := decodeVec(blob)
 		if err != nil {

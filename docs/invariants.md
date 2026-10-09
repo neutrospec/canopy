@@ -296,6 +296,7 @@ scalar는 관용 읽기와 taxonomy 검사를 유지한다. 모든 쓰기의 새
 | V13 | 읽음/제안/반영 UI는 실제 payload·상태에 따라 변하며 HEAD가 노출 기억을 소비하지 않는다 | `go test ./internal/webui/`; `make test-ui` — false/HTML/bad JSON·세션·실패·unknown input·미읽음/추천 구분 |
 | V14 | 지원 Markdown code 경계를 지키며 내장 수식 자산과 두 vendor 고지가 배포물에 포함된다 | `go test ./internal/webui/ ./internal/wiki/`; `make test-assets` — fence/span 원문·asset route·license/manifest |
 | V15 | 실제 lite CLI 실패 경로와 사용자 상태 격리가 CI와 release의 동일 소스에 연결된다 | `make test-cli`; `make release-check` — F2 강등·실패 보존·HOME/XDG·발행 전 검사 |
+| V16 | Overview·Discover 등 탐색 HTML은 추론을 기다리지 않고, 완전한 현재 캐시만 의미 추천에 사용한다; 서버당 하나의 백그라운드 갱신은 요청 취소와 독립적이며 종료 시 정리한다 | `go test ./internal/webui/ -run 'TestNavigation|TestBackground'`; `go test ./internal/indexer/ -run TestInspect` — 멈춘 엔진·반복 요청·keyword 검색·변경 원문·profile 변경·완료 후 의미 추천·종료 대조 |
 
 ## 감사 절차
 
