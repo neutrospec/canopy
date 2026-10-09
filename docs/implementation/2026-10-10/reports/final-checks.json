@@ -1,6 +1,6 @@
 {
-  "source_commit": "ede67e302a8487aecbb4d59587a8686292018cf6",
-  "started_utc": "2026-10-09T19:05:06Z",
+  "source_commit": "b0116fdcb1c29600b1f9bba5119e5db161ce124c",
+  "started_utc": "2026-10-09T19:08:07Z",
   "environment": {
     "HOME": "/private/tmp/canopy-improve-20261010/home",
     "XDG_CONFIG_HOME": "/private/tmp/canopy-improve-20261010/config",
@@ -17,6 +17,7 @@
     "CGO_ENABLED": "0"
   },
   "source_before": {
+    ".gitattributes": "f9002f4575c6f67f86c176232f0e03f2135b26a4d688657c743ebeb83dd026ea",
     ".github/workflows/ci.yml": "a88c4f59db84f8eab516b2196892e5f087e3f28f91b949f0f74abe68bf72744e",
     ".github/workflows/release.yml": "8814c9b43d210eb46b8d8cf5166b1cfbe7ba807ed86578733f570eab65b6dc2d",
     ".gitignore": "0840bb31f08fe178454a12750b181b7aeffa06785e18919e34f7d949dec0a5fd",
@@ -503,7 +504,7 @@
       ],
       "exit": 0,
       "passed": true,
-      "seconds": 31.486,
+      "seconds": 30.587,
       "output": "final-integration.txt"
     },
     {
@@ -518,7 +519,7 @@
       ],
       "exit": 0,
       "passed": true,
-      "seconds": 29.12,
+      "seconds": 28.941,
       "output": "final-race.txt"
     },
     {
@@ -530,7 +531,7 @@
       ],
       "exit": 0,
       "passed": true,
-      "seconds": 0.292,
+      "seconds": 0.226,
       "output": "final-vet.txt"
     },
     {
@@ -542,7 +543,7 @@
       ],
       "exit": 0,
       "passed": true,
-      "seconds": 0.024,
+      "seconds": 0.025,
       "output": "final-gofmt.txt"
     },
     {
@@ -550,12 +551,18 @@
       "argv": [
         "git",
         "diff",
-        "--check"
+        "--check",
+        "ede67e302a8487aecbb4d59587a8686292018cf6",
+        "--",
+        ".",
+        ":(exclude)docs/review/*/evidence/**",
+        ":(exclude)docs/implementation/*/reports/**"
       ],
       "exit": 0,
       "passed": true,
-      "seconds": 0.017,
-      "output": "final-whitespace.txt"
+      "seconds": 0.018,
+      "output": "final-whitespace.txt",
+      "resumed_after_evidence_boundary": true
     },
     {
       "name": "release-config",
@@ -565,8 +572,9 @@
       ],
       "exit": 0,
       "passed": true,
-      "seconds": 0.109,
-      "output": "final-release-config.txt"
+      "seconds": 0.064,
+      "output": "final-release-config.txt",
+      "resumed_after_evidence_boundary": true
     },
     {
       "name": "ruby",
@@ -577,11 +585,13 @@
       ],
       "exit": 0,
       "passed": true,
-      "seconds": 0.049,
-      "output": "final-ruby.txt"
+      "seconds": 0.041,
+      "output": "final-ruby.txt",
+      "resumed_after_evidence_boundary": true
     }
   ],
   "source_after": {
+    ".gitattributes": "f9002f4575c6f67f86c176232f0e03f2135b26a4d688657c743ebeb83dd026ea",
     ".github/workflows/ci.yml": "a88c4f59db84f8eab516b2196892e5f087e3f28f91b949f0f74abe68bf72744e",
     ".github/workflows/release.yml": "8814c9b43d210eb46b8d8cf5166b1cfbe7ba807ed86578733f570eab65b6dc2d",
     ".gitignore": "0840bb31f08fe178454a12750b181b7aeffa06785e18919e34f7d949dec0a5fd",
@@ -1056,6 +1066,8 @@
     "testdata/fixture-wiki/stray-page.md": "032ea6de886db261f65810af78db8c84f38f997f7632fe89f7826b4adfeae1dc"
   },
   "source_unchanged": true,
-  "finished_utc": "2026-10-09T19:06:07Z",
-  "all_commands_passed": true
+  "finished_utc": "2026-10-09T19:10:01Z",
+  "all_commands_passed": true,
+  "prior_attempt": "evidence-boundary-checks.json",
+  "resume_reason": "Frozen raw evidence intentionally contains conflict markers; limit the full-change whitespace predicate to code and prose, then rerun that predicate and remaining configuration checks against unchanged source."
 }

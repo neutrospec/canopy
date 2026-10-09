@@ -1,70 +1,70 @@
 bash scripts/test-go.sh ./internal/... ./cmd/canopy
-ok  	github.com/neutrospec/canopy/internal/attention	0.425s
+ok  	github.com/neutrospec/canopy/internal/attention	0.206s
 ?   	github.com/neutrospec/canopy/internal/buildinfo	[no test files]
-ok  	github.com/neutrospec/canopy/internal/checkout	3.018s
-ok  	github.com/neutrospec/canopy/internal/config	0.868s
-ok  	github.com/neutrospec/canopy/internal/digest	0.285s
-ok  	github.com/neutrospec/canopy/internal/embed	2.077s
-ok  	github.com/neutrospec/canopy/internal/genindex	1.465s
-ok  	github.com/neutrospec/canopy/internal/gitops	4.194s
-ok  	github.com/neutrospec/canopy/internal/indexer	0.227s
-ok  	github.com/neutrospec/canopy/internal/lint	0.855s
-ok  	github.com/neutrospec/canopy/internal/logops	1.118s
+ok  	github.com/neutrospec/canopy/internal/checkout	2.626s
+ok  	github.com/neutrospec/canopy/internal/config	0.126s
+ok  	github.com/neutrospec/canopy/internal/digest	(cached)
+ok  	github.com/neutrospec/canopy/internal/embed	1.566s
+ok  	github.com/neutrospec/canopy/internal/genindex	0.687s
+ok  	github.com/neutrospec/canopy/internal/gitops	3.874s
+ok  	github.com/neutrospec/canopy/internal/indexer	2.102s
+ok  	github.com/neutrospec/canopy/internal/lint	0.669s
+ok  	github.com/neutrospec/canopy/internal/logops	0.512s
 ok  	github.com/neutrospec/canopy/internal/mermaid	(cached)
-ok  	github.com/neutrospec/canopy/internal/migrate	0.285s
-ok  	github.com/neutrospec/canopy/internal/reads	1.405s
-ok  	github.com/neutrospec/canopy/internal/reconcile	1.278s
-ok  	github.com/neutrospec/canopy/internal/resurface	1.231s
-ok  	github.com/neutrospec/canopy/internal/safefile	0.865s
-ok  	github.com/neutrospec/canopy/internal/search	0.320s
-ok  	github.com/neutrospec/canopy/internal/skills	0.354s
-ok  	github.com/neutrospec/canopy/internal/statefile	0.338s
-ok  	github.com/neutrospec/canopy/internal/store	1.631s
-ok  	github.com/neutrospec/canopy/internal/tasks	2.511s
+ok  	github.com/neutrospec/canopy/internal/migrate	0.093s
+ok  	github.com/neutrospec/canopy/internal/reads	0.677s
+ok  	github.com/neutrospec/canopy/internal/reconcile	0.642s
+ok  	github.com/neutrospec/canopy/internal/resurface	0.522s
+ok  	github.com/neutrospec/canopy/internal/safefile	1.344s
+ok  	github.com/neutrospec/canopy/internal/search	0.398s
+ok  	github.com/neutrospec/canopy/internal/skills	0.126s
+ok  	github.com/neutrospec/canopy/internal/statefile	0.296s
+ok  	github.com/neutrospec/canopy/internal/store	1.409s
+ok  	github.com/neutrospec/canopy/internal/tasks	2.414s
 ?   	github.com/neutrospec/canopy/internal/testenv	[no test files]
-ok  	github.com/neutrospec/canopy/internal/webui	3.284s
-ok  	github.com/neutrospec/canopy/internal/wiki	0.463s
-ok  	github.com/neutrospec/canopy/internal/wikilock	2.360s
-ok  	github.com/neutrospec/canopy/internal/writeops	1.264s
-ok  	github.com/neutrospec/canopy/cmd/canopy	20.921s
+ok  	github.com/neutrospec/canopy/internal/webui	3.013s
+ok  	github.com/neutrospec/canopy/internal/wiki	0.569s
+ok  	github.com/neutrospec/canopy/internal/wikilock	1.970s
+ok  	github.com/neutrospec/canopy/internal/writeops	0.956s
+ok  	github.com/neutrospec/canopy/cmd/canopy	20.197s
 node --test internal/webui/uitest/*.test.cjs
-✔ hover preview follows the canonical page address instead of an ambiguous slug (3.257709ms)
-✔ a cleared query cannot be reopened by a late response (0.661666ms)
-✔ responses from before the current debounce stay hidden (0.492041ms)
-✔ out-of-order search responses never replace current results (0.369042ms)
-✔ Escape cancels pending results and keyboard selection (0.339959ms)
-✔ IME composition defers search and prevents suggestion navigation (0.710209ms)
-✔ keyboard selection is exposed to assistive technology and opens the selected page (0.465208ms)
-✔ failed search responses leave the ordinary form available (0.348292ms)
-✔ mobile navigation opens, closes with Escape, and adapts to desktop (0.30225ms)
-✔ search shortcuts respect typing, while Ctrl K can focus search from an editor (0.320541ms)
-✔ code copy preserves literal source text and displays localized success (0.33325ms)
-✔ clipboard failure never displays a success state (0.245833ms)
-✔ the page outline uses real heading targets without including the anchor marker (0.168667ms)
-✔ only an exact duplicate body title is collapsed, with its source preserved (0.457792ms)
-✔ auto read requires visible dwell and scroll progress (0.498916ms)
-✔ dwell without sufficient scroll does not mark a long page read (0.190917ms)
-✔ HTTP failure keeps explicit read controls without showing auto success (0.266167ms)
-✔ network failure keeps explicit read controls without showing auto success (0.198958ms)
-✔ read shortcut respects editable content and key repeats (0.203833ms)
-✔ real Response: HTML login preserves explicit controls and state (0.200292ms)
-✔ real Response: read false preserves explicit controls and state (0.192167ms)
-✔ real Response: missing read preserves explicit controls and state (0.190542ms)
-✔ real Response: string read preserves explicit controls and state (0.190709ms)
-✔ real Response: bad JSON preserves explicit controls and state (0.196417ms)
-✔ real Response: wrong content type preserves explicit controls and state (0.171917ms)
-✔ real Response: expired session preserves explicit controls and state (0.169875ms)
-✔ a real followed HTTP login redirect cannot confirm a read (15.951042ms)
-✔ Mermaid load failure keeps the exact diagram source and shows an error (0.460916ms)
-✔ Mermaid parse failure restores source after a renderer changed the node (1.58125ms)
-✔ MathJax load failure leaves source visible and reports failure (1.588792ms)
-✔ MathJax parse failure retains exact TeX as text, including HTML-looking characters (0.317041ms)
-✔ pinned local TeX corpus compiles: x^2 + \frac{1}{2} (3.522583ms)
-✔ pinned local TeX corpus compiles: \begin{aligned}a&=b+c\\d&=e\end{aligned} (1.511333ms)
-✔ pinned local TeX corpus compiles: \newcommand{\RR}{\mathbb{R}}\RR (0.793542ms)
-✔ pinned local TeX corpus compiles: \color{red}{x} + \textcolor{blue}{y} (0.656ms)
-✔ pinned local TeX corpus compiles: \dv{f}{x}+\pdv{g}{t}+\qty(\frac{x}{y}) (1.28425ms)
-✔ undeclared TeX extensions fail instead of triggering an autoload (0.425541ms)
+✔ hover preview follows the canonical page address instead of an ambiguous slug (3.038916ms)
+✔ a cleared query cannot be reopened by a late response (0.607208ms)
+✔ responses from before the current debounce stay hidden (0.620459ms)
+✔ out-of-order search responses never replace current results (0.430375ms)
+✔ Escape cancels pending results and keyboard selection (0.359417ms)
+✔ IME composition defers search and prevents suggestion navigation (0.656458ms)
+✔ keyboard selection is exposed to assistive technology and opens the selected page (0.373458ms)
+✔ failed search responses leave the ordinary form available (0.32125ms)
+✔ mobile navigation opens, closes with Escape, and adapts to desktop (0.317083ms)
+✔ search shortcuts respect typing, while Ctrl K can focus search from an editor (0.291208ms)
+✔ code copy preserves literal source text and displays localized success (0.332041ms)
+✔ clipboard failure never displays a success state (0.221917ms)
+✔ the page outline uses real heading targets without including the anchor marker (0.168334ms)
+✔ only an exact duplicate body title is collapsed, with its source preserved (0.325459ms)
+✔ auto read requires visible dwell and scroll progress (0.395125ms)
+✔ dwell without sufficient scroll does not mark a long page read (0.178917ms)
+✔ HTTP failure keeps explicit read controls without showing auto success (0.242584ms)
+✔ network failure keeps explicit read controls without showing auto success (0.166291ms)
+✔ read shortcut respects editable content and key repeats (0.201708ms)
+✔ real Response: HTML login preserves explicit controls and state (0.186792ms)
+✔ real Response: read false preserves explicit controls and state (0.184875ms)
+✔ real Response: missing read preserves explicit controls and state (0.185833ms)
+✔ real Response: string read preserves explicit controls and state (0.192709ms)
+✔ real Response: bad JSON preserves explicit controls and state (0.306083ms)
+✔ real Response: wrong content type preserves explicit controls and state (0.16825ms)
+✔ real Response: expired session preserves explicit controls and state (0.17175ms)
+✔ a real followed HTTP login redirect cannot confirm a read (13.4455ms)
+✔ Mermaid load failure keeps the exact diagram source and shows an error (0.367583ms)
+✔ Mermaid parse failure restores source after a renderer changed the node (1.399709ms)
+✔ MathJax load failure leaves source visible and reports failure (0.981334ms)
+✔ MathJax parse failure retains exact TeX as text, including HTML-looking characters (0.23775ms)
+✔ pinned local TeX corpus compiles: x^2 + \frac{1}{2} (3.178542ms)
+✔ pinned local TeX corpus compiles: \begin{aligned}a&=b+c\\d&=e\end{aligned} (1.459459ms)
+✔ pinned local TeX corpus compiles: \newcommand{\RR}{\mathbb{R}}\RR (0.762583ms)
+✔ pinned local TeX corpus compiles: \color{red}{x} + \textcolor{blue}{y} (0.621667ms)
+✔ pinned local TeX corpus compiles: \dv{f}{x}+\pdv{g}{t}+\qty(\frac{x}{y}) (1.435833ms)
+✔ undeclared TeX extensions fail instead of triggering an autoload (0.442667ms)
 ℹ tests 37
 ℹ suites 0
 ℹ pass 37
@@ -72,16 +72,16 @@ node --test internal/webui/uitest/*.test.cjs
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 149.093958
+ℹ duration_ms 126.619167
 python3 scripts/test-cli.py
 {"checks": 37, "lite_hybrid_fallback": "pass", "single_object_mutations": "pass", "failure_effects": "pass", "non_target_wiki": "unchanged"}
 python3 scripts/test-native-download.py
 ......
 ----------------------------------------------------------------------
-Ran 6 tests in 0.493s
+Ran 6 tests in 0.343s
 
 OK
-native ready: darwin/arm64 /private/tmp/canopy-improve-20261010/tmp/canopy-native-tests-mw9lli5w/lib/libtokenizers.a
+native ready: darwin/arm64 /private/tmp/canopy-improve-20261010/tmp/canopy-native-tests-z8ygnhnp/lib/libtokenizers.a
 native cache verified
 python3 scripts/check-assets.py
 PASS: 4 pinned assets, 6 notices, packaging declarations, 8 positive/negative controls

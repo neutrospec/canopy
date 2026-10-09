@@ -1,0 +1,4 @@
+# Preserve exact captured commands, fixture sources and output, including spaces.
+# Normal source and prose remain subject to git diff --check.
+docs/review/*/evidence/** -whitespace
+docs/implementation/*/reports/** -whitespace

@@ -1,0 +1,23 @@
+{
+  "before": "raw-evidence-whitespace-before.txt",
+  "after_exit": 2,
+  "after_output": "docs/review/2026-10-09/evidence/state-output.txt:85: leftover conflict marker\ndocs/review/2026-10-09/evidence/state-output.txt:87: leftover conflict marker\ndocs/review/2026-10-09/evidence/state-output.txt:89: leftover conflict marker\n",
+  "attributes": "internal/skills/canopy_wiki.md: whitespace: unspecified\ndocs/getting-started.md: whitespace: unspecified\ndocs/implementation/2026-10-10/reports/raw-evidence-whitespace-before.txt: whitespace: unset\n",
+  "reason": "Exact captured evidence includes intentional source/output trailing spaces; exclude only evidence directories, retain ordinary code/prose checks.",
+  "prior_final": "source-fixed-final-checks.json",
+  "full_code_and_prose_check": {
+    "argv": [
+      "git",
+      "diff",
+      "--check",
+      "ede67e302a8487aecbb4d59587a8686292018cf6",
+      "--",
+      ".",
+      ":(exclude)docs/review/*/evidence/**",
+      ":(exclude)docs/implementation/*/reports/**"
+    ],
+    "exit": 0,
+    "output": ""
+  },
+  "conflict_marker_limit": "git diff --check also diagnoses intentional conflict markers independently of the whitespace attribute; frozen raw evidence is therefore explicitly excluded from this code/prose predicate."
+}

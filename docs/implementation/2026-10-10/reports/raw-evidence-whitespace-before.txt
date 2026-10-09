@@ -1,0 +1,1101 @@
+docs/implementation/2026-10-10/reports/coordinator-resolved-mutation-before.txt:12: trailing whitespace.
++            
+docs/implementation/2026-10-10/reports/coordinator-resolved-mutation-before.txt:14: trailing whitespace.
++            
+docs/implementation/2026-10-10/reports/coordinator-resolved-mutation-before.txt:16: trailing whitespace.
++            
+docs/implementation/2026-10-10/reports/coordinator-resolved-mutation-before.txt:25: trailing whitespace.
++            
+docs/implementation/2026-10-10/reports/coordinator-resolved-mutation-before.txt:27: trailing whitespace.
++            
+docs/implementation/2026-10-10/reports/coordinator-resolved-mutation-before.txt:39: trailing whitespace.
++            
+docs/implementation/2026-10-10/reports/coordinator-resolved-mutation-before.txt:41: trailing whitespace.
++            
+docs/implementation/2026-10-10/reports/coordinator-resolved-mutation-before.txt:43: trailing whitespace.
++            
+docs/implementation/2026-10-10/reports/coordinator-resolved-mutation-before.txt:52: trailing whitespace.
++            
+docs/implementation/2026-10-10/reports/coordinator-resolved-mutation-before.txt:54: trailing whitespace.
++            
+docs/implementation/2026-10-10/reports/coordinator-resolved-mutation-before.txt:66: trailing whitespace.
++            
+docs/implementation/2026-10-10/reports/coordinator-resolved-mutation-before.txt:68: trailing whitespace.
++            
+docs/implementation/2026-10-10/reports/coordinator-resolved-mutation-before.txt:70: trailing whitespace.
++            
+docs/implementation/2026-10-10/reports/coordinator-resolved-mutation-before.txt:79: trailing whitespace.
++            
+docs/implementation/2026-10-10/reports/coordinator-resolved-mutation-before.txt:81: trailing whitespace.
++            
+docs/implementation/2026-10-10/reports/coordinator-web-preview-before.txt:17: trailing whitespace.
++  
+docs/implementation/2026-10-10/reports/coordinator-web-preview-before.txt:21: trailing whitespace.
++  
+docs/implementation/2026-10-10/reports/preservation-state-adversarial-strict-overlay.go.txt:100: new blank line at EOF.
+docs/implementation/2026-10-10/reports/web-archive-tests.txt:16: new blank line at EOF.
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:6: trailing whitespace.
++133: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:22: trailing whitespace.
++149: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:38: trailing whitespace.
++165: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:329: trailing whitespace.
++86: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:341: trailing whitespace.
++98: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:358: trailing whitespace.
++137: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:363: trailing whitespace.
++142: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:369: trailing whitespace.
++148: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:376: trailing whitespace.
++155: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:425: trailing whitespace.
++211: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:435: trailing whitespace.
++221: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:478: trailing whitespace.
++95: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:492: trailing whitespace.
++109: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:503: trailing whitespace.
++146: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:514: trailing whitespace.
++157: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:541: trailing whitespace.
++184: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:597: trailing whitespace.
++270: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:638: trailing whitespace.
++361: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:672: trailing whitespace.
++98: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:691: trailing whitespace.
++117: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:736: trailing whitespace.
++207: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:751: trailing whitespace.
++222: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:781: trailing whitespace.
++252: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:815: trailing whitespace.
++101: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:817: trailing whitespace.
++103: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:844: trailing whitespace.
++172: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:872: trailing whitespace.
++246: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:921: trailing whitespace.
++70: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:945: trailing whitespace.
++142: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:965: trailing whitespace.
++90: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:993: trailing whitespace.
++131: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:1000: trailing whitespace.
++138: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:1012: trailing whitespace.
++150: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:1033: trailing whitespace.
++168: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:1041: trailing whitespace.
++176: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:1092: trailing whitespace.
++40: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:1098: trailing whitespace.
++46: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:1113: trailing whitespace.
++61: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:1152: trailing whitespace.
++61: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:1237: trailing whitespace.
++58: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:1296: trailing whitespace.
++46: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:1329: trailing whitespace.
++28: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:1331: trailing whitespace.
++30: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:1410: trailing whitespace.
++90: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:1433: trailing whitespace.
++28: 
+docs/review/2026-10-09/evidence/def_data-source-lines.txt:1445: trailing whitespace.
++40: 
+docs/review/2026-10-09/evidence/def_search-static.txt:3: trailing whitespace.
++21: 
+docs/review/2026-10-09/evidence/def_search-static.txt:26: trailing whitespace.
++44: 
+docs/review/2026-10-09/evidence/def_search-static.txt:79: trailing whitespace.
++22: 
+docs/review/2026-10-09/evidence/def_search-static.txt:87: trailing whitespace.
++30: 
+docs/review/2026-10-09/evidence/def_search-static.txt:105: trailing whitespace.
++48: 
+docs/review/2026-10-09/evidence/def_search-static.txt:143: trailing whitespace.
++27: 
+docs/review/2026-10-09/evidence/def_search-static.txt:152: trailing whitespace.
++36: 
+docs/review/2026-10-09/evidence/def_search-static.txt:157: trailing whitespace.
++41: 
+docs/review/2026-10-09/evidence/def_search-static.txt:193: trailing whitespace.
++82: 
+docs/review/2026-10-09/evidence/def_search-static.txt:201: trailing whitespace.
++90: 
+docs/review/2026-10-09/evidence/def_search-static.txt:205: trailing whitespace.
++33: 
+docs/review/2026-10-09/evidence/def_search-static.txt:227: trailing whitespace.
++55: 
+docs/review/2026-10-09/evidence/def_search-static.txt:356: trailing whitespace.
++238: 
+docs/review/2026-10-09/evidence/def_search-static.txt:359: trailing whitespace.
++241: 
+docs/review/2026-10-09/evidence/def_search-static.txt:360: trailing whitespace.
++261: 
+docs/review/2026-10-09/evidence/def_search-static.txt:371: trailing whitespace.
++272: 
+docs/review/2026-10-09/evidence/def_search-static.txt:385: trailing whitespace.
++29: 
+docs/review/2026-10-09/evidence/def_search-static.txt:408: trailing whitespace.
++130: 
+docs/review/2026-10-09/evidence/def_search-static.txt:441: trailing whitespace.
++163: 
+docs/review/2026-10-09/evidence/def_search-static.txt:455: trailing whitespace.
++177: 
+docs/review/2026-10-09/evidence/def_search-static.txt:561: trailing whitespace.
++576: 
+docs/review/2026-10-09/evidence/def_search-static.txt:566: trailing whitespace.
++48: 
+docs/review/2026-10-09/evidence/def_search-static.txt:573: trailing whitespace.
++55: 
+docs/review/2026-10-09/evidence/def_search-static.txt:585: trailing whitespace.
++67: 
+docs/review/2026-10-09/evidence/def_search-static.txt:610: trailing whitespace.
++92: 
+docs/review/2026-10-09/evidence/def_search-static.txt:624: trailing whitespace.
++106: 
+docs/review/2026-10-09/evidence/def_search-static.txt:640: trailing whitespace.
++42: 
+docs/review/2026-10-09/evidence/def_search-static.txt:659: trailing whitespace.
++61: 
+docs/review/2026-10-09/evidence/def_search-static.txt:671: trailing whitespace.
++73: 
+docs/review/2026-10-09/evidence/def_search-static.txt:684: trailing whitespace.
++86: 
+docs/review/2026-10-09/evidence/def_search-static.txt:753: trailing whitespace.
++114: 
+docs/review/2026-10-09/evidence/def_search-static.txt:764: trailing whitespace.
++41: 
+docs/review/2026-10-09/evidence/def_search-static.txt:785: trailing whitespace.
++62: 
+docs/review/2026-10-09/evidence/def_search-static.txt:794: trailing whitespace.
++71: 
+docs/review/2026-10-09/evidence/def_search-static.txt:806: trailing whitespace.
++187: 
+docs/review/2026-10-09/evidence/def_search-static.txt:824: trailing whitespace.
++205: 
+docs/review/2026-10-09/evidence/def_search-static.txt:853: trailing whitespace.
++234: 
+docs/review/2026-10-09/evidence/def_search-static.txt:880: trailing whitespace.
++65: 
+docs/review/2026-10-09/evidence/def_search-static.txt:885: trailing whitespace.
++70: 
+docs/review/2026-10-09/evidence/def_search-static.txt:895: trailing whitespace.
++384: 
+docs/review/2026-10-09/evidence/def_search-static.txt:911: trailing whitespace.
++400: 
+docs/review/2026-10-09/evidence/def_search-static.txt:917: trailing whitespace.
++406: 
+docs/review/2026-10-09/evidence/def_search-static.txt:945: trailing whitespace.
++471: 
+docs/review/2026-10-09/evidence/def_search-static.txt:950: trailing whitespace.
++476: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1021: trailing whitespace.
++604: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1042: trailing whitespace.
++204: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1052: trailing whitespace.
++214: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1154: trailing whitespace.
++24: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1182: trailing whitespace.
++13: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1191: trailing whitespace.
++22: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1193: trailing whitespace.
++24: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1196: trailing whitespace.
++27: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1200: trailing whitespace.
++31: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1204: trailing whitespace.
++54: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1213: trailing whitespace.
++70: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1245: trailing whitespace.
++2: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1254: trailing whitespace.
++11: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1314: trailing whitespace.
++37: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1323: trailing whitespace.
++16: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1337: trailing whitespace.
++30: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1345: trailing whitespace.
++38: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1388: trailing whitespace.
++5: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1392: trailing whitespace.
++9: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1400: trailing whitespace.
++17: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1403: trailing whitespace.
++20: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1409: trailing whitespace.
++199: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1432: trailing whitespace.
++133: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1434: trailing whitespace.
++135: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1466: trailing whitespace.
++250: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1478: trailing whitespace.
++70: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1487: trailing whitespace.
++79: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1494: trailing whitespace.
++86: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1529: trailing whitespace.
++57: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1579: trailing whitespace.
++47: 
+docs/review/2026-10-09/evidence/def_search-static.txt:1624: trailing whitespace.
++92: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:4: trailing whitespace.
++14: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:24: trailing whitespace.
++57: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:27: trailing whitespace.
++60: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:31: trailing whitespace.
++64: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:39: trailing whitespace.
++76: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:76: trailing whitespace.
++155: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:78: trailing whitespace.
++157: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:82: trailing whitespace.
++161: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:87: trailing whitespace.
++166: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:110: trailing whitespace.
++191: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:114: trailing whitespace.
++195: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:118: trailing whitespace.
++208: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:120: trailing whitespace.
++210: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:122: trailing whitespace.
++212: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:127: trailing whitespace.
++217: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:129: trailing whitespace.
++219: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:135: trailing whitespace.
++225: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:137: trailing whitespace.
++227: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:153: trailing whitespace.
++243: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:155: trailing whitespace.
++245: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:182: trailing whitespace.
++62: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:185: trailing whitespace.
++65: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:189: trailing whitespace.
++69: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:196: trailing whitespace.
++81: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:237: trailing whitespace.
++167: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:239: trailing whitespace.
++169: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:243: trailing whitespace.
++173: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:248: trailing whitespace.
++178: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:260: trailing whitespace.
++4: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:264: trailing whitespace.
++8: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:273: trailing whitespace.
++68: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:276: trailing whitespace.
++71: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:278: trailing whitespace.
++73: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:283: trailing whitespace.
++78: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:288: trailing whitespace.
++83: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:292: trailing whitespace.
++87: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:295: trailing whitespace.
++90: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:297: trailing whitespace.
++92: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:301: trailing whitespace.
++96: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:304: trailing whitespace.
++99: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:306: trailing whitespace.
++101: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:311: trailing whitespace.
++106: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:320: trailing whitespace.
++173: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:326: trailing whitespace.
++179: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:330: trailing whitespace.
++217: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:340: trailing whitespace.
++183: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:346: trailing whitespace.
++189: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:350: trailing whitespace.
++232: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:354: trailing whitespace.
++236: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:365: trailing whitespace.
++49: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:373: trailing whitespace.
++57: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:381: trailing whitespace.
++52: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:389: trailing whitespace.
++60: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:393: trailing whitespace.
++19: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:395: trailing whitespace.
++21: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:402: trailing whitespace.
++28: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:406: trailing whitespace.
++87: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:408: trailing whitespace.
++89: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:412: trailing whitespace.
++93: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:417: trailing whitespace.
++98: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:420: trailing whitespace.
++101: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:423: trailing whitespace.
++53: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:430: trailing whitespace.
++60: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:432: trailing whitespace.
++62: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:434: trailing whitespace.
++64: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:439: trailing whitespace.
++69: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:443: trailing whitespace.
++78: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:451: trailing whitespace.
++86: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:455: trailing whitespace.
++90: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:457: trailing whitespace.
++92: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:464: trailing whitespace.
++99: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:466: trailing whitespace.
++101: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:478: trailing whitespace.
++113: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:480: trailing whitespace.
++115: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:484: trailing whitespace.
++85: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:486: trailing whitespace.
++87: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:490: trailing whitespace.
++91: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:496: trailing whitespace.
++97: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:504: trailing whitespace.
++125: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:512: trailing whitespace.
++133: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:516: trailing whitespace.
++25: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:522: trailing whitespace.
++31: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:524: trailing whitespace.
++33: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:534: trailing whitespace.
++43: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:536: trailing whitespace.
++45: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:548: trailing whitespace.
++57: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:550: trailing whitespace.
++59: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:557: trailing whitespace.
++14: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:561: trailing whitespace.
++18: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:566: trailing whitespace.
++23: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:573: trailing whitespace.
++53: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:578: trailing whitespace.
++58: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:583: trailing whitespace.
++63: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:586: trailing whitespace.
++82: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:589: trailing whitespace.
++85: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:594: trailing whitespace.
++90: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:602: trailing whitespace.
++98: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:607: trailing whitespace.
++103: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:617: trailing whitespace.
++123: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:622: trailing whitespace.
++128: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:626: trailing whitespace.
++150: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:629: trailing whitespace.
++153: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:638: trailing whitespace.
++162: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:644: trailing whitespace.
++168: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:648: trailing whitespace.
++172: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:655: trailing whitespace.
++185: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:665: trailing whitespace.
++217: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:675: trailing whitespace.
++227: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:677: trailing whitespace.
++229: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:680: trailing whitespace.
++232: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:686: trailing whitespace.
++238: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:696: trailing whitespace.
++17: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:704: trailing whitespace.
++25: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:707: trailing whitespace.
++28: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:709: trailing whitespace.
++30: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:725: trailing whitespace.
++64: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:728: trailing whitespace.
++67: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:730: trailing whitespace.
++69: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:753: trailing whitespace.
++95: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:767: trailing whitespace.
++109: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:845: trailing whitespace.
++138: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:870: trailing whitespace.
++163: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:878: trailing whitespace.
++171: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:892: trailing whitespace.
++185: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:898: trailing whitespace.
++191: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:900: trailing whitespace.
++193: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:918: trailing whitespace.
++222: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:923: trailing whitespace.
++227: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:957: trailing whitespace.
++261: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:968: trailing whitespace.
++272: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:970: trailing whitespace.
++274: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:974: trailing whitespace.
++282: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1000: trailing whitespace.
++308: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1012: trailing whitespace.
++320: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1028: trailing whitespace.
++336: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1094: trailing whitespace.
++15: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1102: trailing whitespace.
++23: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1107: trailing whitespace.
++28: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1125: trailing whitespace.
++46: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1210: trailing whitespace.
++124: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1241: trailing whitespace.
++155: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1289: trailing whitespace.
++79: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1320: trailing whitespace.
++110: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1351: trailing whitespace.
++128: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1433: trailing whitespace.
++549: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1435: trailing whitespace.
++551: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1442: trailing whitespace.
++558: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1460: trailing whitespace.
++576: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1500: trailing whitespace.
++44: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1504: trailing whitespace.
++48: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1511: trailing whitespace.
++55: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1523: trailing whitespace.
++67: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1721: trailing whitespace.
++242: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1771: trailing whitespace.
++24: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1795: trailing whitespace.
++177: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1818: trailing whitespace.
++200: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:1987: trailing whitespace.
++51: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2014: trailing whitespace.
++157: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2041: trailing whitespace.
++184: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2128: trailing whitespace.
++270: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2182: trailing whitespace.
++98: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2201: trailing whitespace.
++117: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2218: trailing whitespace.
++157: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2222: trailing whitespace.
++161: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2226: trailing whitespace.
++165: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2249: trailing whitespace.
++188: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2280: trailing whitespace.
++70: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2370: trailing whitespace.
++11: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2378: trailing whitespace.
++19: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2384: trailing whitespace.
++25: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2390: trailing whitespace.
++31: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2393: trailing whitespace.
++34: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2405: trailing whitespace.
++60: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2407: trailing whitespace.
++62: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2428: trailing whitespace.
++83: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2437: trailing whitespace.
++133: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2469: trailing whitespace.
++165: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2619: trailing whitespace.
++51: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2782: trailing whitespace.
++137: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2787: trailing whitespace.
++142: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2793: trailing whitespace.
++148: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2800: trailing whitespace.
++155: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2808: trailing whitespace.
++163: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2882: trailing whitespace.
++253: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2909: trailing whitespace.
++69: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2919: trailing whitespace.
++79: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2927: trailing whitespace.
++87: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2935: trailing whitespace.
++95: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2943: trailing whitespace.
++25: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2970: trailing whitespace.
++52: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2986: trailing whitespace.
++8: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:2988: trailing whitespace.
++10: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:3003: trailing whitespace.
++50: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:3007: trailing whitespace.
++124: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:3012: trailing whitespace.
++129: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:3019: trailing whitespace.
++182: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:3024: trailing whitespace.
++187: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:3031: trailing whitespace.
++194: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:3051: trailing whitespace.
++225: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:3057: trailing whitespace.
++231: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:3070: trailing whitespace.
++244: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:3072: trailing whitespace.
++246: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:3080: trailing whitespace.
++255: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:3082: trailing whitespace.
++257: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:3117: trailing whitespace.
++8: 
+docs/review/2026-10-09/evidence/def_web-source-slices.txt:3133: trailing whitespace.
++24: 
+docs/review/2026-10-09/evidence/red_data-lines.txt:29: trailing whitespace.
++  133 
+docs/review/2026-10-09/evidence/red_data-lines.txt:45: trailing whitespace.
++  149 
+docs/review/2026-10-09/evidence/red_data-lines.txt:61: trailing whitespace.
++  165 
+docs/review/2026-10-09/evidence/red_data-lines.txt:375: trailing whitespace.
++  643 
+docs/review/2026-10-09/evidence/red_data-lines.txt:442: trailing whitespace.
++   80 
+docs/review/2026-10-09/evidence/red_data-lines.txt:510: trailing whitespace.
++  400 
+docs/review/2026-10-09/evidence/red_data-lines.txt:516: trailing whitespace.
++  406 
+docs/review/2026-10-09/evidence/red_data-lines.txt:555: trailing whitespace.
++  132 
+docs/review/2026-10-09/evidence/red_data-lines.txt:566: trailing whitespace.
++   69 
+docs/review/2026-10-09/evidence/red_data-lines.txt:576: trailing whitespace.
++   79 
+docs/review/2026-10-09/evidence/red_data-lines.txt:598: trailing whitespace.
++   86 
+docs/review/2026-10-09/evidence/red_data-lines.txt:610: trailing whitespace.
++   98 
+docs/review/2026-10-09/evidence/red_data-lines.txt:631: trailing whitespace.
++  127 
+docs/review/2026-10-09/evidence/red_data-lines.txt:641: trailing whitespace.
++  137 
+docs/review/2026-10-09/evidence/red_data-lines.txt:646: trailing whitespace.
++  142 
+docs/review/2026-10-09/evidence/red_data-lines.txt:652: trailing whitespace.
++  148 
+docs/review/2026-10-09/evidence/red_data-lines.txt:659: trailing whitespace.
++  155 
+docs/review/2026-10-09/evidence/red_data-lines.txt:667: trailing whitespace.
++  163 
+docs/review/2026-10-09/evidence/red_data-lines.txt:707: trailing whitespace.
++  211 
+docs/review/2026-10-09/evidence/red_data-lines.txt:717: trailing whitespace.
++  221 
+docs/review/2026-10-09/evidence/red_data-lines.txt:722: trailing whitespace.
++  226 
+docs/review/2026-10-09/evidence/red_data-lines.txt:760: trailing whitespace.
++    7 
+docs/review/2026-10-09/evidence/red_data-lines.txt:771: trailing whitespace.
++   18 
+docs/review/2026-10-09/evidence/red_data-lines.txt:819: trailing whitespace.
++   42 
+docs/review/2026-10-09/evidence/red_data-lines.txt:838: trailing whitespace.
++   61 
+docs/review/2026-10-09/evidence/red_data-lines.txt:853: trailing whitespace.
++   86 
+docs/review/2026-10-09/evidence/red_data-lines.txt:873: trailing whitespace.
++  106 
+docs/review/2026-10-09/evidence/red_data-lines.txt:890: trailing whitespace.
++  123 
+docs/review/2026-10-09/evidence/red_data-lines.txt:904: trailing whitespace.
++  137 
+docs/review/2026-10-09/evidence/red_data-lines.txt:918: trailing whitespace.
++  185 
+docs/review/2026-10-09/evidence/red_data-lines.txt:941: trailing whitespace.
++  208 
+docs/review/2026-10-09/evidence/red_data-lines.txt:949: trailing whitespace.
++  216 
+docs/review/2026-10-09/evidence/red_data-lines.txt:954: trailing whitespace.
++    2 
+docs/review/2026-10-09/evidence/red_data-lines.txt:960: trailing whitespace.
++    8 
+docs/review/2026-10-09/evidence/red_data-lines.txt:977: trailing whitespace.
++   25 
+docs/review/2026-10-09/evidence/red_data-lines.txt:986: trailing whitespace.
++   34 
+docs/review/2026-10-09/evidence/red_data-lines.txt:992: trailing whitespace.
++   40 
+docs/review/2026-10-09/evidence/red_data-lines.txt:998: trailing whitespace.
++   46 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1013: trailing whitespace.
++   61 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1039: trailing whitespace.
++    2 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1044: trailing whitespace.
++    7 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1046: trailing whitespace.
++    9 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1052: trailing whitespace.
++   15 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1054: trailing whitespace.
++   17 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1073: trailing whitespace.
++   38 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1081: trailing whitespace.
++   46 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1085: trailing whitespace.
++   50 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1091: trailing whitespace.
++   56 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1095: trailing whitespace.
++   60 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1101: trailing whitespace.
++   66 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1133: trailing whitespace.
++   98 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1152: trailing whitespace.
++  117 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1163: trailing whitespace.
++  128 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1165: trailing whitespace.
++  130 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1183: trailing whitespace.
++  148 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1192: trailing whitespace.
++  157 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1196: trailing whitespace.
++  161 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1200: trailing whitespace.
++  165 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1223: trailing whitespace.
++  188 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1242: trailing whitespace.
++  207 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1257: trailing whitespace.
++  222 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1287: trailing whitespace.
++  252 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1316: trailing whitespace.
++   60 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1318: trailing whitespace.
++   62 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1320: trailing whitespace.
++   64 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1351: trailing whitespace.
++   95 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1365: trailing whitespace.
++  109 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1376: trailing whitespace.
++  135 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1387: trailing whitespace.
++  146 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1398: trailing whitespace.
++  157 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1425: trailing whitespace.
++  184 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1499: trailing whitespace.
++  270 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1531: trailing whitespace.
++  340 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1552: trailing whitespace.
++  361 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1564: trailing whitespace.
++    7 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1572: trailing whitespace.
++   15 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1575: trailing whitespace.
++   18 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1586: trailing whitespace.
++   29 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1592: trailing whitespace.
++   35 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1599: trailing whitespace.
++   42 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1603: trailing whitespace.
++   46 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1627: trailing whitespace.
++   70 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1639: trailing whitespace.
++   82 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1646: trailing whitespace.
++   89 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1668: trailing whitespace.
++  111 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1680: trailing whitespace.
++  123 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1686: trailing whitespace.
++  129 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1690: trailing whitespace.
++  133 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1694: trailing whitespace.
++  137 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1699: trailing whitespace.
++  142 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1703: trailing whitespace.
++  146 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1712: trailing whitespace.
++   23 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1715: trailing whitespace.
++   26 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1723: trailing whitespace.
++   34 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1727: trailing whitespace.
++   38 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1747: trailing whitespace.
++   58 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1759: trailing whitespace.
++   70 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1764: trailing whitespace.
++   75 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1790: trailing whitespace.
++  115 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1796: trailing whitespace.
++  121 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1828: trailing whitespace.
++  216 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1859: trailing whitespace.
++   77 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1864: trailing whitespace.
++   82 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1883: trailing whitespace.
++  101 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1885: trailing whitespace.
++  103 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1893: trailing whitespace.
++  111 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1930: trailing whitespace.
++  172 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1943: trailing whitespace.
++  218 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1971: trailing whitespace.
++  246 
+docs/review/2026-10-09/evidence/red_data-lines.txt:1996: trailing whitespace.
++   27 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2000: trailing whitespace.
++   31 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2021: trailing whitespace.
++   52 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2037: trailing whitespace.
++    2 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2046: trailing whitespace.
++   11 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2050: trailing whitespace.
++   15 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2058: trailing whitespace.
++   23 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2063: trailing whitespace.
++   28 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2081: trailing whitespace.
++   46 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2158: trailing whitespace.
++   79 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2189: trailing whitespace.
++  110 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2191: trailing whitespace.
++  112 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2212: trailing whitespace.
++   47 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2215: trailing whitespace.
++   92 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2217: trailing whitespace.
++   94 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2247: trailing whitespace.
++  124 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2267: trailing whitespace.
++  161 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2274: trailing whitespace.
++  168 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2282: trailing whitespace.
++  176 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2290: trailing whitespace.
++  184 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2294: trailing whitespace.
++  188 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2298: trailing whitespace.
++  192 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2325: trailing whitespace.
++  219 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2348: trailing whitespace.
++   75 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2363: trailing whitespace.
++   90 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2392: trailing whitespace.
++  131 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2399: trailing whitespace.
++  138 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2411: trailing whitespace.
++  150 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2436: trailing whitespace.
++   13 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2439: trailing whitespace.
++   16 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2448: trailing whitespace.
++   25 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2475: trailing whitespace.
++   52 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2507: trailing whitespace.
++   76 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2521: trailing whitespace.
++   90 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2553: trailing whitespace.
++   14 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2557: trailing whitespace.
++   18 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2559: trailing whitespace.
++   20 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2567: trailing whitespace.
++   28 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2574: trailing whitespace.
++   81 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2576: trailing whitespace.
++   83 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2578: trailing whitespace.
++   85 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2582: trailing whitespace.
++   89 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2584: trailing whitespace.
++   91 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2586: trailing whitespace.
++   93 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2594: trailing whitespace.
++  194 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2596: trailing whitespace.
++  196 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2600: trailing whitespace.
++  200 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2611: trailing whitespace.
++  211 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2613: trailing whitespace.
++  213 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2618: trailing whitespace.
++  202 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2628: trailing whitespace.
++  212 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2633: trailing whitespace.
++  217 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2635: trailing whitespace.
++  219 
+docs/review/2026-10-09/evidence/red_data-lines.txt:2640: trailing whitespace.
++  224 
+docs/review/2026-10-09/evidence/red_search-static.txt:25: trailing whitespace.
++44	
+docs/review/2026-10-09/evidence/red_search-static.txt:222: trailing whitespace.
++238	
+docs/review/2026-10-09/evidence/red_search-static.txt:235: trailing whitespace.
++272	
+docs/review/2026-10-09/evidence/red_search-static.txt:251: trailing whitespace.
++22	
+docs/review/2026-10-09/evidence/red_search-static.txt:259: trailing whitespace.
++30	
+docs/review/2026-10-09/evidence/red_search-static.txt:277: trailing whitespace.
++48	
+docs/review/2026-10-09/evidence/red_search-static.txt:333: trailing whitespace.
++82	
+docs/review/2026-10-09/evidence/red_search-static.txt:455: trailing whitespace.
++48	
+docs/review/2026-10-09/evidence/red_search-static.txt:462: trailing whitespace.
++55	
+docs/review/2026-10-09/evidence/red_search-static.txt:486: trailing whitespace.
++106	
+docs/review/2026-10-09/evidence/red_search-static.txt:504: trailing whitespace.
++42	
+docs/review/2026-10-09/evidence/red_search-static.txt:576: trailing whitespace.
++384	
+docs/review/2026-10-09/evidence/red_search-static.txt:592: trailing whitespace.
++400	
+docs/review/2026-10-09/evidence/red_search-static.txt:598: trailing whitespace.
++406	
+docs/review/2026-10-09/evidence/red_search-static.txt:627: trailing whitespace.
++466	
+docs/review/2026-10-09/evidence/red_search-static.txt:632: trailing whitespace.
++471	
+docs/review/2026-10-09/evidence/red_search-static.txt:637: trailing whitespace.
++476	
+docs/review/2026-10-09/evidence/red_search-static.txt:726: trailing whitespace.
++204	
+docs/review/2026-10-09/evidence/red_search-static.txt:736: trailing whitespace.
++214	
+docs/review/2026-10-09/evidence/red_search-static.txt:781: trailing whitespace.
++205	
+docs/review/2026-10-09/evidence/red_search-static.txt:851: trailing whitespace.
++41	
+docs/review/2026-10-09/evidence/red_search-static.txt:872: trailing whitespace.
++62	
+docs/review/2026-10-09/evidence/red_search-static.txt:881: trailing whitespace.
++71	
+docs/review/2026-10-09/evidence/red_search-static.txt:898: trailing whitespace.
++8	
+docs/review/2026-10-09/evidence/red_search-static.txt:903: trailing whitespace.
++13	
+docs/review/2026-10-09/evidence/red_search-static.txt:912: trailing whitespace.
++22	
+docs/review/2026-10-09/evidence/red_search-static.txt:914: trailing whitespace.
++24	
+docs/review/2026-10-09/evidence/red_search-static.txt:917: trailing whitespace.
++27	
+docs/review/2026-10-09/evidence/red_search-static.txt:921: trailing whitespace.
++31	
+docs/review/2026-10-09/evidence/red_search-static.txt:924: trailing whitespace.
++34	
+docs/review/2026-10-09/evidence/red_search-static.txt:926: trailing whitespace.
++54	
+docs/review/2026-10-09/evidence/red_search-static.txt:930: trailing whitespace.
++58	
+docs/review/2026-10-09/evidence/red_search-static.txt:933: trailing whitespace.
++61	
+docs/review/2026-10-09/evidence/red_search-static.txt:945: trailing whitespace.
++2	
+docs/review/2026-10-09/evidence/red_search-static.txt:954: trailing whitespace.
++11	
+docs/review/2026-10-09/evidence/red_search-static.txt:1019: trailing whitespace.
++16	
+docs/review/2026-10-09/evidence/red_search-static.txt:1033: trailing whitespace.
++30	
+docs/review/2026-10-09/evidence/red_search-static.txt:1047: trailing whitespace.
++5	
+docs/review/2026-10-09/evidence/red_search-static.txt:1051: trailing whitespace.
++9	
+docs/review/2026-10-09/evidence/red_search-static.txt:1059: trailing whitespace.
++17	
+docs/review/2026-10-09/evidence/red_search-static.txt:1062: trailing whitespace.
++20	
+docs/review/2026-10-09/evidence/state-output.txt:85: leftover conflict marker
+docs/review/2026-10-09/evidence/state-output.txt:87: leftover conflict marker
+docs/review/2026-10-09/evidence/state-output.txt:89: leftover conflict marker

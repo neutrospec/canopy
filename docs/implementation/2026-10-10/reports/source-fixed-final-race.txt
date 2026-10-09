@@ -1,0 +1,28 @@
+ok  	github.com/neutrospec/canopy/internal/attention	1.407s
+?   	github.com/neutrospec/canopy/internal/buildinfo	[no test files]
+ok  	github.com/neutrospec/canopy/internal/checkout	6.053s
+ok  	github.com/neutrospec/canopy/internal/config	1.741s
+ok  	github.com/neutrospec/canopy/internal/digest	1.279s
+ok  	github.com/neutrospec/canopy/internal/embed	3.411s
+ok  	github.com/neutrospec/canopy/internal/genindex	2.276s
+ok  	github.com/neutrospec/canopy/internal/gitops	4.401s
+ok  	github.com/neutrospec/canopy/internal/indexer	2.695s
+ok  	github.com/neutrospec/canopy/internal/lint	5.940s
+ok  	github.com/neutrospec/canopy/internal/logops	1.908s
+ok  	github.com/neutrospec/canopy/internal/mermaid	28.513s
+ok  	github.com/neutrospec/canopy/internal/migrate	1.790s
+ok  	github.com/neutrospec/canopy/internal/reads	2.139s
+ok  	github.com/neutrospec/canopy/internal/reconcile	2.189s
+ok  	github.com/neutrospec/canopy/internal/resurface	2.164s
+ok  	github.com/neutrospec/canopy/internal/safefile	2.423s
+ok  	github.com/neutrospec/canopy/internal/search	2.149s
+ok  	github.com/neutrospec/canopy/internal/skills	2.115s
+ok  	github.com/neutrospec/canopy/internal/statefile	1.276s
+ok  	github.com/neutrospec/canopy/internal/store	1.511s
+ok  	github.com/neutrospec/canopy/internal/tasks	3.452s
+?   	github.com/neutrospec/canopy/internal/testenv	[no test files]
+ok  	github.com/neutrospec/canopy/internal/webui	6.570s
+ok  	github.com/neutrospec/canopy/internal/wiki	1.276s
+ok  	github.com/neutrospec/canopy/internal/wikilock	3.595s
+ok  	github.com/neutrospec/canopy/internal/writeops	1.728s
+ok  	github.com/neutrospec/canopy/cmd/canopy	22.752s

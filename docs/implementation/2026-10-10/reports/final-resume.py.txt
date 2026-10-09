@@ -1,0 +1,25 @@
+import hashlib,json,os,pathlib,subprocess,sys,time
+repo=pathlib.Path('/Users/nobocop/play/canopy');reports=repo/'docs/implementation/2026-10-10/reports'
+def manifest():
+ names=subprocess.check_output(['git','ls-files','-co','--exclude-standard'],cwd=repo,text=True).splitlines()
+ return {n:hashlib.sha256((repo/n).read_bytes()).hexdigest() for n in sorted(set(names)) if not n.startswith('docs/implementation/2026-10-10/reports/') and (repo/n).is_file()}
+p=reports/'final-checks.json';d=json.loads(p.read_text())
+assert d['source_unchanged'] and d['source_after']==manifest()
+assert [c['name'] for c in d['commands']]==['integration','race','vet','gofmt','whitespace']
+assert all(c['passed'] for c in d['commands'][:4]) and not d['commands'][4]['passed']
+(reports/'evidence-boundary-whitespace.txt').write_bytes((reports/'final-whitespace.txt').read_bytes())
+d['commands'][4]['output']='evidence-boundary-whitespace.txt'
+(reports/'evidence-boundary-checks.json').write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+d['prior_attempt']='evidence-boundary-checks.json';d['resume_reason']='Frozen raw evidence intentionally contains conflict markers; limit the full-change whitespace predicate to code and prose, then rerun that predicate and remaining configuration checks against unchanged source.'
+d['commands']=d['commands'][:4]
+env=os.environ.copy();env.update(d['environment']);env['PYTHONDONTWRITEBYTECODE']='1'
+commands=[('whitespace',['git','diff','--check','ede67e302a8487aecbb4d59587a8686292018cf6','--','.',':(exclude)docs/review/*/evidence/**',':(exclude)docs/implementation/*/reports/**']),('release-config',['goreleaser','check']),('ruby',['ruby','-c','packaging/homebrew/canopy.rb'])]
+for name,argv in commands:
+ start=time.monotonic();r=subprocess.run(argv,cwd=repo,env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
+ out='final-'+name+'.txt';(reports/out).write_text(r.stdout)
+ d['commands'].append({'name':name,'argv':argv,'exit':r.returncode,'passed':r.returncode==0,'seconds':round(time.monotonic()-start,3),'output':out,'resumed_after_evidence_boundary':True})
+ print(name,'PASS' if r.returncode==0 else 'FAIL',flush=True)
+ if r.returncode:break
+d['source_after']=manifest();d['source_unchanged']=d['source_before']==d['source_after'];d['all_commands_passed']=len(d['commands'])==7 and all(c['passed'] for c in d['commands']);d['finished_utc']=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())
+p.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+print('source_unchanged',d['source_unchanged']);sys.exit(0 if d['all_commands_passed'] and d['source_unchanged'] else 1)
