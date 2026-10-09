@@ -1,0 +1,42 @@
+{
+  "installed_prefix": "/opt/homebrew/opt/canopy",
+  "notices": [
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "sha256": "396c1fc1aea2877139a57be3a24bebb1c40982561ed469685d2b51a8f84019a7",
+      "matches_source": true
+    },
+    {
+      "path": "internal/webui/static/vendor/assets.json",
+      "sha256": "41c6328fa914c97b6ec4148445cd8a1365e9f4c6595c07f2b163ed47e472e14f",
+      "matches_source": true
+    },
+    {
+      "path": "internal/webui/static/vendor/LICENSE-force-graph.txt",
+      "sha256": "5b6dc9ce44c7b73620b191c567339212bd00537af46fdedaf98304c34214cc9c",
+      "matches_source": true
+    },
+    {
+      "path": "internal/webui/static/vendor/LICENSE-mathjax.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "matches_source": true
+    },
+    {
+      "path": "internal/webui/static/vendor/NOTICE-force-graph.txt",
+      "sha256": "b3b032c8c948d2b2baa9911cd1a625fb351e01cfb85bed18583a37227ab566a0",
+      "matches_source": true
+    },
+    {
+      "path": "internal/webui/static/vendor/NOTICE-mathjax.txt",
+      "sha256": "43a360b0822d5781b8abf7b21382dfcbb961960925f6a171e95a2d184684e1e9",
+      "matches_source": true
+    },
+    {
+      "path": "internal/webui/static/vendor/fonts/LICENSE-fonts.txt",
+      "sha256": "97b19fea7e1125e926d781eeaf8fa8847d976aafc43a1e01af4073345a8646ce",
+      "matches_source": true
+    }
+  ],
+  "tap_commit": "00e4fd86b636dffd39ffe37d19a3fd4c87f1b533",
+  "passed": true
+}

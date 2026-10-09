@@ -1,0 +1,38 @@
+{
+  "binary": "/opt/homebrew/opt/canopy/bin/canopy",
+  "binary_sha256": "3b551d017ea7226ece2bb72b251bbd84c1564c45480046916dd0be4489fec9d6",
+  "fixture": "/private/tmp/canopy-installed-native-635esug_",
+  "commands": [
+    {
+      "args": [
+        "init"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-installed-native-635esug_/cache/canopy/index/0799e1a072e7.db\",\n  \"default_wiki_set\": true,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-installed-native-635esug_/wiki with spaces\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "reindex"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"pages\": 2,\n  \"embedded_pages\": 2,\n  \"pruned_pages\": 0,\n  \"total_chunks\": 2,\n  \"covered_pages\": 2,\n  \"needs_reindex\": 0,\n  \"semantic_ready\": true,\n  \"profile\": \"3b45cea3fbf1b079a527f47a79ee3da1774fcb62334efa9750c4498fbe224be2\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "search",
+        "carrier pigeon",
+        "--mode",
+        "hybrid",
+        "--top-k",
+        "2"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"hits\": [\n    {\n      \"slug\": \"carrier\",\n      \"rel_path\": \"concepts/carrier.md\",\n      \"title\": \"carrier\",\n      \"score\": 0.03278688524590164,\n      \"snippet\": \"»Carrier« »pigeons« transport small written messages between locations.\\n\"\n    },\n    {\n      \"slug\": \"compiler\",\n      \"rel_path\": \"concepts/compiler.md\",\n      \"title\": \"compiler\",\n      \"score\": 0.016129032258064516,\n      \"snippet\": \"A compiler translates source programs into machine instructions. \"\n    }\n  ],\n  \"mode\": \"hybrid\",\n  \"query\": \"carrier pigeon\"\n}\n",
+      "stderr": ""
+    }
+  ],
+  "started_utc": "2026-10-09T19:21:14Z",
+  "finished_utc": "2026-10-09T19:21:15Z"
+}

@@ -1,0 +1,8 @@
+{
+  "release_commit": "c32685aa20d94f8dc8757ed1187d52b9bc66528e",
+  "candidate_tag": "v0.11.0",
+  "bound_source_files": 473,
+  "changed_since_final_checks": [],
+  "final_checks_sha256": "19ba84d4805bcf6514c61c72067bcf8c9fcf144678dc10273160c7bc56fad286",
+  "git_status": ""
+}

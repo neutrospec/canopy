@@ -1,0 +1,152 @@
+{
+  "formulae": [
+    {
+      "name": "canopy",
+      "full_name": "neutrospec/tap/canopy",
+      "tap": "neutrospec/tap",
+      "oldnames": [],
+      "aliases": [],
+      "versioned_formulae": [],
+      "desc": "Local knowledge manager for markdown wikis: schema, hybrid search, web UI",
+      "license": "MIT",
+      "homepage": "https://github.com/neutrospec/canopy",
+      "versions": {
+        "stable": "0.11.0",
+        "head": "HEAD",
+        "bottle": false
+      },
+      "urls": {
+        "stable": {
+          "url": "https://github.com/neutrospec/canopy/archive/refs/tags/v0.11.0.tar.gz",
+          "tag": null,
+          "revision": null,
+          "using": null,
+          "checksum": "9f3b0f5a426e18c089084f2ad38c518fb565450b2454f3a8302e0c17651ed778"
+        },
+        "head": {
+          "url": "https://github.com/neutrospec/canopy.git",
+          "branch": "main",
+          "using": null
+        }
+      },
+      "patches": [],
+      "revision": 0,
+      "version_scheme": 0,
+      "compatibility_version": null,
+      "autobump": true,
+      "no_autobump_message": null,
+      "skip_livecheck": false,
+      "bottle": {},
+      "pour_bottle_only_if": null,
+      "keg_only": false,
+      "keg_only_reason": null,
+      "options": [],
+      "build_dependencies": [
+        "go"
+      ],
+      "dependencies": [
+        "onnxruntime"
+      ],
+      "test_dependencies": [],
+      "recommended_dependencies": [],
+      "optional_dependencies": [],
+      "uses_from_macos": [],
+      "uses_from_macos_bounds": [],
+      "requirements": [],
+      "conflicts_with": [],
+      "conflicts_with_reasons": [],
+      "link_overwrite": [],
+      "caveats": "Semantic search uses a local bge-m3 ONNX model (~2.3GB). Download it once:\n  canopy model pull\nKeyword search works without it. If the ONNX Runtime library is not found\nautomatically (e.g. Linuxbrew or a non-standard prefix), point canopy at it:\n  export CANOPY_ONNXRUNTIME_DIR=\"$HOMEBREW_PREFIX/opt/onnxruntime/lib\"\n\nTo run the web UI as a background service (http://localhost:8737):\n  brew services start canopy\nIt serves the wiki named by default_wiki. Adopt your wiki first:\n  canopy init --wiki /path/to/wiki\nIf a default already exists, edit default_wiki in your canopy config\nwhile preserving its other settings (the default path is ~/.config/canopy/config.toml).\n",
+      "installed": [
+        {
+          "version": "0.10.0",
+          "used_options": [],
+          "built_as_bottle": false,
+          "poured_from_bottle": false,
+          "time": 1791088163,
+          "runtime_dependencies": [
+            {
+              "full_name": "abseil",
+              "version": "20260817.0",
+              "revision": 0,
+              "bottle_rebuild": 1,
+              "pkg_version": "20260817.0",
+              "declared_directly": false
+            },
+            {
+              "full_name": "protobuf",
+              "version": "36.2",
+              "revision": 0,
+              "bottle_rebuild": 0,
+              "pkg_version": "36.2",
+              "declared_directly": false
+            },
+            {
+              "full_name": "onnx",
+              "version": "1.23.1",
+              "revision": 0,
+              "bottle_rebuild": 0,
+              "pkg_version": "1.23.1",
+              "declared_directly": false
+            },
+            {
+              "full_name": "re2",
+              "version": "2025-11-05",
+              "revision": 2,
+              "bottle_rebuild": 0,
+              "pkg_version": "2025-11-05_2",
+              "declared_directly": false
+            },
+            {
+              "full_name": "onnxruntime",
+              "version": "1.30.0",
+              "revision": 1,
+              "bottle_rebuild": 0,
+              "pkg_version": "1.30.0_1",
+              "declared_directly": true
+            }
+          ],
+          "installed_on_request": true
+        }
+      ],
+      "linked_keg": "0.10.0",
+      "pinned": false,
+      "outdated": true,
+      "deprecated": false,
+      "deprecation_date": null,
+      "deprecation_reason": null,
+      "deprecation_replacement_formula": null,
+      "deprecation_replacement_cask": null,
+      "deprecate_args": null,
+      "disabled": false,
+      "disable_date": null,
+      "disable_reason": null,
+      "disable_replacement_formula": null,
+      "disable_replacement_cask": null,
+      "disable_args": null,
+      "post_install_steps": [],
+      "post_install_defined": false,
+      "service": {
+        "run": [
+          "/opt/homebrew/opt/canopy/bin/canopy",
+          "serve"
+        ],
+        "run_type": "immediate",
+        "keep_alive": {
+          "always": true
+        },
+        "environment_variables": {
+          "HOMEBREW_PREFIX": "/opt/homebrew"
+        },
+        "log_path": "/opt/homebrew/var/log/canopy.log",
+        "error_log_path": "/opt/homebrew/var/log/canopy.log"
+      },
+      "tap_git_head": "00e4fd86b636dffd39ffe37d19a3fd4c87f1b533",
+      "ruby_source_path": "Formula/canopy.rb",
+      "ruby_source_checksum": {
+        "sha256": "075d4b7ab40187019f26912ee16db29106c717fa306e24ea25270c1217aa9d8b"
+      }
+    }
+  ],
+  "casks": []
+}

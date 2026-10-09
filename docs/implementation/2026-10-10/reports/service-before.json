@@ -1,0 +1,47 @@
+{
+  "observed_utc": "2026-10-09T19:14:50Z",
+  "url": "http://localhost:8737",
+  "route": "/browse",
+  "status": 200,
+  "html_sha256": "2d9cc28f22249bdf9debc3fb603eb72526f29dcd47441046c2dcf93eb9b998a2",
+  "app_asset_urls": [
+    "/static/style.css",
+    "/static/chroma.css",
+    "/static/app.js"
+  ],
+  "installed_version": {
+    "cache_schema": "2",
+    "commit": "homebrew",
+    "date": "homebrew",
+    "go": "go1.27.1",
+    "schema_target": 1,
+    "schema_version": 1,
+    "semantic": true,
+    "version": "0.10.0"
+  },
+  "version_exit": 0,
+  "service": [
+    {
+      "name": "canopy",
+      "service_name": "sh.brew.canopy",
+      "running": true,
+      "loaded": true,
+      "schedulable": false,
+      "pid": 893,
+      "exit_code": null,
+      "user": "nobocop",
+      "status": "started",
+      "file": "/Users/nobocop/Library/LaunchAgents/sh.brew.canopy.plist",
+      "registered": true,
+      "loaded_file": "/Users/nobocop/Library/LaunchAgents/sh.brew.canopy.plist",
+      "command": "HOMEBREW_PREFIX=\"/opt/homebrew\" /opt/homebrew/opt/canopy/bin/canopy serve",
+      "working_dir": null,
+      "root_dir": null,
+      "log_path": "/opt/homebrew/var/log/canopy.log",
+      "error_log_path": "/opt/homebrew/var/log/canopy.log",
+      "interval": null,
+      "cron": null
+    }
+  ],
+  "initial_harness_correction": "/special/browse returned 404; actual route is /browse. No product failure inferred."
+}

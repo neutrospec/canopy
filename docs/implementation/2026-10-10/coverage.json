@@ -3,11 +3,11 @@
   "baseline": "ede67e302a8487aecbb4d59587a8686292018cf6",
   "historical_audit": "docs/review/2026-10-09/adjudication.json",
   "scope": "selected minimum policies from 14 plans; not every deferred alternative",
-  "status": "selected_policies_implemented_with_bounded_review",
+  "status": "selected_policies_delivered_with_bounded_evidence",
   "plans": {
     "PLAN-01": {
       "selected_policy": "스킬·사용자 계약",
-      "state": "selected_policy_implemented_bounded_evidence",
+      "state": "selected_policy_implemented_bounded_checks_passed",
       "implementation": [
         "internal/skills/canopy_wiki.md",
         "internal/skills/canopy_ingest.md",
@@ -18,13 +18,14 @@
         "reports/docs.md",
         "reports/docs-adversarial.md",
         "reports/final-challenge.md",
-        "reports/final-checks.json"
+        "reports/final-checks.json",
+        "reports/delivery.json"
       ],
       "limits": "한 번의 blind 실행이며 일반 LLM 성공률을 추정하지 않는다."
     },
     "PLAN-02": {
       "selected_policy": "실행 가능한 검사·격리·CI",
-      "state": "selected_policy_implemented_bounded_evidence",
+      "state": "selected_policy_implemented_bounded_checks_passed",
       "implementation": [
         "docs/invariants.md",
         "scripts/test-cli.py",
@@ -36,13 +37,14 @@
         "reports/docs.md",
         "reports/docs-adversarial.md",
         "reports/final-challenge.md",
-        "reports/final-checks.json"
+        "reports/final-checks.json",
+        "reports/delivery.json"
       ],
       "limits": "SDK 시작 전 HOME/XDG 격리와 모듈 입력 읽기 전용의 증거를 구별한다."
     },
     "PLAN-03": {
       "selected_policy": "Git 충돌 발행 중지",
-      "state": "selected_policy_implemented_bounded_evidence",
+      "state": "selected_policy_implemented_bounded_checks_passed",
       "implementation": [
         "internal/gitops/gitops.go",
         "cmd/canopy/write.go"
@@ -51,13 +53,14 @@
         "reports/preservation.md",
         "reports/preservation-state-adversarial.md",
         "reports/final-challenge.md",
-        "reports/final-checks.json"
+        "reports/final-checks.json",
+        "reports/delivery.json"
       ],
       "limits": "협력 canopy 범위이며 외부 Git/hook의 동시 변경을 CAS로 보장하지 않는다."
     },
     "PLAN-04": {
       "selected_policy": "완성 게시·협력 잠금·동시 접수",
-      "state": "selected_policy_implemented_bounded_evidence",
+      "state": "selected_policy_implemented_bounded_checks_passed",
       "implementation": [
         "internal/safefile/safefile.go",
         "internal/wikilock/wikilock.go",
@@ -69,13 +72,14 @@
         "reports/state.md",
         "reports/preservation-state-adversarial.md",
         "reports/final-challenge.md",
-        "reports/final-checks.json"
+        "reports/final-checks.json",
+        "reports/delivery.json"
       ],
       "limits": "다중 파일 rollback·분산 잠금·전원 장애 보장은 선택하지 않았다."
     },
     "PLAN-05": {
       "selected_policy": "부분 반영·checkout 복구",
-      "state": "selected_policy_implemented_bounded_evidence",
+      "state": "selected_policy_implemented_bounded_checks_passed",
       "implementation": [
         "internal/checkout/checkout.go",
         "cmd/canopy/checkout.go",
@@ -85,13 +89,14 @@
         "reports/preservation.md",
         "reports/preservation-state-adversarial.md",
         "reports/final-challenge.md",
-        "reports/final-checks.json"
+        "reports/final-checks.json",
+        "reports/delivery.json"
       ],
       "limits": "현재 파일 효과와 cleanup_pending을 구별하며 자동 rollback을 제공하지 않는다."
     },
     "PLAN-06": {
       "selected_policy": "주소·링크·YAML·rename",
-      "state": "selected_policy_implemented_bounded_evidence",
+      "state": "selected_policy_implemented_bounded_checks_passed",
       "implementation": [
         "internal/wiki/page.go",
         "internal/wiki/edit.go",
@@ -104,13 +109,14 @@
         "reports/state.md",
         "reports/preservation-state-adversarial.md",
         "reports/final-challenge.md",
-        "reports/final-checks.json"
+        "reports/final-checks.json",
+        "reports/delivery.json"
       ],
       "limits": "기존 checkout namespace 유지; 전역 page UUID 전환은 보류했다."
     },
     "PLAN-07": {
       "selected_policy": "재현 불가 상태·시간·GC",
-      "state": "selected_policy_implemented_bounded_evidence",
+      "state": "selected_policy_implemented_bounded_checks_passed",
       "implementation": [
         "internal/statefile/statefile.go",
         "internal/reads/reads.go",
@@ -124,13 +130,14 @@
         "reports/state.md",
         "reports/preservation-state-adversarial.md",
         "reports/final-challenge.md",
-        "reports/final-checks.json"
+        "reports/final-checks.json",
+        "reports/delivery.json"
       ],
       "limits": "event 조회는 matching history를 메모리에 읽는다. 새 snooze timestamp를 쓰는 기기는 함께 업그레이드한다."
     },
     "PLAN-08": {
       "selected_policy": "제안 정체성·단일 mutation JSON",
-      "state": "selected_policy_implemented_bounded_evidence",
+      "state": "selected_policy_implemented_bounded_checks_passed",
       "implementation": [
         "internal/tasks/tasks.go",
         "cmd/canopy/write.go",
@@ -142,13 +149,14 @@
         "reports/docs-adversarial.md",
         "reports/preservation-state-adversarial.md",
         "reports/final-challenge.md",
-        "reports/final-checks.json"
+        "reports/final-checks.json",
+        "reports/delivery.json"
       ],
       "limits": "base는 POST 접수 시점이며 viewed origin snapshot/retention은 보류했다. 초기 인자/bootstrap 실패는 stdout-empty 예외다."
     },
     "PLAN-09": {
       "selected_policy": "현재 근거·revision·profile",
-      "state": "selected_policy_implemented_bounded_evidence",
+      "state": "selected_policy_implemented_bounded_checks_passed",
       "implementation": [
         "internal/indexer/indexer.go",
         "internal/store/store.go",
@@ -160,13 +168,14 @@
         "reports/search-adversarial.md",
         "reports/web-adversarial.md",
         "reports/final-challenge.md",
-        "reports/final-checks.json"
+        "reports/final-checks.json",
+        "reports/delivery.json"
       ],
       "limits": "외부 모델/원문 변경은 관측 후 거부·재색인 범위이며 전역 파일시스템 transaction은 아니다."
     },
     "PLAN-10": {
       "selected_policy": "검색 입력·취소·후보 비용·평가",
-      "state": "selected_policy_implemented_bounded_evidence",
+      "state": "selected_policy_implemented_bounded_checks_passed",
       "implementation": [
         "internal/embed/validation.go",
         "internal/store/vectors.go",
@@ -178,13 +187,14 @@
         "reports/search.md",
         "reports/search-adversarial.md",
         "reports/final-challenge.md",
-        "reports/final-checks.json"
+        "reports/final-checks.json",
+        "reports/delivery.json"
       ],
       "limits": "6페이지·10질의의 한정 평가다. C++ 기호 분리와 hybrid 조건부 span 범위를 명시한다. bridge 정확 비교 CPU는 제곱이다."
     },
     "PLAN-11": {
       "selected_policy": "모델·native 준비·복구",
-      "state": "selected_policy_implemented_bounded_evidence",
+      "state": "selected_policy_implemented_bounded_checks_passed",
       "implementation": [
         "internal/embed/model.go",
         "internal/embed/onnx.go",
@@ -196,13 +206,14 @@
         "reports/search.md",
         "reports/search-adversarial.md",
         "reports/final-challenge.md",
-        "reports/final-checks.json"
+        "reports/final-checks.json",
+        "reports/delivery.json"
       ],
       "limits": "현 host native만 실제 실행했다. 공식 CLS parity·실제 대형 quantization·다른 native 플랫폼은 미검증이다."
     },
     "PLAN-12": {
       "selected_policy": "HTTP Host·인증·예산·HTML",
-      "state": "selected_policy_implemented_bounded_evidence",
+      "state": "selected_policy_implemented_bounded_checks_passed",
       "implementation": [
         "internal/webui/boundaries.go",
         "internal/webui/auth.go",
@@ -213,13 +224,14 @@
         "reports/web.md",
         "reports/web-adversarial.md",
         "reports/final-challenge.md",
-        "reports/final-checks.json"
+        "reports/final-checks.json",
+        "reports/delivery.json"
       ],
       "limits": "allow-host는 추가 Host만 허용한다. loopback 공개 프록시의 인증/TLS는 별도 구성이다."
     },
     "PLAN-13": {
       "selected_policy": "정확한 상태·가까운 조작·밀도 높은 웹",
-      "state": "selected_policy_implemented_bounded_evidence",
+      "state": "selected_policy_implemented_bounded_checks_passed",
       "implementation": [
         "internal/webui/server.go",
         "internal/webui/static/app.js",
@@ -231,13 +243,14 @@
         "reports/web.md",
         "reports/web-adversarial.md",
         "reports/final-challenge.md",
-        "reports/final-checks.json"
+        "reports/final-checks.json",
+        "reports/delivery.json"
       ],
       "limits": "실제 브라우저 paint/focus/IME/U5는 remote-runtime 제약으로 미검증이다. UI 우수성을 확정하지 않는다."
     },
     "PLAN-14": {
       "selected_policy": "코드·수식·자산·배포 고지",
-      "state": "selected_policy_implemented_bounded_evidence",
+      "state": "selected_policy_implemented_bounded_checks_passed",
       "implementation": [
         "internal/webui/wikilink.go",
         "internal/webui/static/vendor/assets.json",
@@ -250,7 +263,8 @@
         "reports/web.md",
         "reports/web-adversarial.md",
         "reports/final-challenge.md",
-        "reports/final-checks.json"
+        "reports/final-checks.json",
+        "reports/delivery.json"
       ],
       "limits": "HTTP route·Node TeX compilation·배포 고지를 실제 offline browser와 구별한다. 전체 dependency 법적 감사/SBOM은 범위 밖이다."
     }
@@ -1416,6 +1430,9 @@
     "final_source": "reports/final-checks.json",
     "adversarial_disposition": "adjudication.md",
     "consolidation": "reports/final-challenge.md",
-    "delivery": "pending_actual_release_homebrew_and_service_verification"
+    "delivery": "reports/delivery.json",
+    "release_source_binding": "reports/release-source-binding.json",
+    "completion_prose": "delivery.md",
+    "scope": "Final source record binds the release commit; subsequent delivery documentation changes do not alter application source."
   }
 }

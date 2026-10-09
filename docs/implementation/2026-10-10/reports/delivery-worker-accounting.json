@@ -1,0 +1,66 @@
+{
+  "run": "run_7eb93ed076b5",
+  "scope": "known local worker handles for this implementation run; unrelated hosts not queried",
+  "workers": [
+    {
+      "task": "task_28406e6dd660",
+      "dispatch": "ctx_67e17ba68a64",
+      "outcome": "succeeded",
+      "dispatch_status": "completed"
+    },
+    {
+      "task": "task_5a52e08fc91b",
+      "dispatch": "ctx_3080630d52a2",
+      "outcome": "succeeded",
+      "dispatch_status": "completed"
+    },
+    {
+      "task": "task_e4f2c148f34a",
+      "dispatch": "ctx_0e91735d6881",
+      "outcome": "succeeded",
+      "dispatch_status": "completed"
+    },
+    {
+      "task": "task_e97c4211dea6",
+      "dispatch": "ctx_86c9e594b8d6",
+      "outcome": "succeeded",
+      "dispatch_status": "completed"
+    },
+    {
+      "task": "task_94fa65234146",
+      "dispatch": "ctx_9e428c2b65e0",
+      "outcome": "stopped",
+      "dispatch_status": "failed"
+    },
+    {
+      "task": "task_b1b965146412",
+      "dispatch": "ctx_961220566011",
+      "outcome": "succeeded",
+      "dispatch_status": "completed"
+    },
+    {
+      "task": "task_f3ecc857247b",
+      "dispatch": "ctx_96c4be8ab9de",
+      "outcome": "succeeded",
+      "dispatch_status": "completed"
+    },
+    {
+      "task": "task_51851a6133bc",
+      "dispatch": "ctx_438ef72d7976",
+      "outcome": "succeeded",
+      "dispatch_status": "completed"
+    },
+    {
+      "task": "task_8505abbd2d4e",
+      "dispatch": "ctx_59293d45aaa9",
+      "outcome": "succeeded",
+      "dispatch_status": "completed"
+    }
+  ],
+  "remaining_worker_terminals": [],
+  "coordinator_terminal_present": true,
+  "notes": [
+    "Search review was stopped after provider interruption; raw evidence retained, no final independent acceptance claimed.",
+    "Reused preservation/state terminal was recorded external and remained after worker-release; exact completed terminal was closed separately. Older registry projections may retain reused ownership labels; local terminal list confirms it is absent."
+  ]
+}

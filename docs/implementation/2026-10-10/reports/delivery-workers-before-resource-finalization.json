@@ -1,0 +1,680 @@
+{
+  "id": "d061c301-1e9c-493a-99ac-e698e7b7937e",
+  "ok": true,
+  "result": {
+    "workers": [
+      {
+        "dispatchId": "ctx_67e17ba68a64",
+        "taskId": "task_28406e6dd660",
+        "runId": "run_7eb93ed076b5",
+        "workerState": "succeeded",
+        "dispatchStatus": "completed",
+        "agentTerminalHandle": "term_b12da5b9-3984-4d6a-a33c-1d01b4d14218",
+        "terminalState": "released",
+        "resource": {
+          "id": "wtr_03ff2aec6f49",
+          "ownershipState": "released",
+          "releaseState": "released",
+          "retainedReason": null,
+          "terminalHandle": "term_b12da5b9-3984-4d6a-a33c-1d01b4d14218",
+          "worktreeId": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+          "endpointId": "bc1a682b-2f3a-4aba-9bdf-be8801296780",
+          "endpointIncarnation": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy@@e0943831:7da7e8e2-09de-46a4-a694-d05cd8e433ab",
+          "originDispatchId": "ctx_67e17ba68a64",
+          "ownerDispatchId": "ctx_67e17ba68a64",
+          "releaseRequestedAt": "2026-10-09 19:03:23",
+          "releaseCompletedAt": "2026-10-09 19:03:25",
+          "releaseError": null,
+          "recoveryAttemptCount": 0,
+          "lastRecoveryAt": null,
+          "archive": {
+            "source": "transcript",
+            "status": "captured"
+          }
+        },
+        "projection": {
+          "id": "ctx_67e17ba68a64",
+          "dispatchId": "ctx_67e17ba68a64",
+          "taskId": "task_28406e6dd660",
+          "runId": "run_7eb93ed076b5",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "succeeded",
+            "dispatch": "completed",
+            "detail": "settled",
+            "activity": "unknown"
+          },
+          "outcome": "succeeded",
+          "liveness": {
+            "verdict": "exited",
+            "source": "resource_release"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "released"
+          },
+          "nextAction": {
+            "kind": "none",
+            "argv": []
+          },
+          "attention": {
+            "categories": [
+              "root_completion"
+            ],
+            "requiresAction": false
+          }
+        }
+      },
+      {
+        "dispatchId": "ctx_3080630d52a2",
+        "taskId": "task_5a52e08fc91b",
+        "runId": "run_7eb93ed076b5",
+        "workerState": "succeeded",
+        "dispatchStatus": "completed",
+        "agentTerminalHandle": "term_f0ded77e-69a4-43b0-89e4-38db03c47cbf",
+        "terminalState": "released",
+        "resource": {
+          "id": "wtr_d3ad9b19bfed",
+          "ownershipState": "released",
+          "releaseState": "released",
+          "retainedReason": null,
+          "terminalHandle": "term_f0ded77e-69a4-43b0-89e4-38db03c47cbf",
+          "worktreeId": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+          "endpointId": "bc1a682b-2f3a-4aba-9bdf-be8801296780",
+          "endpointIncarnation": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy@@5904c722:ee44085a-bfc1-4dd9-a3d1-29fccf2c78a0",
+          "originDispatchId": "ctx_86c9e594b8d6",
+          "ownerDispatchId": "ctx_3080630d52a2",
+          "releaseRequestedAt": "2026-10-09 19:02:59",
+          "releaseCompletedAt": "2026-10-09 19:03:01",
+          "releaseError": null,
+          "recoveryAttemptCount": 0,
+          "lastRecoveryAt": null,
+          "archive": {
+            "source": "transcript",
+            "status": "captured"
+          }
+        },
+        "projection": {
+          "id": "ctx_3080630d52a2",
+          "dispatchId": "ctx_3080630d52a2",
+          "taskId": "task_5a52e08fc91b",
+          "runId": "run_7eb93ed076b5",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "succeeded",
+            "dispatch": "completed",
+            "detail": "settled",
+            "activity": "unknown"
+          },
+          "outcome": "succeeded",
+          "liveness": {
+            "verdict": "exited",
+            "source": "resource_release"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "released"
+          },
+          "nextAction": {
+            "kind": "none",
+            "argv": []
+          },
+          "attention": {
+            "categories": [
+              "root_completion"
+            ],
+            "requiresAction": false
+          }
+        }
+      },
+      {
+        "dispatchId": "ctx_0e91735d6881",
+        "taskId": "task_e4f2c148f34a",
+        "runId": "run_7eb93ed076b5",
+        "workerState": "succeeded",
+        "dispatchStatus": "completed",
+        "agentTerminalHandle": "term_320a696b-2e25-49fd-8a1e-e8db485fa948",
+        "terminalState": "retained",
+        "resource": {
+          "id": "wtr_a7561a08f385",
+          "ownershipState": "external",
+          "releaseState": "not_requested",
+          "retainedReason": "external_terminal",
+          "terminalHandle": "term_320a696b-2e25-49fd-8a1e-e8db485fa948",
+          "worktreeId": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+          "endpointId": "bc1a682b-2f3a-4aba-9bdf-be8801296780",
+          "endpointIncarnation": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy@@83ebc10e:1eba7a2a-2c5a-40dc-b6f2-7faf96395b52",
+          "originDispatchId": "ctx_0e91735d6881",
+          "ownerDispatchId": "ctx_0e91735d6881",
+          "releaseRequestedAt": null,
+          "releaseCompletedAt": null,
+          "releaseError": null,
+          "recoveryAttemptCount": 0,
+          "lastRecoveryAt": null,
+          "archive": {
+            "source": null,
+            "status": null
+          }
+        },
+        "projection": {
+          "id": "ctx_0e91735d6881",
+          "dispatchId": "ctx_0e91735d6881",
+          "taskId": "task_e4f2c148f34a",
+          "runId": "run_7eb93ed076b5",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "succeeded",
+            "dispatch": "completed",
+            "detail": "settled",
+            "activity": "unknown"
+          },
+          "outcome": "succeeded",
+          "liveness": {
+            "verdict": "unverifiable",
+            "reason": "missing_status"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "external"
+          },
+          "nextAction": {
+            "kind": "none",
+            "argv": []
+          },
+          "attention": {
+            "categories": [
+              "unverifiable",
+              "root_completion"
+            ],
+            "requiresAction": true
+          }
+        }
+      },
+      {
+        "dispatchId": "ctx_86c9e594b8d6",
+        "taskId": "task_e97c4211dea6",
+        "runId": "run_7eb93ed076b5",
+        "workerState": "succeeded",
+        "dispatchStatus": "completed",
+        "agentTerminalHandle": "term_f0ded77e-69a4-43b0-89e4-38db03c47cbf",
+        "terminalState": "retained",
+        "resource": null,
+        "projection": {
+          "id": "ctx_86c9e594b8d6",
+          "dispatchId": "ctx_86c9e594b8d6",
+          "taskId": "task_e97c4211dea6",
+          "runId": "run_7eb93ed076b5",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "succeeded",
+            "dispatch": "completed",
+            "detail": "settled",
+            "activity": "unknown"
+          },
+          "outcome": "succeeded",
+          "liveness": {
+            "verdict": "unverifiable",
+            "reason": "missing_status"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "absent",
+            "reason": "not_materialized"
+          },
+          "nextAction": {
+            "kind": "none",
+            "argv": []
+          },
+          "attention": {
+            "categories": [
+              "unverifiable",
+              "root_completion"
+            ],
+            "requiresAction": true
+          }
+        }
+      },
+      {
+        "dispatchId": "ctx_9e428c2b65e0",
+        "taskId": "task_94fa65234146",
+        "runId": "run_7eb93ed076b5",
+        "workerState": "stopped",
+        "dispatchStatus": "failed",
+        "agentTerminalHandle": "term_934acd31-780a-4376-9b70-c07bd6673985",
+        "terminalState": "retained",
+        "resource": {
+          "id": "wtr_dbc353f3fcb8",
+          "ownershipState": "owned",
+          "releaseState": "not_requested",
+          "retainedReason": null,
+          "terminalHandle": "term_934acd31-780a-4376-9b70-c07bd6673985",
+          "worktreeId": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+          "endpointId": "bc1a682b-2f3a-4aba-9bdf-be8801296780",
+          "endpointIncarnation": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy@@4036d8a3:e35bb1dc-0e2b-4602-a031-1bade5196e58",
+          "originDispatchId": "ctx_9e428c2b65e0",
+          "ownerDispatchId": "ctx_9e428c2b65e0",
+          "releaseRequestedAt": null,
+          "releaseCompletedAt": null,
+          "releaseError": null,
+          "recoveryAttemptCount": 0,
+          "lastRecoveryAt": null,
+          "archive": {
+            "source": null,
+            "status": null
+          }
+        },
+        "projection": {
+          "id": "ctx_9e428c2b65e0",
+          "dispatchId": "ctx_9e428c2b65e0",
+          "taskId": "task_94fa65234146",
+          "runId": "run_7eb93ed076b5",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "stopped",
+            "dispatch": "failed",
+            "detail": "process_stopped",
+            "activity": "unknown"
+          },
+          "outcome": "failed",
+          "liveness": {
+            "verdict": "exited",
+            "source": "worker_stop"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "owned"
+          },
+          "nextAction": {
+            "kind": "release",
+            "argv": [
+              "orchestration",
+              "worker-release",
+              "--dispatch",
+              "ctx_9e428c2b65e0"
+            ]
+          },
+          "attention": {
+            "categories": [
+              "failure"
+            ],
+            "requiresAction": true
+          }
+        }
+      },
+      {
+        "dispatchId": "ctx_961220566011",
+        "taskId": "task_b1b965146412",
+        "runId": "run_7eb93ed076b5",
+        "workerState": "succeeded",
+        "dispatchStatus": "completed",
+        "agentTerminalHandle": "term_320a696b-2e25-49fd-8a1e-e8db485fa948",
+        "terminalState": "retained",
+        "resource": {
+          "id": "wtr_4732720cb29c",
+          "ownershipState": "user_owned",
+          "releaseState": "retained",
+          "retainedReason": "user_takeover",
+          "terminalHandle": "term_320a696b-2e25-49fd-8a1e-e8db485fa948",
+          "worktreeId": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+          "endpointId": "bc1a682b-2f3a-4aba-9bdf-be8801296780",
+          "endpointIncarnation": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy@@83ebc10e:1eba7a2a-2c5a-40dc-b6f2-7faf96395b52",
+          "originDispatchId": "ctx_59293d45aaa9",
+          "ownerDispatchId": "ctx_961220566011",
+          "releaseRequestedAt": null,
+          "releaseCompletedAt": null,
+          "releaseError": null,
+          "recoveryAttemptCount": 0,
+          "lastRecoveryAt": null,
+          "archive": {
+            "source": null,
+            "status": null
+          }
+        },
+        "projection": {
+          "id": "ctx_961220566011",
+          "dispatchId": "ctx_961220566011",
+          "taskId": "task_b1b965146412",
+          "runId": "run_7eb93ed076b5",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "succeeded",
+            "dispatch": "completed",
+            "detail": "settled",
+            "activity": "unknown"
+          },
+          "outcome": "succeeded",
+          "liveness": {
+            "verdict": "unverifiable",
+            "reason": "missing_status"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "user_owned"
+          },
+          "nextAction": {
+            "kind": "none",
+            "argv": []
+          },
+          "attention": {
+            "categories": [
+              "unverifiable",
+              "root_completion"
+            ],
+            "requiresAction": true
+          }
+        }
+      },
+      {
+        "dispatchId": "ctx_96c4be8ab9de",
+        "taskId": "task_f3ecc857247b",
+        "runId": "run_7eb93ed076b5",
+        "workerState": "succeeded",
+        "dispatchStatus": "completed",
+        "agentTerminalHandle": "term_815ceba3-7848-4a70-a789-c749fcae679f",
+        "terminalState": "released",
+        "resource": {
+          "id": "wtr_662419396b93",
+          "ownershipState": "released",
+          "releaseState": "released",
+          "retainedReason": null,
+          "terminalHandle": "term_815ceba3-7848-4a70-a789-c749fcae679f",
+          "worktreeId": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+          "endpointId": "bc1a682b-2f3a-4aba-9bdf-be8801296780",
+          "endpointIncarnation": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy@@0ae8e5f2:0715c52f-4995-4688-8b09-bb0fb91f5ee7",
+          "originDispatchId": "ctx_96c4be8ab9de",
+          "ownerDispatchId": "ctx_96c4be8ab9de",
+          "releaseRequestedAt": "2026-10-09 17:48:43",
+          "releaseCompletedAt": "2026-10-09 17:48:45",
+          "releaseError": null,
+          "recoveryAttemptCount": 0,
+          "lastRecoveryAt": null,
+          "archive": {
+            "source": "transcript",
+            "status": "captured"
+          }
+        },
+        "projection": {
+          "id": "ctx_96c4be8ab9de",
+          "dispatchId": "ctx_96c4be8ab9de",
+          "taskId": "task_f3ecc857247b",
+          "runId": "run_7eb93ed076b5",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "succeeded",
+            "dispatch": "completed",
+            "detail": "settled",
+            "activity": "unknown"
+          },
+          "outcome": "succeeded",
+          "liveness": {
+            "verdict": "exited",
+            "source": "resource_release"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "released"
+          },
+          "nextAction": {
+            "kind": "none",
+            "argv": []
+          },
+          "attention": {
+            "categories": [
+              "root_completion"
+            ],
+            "requiresAction": false
+          }
+        }
+      },
+      {
+        "dispatchId": "ctx_438ef72d7976",
+        "taskId": "task_51851a6133bc",
+        "runId": "run_7eb93ed076b5",
+        "workerState": "succeeded",
+        "dispatchStatus": "completed",
+        "agentTerminalHandle": "term_894a8df0-f655-4105-9a59-a599f001bb0b",
+        "terminalState": "released",
+        "resource": {
+          "id": "wtr_13db0ae812f3",
+          "ownershipState": "released",
+          "releaseState": "released",
+          "retainedReason": null,
+          "terminalHandle": "term_894a8df0-f655-4105-9a59-a599f001bb0b",
+          "worktreeId": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+          "endpointId": "bc1a682b-2f3a-4aba-9bdf-be8801296780",
+          "endpointIncarnation": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy@@3243ac04:dea41677-d4ad-45a8-a330-292d3994d189",
+          "originDispatchId": "ctx_438ef72d7976",
+          "ownerDispatchId": "ctx_438ef72d7976",
+          "releaseRequestedAt": "2026-10-09 18:03:06",
+          "releaseCompletedAt": "2026-10-09 18:03:08",
+          "releaseError": null,
+          "recoveryAttemptCount": 0,
+          "lastRecoveryAt": null,
+          "archive": {
+            "source": "transcript",
+            "status": "captured"
+          }
+        },
+        "projection": {
+          "id": "ctx_438ef72d7976",
+          "dispatchId": "ctx_438ef72d7976",
+          "taskId": "task_51851a6133bc",
+          "runId": "run_7eb93ed076b5",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "succeeded",
+            "dispatch": "completed",
+            "detail": "settled",
+            "activity": "unknown"
+          },
+          "outcome": "succeeded",
+          "liveness": {
+            "verdict": "exited",
+            "source": "resource_release"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "released"
+          },
+          "nextAction": {
+            "kind": "none",
+            "argv": []
+          },
+          "attention": {
+            "categories": [
+              "root_completion"
+            ],
+            "requiresAction": false
+          }
+        }
+      },
+      {
+        "dispatchId": "ctx_59293d45aaa9",
+        "taskId": "task_8505abbd2d4e",
+        "runId": "run_7eb93ed076b5",
+        "workerState": "succeeded",
+        "dispatchStatus": "completed",
+        "agentTerminalHandle": "term_320a696b-2e25-49fd-8a1e-e8db485fa948",
+        "terminalState": "retained",
+        "resource": null,
+        "projection": {
+          "id": "ctx_59293d45aaa9",
+          "dispatchId": "ctx_59293d45aaa9",
+          "taskId": "task_8505abbd2d4e",
+          "runId": "run_7eb93ed076b5",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "c10bf90b-ea6b-4af1-9060-37ce3bdf1560::/Users/nobocop/play/canopy",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "succeeded",
+            "dispatch": "completed",
+            "detail": "settled",
+            "activity": "unknown"
+          },
+          "outcome": "succeeded",
+          "liveness": {
+            "verdict": "unverifiable",
+            "reason": "missing_status"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "absent",
+            "reason": "not_materialized"
+          },
+          "nextAction": {
+            "kind": "none",
+            "argv": []
+          },
+          "attention": {
+            "categories": [
+              "unverifiable",
+              "root_completion"
+            ],
+            "requiresAction": true
+          }
+        }
+      }
+    ],
+    "counts": {
+      "retained": 5,
+      "released": 4
+    },
+    "page": {
+      "limit": 100,
+      "total": 9,
+      "hasMore": false,
+      "nextCursor": null
+    },
+    "scope": {
+      "run": "run_7eb93ed076b5",
+      "source": "flag"
+    }
+  },
+  "_meta": {
+    "runtimeId": "bc1a682b-2f3a-4aba-9bdf-be8801296780"
+  }
+}

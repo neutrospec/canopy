@@ -1,0 +1,2 @@
+working tree dirty — commit first
+make: *** [release-check] Error 1

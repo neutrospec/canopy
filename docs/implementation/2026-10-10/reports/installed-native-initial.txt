@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/private/tmp/canopy-improve-20261010/installed-native.py", line 15, in <module>
+    cfg=wiki/'canopy.toml';s=cfg.read_text();s,n=re.subn(r'(?m)^model\s*=\s*"[^"]*"','model = "/Users/nobocop/.local/share/canopy/models/bge-m3"',s);assert n==1,n;cfg.write_text(s)
+                                                                                                                                                            ^^^^
+AssertionError: 0

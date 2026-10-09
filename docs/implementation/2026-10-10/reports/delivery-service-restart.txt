@@ -1,0 +1,3 @@
+Stopping `canopy`... (might take a while)
+==> Successfully stopped `canopy` (label: sh.brew.canopy)
+==> Successfully started `canopy` (label: sh.brew.canopy)

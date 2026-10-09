@@ -1,0 +1,31 @@
+import pathlib,tempfile,subprocess,os,json,hashlib,re,time
+base=pathlib.Path(tempfile.mkdtemp(prefix='canopy-installed-native-',dir='/private/tmp'))
+env=os.environ.copy();env.pop('CANOPY_WIKI',None)
+for key,name in [('HOME','home'),('XDG_CONFIG_HOME','config'),('XDG_CACHE_HOME','cache'),('XDG_STATE_HOME','state'),('XDG_DATA_HOME','data'),('TMPDIR','tmp')]:
+ p=base/name;p.mkdir();env[key]=str(p)
+env.update(GOTELEMETRY='off',HOMEBREW_PREFIX='/opt/homebrew')
+binary='/opt/homebrew/opt/canopy/bin/canopy';wiki=base/'wiki with spaces';wiki.mkdir()
+record={'binary':binary,'binary_sha256':hashlib.sha256(pathlib.Path(binary).read_bytes()).hexdigest(),'fixture':str(base),'commands':[],'started_utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())}
+def run(args):
+ r=subprocess.run([binary,'--wiki',str(wiki),'--json',*args],cwd=base,env=env,capture_output=True,text=True,timeout=120)
+ record['commands'].append({'args':args,'exit':r.returncode,'stdout':r.stdout,'stderr':r.stderr});assert r.returncode==0,record['commands'][-1]
+ return json.loads(r.stdout)
+try:
+ run(['init'])
+ cfg=wiki/'canopy.toml';s=cfg.read_text();s,n=re.subn(r'(?m)^[ \t]*model[ \t]*=[ \t]*"[^"]*"','model = "/Users/nobocop/.local/share/canopy/models/bge-m3"',s);assert n==1,n;cfg.write_text(s)
+ bodies={'carrier':'Carrier pigeons transport small written messages between locations.\n','compiler':'A compiler translates source programs into machine instructions.\n'}
+ for slug,body in bodies.items():
+  (wiki/'concepts').mkdir(exist_ok=True)
+  (wiki/'concepts'/(slug+'.md')).write_text('---\ntitle: '+slug+'\ntype: concept\ntags: []\ncreated: 2026-10-10\nupdated: 2026-10-10\n---\n'+body)
+ index=run(['reindex']);assert index['semantic_ready'] and index['covered_pages']==2 and index['needs_reindex']==0,index
+ search=run(['search','carrier pigeon','--mode','hybrid','--top-k','2']);assert search['mode']=='hybrid' and search['hits'],search
+ recall=run(['recall','carrier pigeon','--top-k','2','--no-mark']);assert recall['mode']=='semantic' and recall['chunks'],recall
+ for h in recall['chunks']:
+  body=bodies[h['slug']].encode();assert 0<=h['start_byte']<h['end_byte']<=len(body);assert h['text'].encode()==body[h['start_byte']:h['end_byte']];assert h['profile']==index['profile'];assert h['source_revision']
+ record['passed']=True
+finally:
+ record['finished_utc']=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())
+ pathlib.Path('/private/tmp/canopy-improve-20261010/installed-native.json').write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n')
+ if record.get('passed'):
+  import shutil
+  shutil.rmtree(base);print('PASS: installed native binary loads read-only model, indexes 2 fixture pages, performs hybrid search and exact-range semantic recall; fixture removed.')

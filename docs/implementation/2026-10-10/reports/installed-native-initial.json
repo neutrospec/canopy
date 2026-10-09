@@ -1,0 +1,17 @@
+{
+  "binary": "/opt/homebrew/opt/canopy/bin/canopy",
+  "binary_sha256": "3b551d017ea7226ece2bb72b251bbd84c1564c45480046916dd0be4489fec9d6",
+  "fixture": "/private/tmp/canopy-installed-native-rl_agygl",
+  "commands": [
+    {
+      "args": [
+        "init"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-installed-native-rl_agygl/cache/canopy/index/a354439f7119.db\",\n  \"default_wiki_set\": true,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-installed-native-rl_agygl/wiki with spaces\"\n}\n",
+      "stderr": ""
+    }
+  ],
+  "started_utc": "2026-10-09T19:20:36Z",
+  "finished_utc": "2026-10-09T19:20:37Z"
+}

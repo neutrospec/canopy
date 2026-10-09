@@ -1,0 +1,104 @@
+git fetch origin main
+From https://github.com/neutrospec/canopy
+ * branch            main       -> FETCH_HEAD
+/Applications/Xcode.app/Contents/Developer/usr/bin/make test test-ui test-cli test-assets i18n-check
+bash scripts/test-go.sh ./internal/... ./cmd/canopy
+ok  	github.com/neutrospec/canopy/internal/attention	1.065s
+?   	github.com/neutrospec/canopy/internal/buildinfo	[no test files]
+ok  	github.com/neutrospec/canopy/internal/checkout	2.748s
+ok  	github.com/neutrospec/canopy/internal/config	0.213s
+ok  	github.com/neutrospec/canopy/internal/digest	(cached)
+ok  	github.com/neutrospec/canopy/internal/embed	1.667s
+ok  	github.com/neutrospec/canopy/internal/genindex	0.840s
+ok  	github.com/neutrospec/canopy/internal/gitops	3.980s
+ok  	github.com/neutrospec/canopy/internal/indexer	2.193s
+ok  	github.com/neutrospec/canopy/internal/lint	0.732s
+ok  	github.com/neutrospec/canopy/internal/logops	0.507s
+ok  	github.com/neutrospec/canopy/internal/mermaid	(cached)
+ok  	github.com/neutrospec/canopy/internal/migrate	0.195s
+ok  	github.com/neutrospec/canopy/internal/reads	0.783s
+ok  	github.com/neutrospec/canopy/internal/reconcile	0.770s
+ok  	github.com/neutrospec/canopy/internal/resurface	0.709s
+ok  	github.com/neutrospec/canopy/internal/safefile	1.333s
+ok  	github.com/neutrospec/canopy/internal/search	0.675s
+ok  	github.com/neutrospec/canopy/internal/skills	0.290s
+ok  	github.com/neutrospec/canopy/internal/statefile	0.414s
+ok  	github.com/neutrospec/canopy/internal/store	1.431s
+ok  	github.com/neutrospec/canopy/internal/tasks	2.425s
+?   	github.com/neutrospec/canopy/internal/testenv	[no test files]
+ok  	github.com/neutrospec/canopy/internal/webui	3.006s
+ok  	github.com/neutrospec/canopy/internal/wiki	0.435s
+ok  	github.com/neutrospec/canopy/internal/wikilock	1.891s
+ok  	github.com/neutrospec/canopy/internal/writeops	0.852s
+ok  	github.com/neutrospec/canopy/cmd/canopy	19.482s
+node --test internal/webui/uitest/*.test.cjs
+✔ hover preview follows the canonical page address instead of an ambiguous slug (3.02075ms)
+✔ a cleared query cannot be reopened by a late response (0.632083ms)
+✔ responses from before the current debounce stay hidden (0.5075ms)
+✔ out-of-order search responses never replace current results (0.400209ms)
+✔ Escape cancels pending results and keyboard selection (0.424208ms)
+✔ IME composition defers search and prevents suggestion navigation (0.665584ms)
+✔ keyboard selection is exposed to assistive technology and opens the selected page (0.406125ms)
+✔ failed search responses leave the ordinary form available (0.383167ms)
+✔ mobile navigation opens, closes with Escape, and adapts to desktop (0.336834ms)
+✔ search shortcuts respect typing, while Ctrl K can focus search from an editor (0.297042ms)
+✔ code copy preserves literal source text and displays localized success (0.343917ms)
+✔ clipboard failure never displays a success state (0.217084ms)
+✔ the page outline uses real heading targets without including the anchor marker (0.165958ms)
+✔ only an exact duplicate body title is collapsed, with its source preserved (0.320833ms)
+✔ auto read requires visible dwell and scroll progress (0.416792ms)
+✔ dwell without sufficient scroll does not mark a long page read (0.181458ms)
+✔ HTTP failure keeps explicit read controls without showing auto success (0.244792ms)
+✔ network failure keeps explicit read controls without showing auto success (0.167291ms)
+✔ read shortcut respects editable content and key repeats (0.18375ms)
+✔ real Response: HTML login preserves explicit controls and state (0.188875ms)
+✔ real Response: read false preserves explicit controls and state (0.189875ms)
+✔ real Response: missing read preserves explicit controls and state (0.185ms)
+✔ real Response: string read preserves explicit controls and state (0.195125ms)
+✔ real Response: bad JSON preserves explicit controls and state (0.194541ms)
+✔ real Response: wrong content type preserves explicit controls and state (0.172542ms)
+✔ real Response: expired session preserves explicit controls and state (0.1665ms)
+✔ a real followed HTTP login redirect cannot confirm a read (10.450875ms)
+✔ Mermaid load failure keeps the exact diagram source and shows an error (0.39725ms)
+✔ Mermaid parse failure restores source after a renderer changed the node (1.276834ms)
+✔ MathJax load failure leaves source visible and reports failure (0.923375ms)
+✔ MathJax parse failure retains exact TeX as text, including HTML-looking characters (0.248042ms)
+✔ pinned local TeX corpus compiles: x^2 + \frac{1}{2} (3.307ms)
+✔ pinned local TeX corpus compiles: \begin{aligned}a&=b+c\\d&=e\end{aligned} (1.492084ms)
+✔ pinned local TeX corpus compiles: \newcommand{\RR}{\mathbb{R}}\RR (0.85575ms)
+✔ pinned local TeX corpus compiles: \color{red}{x} + \textcolor{blue}{y} (0.580167ms)
+✔ pinned local TeX corpus compiles: \dv{f}{x}+\pdv{g}{t}+\qty(\frac{x}{y}) (1.190209ms)
+✔ undeclared TeX extensions fail instead of triggering an autoload (0.378959ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 123.776334
+python3 scripts/test-cli.py
+{"checks": 37, "lite_hybrid_fallback": "pass", "single_object_mutations": "pass", "failure_effects": "pass", "non_target_wiki": "unchanged"}
+python3 scripts/test-native-download.py
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.271s
+
+OK
+native ready: darwin/arm64 /private/tmp/canopy-improve-20261010/tmp/canopy-native-tests-0lhsl5fw/lib/libtokenizers.a
+native cache verified
+python3 scripts/check-assets.py
+PASS: 4 pinned assets, 6 notices, packaging declarations, 8 positive/negative controls
+UNVERIFIED: actual release archive (supply --archive PATH)
+scripts/i18n-check.sh
+✓ i18n: 4 translation(s) current
+go vet ./...
+✓ ready to release v0.10.0-3-gc32685a
+git push origin main
+To https://github.com/neutrospec/canopy.git
+   ede67e3..c32685a  main -> main
+git tag -a v0.11.0 -m "canopy v0.11.0"
+git push origin v0.11.0
+To https://github.com/neutrospec/canopy.git
+ * [new tag]         v0.11.0 -> v0.11.0
+✓ tagged v0.11.0 — GitHub Actions will publish the release and Homebrew formula

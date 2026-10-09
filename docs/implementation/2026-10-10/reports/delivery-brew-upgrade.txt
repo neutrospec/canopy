@@ -1,0 +1,44 @@
+Warning: The following taps are not trusted:
+  steipete/tap
+
+Homebrew is currently ignoring formulae, casks and commands
+from these taps because tap trust is required.
+Prefer trusting only the specific formulae, casks or commands you need.
+Trust installed formulae from these taps with:
+  brew trust --formula steipete/tap/imsg
+Trust other specific casks and commands with:
+  brew trust --cask <user>/<tap>/<cask>
+  brew trust --command <user>/<tap>/<command>
+Whole-tap trust is broader and includes all current and future formulae,
+casks and commands from the listed taps. Trust whole taps with:
+  brew trust steipete/tap
+Untap them with:
+  brew untap steipete/tap
+For more information, see:
+  https://docs.brew.sh/Tap-Trust
+==> Fetching downloads for: neutrospec/tap/canopy
+✔︎ Resource canopy--tokenizers
+✔︎ Formula canopy (0.11.0)
+==> Upgrading neutrospec/tap/canopy
+  0.10.0 -> 0.11.0 
+==> go build -tags ORT -ldflags -X github.com/neutrospec/canopy/internal/buildin
+🍺  /opt/homebrew/Cellar/canopy/0.11.0: 15 files, 77.6MB, built in 6 seconds
+==> Caveats
+==> canopy
+Semantic search uses a local bge-m3 ONNX model (~2.3GB). Download it once:
+  canopy model pull
+Keyword search works without it. If the ONNX Runtime library is not found
+automatically (e.g. Linuxbrew or a non-standard prefix), point canopy at it:
+  export CANOPY_ONNXRUNTIME_DIR="/opt/homebrew/opt/onnxruntime/lib"
+
+To run the web UI as a background service (http://localhost:8737):
+  brew services start canopy
+It serves the wiki named by default_wiki. Adopt your wiki first:
+  canopy init --wiki /path/to/wiki
+If a default already exists, edit default_wiki in your canopy config
+while preserving its other settings (the default path is ~/.config/canopy/config.toml).
+
+To restart neutrospec/tap/canopy after an upgrade:
+  brew services restart neutrospec/tap/canopy
+Or, if you don't want/need a background service you can just run:
+  HOMEBREW_PREFIX="/opt/homebrew" /opt/homebrew/opt/canopy/bin/canopy serve

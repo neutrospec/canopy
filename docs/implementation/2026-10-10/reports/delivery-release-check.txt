@@ -1,0 +1,93 @@
+/Applications/Xcode.app/Contents/Developer/usr/bin/make test test-ui test-cli test-assets i18n-check
+bash scripts/test-go.sh ./internal/... ./cmd/canopy
+ok  	github.com/neutrospec/canopy/internal/attention	0.454s
+?   	github.com/neutrospec/canopy/internal/buildinfo	[no test files]
+ok  	github.com/neutrospec/canopy/internal/checkout	3.127s
+ok  	github.com/neutrospec/canopy/internal/config	0.303s
+ok  	github.com/neutrospec/canopy/internal/digest	(cached)
+ok  	github.com/neutrospec/canopy/internal/embed	2.190s
+ok  	github.com/neutrospec/canopy/internal/genindex	1.486s
+ok  	github.com/neutrospec/canopy/internal/gitops	4.354s
+ok  	github.com/neutrospec/canopy/internal/indexer	0.218s
+ok  	github.com/neutrospec/canopy/internal/lint	0.858s
+ok  	github.com/neutrospec/canopy/internal/logops	0.899s
+ok  	github.com/neutrospec/canopy/internal/mermaid	(cached)
+ok  	github.com/neutrospec/canopy/internal/migrate	0.311s
+ok  	github.com/neutrospec/canopy/internal/reads	1.381s
+ok  	github.com/neutrospec/canopy/internal/reconcile	1.318s
+ok  	github.com/neutrospec/canopy/internal/resurface	1.299s
+ok  	github.com/neutrospec/canopy/internal/safefile	1.959s
+ok  	github.com/neutrospec/canopy/internal/search	0.327s
+ok  	github.com/neutrospec/canopy/internal/skills	0.307s
+ok  	github.com/neutrospec/canopy/internal/statefile	0.372s
+ok  	github.com/neutrospec/canopy/internal/store	1.608s
+ok  	github.com/neutrospec/canopy/internal/tasks	2.704s
+?   	github.com/neutrospec/canopy/internal/testenv	[no test files]
+ok  	github.com/neutrospec/canopy/internal/webui	3.368s
+ok  	github.com/neutrospec/canopy/internal/wiki	0.276s
+ok  	github.com/neutrospec/canopy/internal/wikilock	2.427s
+ok  	github.com/neutrospec/canopy/internal/writeops	1.376s
+ok  	github.com/neutrospec/canopy/cmd/canopy	21.069s
+node --test internal/webui/uitest/*.test.cjs
+✔ hover preview follows the canonical page address instead of an ambiguous slug (3.322333ms)
+✔ a cleared query cannot be reopened by a late response (0.656791ms)
+✔ responses from before the current debounce stay hidden (0.503541ms)
+✔ out-of-order search responses never replace current results (0.370208ms)
+✔ Escape cancels pending results and keyboard selection (0.358042ms)
+✔ IME composition defers search and prevents suggestion navigation (0.361167ms)
+✔ keyboard selection is exposed to assistive technology and opens the selected page (0.749208ms)
+✔ failed search responses leave the ordinary form available (0.410041ms)
+✔ mobile navigation opens, closes with Escape, and adapts to desktop (0.389583ms)
+✔ search shortcuts respect typing, while Ctrl K can focus search from an editor (0.3315ms)
+✔ code copy preserves literal source text and displays localized success (0.35325ms)
+✔ clipboard failure never displays a success state (0.229875ms)
+✔ the page outline uses real heading targets without including the anchor marker (0.169125ms)
+✔ only an exact duplicate body title is collapsed, with its source preserved (0.32025ms)
+✔ auto read requires visible dwell and scroll progress (0.419625ms)
+✔ dwell without sufficient scroll does not mark a long page read (0.191375ms)
+✔ HTTP failure keeps explicit read controls without showing auto success (0.262708ms)
+✔ network failure keeps explicit read controls without showing auto success (0.17325ms)
+✔ read shortcut respects editable content and key repeats (0.179208ms)
+✔ real Response: HTML login preserves explicit controls and state (0.204875ms)
+✔ real Response: read false preserves explicit controls and state (0.180667ms)
+✔ real Response: missing read preserves explicit controls and state (0.178666ms)
+✔ real Response: string read preserves explicit controls and state (0.201209ms)
+✔ real Response: bad JSON preserves explicit controls and state (0.196208ms)
+✔ real Response: wrong content type preserves explicit controls and state (0.176625ms)
+✔ real Response: expired session preserves explicit controls and state (0.171ms)
+✔ a real followed HTTP login redirect cannot confirm a read (15.995166ms)
+✔ Mermaid load failure keeps the exact diagram source and shows an error (0.406708ms)
+✔ Mermaid parse failure restores source after a renderer changed the node (1.758083ms)
+✔ MathJax load failure leaves source visible and reports failure (1.691791ms)
+✔ MathJax parse failure retains exact TeX as text, including HTML-looking characters (0.342542ms)
+✔ pinned local TeX corpus compiles: x^2 + \frac{1}{2} (3.371583ms)
+✔ pinned local TeX corpus compiles: \begin{aligned}a&=b+c\\d&=e\end{aligned} (1.520833ms)
+✔ pinned local TeX corpus compiles: \newcommand{\RR}{\mathbb{R}}\RR (0.858166ms)
+✔ pinned local TeX corpus compiles: \color{red}{x} + \textcolor{blue}{y} (0.797541ms)
+✔ pinned local TeX corpus compiles: \dv{f}{x}+\pdv{g}{t}+\qty(\frac{x}{y}) (1.263792ms)
+✔ undeclared TeX extensions fail instead of triggering an autoload (0.4195ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 149.485417
+python3 scripts/test-cli.py
+{"checks": 37, "lite_hybrid_fallback": "pass", "single_object_mutations": "pass", "failure_effects": "pass", "non_target_wiki": "unchanged"}
+python3 scripts/test-native-download.py
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.429s
+
+OK
+native ready: darwin/arm64 /private/tmp/canopy-improve-20261010/tmp/canopy-native-tests-whg7vfcv/lib/libtokenizers.a
+native cache verified
+python3 scripts/check-assets.py
+PASS: 4 pinned assets, 6 notices, packaging declarations, 8 positive/negative controls
+UNVERIFIED: actual release archive (supply --archive PATH)
+scripts/i18n-check.sh
+✓ i18n: 4 translation(s) current
+go vet ./...
+✓ ready to release v0.10.0-3-gc32685a

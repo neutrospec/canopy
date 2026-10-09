@@ -1,0 +1,30 @@
+[
+  {
+    "archive": "canopy_0.10.0-SNAPSHOT-c32685a_darwin_amd64_lite.tar.gz",
+    "sha256": "68adef202135e00081007ad70bbc7e6c7838082d84597ad04b2994f05d584405",
+    "bytes": 15974461,
+    "exit": 0,
+    "output": "PASS: 4 pinned assets, 6 notices, packaging declarations, 8 positive/negative controls\nPASS: actual archive notices and manifest: dist/canopy_0.10.0-SNAPSHOT-c32685a_darwin_amd64_lite.tar.gz\n"
+  },
+  {
+    "archive": "canopy_0.10.0-SNAPSHOT-c32685a_darwin_arm64_lite.tar.gz",
+    "sha256": "61e538add3a8a79a1f74ee7e5e20e5cbdf3f50099246d52005ed257dd44483f4",
+    "bytes": 15445781,
+    "exit": 0,
+    "output": "PASS: 4 pinned assets, 6 notices, packaging declarations, 8 positive/negative controls\nPASS: actual archive notices and manifest: dist/canopy_0.10.0-SNAPSHOT-c32685a_darwin_arm64_lite.tar.gz\n"
+  },
+  {
+    "archive": "canopy_0.10.0-SNAPSHOT-c32685a_linux_amd64_lite.tar.gz",
+    "sha256": "f4f288311b43e285f1d95adda8ca2b1e7bbcf3993ccb2422d7288fecec03e90b",
+    "bytes": 15826949,
+    "exit": 0,
+    "output": "PASS: 4 pinned assets, 6 notices, packaging declarations, 8 positive/negative controls\nPASS: actual archive notices and manifest: dist/canopy_0.10.0-SNAPSHOT-c32685a_linux_amd64_lite.tar.gz\n"
+  },
+  {
+    "archive": "canopy_0.10.0-SNAPSHOT-c32685a_linux_arm64_lite.tar.gz",
+    "sha256": "162cd1638394aa55f7e9af1d92e73bccc4a6194483b75a91d96e317773fa3a56",
+    "bytes": 15010662,
+    "exit": 0,
+    "output": "PASS: 4 pinned assets, 6 notices, packaging declarations, 8 positive/negative controls\nPASS: actual archive notices and manifest: dist/canopy_0.10.0-SNAPSHOT-c32685a_linux_arm64_lite.tar.gz\n"
+  }
+]

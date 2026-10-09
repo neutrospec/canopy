@@ -1,0 +1,168 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-10-09T19:25:33Z",
+  "tag": "v0.11.0",
+  "release_commit": "c32685aa20d94f8dc8757ed1187d52b9bc66528e",
+  "release_url": "https://github.com/neutrospec/canopy/releases/tag/v0.11.0",
+  "actions_url": "https://github.com/neutrospec/canopy/actions/runs/37978808709",
+  "actions_conclusion": "success",
+  "tap_commit": "00e4fd86b636dffd39ffe37d19a3fd4c87f1b533",
+  "published_archives": 4,
+  "published_host_lite_cli_checks": 37,
+  "homebrew_version": "0.11.0",
+  "homebrew_test": "passed",
+  "installed_native_fixture": "passed",
+  "service_url": "http://localhost:8737",
+  "old_pid": 893,
+  "new_pid": 92180,
+  "http_status": 200,
+  "source_matching_live_assets": 3,
+  "actual_user_wiki_used_as_fixture": false,
+  "actual_browser": "unverified",
+  "other_native_platforms": "unverified",
+  "official_cls_parity": "unverified",
+  "large_quantization": "unverified",
+  "files": [
+    {
+      "path": "release-source-binding.json",
+      "sha256": "851d44221df2cd2c461a655fb467a63ec3b811ed67b1a3fbc26350d94b7ea92e",
+      "bytes": 275
+    },
+    {
+      "path": "delivery-actions-status.json",
+      "sha256": "f103f8820d4facd584f7b316497710b2aa81d0b79fbf1199ba0c5574587c1c96",
+      "bytes": 4025
+    },
+    {
+      "path": "delivery-published-release.json",
+      "sha256": "d47b8fec98e47eef0a3d85a262c20723ce1d66f74caa802e6868e97a535e8b20",
+      "bytes": 12516
+    },
+    {
+      "path": "published-archive-checks.json",
+      "sha256": "baf913f3da353db0cc4418cf198923d967b8b7892f7ce878d918b172241d91ea",
+      "bytes": 2584
+    },
+    {
+      "path": "installed-notices.json",
+      "sha256": "9f8626eacbc973a394422654e9d3937db0a6c05fbee58920579abcc35436f1f4",
+      "bytes": 1470
+    },
+    {
+      "path": "installed-native.json",
+      "sha256": "79e95b5f7f488fc014762c6093e5171490aa71f88e6a84d0566d89dbeb9dec1e",
+      "bytes": 3143
+    },
+    {
+      "path": "installed-native-initial.json",
+      "sha256": "2483a7bf2ae94f4b6732c0ab46423deaad4a0f71287b4399d21df82b4e3351d5",
+      "bytes": 646
+    },
+    {
+      "path": "installed-native-initial.txt",
+      "sha256": "1bc73701a368227eb824eab14f54bbe8876e4a0642f2b8f9d6197f83d76746fa",
+      "bytes": 483
+    },
+    {
+      "path": "installed-native-schema.json",
+      "sha256": "db4679ed8778bfb89e0cd5e2e77d4bbb28ac30033a3595a45762b109aa2c7956",
+      "bytes": 1827
+    },
+    {
+      "path": "installed-native-schema.txt",
+      "sha256": "f5d9cde15080867c227478e7b1a4c4ceaaa40c0ee7bb5755304d953f231c96d1",
+      "bytes": 410
+    },
+    {
+      "path": "installed-native.py.txt",
+      "sha256": "55a24889b00df78f8f459aa1ea5f6b470076ec8a71ae0669259f845cc3c65d8b",
+      "bytes": 2754
+    },
+    {
+      "path": "service-before.json",
+      "sha256": "3476938a430d5fcb001e3f722e96c692b8810c8c97ef87691f5769176207d49f",
+      "bytes": 1413
+    },
+    {
+      "path": "service-after.json",
+      "sha256": "480392658b524dc4b4491b60ced145e4cd9bcb4344f8a2427f6566d9ecead058",
+      "bytes": 2509
+    },
+    {
+      "path": "service-verify.py.txt",
+      "sha256": "c2275ef2e7b21dab4d27d241eda3bc37a4fc16972c6749486f5d18789b9c4754",
+      "bytes": 2719
+    },
+    {
+      "path": "delivery-snapshot-archives.json",
+      "sha256": "acfc9c7b9d220734a62751499b4572e6d45026cbc7b46055364b4b1fba646a83",
+      "bytes": 1651
+    },
+    {
+      "path": "delivery-snapshot.txt",
+      "sha256": "8a0685c33262de263211cf5575b6c98b485a8ebc96b159e70313626209dfaf76",
+      "bytes": 4057
+    },
+    {
+      "path": "delivery-snapshot-cli.txt",
+      "sha256": "711b659d50a0f951c173e4fcbac3c637684ff1f3aefa042500cdfa3d0280866f",
+      "bytes": 141
+    },
+    {
+      "path": "delivery-published-cli.txt",
+      "sha256": "711b659d50a0f951c173e4fcbac3c637684ff1f3aefa042500cdfa3d0280866f",
+      "bytes": 141
+    },
+    {
+      "path": "delivery-release-check.txt",
+      "sha256": "cd39b167b5b7992e0f81f36a7e0942979ef051b792005cb6ab2278f859c835c3",
+      "bytes": 5762
+    },
+    {
+      "path": "delivery-release-check-initial-home.txt",
+      "sha256": "02852f5e28ecef6082977979beb14bc4e506e1fcd67a0bb1602765edc934dc1c",
+      "bytes": 70
+    },
+    {
+      "path": "delivery-release-check-initial-xdg.txt",
+      "sha256": "02852f5e28ecef6082977979beb14bc4e506e1fcd67a0bb1602765edc934dc1c",
+      "bytes": 70
+    },
+    {
+      "path": "delivery-release-tag.txt",
+      "sha256": "39da396d0a263ff829e4c18951c213bc212ee2df4723ce8e896b7f7f5f8581f9",
+      "bytes": 6198
+    },
+    {
+      "path": "delivery-brew-upgrade.txt",
+      "sha256": "b2cf1ae62476c7288d46fad64ae154ff9ef7924bf2c0832abececb4ae0395efe",
+      "bytes": 1990
+    },
+    {
+      "path": "delivery-brew-test.txt",
+      "sha256": "61392cc0087228cd2029792c1e1edc42ffc6d1990dce09935a07e917f0e7248e",
+      "bytes": 2423
+    },
+    {
+      "path": "delivery-service-restart.txt",
+      "sha256": "cb74544ab68c9ebbf18c9b3afe8b889a0e765b29c2a309d2322bec1edc616953",
+      "bytes": 158
+    },
+    {
+      "path": "delivery-brew-new-formula.json",
+      "sha256": "17ad3905f895f999370f23691087469f1c0a1df4b8dbcc3bc069058cd3e42387",
+      "bytes": 5144
+    },
+    {
+      "path": "delivery-workers-before-resource-finalization.json",
+      "sha256": "4d23098d4d0de66f47a1e9a91f59a506b3254d9f3ad46fa0b3e2831a6ff78fa2",
+      "bytes": 22094
+    },
+    {
+      "path": "delivery-worker-accounting.json",
+      "sha256": "7312abf0c8dc7516e4ce8cbb62072dc3c67c6ddcd6f6ec09fb14149dbb1f9879",
+      "bytes": 1993
+    }
+  ],
+  "remaining_local_worker_terminals": 0
+}

@@ -1,0 +1,22 @@
+import pathlib,json,urllib.request,urllib.error,urllib.parse,hashlib,re,html,subprocess,time
+work=pathlib.Path('/private/tmp/canopy-improve-20261010');repo=pathlib.Path('/Users/nobocop/play/canopy');base='http://localhost:8737'
+with urllib.request.urlopen(base+'/browse',timeout=30) as r:
+ body=r.read();status=r.status;cache=r.headers.get('Cache-Control')
+assert status==200 and cache=='no-cache',(status,cache)
+links=[html.unescape(u) for u in re.findall(r'(?:src|href)="([^"]*(?:app\.js|style\.css|chroma\.css|graph\.js)[^"]*)"',body.decode())]
+assert len(links)>=3,links
+assets=[]
+for link in links:
+ u=urllib.parse.urlsplit(link);source=repo/'internal/webui'/u.path.lstrip('/');expected=source.read_bytes();digest=hashlib.sha256(expected).hexdigest();assert urllib.parse.parse_qs(u.query)['v']==[digest[:12]],link
+ with urllib.request.urlopen(base+link,timeout=15) as r:
+  data=r.read();etag=r.headers.get('ETag');cc=r.headers.get('Cache-Control');assert r.status==200 and data==expected and etag=='"'+digest+'"' and cc=='no-cache'
+ request=urllib.request.Request(base+link,headers={'If-None-Match':etag})
+ try:
+  with urllib.request.urlopen(request,timeout=15) as r:validation_status=r.status;empty=not r.read()
+ except urllib.error.HTTPError as e:validation_status=e.code;empty=not e.read()
+ assert validation_status==304 and empty,(validation_status,empty)
+ assets.append({'url':link,'sha256':digest,'matches_release_source':True,'etag':etag,'cache_control':cc,'validator_status':validation_status,'validator_body_empty':empty})
+version=subprocess.run(['/opt/homebrew/bin/canopy','version','--json'],capture_output=True,text=True);assert version.returncode==0;v=json.loads(version.stdout);assert v['version']=='0.11.0' and v['semantic'] is True and v['cache_schema']=='3',v
+service=subprocess.run(['/opt/homebrew/bin/brew','services','info','canopy','--json'],capture_output=True,text=True);assert service.returncode==0;svc=json.loads(service.stdout)[0];before=json.loads((work/'service-before.json').read_text());assert svc['running'] and svc['pid']!=before['service'][0]['pid'],svc
+binary=pathlib.Path('/opt/homebrew/opt/canopy/bin/canopy').resolve();record={'observed_utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'url':base,'route':'/browse','status':status,'html_cache_control':cache,'html_sha256':hashlib.sha256(body).hexdigest(),'assets':assets,'version':v,'service':svc,'previous_pid':before['service'][0]['pid'],'binary_path':str(binary),'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'actual_browser':'unverified','passed':True}
+(work/'service-after.json').write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n');print(json.dumps(record,ensure_ascii=False,indent=2))

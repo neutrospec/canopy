@@ -1,0 +1,1 @@
+{"checks": 37, "lite_hybrid_fallback": "pass", "single_object_mutations": "pass", "failure_effects": "pass", "non_target_wiki": "unchanged"}

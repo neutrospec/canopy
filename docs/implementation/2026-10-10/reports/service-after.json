@@ -1,0 +1,73 @@
+{
+  "observed_utc": "2026-10-09T19:23:16Z",
+  "url": "http://localhost:8737",
+  "route": "/browse",
+  "status": 200,
+  "html_cache_control": "no-cache",
+  "html_sha256": "570e589c5cb8c554abd1df3113dc64dfff013b4f592238d8c13b5f0f69292681",
+  "assets": [
+    {
+      "url": "/static/style.css?v=983d2ed8ce81",
+      "sha256": "983d2ed8ce8144afaf8266d5b6923138341bd20da761f7e9e4ba004576bbf276",
+      "matches_release_source": true,
+      "etag": "\"983d2ed8ce8144afaf8266d5b6923138341bd20da761f7e9e4ba004576bbf276\"",
+      "cache_control": "no-cache",
+      "validator_status": 304,
+      "validator_body_empty": true
+    },
+    {
+      "url": "/static/chroma.css?v=341e2df85fd2",
+      "sha256": "341e2df85fd23a7060e31b37dc9491769683e23475371d929c3a7d28d4a41079",
+      "matches_release_source": true,
+      "etag": "\"341e2df85fd23a7060e31b37dc9491769683e23475371d929c3a7d28d4a41079\"",
+      "cache_control": "no-cache",
+      "validator_status": 304,
+      "validator_body_empty": true
+    },
+    {
+      "url": "/static/app.js?v=30b77167f414",
+      "sha256": "30b77167f41412ab3afc52d30825689795d1f7e08df0dd104be2373d8debe4b9",
+      "matches_release_source": true,
+      "etag": "\"30b77167f41412ab3afc52d30825689795d1f7e08df0dd104be2373d8debe4b9\"",
+      "cache_control": "no-cache",
+      "validator_status": 304,
+      "validator_body_empty": true
+    }
+  ],
+  "version": {
+    "cache_schema": "3",
+    "commit": "homebrew",
+    "date": "homebrew",
+    "go": "go1.27.1",
+    "schema_target": 1,
+    "schema_version": 1,
+    "semantic": true,
+    "version": "0.11.0"
+  },
+  "service": {
+    "name": "canopy",
+    "service_name": "sh.brew.canopy",
+    "running": true,
+    "loaded": true,
+    "schedulable": false,
+    "pid": 92180,
+    "exit_code": null,
+    "user": "nobocop",
+    "status": "started",
+    "file": "/Users/nobocop/Library/LaunchAgents/sh.brew.canopy.plist",
+    "registered": true,
+    "loaded_file": "/Users/nobocop/Library/LaunchAgents/sh.brew.canopy.plist",
+    "command": "HOMEBREW_PREFIX=\"/opt/homebrew\" /opt/homebrew/opt/canopy/bin/canopy serve",
+    "working_dir": null,
+    "root_dir": null,
+    "log_path": "/opt/homebrew/var/log/canopy.log",
+    "error_log_path": "/opt/homebrew/var/log/canopy.log",
+    "interval": null,
+    "cron": null
+  },
+  "previous_pid": 893,
+  "binary_path": "/opt/homebrew/Cellar/canopy/0.11.0/bin/canopy",
+  "binary_sha256": "3b551d017ea7226ece2bb72b251bbd84c1564c45480046916dd0be4489fec9d6",
+  "actual_browser": "unverified",
+  "passed": true
+}

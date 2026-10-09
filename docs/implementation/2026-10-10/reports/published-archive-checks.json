@@ -1,0 +1,55 @@
+{
+  "archives": [
+    {
+      "name": "canopy_0.11.0_darwin_amd64_lite.tar.gz",
+      "sha256": "425e8eed15ccf0cc8ba5b6539bcadff68f39c95d8806647080944d9f6a4e6ea8",
+      "github_digest_match": true,
+      "checksums_match": true,
+      "bytes": 15740737,
+      "notice_check_exit": 0,
+      "notice_check_output": "PASS: 4 pinned assets, 6 notices, packaging declarations, 8 positive/negative controls\nPASS: actual archive notices and manifest: /private/tmp/canopy-improve-20261010/release-v0.11.0/canopy_0.11.0_darwin_amd64_lite.tar.gz\n"
+    },
+    {
+      "name": "canopy_0.11.0_darwin_arm64_lite.tar.gz",
+      "sha256": "e2a57fc6cc019a30ed6137f93d9899c6f990a4e4286ef51dfdf4a3f7a9a84a6d",
+      "github_digest_match": true,
+      "checksums_match": true,
+      "bytes": 15252267,
+      "notice_check_exit": 0,
+      "notice_check_output": "PASS: 4 pinned assets, 6 notices, packaging declarations, 8 positive/negative controls\nPASS: actual archive notices and manifest: /private/tmp/canopy-improve-20261010/release-v0.11.0/canopy_0.11.0_darwin_arm64_lite.tar.gz\n"
+    },
+    {
+      "name": "canopy_0.11.0_linux_amd64_lite.tar.gz",
+      "sha256": "3af7d31ff7c4d0902f8c80f51ee66b084e2bff506038cee1e7d3c160368a5854",
+      "github_digest_match": true,
+      "checksums_match": true,
+      "bytes": 15604343,
+      "notice_check_exit": 0,
+      "notice_check_output": "PASS: 4 pinned assets, 6 notices, packaging declarations, 8 positive/negative controls\nPASS: actual archive notices and manifest: /private/tmp/canopy-improve-20261010/release-v0.11.0/canopy_0.11.0_linux_amd64_lite.tar.gz\n"
+    },
+    {
+      "name": "canopy_0.11.0_linux_arm64_lite.tar.gz",
+      "sha256": "e20f85518942d76db20be79585adca7d9d3fc81effe0c8a4066a505995ea9dee",
+      "github_digest_match": true,
+      "checksums_match": true,
+      "bytes": 14828750,
+      "notice_check_exit": 0,
+      "notice_check_output": "PASS: 4 pinned assets, 6 notices, packaging declarations, 8 positive/negative controls\nPASS: actual archive notices and manifest: /private/tmp/canopy-improve-20261010/release-v0.11.0/canopy_0.11.0_linux_arm64_lite.tar.gz\n"
+    }
+  ],
+  "executed_binary": {
+    "path": "/private/tmp/canopy-improve-20261010/published-canopy-lite",
+    "sha256": "24ea90d828b9eb2e845696a1c578771d4d084931b8441df828d417ae0ed10906",
+    "version": {
+      "cache_schema": "3",
+      "commit": "c32685a",
+      "date": "2026-10-09T19:15:50Z",
+      "go": "go1.26.4",
+      "schema_target": 1,
+      "schema_version": 0,
+      "semantic": false,
+      "version": "0.11.0"
+    }
+  },
+  "passed": true
+}
