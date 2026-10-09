@@ -3,6 +3,7 @@ package search
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/neutrospec/canopy/internal/store"
 )
@@ -13,6 +14,9 @@ const rrfK = 60.0
 // Fuse merges ranked lists with RRF: score = Σ 1/(60+rank). Snippets
 // prefer the keyword list (it highlights matched terms).
 func Fuse(k int, lists ...[]store.Hit) []store.Hit {
+	if store.ValidateK(k) != nil {
+		return nil
+	}
 	type acc struct {
 		hit   store.Hit
 		score float64
@@ -35,7 +39,15 @@ func Fuse(k int, lists ...[]store.Hit) []store.Hit {
 		a.hit.Score = a.score
 		out = append(out, a.hit)
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].Score > out[j].Score })
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Score != out[j].Score {
+			return out[i].Score > out[j].Score
+		}
+		if a, b := strings.ToLower(out[i].Slug), strings.ToLower(out[j].Slug); a != b {
+			return a < b
+		}
+		return out[i].Slug < out[j].Slug
+	})
 	if len(out) > k {
 		out = out[:k]
 	}

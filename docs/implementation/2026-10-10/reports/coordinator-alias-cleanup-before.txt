@@ -1,0 +1,5 @@
+--- FAIL: TestScratchCleanupThroughRootAlias (0.00s)
+    safefile_test.go:282: successful alias cleanup left abandoned scratch
+FAIL
+FAIL	github.com/neutrospec/canopy/internal/safefile	0.410s
+FAIL

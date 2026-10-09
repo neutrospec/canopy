@@ -11,17 +11,18 @@
 package reconcile
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/statefile"
+	"github.com/neutrospec/canopy/internal/wikilock"
 )
 
 // State is the blessed-content ledger, committed to the wiki so every
@@ -30,6 +31,7 @@ import (
 type State struct {
 	Version int               `json:"version"`
 	Blessed map[string]string `json:"blessed"` // rel path -> sha256 hex of reviewed content
+	base    []byte
 }
 
 func Path(w *config.Wiki) string {
@@ -47,25 +49,31 @@ func Load(w *config.Wiki) (*State, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
-	if err := json.Unmarshal(data, s); err != nil {
+	if err := statefile.Decode(data, s); err != nil {
 		return nil, false, fmt.Errorf("parse %s: %w", Path(w), err)
 	}
 	if s.Blessed == nil {
 		s.Blessed = map[string]string{}
 	}
+	s.base = statefile.Snapshot(s)
 	return s, true, nil
 }
 
 func (s *State) Save(w *config.Wiki) error {
-	path := Path(w)
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	data, err := json.MarshalIndent(s, "", "  ") // map keys sort — stable git diffs
+	g, err := wikilock.AcquireShared(context.Background(), w.Root)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, append(data, '\n'), 0o644)
+	defer g.Unlock()
+	return s.SaveLocked(w)
+}
+
+func (s *State) SaveLocked(w *config.Wiki) error {
+	err := statefile.Patch(Path(w), s.base, s, func(b []byte) error { return statefile.Decode(b, &State{}) })
+	if err == nil {
+		s.base = statefile.Snapshot(s)
+	}
+	return err
 }
 
 func HashBytes(b []byte) string {
@@ -93,6 +101,16 @@ type Effects struct {
 // Record folds a mutation's effects into the ledger. A no-op until the
 // gate is initialized (opt-in), and for empty effects.
 func Record(w *config.Wiki, eff Effects) error {
+	g, err := wikilock.AcquireShared(context.Background(), w.Root)
+	if err != nil {
+		return err
+	}
+	defer g.Unlock()
+	return RecordLocked(w, eff)
+}
+
+// RecordLocked is the pipeline entry when the caller owns the wiki lease.
+func RecordLocked(w *config.Wiki, eff Effects) error {
 	if len(eff.Written) == 0 && len(eff.Removed) == 0 {
 		return nil
 	}
@@ -110,7 +128,7 @@ func Record(w *config.Wiki, eff Effects) error {
 	for _, rel := range eff.Removed {
 		delete(st.Blessed, rel)
 	}
-	return st.Save(w)
+	return st.SaveLocked(w)
 }
 
 // Candidate is one foreign change: page content the ledger has not judged.
@@ -128,17 +146,12 @@ func pageFiles(w *config.Wiki) []string {
 	}
 	var out []string
 	for _, d := range cfg.Schema.PageDirs {
-		filepath.WalkDir(filepath.Join(w.Root, d), func(p string, e fs.DirEntry, err error) error {
-			if err != nil {
-				return nil // dir may not exist yet
+		entries, _ := os.ReadDir(filepath.Join(w.Root, d))
+		for _, entry := range entries {
+			if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".md") {
+				out = append(out, filepath.Join(d, entry.Name()))
 			}
-			if !e.IsDir() && strings.HasSuffix(p, ".md") {
-				if rel, err := filepath.Rel(w.Root, p); err == nil {
-					out = append(out, rel)
-				}
-			}
-			return nil
-		})
+		}
 	}
 	sort.Strings(out)
 	return out
@@ -191,6 +204,11 @@ func Count(w *config.Wiki) (int, bool, error) {
 // path only in the ledger accepts the deletion (entry removed); a path in
 // neither is an error.
 func BlessPaths(w *config.Wiki, rels []string) error {
+	g, err := wikilock.AcquireShared(context.Background(), w.Root)
+	if err != nil {
+		return err
+	}
+	defer g.Unlock()
 	st, _, err := Load(w)
 	if err != nil {
 		return err
@@ -211,12 +229,17 @@ func BlessPaths(w *config.Wiki, rels []string) error {
 		}
 		return fmt.Errorf("nothing to bless at %s (no such file, no ledger entry)", rel)
 	}
-	return st.Save(w)
+	return st.SaveLocked(w)
 }
 
 // BlessAll baselines the gate: every current page is recorded as reviewed
 // and stale ledger entries drop. First run initializes (opts in) the wiki.
 func BlessAll(w *config.Wiki) (int, error) {
+	g, err := wikilock.AcquireShared(context.Background(), w.Root)
+	if err != nil {
+		return 0, err
+	}
+	defer g.Unlock()
 	st, _, err := Load(w)
 	if err != nil {
 		return 0, err
@@ -230,5 +253,5 @@ func BlessAll(w *config.Wiki) (int, error) {
 		}
 		st.Blessed[rel] = h
 	}
-	return len(files), st.Save(w)
+	return len(files), st.SaveLocked(w)
 }

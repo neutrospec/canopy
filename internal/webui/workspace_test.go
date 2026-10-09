@@ -30,6 +30,7 @@ func workspaceServer(t *testing.T) (*Server, *config.Wiki) {
 func workspaceGet(t *testing.T, s *Server, path, lang string) *httptest.ResponseRecorder {
 	t.Helper()
 	r := httptest.NewRequest("GET", path, nil)
+	r.Host = "localhost"
 	r.Header.Set("Accept-Language", lang)
 	w := httptest.NewRecorder()
 	s.Handler().ServeHTTP(w, r)
@@ -54,6 +55,19 @@ func TestClientMessagesLocalized(t *testing.T) {
 			for _, id := range clientMessageIDs {
 				if messages[id] == "" || messages[id] == id || messages[id] != localizeString(lc, id) {
 					t.Errorf("%s: client message %q = %q", lang, id, messages[id])
+				}
+			}
+			// Verify messages consumed by the shipped clients, independently of
+			// the server's own allowlist; a missing allowlist entry must fail.
+			for _, file := range []string{"static/app.js", "static/graph.js"} {
+				source, err := os.ReadFile(file)
+				if err != nil {
+					t.Fatal(err)
+				}
+				for _, call := range regexp.MustCompile(`\bt\(["']([a-z][a-z0-9_]*)["']\)`).FindAllStringSubmatch(string(source), -1) {
+					if messages[call[1]] == "" || messages[call[1]] == call[1] {
+						t.Errorf("%s requires undelivered translation %s", file, call[1])
+					}
 				}
 			}
 		})

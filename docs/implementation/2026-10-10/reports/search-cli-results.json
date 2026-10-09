@@ -1,0 +1,73 @@
+[
+  {
+    "args": [
+      "search",
+      "MQTT",
+      "--mode",
+      "hybrid",
+      "--no-mark",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\n  \"hits\": [\n    {\n      \"slug\": \"protocol\",\n      \"rel_path\": \"concepts/protocol.md\",\n      \"title\": \"Protocol\",\n      \"score\": 0.000001,\n      \"snippet\": \"»MQTT« protocol is an industrial communication rule.\\n\"\n    }\n  ],\n  \"mode\": \"keyword\",\n  \"query\": \"MQTT\"\n}\n",
+    "stderr": "warning: embedding.dimension=16 is unsupported; effective dimension comes from the model (default 1024)\nwarning: embedding.chunk_tokens=1 is unsupported; effective chunker target_runes=1200 max_runes=1600\nhybrid → keyword only (this canopy binary was built without embedding support (rebuild with -tags ORT))\n",
+    "parsed": {
+      "hits": [
+        {
+          "slug": "protocol",
+          "rel_path": "concepts/protocol.md",
+          "title": "Protocol",
+          "score": 1e-06,
+          "snippet": "»MQTT« protocol is an industrial communication rule.\n"
+        }
+      ],
+      "mode": "keyword",
+      "query": "MQTT"
+    }
+  },
+  {
+    "args": [
+      "search",
+      "MQTT",
+      "-k=-1",
+      "--json"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "error: k must be between 1 and 1000 (got -1)\n"
+  },
+  {
+    "args": [
+      "recall",
+      "MQTT",
+      "-k=0",
+      "--json"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "error: k must be between 1 and 1000 (got 0)\n"
+  },
+  {
+    "args": [
+      "model",
+      "status",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\n  \"effective\": {\n    \"dimension\": 1024,\n    \"max_runes\": 1600,\n    \"pooling\": \"first-output/mean-if-3d/l2\",\n    \"target_runes\": 1200\n  },\n  \"error\": \"model incomplete: open /private/tmp/canopy-search-20261010/data/canopy/models/bge-m3/model.onnx: no such file or directory; run canopy model pull --repair or model verify --adopt\",\n  \"model\": null,\n  \"model_available\": false,\n  \"model_path\": \"/private/tmp/canopy-search-20261010/data/canopy/models/bge-m3\",\n  \"ort_available\": false\n}\n",
+    "stderr": "warning: embedding.dimension=16 is unsupported; effective dimension comes from the model (default 1024)\nwarning: embedding.chunk_tokens=1 is unsupported; effective chunker target_runes=1200 max_runes=1600\n",
+    "parsed": {
+      "effective": {
+        "dimension": 1024,
+        "max_runes": 1600,
+        "pooling": "first-output/mean-if-3d/l2",
+        "target_runes": 1200
+      },
+      "error": "model incomplete: open /private/tmp/canopy-search-20261010/data/canopy/models/bge-m3/model.onnx: no such file or directory; run canopy model pull --repair or model verify --adopt",
+      "model": null,
+      "model_available": false,
+      "model_path": "/private/tmp/canopy-search-20261010/data/canopy/models/bge-m3",
+      "ort_available": false
+    }
+  }
+]

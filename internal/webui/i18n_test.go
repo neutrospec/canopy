@@ -66,6 +66,7 @@ func TestLocaleFallback(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := httptest.NewRequest("GET", "/", nil)
+	req.Host = "localhost"
 	req.Header.Set("Accept-Language", "xx-YY")
 	if got := ib.resolveLang(req); got != defaultLang {
 		t.Errorf("unknown Accept-Language should resolve to %q, got %q", defaultLang, got)
@@ -93,6 +94,7 @@ func TestLocaleCookieOverride(t *testing.T) {
 		t.Skip("no en locale")
 	}
 	req := httptest.NewRequest("GET", "/", nil)
+	req.Host = "localhost"
 	req.Header.Set("Accept-Language", "ko")
 	req.AddCookie(&http.Cookie{Name: langCookie, Value: "en"})
 	if got := ib.resolveLang(req); got != "en" {

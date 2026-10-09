@@ -1,0 +1,31 @@
+✖ hover preview follows the canonical page address instead of an ambiguous slug (1.921667ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 101.90475
+
+✖ failing tests:
+
+test at internal/webui/uitest/app.test.cjs:168:1
+✖ hover preview follows the canonical page address instead of an ambiguous slug (1.921667ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '/api/preview/foo.md'
+  - '/api/preview/concepts%2Ffoo.md.md'
+                  ^
+  
+      at TestContext.<anonymous> (/Users/nobocop/play/canopy/internal/webui/uitest/app.test.cjs:177:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '/api/preview/foo.md',
+    expected: '/api/preview/concepts%2Ffoo.md.md',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -20,17 +20,24 @@ DATE    ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 PKG     := github.com/neutrospec/canopy/internal/buildinfo
 LDFLAGS := -X $(PKG).version=$(VERSION) -X $(PKG).commit=$(COMMIT) -X $(PKG).date=$(DATE)
 
-.PHONY: build build-lite test test-ui fmt deps install release-check release-tag i18n-check release-lineage-check
+.PHONY: build build-lite test test-ui test-cli test-assets fmt deps install release-check release-tag i18n-check release-lineage-check
 
 build: deps
 	go build -tags ORT -ldflags "$(LDFLAGS)" -o canopy ./cmd/canopy
 
 # keyword-search-only binary, no cgo/native deps
 build-lite:
-	go build -ldflags "$(LDFLAGS)" -o canopy ./cmd/canopy
+	CGO_ENABLED=0 go build -ldflags "$(LDFLAGS)" -o canopy ./cmd/canopy
 
 test:
-	go test ./internal/...
+	bash scripts/test-go.sh ./internal/... ./cmd/canopy
+
+test-cli:
+	python3 scripts/test-cli.py
+
+test-assets:
+	python3 scripts/test-native-download.py
+	python3 scripts/check-assets.py
 
 # Client interaction checks use Node's built-in runner, without npm packages.
 # Node is a development-only dependency; the binary still embeds all UI assets.
@@ -50,11 +57,10 @@ i18n-check:
 release-lineage-check:
 	scripts/release-lineage-check.sh
 
-deps: $(LIBDIR)/libtokenizers.a
-
-$(LIBDIR)/libtokenizers.a:
-	mkdir -p $(LIBDIR)
-	curl -sL https://github.com/daulet/tokenizers/releases/download/$(TOKENIZERS_VERSION)/libtokenizers.darwin-arm64.tar.gz | tar xz -C $(LIBDIR)
+# Native preparation validates the host tuple and pinned archive digest even
+# when a library already exists. Each stage has its own checked exit status.
+deps:
+	python3 scripts/prepare-native.py --libdir "$(LIBDIR)"
 
 install: build
 	install -m 0755 canopy $(HOME)/.local/bin/canopy 2>/dev/null || install -m 0755 canopy /opt/homebrew/bin/canopy
@@ -64,14 +70,15 @@ install: build
 # (invariants F1/F3). See docs/versioning.md for the full release runbook.
 release-check:
 	@test -z "$$(git status --porcelain)" || { echo "working tree dirty — commit first"; exit 1; }
-	go test ./internal/...
+	$(MAKE) test test-ui test-cli test-assets i18n-check
+	go vet ./...
+	@git diff --exit-code
 	@test -z "$$(gofmt -l .)" || { echo "gofmt not clean: $$(gofmt -l .)"; exit 1; }
 	@echo "✓ ready to release $(VERSION)"
 
 # Tag the current commit and push it. GoReleaser (.goreleaser.yaml) turns the
-# tag into a GitHub release with a generated changelog. Then refresh the
-# Homebrew formula url+sha256 (scripts/brew-sha256.sh v$(V)) and push it to the
-# neutrospec/homebrew-tap repo.
+# tag into a GitHub release with a generated changelog, then publishes the
+# source formula to neutrospec/homebrew-tap with the release URL and digest.
 #
 # Releases are cut from main only (invariant J7). Guard order matters:
 #   1. cheap guards first (V set, on main) — fail before the test suite runs;
@@ -95,4 +102,4 @@ release-tag:
 	git push origin main
 	git tag -a v$(V) -m "canopy v$(V)"
 	git push origin v$(V)
-	@echo "✓ tagged v$(V) — next: goreleaser release, then bump the Homebrew formula"
+	@echo "✓ tagged v$(V) — GitHub Actions will publish the release and Homebrew formula"

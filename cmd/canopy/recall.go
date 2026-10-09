@@ -12,6 +12,8 @@ import (
 
 	"github.com/neutrospec/canopy/internal/attention"
 	"github.com/neutrospec/canopy/internal/digest"
+	"github.com/neutrospec/canopy/internal/embed"
+	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
 )
 
@@ -25,7 +27,16 @@ func cmdRecall() *cobra.Command {
 so an agent can inject them into context and cite [[slug]] sources.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := store.ValidateK(topK); err != nil {
+				return err
+			}
+			if perPage < 0 || perPage > store.MaxK {
+				return fmt.Errorf("per-page must be between 0 and %d", store.MaxK)
+			}
 			query := strings.Join(args, " ")
+			if len([]rune(query)) > embed.MaxTextRunes {
+				return fmt.Errorf("query exceeds %d runes", embed.MaxTextRunes)
+			}
 			w, err := loadWiki()
 			if err != nil {
 				return err
@@ -36,12 +47,12 @@ so an agent can inject them into context and cite [[slug]] sources.`,
 				return fmt.Errorf("recall needs the embedding stack: %w", err)
 			}
 			defer eng.Close()
-			st, _, err := refreshIndex(w, eng)
+			st, _, err := refreshIndexContext(cmd.Context(), w, eng)
 			if err != nil {
 				return err
 			}
 			defer st.Close()
-			qv, err := eng.Embed([]string{query})
+			qv, err := embed.EmbedContext(cmd.Context(), eng, []string{query})
 			if err != nil {
 				return err
 			}
@@ -64,7 +75,7 @@ so an agent can inject them into context and cite [[slug]] sources.`,
 				touchAttention(w, slugs, attention.KindRecall, query)
 			}
 			if flagJSON {
-				return emitJSON(map[string]any{"query": query, "chunks": chunks})
+				return emitJSON(map[string]any{"query": query, "mode": "semantic", "chunks": chunks})
 			}
 			if len(chunks) == 0 {
 				fmt.Println("no indexed chunks — run `canopy reindex`")

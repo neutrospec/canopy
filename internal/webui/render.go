@@ -1,7 +1,5 @@
 // Package webui serves the wiki over HTTP for human browsing.
-// Reading is free-form; the only mutation is the body editor, which
-// runs the same writeops.Run pipeline as the CLI so the write
-// invariants cannot be bypassed (docs/web-ui-write-design.md).
+// The editor queues proposals; agents apply them through the CLI pipeline.
 package webui
 
 import (
@@ -17,7 +15,8 @@ import (
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
-	ghtml "github.com/yuin/goldmark/renderer/html"
+	"github.com/yuin/goldmark/renderer"
+	"github.com/yuin/goldmark/util"
 	"go.abhg.dev/goldmark/mermaid"
 
 	"github.com/neutrospec/canopy/internal/wiki"
@@ -36,30 +35,33 @@ var md = goldmark.New(
 		// loads the vendored script only when a page contains one.
 		&mermaid.Extender{RenderMode: mermaid.RenderModeClient, NoScript: true},
 	),
-	goldmark.WithParserOptions(parser.WithAutoHeadingID()),
-	// The wiki is the user's own content and wikilink preprocessing
-	// emits inline <a> tags, so raw HTML must pass through.
-	goldmark.WithRendererOptions(ghtml.WithUnsafe()),
+	goldmark.WithParserOptions(parser.WithAutoHeadingID(), parser.WithInlineParsers(util.Prioritized(wikiLinkParser{}, 100))),
+	goldmark.WithRendererOptions(renderer.WithNodeRenderers(util.Prioritized(wikiLinkRenderer{}, 100))),
 )
 
 // Wikilink with optional #anchor and |alias. Same target charset as
 // wiki.ExtractLinks, but capturing all three parts for display.
 var linkRe = regexp.MustCompile(`\[\[([^\]\[|#]+)(#[^\]\[|]*)?(\|[^\]\[]*)?\]\]`)
 
-// Code regions where wikilinks must be left verbatim (mirrors the
-// exclusions in wiki.ExtractLinks).
-var (
-	fencedRe = regexp.MustCompile("(?ms)^\\s*```.*?^\\s*```\\s*$")
-	inlineRe = regexp.MustCompile("`[^`\n]*`")
-)
-
 // RenderPage converts a page body to HTML. exists reports whether a
 // normalized slug resolves to a page, so missing targets render as
 // red links (Wikipedia pattern).
 func RenderPage(body string, exists func(slug string) bool) (template.HTML, error) {
-	src := replaceWikilinks(body, exists)
+	return RenderPageWithResolver(body, func(target string) (string, string, bool) {
+		slug := wiki.NormalizeLink(target)
+		return slug, slug, exists != nil && exists(slug)
+	})
+}
+
+// WikiLinkResolver resolves the original target with the same namespace as
+// page lookup. reference can be a governed path to disambiguate dotted slugs.
+type WikiLinkResolver func(target string) (slug, reference string, found bool)
+
+func RenderPageWithResolver(body string, resolve WikiLinkResolver) (template.HTML, error) {
+	ctx := parser.NewContext()
+	ctx.Set(wikiResolveKey, resolve)
 	var buf bytes.Buffer
-	if err := md.Convert([]byte(src), &buf); err != nil {
+	if err := md.Convert([]byte(body), &buf, parser.WithContext(ctx)); err != nil {
 		return "", err
 	}
 	return template.HTML(buf.String()), nil
@@ -93,27 +95,7 @@ func replaceWikilinks(src string, exists func(string) bool) string {
 // outsideCode applies f to the parts of src not inside fenced blocks
 // or inline code spans.
 func outsideCode(src string, f func(string) string) string {
-	var out strings.Builder
-	last := 0
-	for _, loc := range fencedRe.FindAllStringIndex(src, -1) {
-		out.WriteString(applyOutsideInline(src[last:loc[0]], f))
-		out.WriteString(src[loc[0]:loc[1]])
-		last = loc[1]
-	}
-	out.WriteString(applyOutsideInline(src[last:], f))
-	return out.String()
-}
-
-func applyOutsideInline(seg string, f func(string) string) string {
-	var out strings.Builder
-	last := 0
-	for _, loc := range inlineRe.FindAllStringIndex(seg, -1) {
-		out.WriteString(f(seg[last:loc[0]]))
-		out.WriteString(seg[loc[0]:loc[1]])
-		last = loc[1]
-	}
-	out.WriteString(f(seg[last:]))
-	return out.String()
+	return wiki.OutsideCode(src, f)
 }
 
 // FirstParagraph returns a plain-text excerpt of a page body for

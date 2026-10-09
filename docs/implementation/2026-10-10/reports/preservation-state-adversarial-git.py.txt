@@ -1,0 +1,52 @@
+from runner import *
+import hashlib
+BIN=ROOT/'canopy'
+(ROOT/'normal-input.md').write_text('LOCAL_CHANGED_BODY\n')
+(ROOT/'rejected-input.md').write_text('LOCALLY_APPLIED_REJECTED_PUSH\n')
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def git(label,cwd,*args):
+ r=run(label,['/usr/bin/git','-c','protocol.file.allow=always',*args],cwd)
+ if r['exit']:raise RuntimeError(r)
+ return r['stdout'].strip()
+def page(body,title='alpha'):return f'---\ntitle: "{title}"\ntype: concept\ncreated: 2026-01-01\nupdated: 2026-01-01\ntags: []\n---\n\n{body}\n'
+def setup(name):
+ base=ROOT/'fixtures'/name;base.mkdir();remote=base/'remote.git';local=base/'local';peer=base/'peer'
+ (local/'concepts').mkdir(parents=True);(local/'concepts/alpha.md').write_text(page('BASE_INPUT'))
+ run(name+'-init',[BIN,'--wiki',local,'init','--json'])
+ git(name+'-bare',base,'init','--bare','--initial-branch=main',remote)
+ git(name+'-gitinit',base,'init','-b','main',local)
+ git(name+'-add',local,'add','-A');git(name+'-basecommit',local,'commit','-m','base')
+ git(name+'-remote',local,'remote','add','origin',remote);git(name+'-basepush',local,'push','-u','origin','main')
+ git(name+'-clone',base,'clone',remote,peer)
+ return base,remote,local,peer
+base,remote,local,peer=setup('git-conflict-v2')
+(peer/'concepts/alpha.md').write_text(page('REMOTE_INPUT'))
+git('conflict-peeradd',peer,'add','-A');git('conflict-peercommit',peer,'commit','-m','upstream');git('conflict-peerpush',peer,'push')
+remote_before=git('conflict-tip-before',base,'--git-dir',remote,'rev-parse','main')
+(local/'concepts/alpha.md').write_text(page('LOCAL_INPUT'))
+before={'local_sha':sha(local/'concepts/alpha.md'),'remote_tip':remote_before}
+sync=run('conflict-sync',[BIN,'--wiki',local,'sync','--json'])
+stash=git('conflict-stash',local,'stash','show','-p','stash@{0}')
+unmerged=git('conflict-unmerged',local,'ls-files','-u')
+remote_after=git('conflict-tip-after',base,'--git-dir',remote,'rev-parse','main')
+upstream=git('conflict-upstream-body',local,'show','HEAD:concepts/alpha.md')
+conflict={'before':before,'after_sha':sha(local/'concepts/alpha.md'),'sync':sync,'stash':stash,'unmerged':unmerged,'upstream':upstream,'remote_after':remote_after,'passes':{'nonzero':sync['exit']!=0,'no_remote_publish':remote_before==remote_after,'local_recoverable':'LOCAL_INPUT' in stash,'remote_recoverable':'REMOTE_INPUT' in upstream,'unresolved_visible':bool(unmerged)}}
+base,remote,local,peer=setup('git-control-v2')
+(peer/'concepts/beta.md').write_text(page('REMOTE_BETA','beta'))
+git('control-peeradd',peer,'add','-A');git('control-peercommit',peer,'commit','-m','add beta');git('control-peerpush',peer,'push')
+(local/'unrelated.txt').write_text('USER_DIRTY_INPUT\n')
+normal=run('control-update-sync',[BIN,'--wiki',local,'update','alpha','--body-file',ROOT/'normal-input.md','--sync','--json'])
+parsed=json.loads(normal['stdout'])
+remote_index=git('control-remote-index',base,'--git-dir',remote,'show','main:index/concepts.md')
+remote_unrelated=git('control-remote-dirty',base,'--git-dir',remote,'show','main:unrelated.txt')
+control={'command':normal,'remote_index':remote_index,'remote_unrelated':remote_unrelated,'passes':{'exit0':normal['exit']==0,'one_json_object':isinstance(parsed,dict),'confirmed_commit_push':parsed['sync']['committed'] and parsed['sync']['pushed'],'pulled_beta_in_final_index':'[[beta]]' in remote_index,'all_dirty_synced':remote_unrelated=='USER_DIRTY_INPUT'}}
+hook=remote/'hooks/pre-receive';hook.write_text('#!/bin/sh\nexit 29\n');hook.chmod(0o755)
+remote_before=git('pushreject-before',base,'--git-dir',remote,'rev-parse','main')
+old_sha=sha(local/'concepts/alpha.md')
+pushfail=run('pushreject-update-sync',[BIN,'--wiki',local,'update','alpha','--body-file',ROOT/'rejected-input.md','--sync','--json'])
+parsed=json.loads(pushfail['stdout'])
+remote_after=git('pushreject-after',base,'--git-dir',remote,'rev-parse','main')
+local_head=git('pushreject-localhead',local,'rev-parse','HEAD')
+push={'command':pushfail,'before_sha':old_sha,'after_sha':sha(local/'concepts/alpha.md'),'remote_before':remote_before,'remote_after':remote_after,'local_head':local_head,'passes':{'nonzero':pushfail['exit']!=0,'applied':parsed['applied']=='applied','stage_push':parsed['stage']=='push','committed':parsed['sync']['committed'],'not_pushed':not parsed['sync']['pushed'],'remote_unchanged':remote_before==remote_after,'local_commit_retained':local_head!=remote_after}}
+(ROOT/'git-probes.json').write_text(json.dumps({'conflict':conflict,'control':control,'push_failure':push},indent=2)+'\n')
+print(json.dumps({name:x['passes'] for name,x in [('conflict',conflict),('control',control),('push_failure',push)]},indent=2))

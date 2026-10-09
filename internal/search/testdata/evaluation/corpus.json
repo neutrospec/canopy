@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "split": "holdout-no-tuning",
+  "judge": "Hand-authored labels fixed before first measurement; literal required spans; no generated answer judge",
+  "baseline": "keyword unicode61 quoted prefix AND; semantic current mean-if-3d/l2; hybrid RRF k=60",
+  "acceptance": {"literal_recall_at_3_min":1.0,"raw_ranges_exact":true,"unsupported_keyword_hits_max":0,"semantic_quality_threshold":"descriptive only; no universal threshold or abstention claim"},
+  "pages": [
+    {"slug":"ko-protocol","title":"산업용 통신","body":"프로토콜은 산업용 통신 규칙이다. OPC UA는 장비 사이의 구조화된 데이터 교환에 쓰인다.\n"},
+    {"slug":"en-cache","title":"Cache invalidation","body":"A cache stores derived results. Editing source content invalidates the cached revision; rebuild from the current source.\n"},
+    {"slug":"mixed-queue","title":"취소와 request queue","body":"대기 중 request가 canceled 상태가 되면 gate 획득 뒤 Embed를 시작하지 않는다. 실행 중 native batch의 즉시 중단은 별도 계약이다.\n"},
+    {"slug":"symbol-cpp","title":"C++ API","body":"C++ is used for this sample API. The ++ operator increments a value. This page does not discuss C deployment.\n"},
+    {"slug":"code-go","title":"Go context example","body":"Context cancellation:\n\n    if err := ctx.Err(); err != nil { return err }\n\nA queued request checks cancellation before inference.  \n"},
+    {"slug":"negative-lunch","title":"점심 메뉴","body":"점심에는 국수와 채소를 먹었다. 이 페이지에는 통신 설정이나 모델 설치 방법이 없다.\n"}
+  ],
+  "queries": [
+    {"id":"ko-literal","language":"ko","query":"산업용 프로토콜","answerable":true,"expected_pages":["ko-protocol"],"supporting_spans":["프로토콜은 산업용 통신 규칙이다."],"relevance":{"ko-protocol":2},"gate":"literal"},
+    {"id":"en-literal","language":"en","query":"cache revision","answerable":true,"expected_pages":["en-cache"],"supporting_spans":["Editing source content invalidates the cached revision; rebuild from the current source."],"relevance":{"en-cache":2},"gate":"literal"},
+    {"id":"mixed-literal","language":"ko-en","query":"request gate","answerable":true,"expected_pages":["mixed-queue"],"supporting_spans":["대기 중 request가 canceled 상태가 되면 gate 획득 뒤 Embed를 시작하지 않는다."],"relevance":{"mixed-queue":2,"code-go":1},"gate":"literal"},
+    {"id":"symbol-literal","language":"symbol","query":"C++ API","answerable":true,"expected_pages":["symbol-cpp"],"supporting_spans":["C++ is used for this sample API."],"relevance":{"symbol-cpp":2},"gate":"literal"},
+    {"id":"code-literal","language":"code","query":"ctx.Err","answerable":true,"expected_pages":["code-go"],"supporting_spans":["    if err := ctx.Err(); err != nil { return err }"],"relevance":{"code-go":2},"gate":"literal"},
+    {"id":"ko-particle","language":"ko","query":"프로토콜을","answerable":true,"expected_pages":["ko-protocol"],"supporting_spans":["프로토콜은 산업용 통신 규칙이다."],"relevance":{"ko-protocol":2},"gate":"descriptive"},
+    {"id":"en-paraphrase","language":"en","query":"What must happen after the original page changes?","answerable":true,"expected_pages":["en-cache"],"supporting_spans":["Editing source content invalidates the cached revision; rebuild from the current source."],"relevance":{"en-cache":2},"gate":"descriptive"},
+    {"id":"mixed-paraphrase","language":"ko-en","query":"취소된 요청은 왜 추론하지 않나요?","answerable":true,"expected_pages":["mixed-queue","code-go"],"supporting_spans":["대기 중 request가 canceled 상태가 되면 gate 획득 뒤 Embed를 시작하지 않는다.","A queued request checks cancellation before inference."],"relevance":{"mixed-queue":2,"code-go":2},"gate":"descriptive"},
+    {"id":"unsupported","language":"en","query":"lunar basalt isotope calendar","answerable":false,"expected_pages":[],"supporting_spans":[],"relevance":{},"gate":"unsupported"},
+    {"id":"punctuation","language":"symbol","query":"+++","answerable":false,"expected_pages":[],"supporting_spans":[],"relevance":{},"gate":"unsupported"}
+  ]
+}

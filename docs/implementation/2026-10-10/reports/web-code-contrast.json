@@ -1,0 +1,45 @@
+{
+  "scope": "explicit adjusted code tokens vs declared surfaces only; not browser paint or accessibility verification",
+  "colors": {
+    "light": {
+      "surface": "#edf1ed",
+      "foreground": [
+        "#26332c",
+        "#58675e",
+        "#255c7e",
+        "#9f2f38",
+        "#2f6042",
+        "#694d83"
+      ],
+      "ratios": {
+        "#26332c": 11.559,
+        "#58675e": 5.234,
+        "#255c7e": 6.323,
+        "#9f2f38": 6.265,
+        "#2f6042": 6.407,
+        "#694d83": 6.156
+      }
+    },
+    "dark": {
+      "surface": "#242d27",
+      "foreground": [
+        "#e2e8e3",
+        "#a1ada4",
+        "#ffabb3",
+        "#b8d8f9",
+        "#a9dcae",
+        "#dac4ff",
+        "#d4b477"
+      ],
+      "ratios": {
+        "#e2e8e3": 11.412,
+        "#a1ada4": 6.102,
+        "#ffabb3": 7.926,
+        "#b8d8f9": 9.616,
+        "#a9dcae": 9.148,
+        "#dac4ff": 9.003,
+        "#d4b477": 7.16
+      }
+    }
+  }
+}

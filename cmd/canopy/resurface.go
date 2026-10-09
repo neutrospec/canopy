@@ -1,16 +1,19 @@
 // Resurface commands: candidate engines for the second-brain loop.
-// canopy picks deterministically and records state; the agent judges,
+// canopy filters, scores, or samples candidates and records state; the agent judges,
 // phrases, and delivers (docs/second-brain.md).
 package main
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/neutrospec/canopy/internal/indexer"
 	"github.com/neutrospec/canopy/internal/reads"
 	"github.com/neutrospec/canopy/internal/resurface"
 	"github.com/neutrospec/canopy/internal/store"
@@ -25,6 +28,9 @@ func cmdResurface() *cobra.Command {
 		Use:   "resurface",
 		Short: "Pick forgotten/stale-hub pages to re-encounter (records pick history)",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if n < 1 || n > store.MaxK {
+				return fmt.Errorf("count must be between 1 and %d", store.MaxK)
+			}
 			w, err := loadWiki()
 			if err != nil {
 				return err
@@ -41,10 +47,10 @@ func cmdResurface() *cobra.Command {
 			now := time.Now()
 			rng := rand.New(rand.NewSource(now.UnixNano()))
 			// Attention aggregates keep recently-accessed pages out of the
-			// pool (H6); on load failure fall back to edit dates alone.
+			// pool (H6). Preserve a healthy half if the other file is unavailable.
 			rd, err := reads.Load(w)
 			if err != nil {
-				rd = nil
+				fmt.Fprintln(os.Stderr, "warning: partial attention state:", err)
 			}
 			picks, err := resurface.PickPages(scan, st, rd, strategy, n, now, rng)
 			if err != nil {
@@ -94,11 +100,32 @@ func cmdResurfaceFeedback() *cobra.Command {
 		Short: "Record 👍/👎/snooze for a resurfaced page (tunes future picks)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			choices := 0
+			if up {
+				choices++
+			}
+			if down {
+				choices++
+			}
+			if snooze > 0 {
+				choices++
+			}
+			if choices != 1 || snooze < 0 || int64(snooze) > int64(math.MaxInt64)/int64(24*time.Hour) {
+				return fmt.Errorf("pass exactly one of --up, --down, --snooze <positive days>; snooze must fit a time.Duration")
+			}
 			w, err := loadWiki()
 			if err != nil {
 				return err
 			}
-			slug := wiki.NormalizeLink(args[0])
+			scan, err := wiki.Scan(w)
+			if err != nil {
+				return err
+			}
+			p, err := scan.Find(args[0])
+			if err != nil {
+				return err
+			}
+			slug := strings.ToLower(p.Slug)
 			st, err := resurface.LoadState(w)
 			if err != nil {
 				return err
@@ -139,6 +166,12 @@ func cmdBridge() *cobra.Command {
 		Use:   "bridge",
 		Short: "Find similar page pairs: unlinked = connection candidates; --include-linked adds merge/contradiction candidates",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if n < 1 || n > store.MaxK {
+				return fmt.Errorf("count must be between 1 and %d", store.MaxK)
+			}
+			if math.IsNaN(minSim) || math.IsInf(minSim, 0) || minSim < -1 || minSim > 1 {
+				return fmt.Errorf("min-sim must be finite and between -1 and 1")
+			}
 			w, err := loadWiki()
 			if err != nil {
 				return err
@@ -153,7 +186,19 @@ func cmdBridge() *cobra.Command {
 				if !ok {
 					return fmt.Errorf("--dismiss wants slug-a:slug-b")
 				}
-				st.DismissPair(wiki.NormalizeLink(a), wiki.NormalizeLink(b))
+				scan, err := wiki.Scan(w)
+				if err != nil {
+					return err
+				}
+				pa, err := scan.Find(a)
+				if err != nil {
+					return err
+				}
+				pb, err := scan.Find(b)
+				if err != nil {
+					return err
+				}
+				st.DismissPair(strings.ToLower(pa.Slug), strings.ToLower(pb.Slug))
 				if err := st.Save(w); err != nil {
 					return err
 				}
@@ -171,6 +216,13 @@ func cmdBridge() *cobra.Command {
 				return err
 			}
 			defer db.Close()
+			coverage, err := indexer.EnsureCurrentContext(cmd.Context(), w, db, scan, nil, nil)
+			if err != nil {
+				return err
+			}
+			if coverage.NeedsReindex > 0 {
+				fmt.Fprintf(os.Stderr, "warning: %d pages need embeddings; bridge uses only current indexed evidence\n", coverage.NeedsReindex)
+			}
 			vectors, err := db.PageVectors()
 			if err != nil {
 				return err
@@ -189,7 +241,7 @@ func cmdBridge() *cobra.Command {
 				}
 			}
 			if flagJSON {
-				return emitJSON(map[string]any{"bridges": bridges, "state_updated": !peek && len(bridges) > 0})
+				return emitJSON(map[string]any{"bridges": bridges, "state_updated": !peek && len(bridges) > 0, "covered_pages": coverage.EmbeddedPages, "needs_reindex": coverage.NeedsReindex, "profile": coverage.Profile})
 			}
 			if len(bridges) == 0 {
 				fmt.Println("no unlinked similar pairs above the threshold — the graph is well connected")

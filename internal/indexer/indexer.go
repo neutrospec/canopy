@@ -1,54 +1,109 @@
-// Package indexer rebuilds the derived index (page metadata, FTS,
-// and — when an embedding engine is supplied — chunk vectors).
+// Package indexer refreshes derived keyword and revision/profile-bound vectors.
 package indexer
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
+	"sync/atomic"
 
 	"github.com/neutrospec/canopy/internal/config"
 	"github.com/neutrospec/canopy/internal/embed"
 	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/wikilock"
 )
 
 type Result struct {
-	Pages       int `json:"pages"`
-	Embedded    int `json:"embedded_pages"` // pages whose vectors were (re)computed
-	Pruned      int `json:"pruned_pages"`   // deleted pages whose vectors were removed
-	TotalChunks int `json:"total_chunks"`
+	Pages         int    `json:"pages"`
+	Embedded      int    `json:"embedded_pages"`
+	Pruned        int    `json:"pruned_pages"`
+	TotalChunks   int    `json:"total_chunks"`
+	EmbeddedPages int    `json:"covered_pages"`
+	NeedsReindex  int    `json:"needs_reindex"`
+	SemanticReady bool   `json:"semantic_ready"`
+	Profile       string `json:"profile"`
 }
 
-// Reindex scans the wiki and refreshes the store. eng may be nil for a
-// keyword-only refresh. progress (optional) receives human status lines.
+var ephemeral atomic.Uint64
+
+// Reindex is retained for existing CLI callers.
 func Reindex(w *config.Wiki, st *store.Store, scan *wiki.ScanResult, eng embed.Engine, progress func(string)) (*Result, error) {
-	say := func(s string) {
-		if progress != nil {
-			progress(s)
-		}
-	}
-	var err error
-	if scan == nil {
-		scan, err = wiki.Scan(w)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if err := st.RebuildPages(scan.Pages); err != nil {
+	return EnsureCurrent(w, st, scan, eng, progress)
+}
+
+// EnsureCurrent bootstraps cold keyword caches and invalidates stale vectors
+// even when eng is nil. All cached-vector consumers must call this with a
+// current scan before searching or computing related/bridge candidates.
+func EnsureCurrent(w *config.Wiki, st *store.Store, scan *wiki.ScanResult, eng embed.Engine, progress func(string)) (*Result, error) {
+	return EnsureCurrentContext(context.Background(), w, st, scan, eng, progress)
+}
+
+func EnsureCurrentContext(ctx context.Context, w *config.Wiki, st *store.Store, scan *wiki.ScanResult, eng embed.Engine, progress func(string)) (*Result, error) {
+	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	res := &Result{Pages: len(scan.Pages)}
-	if eng == nil {
-		return res, nil
+	guard, err := wikilock.AcquireShared(ctx, w.Root)
+	if err != nil {
+		return nil, err
 	}
-
+	defer guard.Unlock()
+	// A supplied snapshot may have waited behind a cooperating mutation.
+	// Refresh under the shared lease and update its caller's view as well.
+	fresh, err := wiki.Scan(w)
+	if err != nil {
+		return nil, err
+	}
+	if scan == nil {
+		scan = fresh
+	} else {
+		*scan = *fresh
+	}
+	profile := embed.ProfileIDFor(w.Cfg.Embedding.Model)
+	if eng != nil {
+		if e, ok := eng.(interface{ ProfileID() string }); ok && e.ProfileID() != "" {
+			profile = e.ProfileID()
+		} else {
+			// Engines without an explicit identity cannot safely reuse vectors.
+			profile = fmt.Sprintf("unidentified/%T/%d/%d", eng, os.Getpid(), ephemeral.Add(1))
+		}
+	}
+	before, err := st.ChunkHashes()
+	if err != nil {
+		return nil, err
+	}
+	if err = st.RebuildPages(scan.Pages); err != nil {
+		return nil, err
+	}
+	if err = st.SetProfile(profile); err != nil {
+		return nil, err
+	}
+	if current, ok := eng.(interface{ ProfileCurrent() bool }); ok && !current.ProfileCurrent() {
+		if err = st.SetProfile(embed.ProfileIDFor(w.Cfg.Embedding.Model)); err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("embedding model files changed; reload engine and reindex")
+	}
 	stored, err := st.ChunkHashes()
 	if err != nil {
 		return nil, err
 	}
-	live := map[string]bool{}
+	if err = guard.Unlock(); err != nil {
+		return nil, err
+	}
+	res := &Result{Pages: len(scan.Pages), Profile: profile}
+	for slug := range before {
+		if _, ok := stored[slug]; !ok {
+			res.Pruned++
+		}
+	}
+	expected := 0
 	for _, p := range scan.Pages {
-		live[p.Slug] = true
+		if err = ctx.Err(); err != nil {
+			return nil, err
+		}
 		title := p.Title
 		if title == "" {
 			title = p.Slug
@@ -57,34 +112,101 @@ func Reindex(w *config.Wiki, st *store.Store, scan *wiki.ScanResult, eng embed.E
 		if len(chunks) == 0 {
 			continue
 		}
-		var hashes []string
-		for _, c := range chunks {
-			hashes = append(hashes, c.Hash)
+		expected++
+		if eng == nil {
+			continue
+		}
+		hashes := make([]string, len(chunks))
+		for i, c := range chunks {
+			hashes[i] = c.Hash
 		}
 		if stored[p.Slug] == strings.Join(hashes, ",") {
-			continue // unchanged since last embedding run
+			continue
 		}
-		texts := make([]string, len(chunks))
-		seqs := make([]int, len(chunks))
+		inputs, texts := make([]string, len(chunks)), make([]string, len(chunks))
+		seqs, starts, ends := make([]int, len(chunks)), make([]int, len(chunks)), make([]int, len(chunks))
 		for i, c := range chunks {
-			texts[i] = c.Text
-			seqs[i] = c.Seq
+			inputs[i], texts[i], seqs[i], starts[i], ends[i] = c.Input, c.Text, c.Seq, c.Start, c.End
 		}
-		say(fmt.Sprintf("embedding %s (%d chunks)", p.RelPath, len(chunks)))
-		vecs, err := eng.Embed(texts)
+		if progress != nil {
+			progress(fmt.Sprintf("embedding %s (%d chunks)", p.RelPath, len(chunks)))
+		}
+		vectors, err := embed.EmbedContext(ctx, eng, inputs)
 		if err != nil {
 			return nil, fmt.Errorf("embed %s: %w", p.RelPath, err)
 		}
-		if err := st.ReplaceChunks(p.Slug, seqs, hashes, texts, vecs); err != nil {
+		revision := store.SourceRevision(p)
+		err = func() error {
+			publishGuard, err := wikilock.AcquireShared(ctx, w.Root)
+			if err != nil {
+				return err
+			}
+			defer publishGuard.Unlock()
+			if current, ok := eng.(interface{ ProfileCurrent() bool }); ok && !current.ProfileCurrent() {
+				if err = st.SetProfile(embed.ProfileIDFor(w.Cfg.Embedding.Model)); err != nil {
+					return err
+				}
+				return fmt.Errorf("embedding model changed during inference; reload engine and reindex")
+			}
+			raw, err := os.ReadFile(filepath.Join(w.Root, p.RelPath))
+			if err != nil {
+				return fmt.Errorf("source changed while embedding %s: %w; retry reindex", p.RelPath, err)
+			}
+			if store.SourceRevision(wiki.Parse(p.RelPath, raw)) != revision {
+				return fmt.Errorf("source changed while embedding %s; retry reindex", p.RelPath)
+			}
+			return st.ReplaceCurrentChunks(p.Slug, revision, profile, seqs, hashes, texts, starts, ends, vectors)
+		}()
+		if err != nil {
 			return nil, err
 		}
 		res.Embedded++
 	}
-	if res.Pruned, err = st.PruneChunks(live); err != nil {
+	// Recheck earlier pages after later batches: a cooperating write during
+	// inference must not leave the initial FTS snapshot or earlier evidence.
+	finalGuard, err := wikilock.AcquireShared(ctx, w.Root)
+	if err != nil {
 		return nil, err
 	}
-	if res.TotalChunks, err = st.ChunkCount(); err != nil {
+	defer finalGuard.Unlock()
+	finalScan, err := wiki.Scan(w)
+	if err != nil {
 		return nil, err
+	}
+	*scan = *finalScan
+	if err = st.RebuildPages(finalScan.Pages); err != nil {
+		return nil, err
+	}
+	if current, ok := eng.(interface{ ProfileCurrent() bool }); ok && !current.ProfileCurrent() {
+		if err = st.SetProfile(embed.ProfileIDFor(w.Cfg.Embedding.Model)); err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("model changed during refresh; reload engine and reindex")
+	}
+	if current, err := st.GetMeta("embedding_profile"); err != nil {
+		return nil, err
+	} else if current != profile {
+		return nil, fmt.Errorf("embedding profile changed during refresh; retry reindex")
+	}
+	expected = 0
+	for _, p := range finalScan.Pages {
+		if strings.TrimSpace(p.Body) != "" {
+			expected++
+		}
+	}
+	res.Pages = len(finalScan.Pages)
+	res.TotalChunks, err = st.ChunkCount()
+	if err != nil {
+		return nil, err
+	}
+	res.EmbeddedPages, err = st.EmbeddedPageCount()
+	if err != nil {
+		return nil, err
+	}
+	res.NeedsReindex = expected - res.EmbeddedPages
+	res.SemanticReady = res.NeedsReindex == 0
+	if eng != nil && !res.SemanticReady {
+		return nil, fmt.Errorf("source changed during index refresh; retry reindex (%d pages need embedding)", res.NeedsReindex)
 	}
 	return res, nil
 }

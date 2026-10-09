@@ -1,0 +1,70 @@
+{
+  "kind": "coordinator late regressions and actual native/benchmark evidence; not independent retests",
+  "files": [
+    {
+      "name": "coordinator-address-time-before.txt",
+      "sha256": "b3a94428b7345459c4eb6f0f1e2c2e449113a31c11cd62d9a851bea13e33af90",
+      "bytes": 1393
+    },
+    {
+      "name": "coordinator-address-time-after.txt",
+      "sha256": "9482ea852d2fb8545d6b4d07342dd58ccb71413b78aefbbbad5380f121a9757f",
+      "bytes": 227
+    },
+    {
+      "name": "coordinator-resolved-mutation-before.txt",
+      "sha256": "92776d94dc155c0359ff79a34a12d7dc4f391c389fef92c322bc0aa25cc40cea",
+      "bytes": 3294
+    },
+    {
+      "name": "coordinator-alias-cleanup-before.txt",
+      "sha256": "3fa7fcab80cd6e36dee6dc9dd118852db33e2ed3174e5366b5f18127c552045c",
+      "bytes": 196
+    },
+    {
+      "name": "coordinator-web-query-before.txt",
+      "sha256": "dc94c24a0453076e20b9022874e21ac039e720aaf257d254a3b15aa7c16496ac",
+      "bytes": 1537
+    },
+    {
+      "name": "coordinator-web-preview-before.txt",
+      "sha256": "7c056428f62a925a6fcd2478d58b187cc44717c6d6a342ce611607ef8291f809",
+      "bytes": 1007
+    },
+    {
+      "name": "coordinator-web-body-before.txt",
+      "sha256": "c76fdca61fa4c9adc1c0742883b51790913155273035f8c9bd32836a63782296",
+      "bytes": 513
+    },
+    {
+      "name": "coordinator-web-messages-before.txt",
+      "sha256": "9c4a0a6f2ec6411eda60ee1995391835ac33f4dfe61c5087ccb401bce6591ba1",
+      "bytes": 494
+    },
+    {
+      "name": "coordinator-web-upload-before.txt",
+      "sha256": "b1ae76b63d115f89ff944058d598ca629a53b730f22a9a426a29e323531362d3",
+      "bytes": 254
+    },
+    {
+      "name": "coordinator-digest-dates-before.txt",
+      "sha256": "dc5fef5a5cc803bdfb80d76ac2ffec5a8a0353aa57e158175eb4ec1aa590a508",
+      "bytes": 763
+    },
+    {
+      "name": "coordinator-tasks-future-before.txt",
+      "sha256": "75b8dcf67dd0803f8233a57169309ac8fb0ea52f8df291e90825eae65051f02b",
+      "bytes": 312
+    },
+    {
+      "name": "coordinator-native-final.txt",
+      "sha256": "93a660d8ae78cfabfbe85568f6e5db55b6fc04ed97f19164744fbf3093695562",
+      "bytes": 10521
+    },
+    {
+      "name": "coordinator-search-fix-bench.txt",
+      "sha256": "81e4c514094cb5a83a59ec9f51f27bea2f574cb1bcc885c31b03c596a71e829f",
+      "bytes": 514
+    }
+  ]
+}

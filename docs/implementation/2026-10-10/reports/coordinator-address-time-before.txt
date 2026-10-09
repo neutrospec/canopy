@@ -1,0 +1,18 @@
+--- FAIL: TestAmbiguousDiscardPreservesBothEditedCopies (0.03s)
+    address_test.go:31: ambiguous reference discarded a working copy
+--- FAIL: TestUniqueDottedSlugCheckinAndDeletedOrphanDiscard (0.02s)
+    address_test.go:64: checkout metadata unavailable for alpha.md: open /var/folders/d0/qk1wb9m146xbpg3nx7k_ds280000gn/T/canopy-go.eZvKDL/tmp/canopy-tests-3026382213/tmp/TestUniqueDottedSlugCheckinAndDeletedOrphanDiscard1889548035/001/state/canopy/checkout/eff7cca2f7c2/alpha.json: no such file or directory; preserve copy and inspect canopy checkout --list
+FAIL
+FAIL	github.com/neutrospec/canopy/internal/checkout	0.444s
+--- FAIL: TestGeneratedLinksResolveDottedNamespace (0.04s)
+    address_test.go:42: index/concepts.md generated invalid target "foo.md": ambiguous page reference "foo.md": use explicit concepts/foo.md.md or concepts/foo.md
+    address_test.go:48: index/concepts.md reaches 1 distinct pages, want 2
+    address_test.go:42: index.md generated invalid target "foo.md": ambiguous page reference "foo.md": use explicit concepts/foo.md.md or concepts/foo.md
+    address_test.go:48: index.md reaches 1 distinct pages, want 2
+FAIL
+FAIL	github.com/neutrospec/canopy/internal/genindex	0.360s
+--- FAIL: TestLoadOrdersByInstantWithStableInvalidFallback (0.04s)
+    time_test.go:22: position 0 = tie-a, want earlier
+FAIL
+FAIL	github.com/neutrospec/canopy/internal/tasks	0.395s
+FAIL

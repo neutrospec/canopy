@@ -6,7 +6,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -67,7 +69,7 @@ bless what stands. See docs/reconcile-design.md.`,
 				fmt.Println("현재 상태 전체를 기준선으로 삼아 켜려면: canopy reconcile bless --all")
 				return nil
 			}
-			reports := enrichForeign(w, cands)
+			reports := enrichForeignContext(cmd.Context(), w, cands)
 			if flagJSON {
 				return emitJSON(map[string]any{"initialized": true, "foreign": reports})
 			}
@@ -179,6 +181,10 @@ func cmdReconcileBless() *cobra.Command {
 // lint findings and semantic duplicate candidates (graceful degradation
 // when the embedding stack is missing — same policy as search).
 func enrichForeign(w *config.Wiki, cands []reconcile.Candidate) []foreignReport {
+	return enrichForeignContext(context.Background(), w, cands)
+}
+
+func enrichForeignContext(ctx context.Context, w *config.Wiki, cands []reconcile.Candidate) []foreignReport {
 	reports := make([]foreignReport, 0, len(cands))
 	if len(cands) == 0 {
 		return reports
@@ -189,14 +195,16 @@ func enrichForeign(w *config.Wiki, cands []reconcile.Candidate) []foreignReport 
 		if e, err := embed.New(); err == nil {
 			eng = e
 			defer eng.Close()
+		} else {
+			fmt.Fprintf(os.Stderr, "reconcile semantic evidence unavailable: %v\n", err)
 		}
 	}
-	st, scan, err := refreshIndex(w, eng)
+	st, scan, err := refreshIndexContext(ctx, w, eng)
 	if err != nil {
 		// Evidence is best-effort; the raw candidate list still stands.
 		for _, c := range cands {
 			reports = append(reports, foreignReport{RelPath: c.RelPath, Kind: c.Kind,
-				DupCandidates: []dupCandidate{}, Issues: []string{}})
+				DupCandidates: []dupCandidate{}, Issues: []string{"search evidence unavailable: " + err.Error()}})
 		}
 		return reports
 	}
@@ -210,13 +218,16 @@ func enrichForeign(w *config.Wiki, cands []reconcile.Candidate) []foreignReport 
 	for _, p := range scan.Pages {
 		pageByRel[p.RelPath] = p
 	}
-	vectors, _ := st.PageVectors()
+	vectors, vectorErr := st.PageVectors()
 
 	for _, c := range cands {
 		r := foreignReport{RelPath: c.RelPath, Kind: c.Kind,
 			DupCandidates: []dupCandidate{}, Issues: issuesByPage[c.RelPath]}
 		if r.Issues == nil {
 			r.Issues = []string{}
+		}
+		if vectorErr != nil {
+			r.Issues = append(r.Issues, "semantic evidence unavailable: "+vectorErr.Error())
 		}
 		if p, ok := pageByRel[c.RelPath]; ok && c.Kind != "deleted" {
 			if v, ok := vectors[p.Slug]; ok {

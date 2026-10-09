@@ -16,6 +16,7 @@ import (
 	"github.com/neutrospec/canopy/internal/resurface"
 	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/wikilock"
 )
 
 // "위키가 먼저 말을 거는 홈" (docs/web-ui-plan-2.md D6): a daily
@@ -31,56 +32,85 @@ type daily struct {
 	bridge *resurface.Bridge
 }
 
-func (s *Server) todaysCard() (*resurface.Pick, *resurface.Bridge) {
+func (s *Server) todaysCard(scan *wiki.ScanResult, rd *reads.State, vectors map[string][]float32) (*resurface.Pick, *resurface.Bridge) {
 	s.dailyMu.Lock()
 	defer s.dailyMu.Unlock()
 	today := time.Now().Format("2006-01-02")
 	if s.daily.date == today {
-		return s.daily.pick, s.daily.bridge
-	}
-	s.daily = daily{date: today}
-	scan, err := wiki.Scan(s.w)
-	if err != nil {
-		return nil, nil
+		// Render copies: a concurrent home response may still be reading the
+		// cached objects. Refresh labels without mutating shared card data.
+		var pick *resurface.Pick
+		var bridge *resurface.Bridge
+		if cached := s.daily.pick; cached != nil {
+			if p, ok := scan.BySlug[strings.ToLower(cached.Slug)]; ok {
+				copy := *cached
+				copy.Title, copy.Excerpt = p.Title, FirstParagraph(p.Body, 200)
+				pick = &copy
+			}
+		}
+		if cached := s.daily.bridge; cached != nil {
+			a, aOK := scan.BySlug[strings.ToLower(cached.A.Slug)]
+			b, bOK := scan.BySlug[strings.ToLower(cached.B.Slug)]
+			av, bv := vectors[strings.ToLower(cached.A.Slug)], vectors[strings.ToLower(cached.B.Slug)]
+			if aOK && bOK && len(av) > 0 && len(bv) > 0 && store.Cosine(av, bv) >= .7 && !containsStr(a.Links, strings.ToLower(b.Slug)) && !containsStr(b.Links, strings.ToLower(a.Slug)) {
+				copy := *cached
+				copy.A.Title, copy.A.Excerpt = a.Title, FirstParagraph(a.Body, 200)
+				copy.B.Title, copy.B.Excerpt = b.Title, FirstParagraph(b.Body, 200)
+				copy.Similarity = store.Cosine(av, bv)
+				bridge = &copy
+			}
+		}
+		return pick, bridge
 	}
 	st, err := resurface.LoadState(s.w)
 	if err != nil {
+		log.Printf("resurface state: %v", err)
 		return nil, nil
 	}
+	next := daily{date: today}
 	now := time.Now()
 	rng := rand.New(rand.NewSource(now.UnixNano()))
 	changed := false
-	rd, err := reads.Load(s.w)
-	if err != nil {
-		rd = nil
-	}
 	if picks, err := resurface.PickPages(scan, st, rd, "auto", 1, now, rng); err == nil && len(picks) > 0 {
-		s.daily.pick = &picks[0]
+		next.pick = &picks[0]
 		st.MarkShown([]string{picks[0].Slug}, now)
 		changed = true
 	}
-	if sdb, err := store.Open(s.w.DBPath()); err == nil {
-		if vectors, err := sdb.PageVectors(); err == nil {
-			if bridges := resurface.PickBridges(scan, vectors, st, 0.7, 1, false, now); len(bridges) > 0 {
-				s.daily.bridge = &bridges[0]
-				st.MarkPairShown(strings.ToLower(bridges[0].A.Slug), strings.ToLower(bridges[0].B.Slug), now)
-				changed = true
-			}
-		}
-		sdb.Close()
+	if bridges := resurface.PickBridges(scan, vectors, st, 0.7, 1, false, now); len(bridges) > 0 {
+		next.bridge = &bridges[0]
+		st.MarkPairShown(strings.ToLower(bridges[0].A.Slug), strings.ToLower(bridges[0].B.Slug), now)
+		changed = true
 	}
 	if changed {
 		if err := st.Save(s.w); err != nil {
 			log.Printf("resurface state save: %v", err)
+			return nil, nil
 		}
 	}
+	s.daily = next
 	return s.daily.pick, s.daily.bridge
 }
 
 // handleResurfaceFeedback wires 👍/👎/😴 to the shared resurface state
 // so the web and the agent loop share cooldowns and votes.
 func (s *Server) handleResurfaceFeedback(w http.ResponseWriter, r *http.Request) {
-	slug := wiki.NormalizeLink(r.FormValue("slug"))
+	lease, err := wikilock.AcquireShared(r.Context(), s.w.Root)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	defer lease.Unlock()
+	scan, err := wiki.Scan(s.w)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	p, findErr := scan.Find(r.FormValue("slug"))
+	if findErr != nil {
+		http.NotFound(w, r)
+		return
+	}
+	slug := strings.ToLower(p.Slug)
 	action := r.FormValue("action")
 	st, err := resurface.LoadState(s.w)
 	if err != nil {
@@ -97,7 +127,7 @@ func (s *Server) handleResurfaceFeedback(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "unknown action", http.StatusBadRequest)
 		return
 	}
-	if err := st.Save(s.w); err != nil {
+	if err := st.SaveLocked(s.w); err != nil {
 		s.fail(w, err)
 		return
 	}

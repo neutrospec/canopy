@@ -4,10 +4,14 @@
 (function () {
   "use strict";
   const el = document.getElementById("graph");
-  if (!el || typeof ForceGraph === "undefined") return;
+  if (!el) return;
 
   const messages = JSON.parse(document.getElementById("ui-messages")?.textContent || "{}");
   const t = (id) => messages[id] || id;
+  const status = document.getElementById("graph-status");
+  const fail = () => { if (status) { status.hidden = false; status.textContent = t("graph_load_failed"); } };
+  if (typeof ForceGraph === "undefined") { fail(); return; }
+  try {
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const css = getComputedStyle(document.documentElement);
@@ -34,6 +38,7 @@
     .d3VelocityDecay(0.25);
 
   let hoverNode = null;
+  let partialReads = false;
   const highlightNodes = new Set();
   const highlightLinks = new Set();
   const neighbors = new Map(); // id -> Set(ids)
@@ -67,8 +72,8 @@
     tip.style.top = Math.max(8, y) + "px";
   }
   function showTip(n) {
-    const meta = [n.dir, `${t("graph_links")} ${n.deg}`, n.read ? t("page_read_label") : t("graph_legend_unread")];
-    if (n.touches) meta.push(`${t("graph_touches")} ${n.touches}`);
+    const meta = [n.dir, `${t("graph_links")} ${n.deg}`, n.read === null ? t("graph_status_unknown") : n.read ? t("page_read_label") : t("graph_legend_unread")];
+    if (n.touches) meta.push(`${t(partialReads ? "graph_available_touches" : "graph_touches")} ${n.touches}`);
     if (n.island) meta.push(t("graph_legend_island"));
     tip.innerHTML = `<b>${esc(n.title)}</b><span class="tipmeta">${esc(meta.join(" · "))}</span>` +
       (n.excerpt ? `<p>${esc(n.excerpt)}</p>` : "");
@@ -94,7 +99,7 @@
       ctx.arc(n.x, n.y, r, 0, 2 * Math.PI);
       ctx.fillStyle = dirColor[n.dir] || C.muted;
       ctx.fill();
-      if (!n.read) { // unread pages get a ring — the discovery loop, visible
+      if (n.read === false) { // unread pages get a ring — the discovery loop, visible
         ctx.strokeStyle = C.missing;
         ctx.lineWidth = 1 / scale;
         ctx.stroke();
@@ -148,7 +153,7 @@
       }
       el.style.cursor = n ? "pointer" : "";
     })
-    .onNodeClick((n) => { location.href = "/page/" + encodeURIComponent(n.id); })
+    .onNodeClick((n) => { location.href = n.url || "/page/" + encodeURIComponent(n.id); })
     .onBackgroundClick(() => { highlightNodes.clear(); highlightLinks.clear(); });
 
   function fit() {
@@ -157,7 +162,13 @@
   fit();
   addEventListener("resize", fit);
 
-  fetch("/api/graph").then((r) => r.json()).then((data) => {
+  fetch("/api/graph").then((r) => {
+    if (!r.ok || r.redirected) throw new Error("graph unavailable");
+    return r.json();
+  }).then((data) => {
+    if (!Array.isArray(data.nodes) || !Array.isArray(data.links)) throw new Error("invalid graph");
+    partialReads = data.reads_partial === true;
+    if (status) { status.hidden = !partialReads; if (partialReads) status.textContent = t("reads_partial"); }
     for (const l of data.links) {
       if (!neighbors.has(l.source)) neighbors.set(l.source, new Set());
       if (!neighbors.has(l.target)) neighbors.set(l.target, new Set());
@@ -178,13 +189,16 @@
     // find box: fly to the best-matching node and light up its neighborhood
     const find = document.getElementById("graphfind");
     find?.addEventListener("keydown", (e) => {
-      if (e.key !== "Enter") return;
+      if (e.key !== "Enter" || e.isComposing) return;
       const q = find.value.trim().toLowerCase();
       if (!q) return;
       const nodes = graph.graphData().nodes;
       const hit = nodes.find((n) => n.id === q) ||
         nodes.find((n) => n.title.toLowerCase().includes(q) || n.id.includes(q));
       if (!hit) return;
+      e.preventDefault();
+      const open = document.getElementById("graph-open");
+      if (open) { open.href = hit.url || "/page/" + encodeURIComponent(hit.id); open.hidden = false; }
       graph.centerAt(hit.x, hit.y, reducedMotion ? 0 : 600);
       graph.zoom(4, reducedMotion ? 0 : 600);
       highlightNodes.clear();
@@ -194,10 +208,9 @@
       (neighbors.get(hit.id) || []).forEach((id) => highlightNodes.add(id));
       (nodeLinks.get(hit.id) || []).forEach((l) => highlightLinks.add(l));
     });
-  }).catch(() => {
-    el.textContent = t("graph_load_failed");
-  });
+  }).catch(fail);
 
   // Debug/power-user hook (also used by automated UI tests).
   window.__canopyGraph = graph;
+  } catch { fail(); }
 })();

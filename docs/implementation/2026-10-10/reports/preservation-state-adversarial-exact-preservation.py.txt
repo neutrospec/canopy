@@ -1,0 +1,20 @@
+from runner import *
+import hashlib, shutil
+BIN=ROOT/'canopy-fixed'
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else None
+# Read the full autostash blob, not just whether its diff contains a marker.
+g=json.loads((ROOT/'git-probes.json').read_text());local=ROOT/'fixtures/git-conflict-v2/local';peer=ROOT/'fixtures/git-conflict-v2/peer'
+stash=run('exact-stash-blob',['/usr/bin/git','show','stash@{0}:concepts/alpha.md'],local)
+upstream=run('exact-upstream-blob',['/usr/bin/git','show','HEAD:concepts/alpha.md'],local)
+git={'stash_command':stash,'upstream_command':upstream,'before_local_sha':g['conflict']['before']['local_sha'],'recovered_local_sha':hashlib.sha256(stash['stdout'].encode()).hexdigest(),'peer_sha':sha(peer/'concepts/alpha.md'),'recovered_upstream_sha':hashlib.sha256(upstream['stdout'].encode()).hexdigest()}
+git['passes']={'local_full_bytes_recoverable':git['before_local_sha']==git['recovered_local_sha'],'upstream_full_bytes_recoverable':git['peer_sha']==git['recovered_upstream_sha']}
+# Observe retained checkout bytes immediately after the actual failure.
+w=ROOT/'fixtures/exact-checkout-recovery';(w/'concepts').mkdir(parents=True);page=w/'concepts/alpha.md';page.write_text('---\ntitle: Alpha\ntype: concept\ncreated: 2026-01-01\nupdated: 2026-01-01\ntags: []\n---\n\nORIGINAL EXACT BYTES\n')
+def cmd(label,*args):return run(label,[BIN,'--wiki',w,*args,'--json'])
+assert cmd('exact-recovery-init','init')['exit']==0
+co=cmd('exact-recovery-checkout','checkout','alpha');copy=Path(json.loads(co['stdout'])['path']);meta=copy.with_suffix('.json');copy.write_text(copy.read_text()+'\nPRESERVE FULL PROPOSED BODY 한글\n');before_copy=sha(copy);before_page=sha(page)
+foreign=ROOT/'fixtures/exact-foreign-index';foreign.write_text('FOREIGN INPUT\n');(w/'index').mkdir();(w/'index/concepts.md').symlink_to(foreign);before_foreign=sha(foreign)
+failed=cmd('exact-recovery-failure','checkin','alpha');after_failure_copy=sha(copy);after_failure_page=sha(page);pending_meta=json.loads(meta.read_text());(w/'index/concepts.md').unlink();resumed=cmd('exact-recovery-resume','checkin','alpha')
+checkout={'failure':failed,'resume':resumed,'copy_sha_before':before_copy,'copy_sha_immediately_after_failure':after_failure_copy,'page_sha_before':before_page,'page_sha_immediately_after_failure':after_failure_page,'page_sha_after_resume':sha(page),'foreign_before':before_foreign,'foreign_after':sha(foreign),'pending_meta':pending_meta}
+checkout['passes']={'failed_nonzero':failed['exit']!=0,'copy_full_bytes_preserved':before_copy==after_failure_copy,'foreign_full_bytes_preserved':before_foreign==sha(foreign),'published_hash_accurate':json.loads(failed['stdout'])['result']['applied_hash']==after_failure_page,'resume_exit0':resumed['exit']==0,'page_not_republished':sha(page)==after_failure_page,'both_checkout_files_reclaimed':not copy.exists() and not meta.exists()}
+result={'git':git,'checkout':checkout};(ROOT/'exact-preservation-retest.json').write_text(json.dumps(result,indent=2,ensure_ascii=False)+'\n');print(json.dumps({k:v['passes'] for k,v in result.items()},indent=2))

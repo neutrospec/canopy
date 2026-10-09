@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "scope": "force-graph and MathJax; no full dependency/SBOM audit",
+  "assets": [
+    {
+      "path": "internal/webui/static/vendor/force-graph.min.js",
+      "project": "force-graph",
+      "version": "1.51.4",
+      "source": "https://registry.npmjs.org/force-graph/-/force-graph-1.51.4.tgz#package/dist/force-graph.min.js",
+      "sha256": "1008539bb9e171a0dc343453366451a1b3a6ded06028ef4f978608b658ba2d0a",
+      "upstream_sha256": "1008539bb9e171a0dc343453366451a1b3a6ded06028ef4f978608b658ba2d0a",
+      "bytes": 177599,
+      "processing": "none (upstream bytes)",
+      "license": "MIT",
+      "license_file": "internal/webui/static/vendor/LICENSE-force-graph.txt"
+    },
+    {
+      "path": "internal/webui/static/vendor/tex-svg.js",
+      "project": "MathJax",
+      "version": "3.2.2",
+      "source": "https://raw.githubusercontent.com/mathjax/MathJax/3.2.2/es5/tex-svg.js",
+      "sha256": "d4295dc33744836935c1399feece5159577b34c5c8ffb9f1c6324cd82e03a882",
+      "upstream_sha256": "d4295dc33744836935c1399feece5159577b34c5c8ffb9f1c6324cd82e03a882",
+      "bytes": 2108580,
+      "processing": "none (upstream bytes)",
+      "license": "Apache-2.0",
+      "license_file": "internal/webui/static/vendor/LICENSE-mathjax.txt"
+    },
+    {
+      "path": "internal/webui/static/vendor/mathjax-color.js",
+      "project": "MathJax",
+      "version": "3.2.2",
+      "source": "https://raw.githubusercontent.com/mathjax/MathJax/3.2.2/es5/input/tex/extensions/color.js",
+      "sha256": "7fdc8f7cda1630f35ccd579379ba04add9dec50c66cebbc05a4b129027b32435",
+      "upstream_sha256": "7fdc8f7cda1630f35ccd579379ba04add9dec50c66cebbc05a4b129027b32435",
+      "bytes": 8627,
+      "processing": "none (upstream bytes); local filename only",
+      "license": "Apache-2.0",
+      "license_file": "internal/webui/static/vendor/LICENSE-mathjax.txt"
+    },
+    {
+      "path": "internal/webui/static/vendor/mathjax-physics.js",
+      "project": "MathJax",
+      "version": "3.2.2",
+      "source": "https://raw.githubusercontent.com/mathjax/MathJax/3.2.2/es5/input/tex/extensions/physics.js",
+      "sha256": "83d5ad43ea478baf855e0ef9456d63d2d735d10c78ab7544019e0cb0b8083a83",
+      "upstream_sha256": "83d5ad43ea478baf855e0ef9456d63d2d735d10c78ab7544019e0cb0b8083a83",
+      "bytes": 24029,
+      "processing": "none (upstream bytes); local filename only",
+      "license": "Apache-2.0",
+      "license_file": "internal/webui/static/vendor/LICENSE-mathjax.txt"
+    }
+  ],
+  "required_notices": [
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "sha256": "396c1fc1aea2877139a57be3a24bebb1c40982561ed469685d2b51a8f84019a7"
+    },
+    {
+      "path": "internal/webui/static/vendor/LICENSE-force-graph.txt",
+      "sha256": "5b6dc9ce44c7b73620b191c567339212bd00537af46fdedaf98304c34214cc9c"
+    },
+    {
+      "path": "internal/webui/static/vendor/NOTICE-force-graph.txt",
+      "sha256": "b3b032c8c948d2b2baa9911cd1a625fb351e01cfb85bed18583a37227ab566a0"
+    },
+    {
+      "path": "internal/webui/static/vendor/LICENSE-mathjax.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "internal/webui/static/vendor/NOTICE-mathjax.txt",
+      "sha256": "43a360b0822d5781b8abf7b21382dfcbb961960925f6a171e95a2d184684e1e9"
+    },
+    {
+      "path": "internal/webui/static/vendor/fonts/LICENSE-fonts.txt",
+      "sha256": "97b19fea7e1125e926d781eeaf8fa8847d976aafc43a1e01af4073345a8646ce"
+    }
+  ],
+  "mathjax": {
+    "packages": [
+      "base",
+      "ams",
+      "newcommand",
+      "color",
+      "physics"
+    ],
+    "disabled": [
+      "autoload",
+      "require",
+      "menu",
+      "remote extensions"
+    ],
+    "corpus": [
+      "x^2 + \\frac{1}{2}",
+      "\\begin{aligned}a&=b+c\\\\d&=e\\end{aligned}",
+      "\\newcommand{\\RR}{\\mathbb{R}}\\RR",
+      "\\color{red}{x} + \\textcolor{blue}{y}",
+      "\\dv{f}{x}+\\pdv{g}{t}+\\qty(\\frac{x}{y})"
+    ],
+    "unsupported_example": "\\require{mhchem}\\ce{H2O}"
+  },
+  "provenance": {
+    "verified_date": "2026-10-10",
+    "force_graph_archive_sha256": "acc62e98b618ba3c19291041b0efcbf719ba65f05c5f40b7ee2c1c9c38220a32",
+    "mathjax_notice": "No top-level NOTICE in pinned upstream distribution; canopy redistribution note retains corresponding source-header attribution."
+  }
+}

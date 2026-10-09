@@ -1,4 +1,4 @@
-<!-- i18n-source: docs/upgrading.md sha:aab42b3d08286c5f46f679655bf4f212f0b8ad36 -->
+<!-- i18n-source: docs/upgrading.md sha:0bae33e295d0c302657089bda2f7b24e7e73e47d -->
 > [한국어](../upgrading.md) · **English**
 
 # Upgrade & Migration Guide
@@ -9,19 +9,25 @@
 >
 > | Kind | Who does it | Where |
 > |---|---|---|
-> | **Data-schema migration** | canopy, automatically (a new version's first run climbs it via `migrate.Ensure()`) | design [versioning.md](../versioning.md), checks [invariants.md](../invariants.md) J |
+> | **Machine-local data-schema migration** | canopy, automatically (a new version's first run climbs it via `migrate.Ensure()`) | design [versioning.md](../versioning.md), checks [invariants.md](../invariants.md) J |
 > | **Install / operational migration** | a person, manually (changing how it's installed or run) | **this document** |
 > | Release changelog | GoReleaser, generated | GitHub Releases (from the commit convention) |
 >
 > Each item carries runnable check commands ([philosophy.md](../philosophy.md) principle 8).
 > Items are stacked newest-first.
 
+The ladder handles non-reproducible state on this machine, such as global settings
+and XDG layouts. Traveling `_meta/*` files evolve through their own version fields;
+completing a machine migration does not update an old wiki fetched later. Search
+databases are derived caches, discarded and rebuilt on a cache-version mismatch.
+Preserve `logs/` and wiki state; they are not caches.
+
 ## First: how am I installed right now
 
 ```bash
-which -a canopy                 # which binaries resolve on PATH (multiple = two installs)
-brew list --versions canopy     # whether brew installed it, and the version
-canopy version                  # app / data-schema / cache-schema versions
+which -a canopy                 # 어느 바이너리가 PATH에 잡히는지 (여러 개면 두 벌 설치)
+brew list --versions canopy     # brew 설치 여부·버전
+canopy version                  # 앱·데이터 스키마·캐시 스키마 버전
 ```
 
 - Only `/opt/homebrew/bin/canopy` (Apple Silicon) or `/usr/local/bin/canopy` (Intel) → **single brew install** — the recommended state.
@@ -29,8 +35,10 @@ canopy version                  # app / data-schema / cache-schema versions
 
 > **Key fact — a binary's location is independent of XDG data.** canopy's
 > config, model, cache, and state live under `$XDG_*_HOME` (or HOME-based
-> defaults), so the same paths are used no matter where the binary is. Moving
-> or deleting the binary leaves the data untouched — the checks below prove it.
+> defaults). Changing only the binary location under the same HOME/XDG reuses
+> those paths. The checks below confirm paths, counts, and service startup; they
+> do not prove complete data preservation. For content preservation, compare
+> actual files with a separate backup and account for intended migrations.
 
 ---
 
@@ -53,48 +61,50 @@ finds the wiki.
 ### Steps
 
 ```bash
-# 1. Install via brew (if you haven't)
+# 1. brew로 설치 (아직 안 했다면)
 brew install neutrospec/tap/canopy
 
-# 2. The model needs no migration — it's XDG data and is reused as-is. Just confirm:
+# 2. 모델은 이전할 필요 없음 — XDG 데이터라 그대로 재사용된다. 확인만:
 canopy model status --json | jq .model_path
-#   → ~/.local/share/canopy/models/... (the brew binary looks at the same path)
+#   → ~/.local/share/canopy/models/... (brew 바이너리도 같은 경로를 본다)
 
-# 3. Remove the old binary
+# 3. 옛 바이너리 제거
 rm ~/.local/bin/canopy
-hash -r                          # clear the shell's command-path cache (or open a new shell)
+hash -r                          # 셸의 명령 경로 캐시 비우기 (또는 새 셸)
 
-# 4. Confirm bare `canopy` now resolves to brew
+# 4. 이제 bare `canopy`가 brew로 해석되는지 확인
 which canopy                     # → /opt/homebrew/bin/canopy
 
-# 5. (optional) Run the web UI as a persistent service
-brew services start canopy       # localhost:8737, also registered to start at login
+# 5. (선택) 웹 UI를 상시 서비스로
+brew services start canopy       # localhost:8737, 로그인 시 자동 시작도 등록
 ```
 
 ### Checks
 
 ```bash
-# Only one install remains
-which -a canopy | sort -u                 # a single brew path
-test ! -e ~/.local/bin/canopy && echo ok  # the old copy is gone
+# 한 벌만 남았나
+which -a canopy | sort -u                 # brew 경로 하나만
+test ! -e ~/.local/bin/canopy && echo ok  # 옛 사본 없음
 
-# No data loss (identical before and after — binary location ≠ XDG)
+# 데이터 경로·페이지 수 확인 (전체 내용 보존을 증명하지 않음)
 canopy model status --json | jq .model_path
-canopy status --json | jq .pages          # page count unchanged
+canopy status --json | jq .pages          # 페이지 수 그대로
 
-# The service actually serves
+# 서비스가 실제로 서빙하나
 brew services list | grep canopy          # started
 curl -s -o /dev/null -w '%{http_code}\n' localhost:8737/   # 200
 ```
 
 ### Rolling back
 
-Data and config live in XDG regardless, so either direction is lossless.
+The same HOME/XDG reuses existing data and configuration paths. Before returning
+to an older version, check file and schema compatibility separately; restore a
+backup for that version if needed.
 
 ```bash
-brew services stop canopy         # take the service down (if needed)
-# To return to a source install, from the canopy repo:
-make install                      # recreates ~/.local/bin/canopy
+brew services stop canopy         # 서비스 내리기 (필요 시)
+# 소스 설치로 복귀하려면 canopy 저장소에서:
+make install                      # ~/.local/bin/canopy 재생성
 ```
 
 ### Pitfalls
@@ -121,12 +131,16 @@ With a single brew install, picking up a new release is two lines.
 
 ```bash
 brew upgrade canopy
-brew services restart canopy      # if you run the web UI as a service (assets are
-                                  # embedded in the binary, so a restart is what
-                                  # brings the new UI in)
+brew services restart canopy      # 서비스로 웹 UI를 돌리는 경우 (에셋이 바이너리에
+                                  # 내장되므로 재시작해야 새 UI가 반영된다)
 ```
 
-For a release that needs a data-schema migration, the **first `canopy` run
+For a release that needs a machine-local data-schema migration, the **first `canopy` run
 after the upgrade climbs it automatically** (confirm with `canopy migrate
 status`). There is nothing for you to do by hand — that's the boundary between
 automatic migration and this document (manual migration).
+
+After upgrading, refresh embedded guidance with `canopy skills install`. For
+skills in an arbitrary directory, pass the same `--dir <path>`. Use root in
+`canopy status --json` to check that the service and agent use the same HOME/XDG
+settings and wiki.

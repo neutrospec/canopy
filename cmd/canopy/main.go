@@ -3,10 +3,9 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -82,6 +81,9 @@ func loadWiki() (*config.Wiki, error) {
 	// Apply the wiki's model choice here, before any embed.* call:
 	// ModelAvailable() gates and New() must agree on the directory.
 	embed.SetModelDir(w.Cfg.Embedding.Model)
+	for _, warning := range w.Cfg.Embedding.EmbeddingWarnings() {
+		fmt.Fprintln(os.Stderr, "warning:", warning)
+	}
 	return w, nil
 }
 
@@ -150,6 +152,10 @@ func emitJSON(v any) error {
 // and can never serve stale keyword results. Vector chunks are only
 // refreshed when an engine is passed (they cost model inference).
 func refreshIndex(w *config.Wiki, eng embed.Engine) (*store.Store, *wiki.ScanResult, error) {
+	return refreshIndexContext(context.Background(), w, eng)
+}
+
+func refreshIndexContext(ctx context.Context, w *config.Wiki, eng embed.Engine) (*store.Store, *wiki.ScanResult, error) {
 	scan, err := wiki.Scan(w)
 	if err != nil {
 		return nil, nil, err
@@ -163,7 +169,7 @@ func refreshIndex(w *config.Wiki, eng embed.Engine) (*store.Store, *wiki.ScanRes
 			fmt.Fprintln(os.Stderr, "  "+s)
 		}
 	}
-	if _, err := indexer.Reindex(w, st, scan, eng, progress); err != nil {
+	if _, err := indexer.EnsureCurrentContext(ctx, w, st, scan, eng, progress); err != nil {
 		st.Close()
 		return nil, nil, err
 	}
@@ -205,7 +211,7 @@ func cmdInit() *cobra.Command {
 			if err := w.WriteTOML(); err != nil {
 				return err
 			}
-			st, scan, err := refreshIndex(w, nil)
+			st, scan, err := refreshIndexContext(cmd.Context(), w, nil)
 			if err != nil {
 				return err
 			}
@@ -251,21 +257,40 @@ func cmdStatus() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			recN, recOn, _ := reconcile.Count(w)
-			taskN, _ := tasks.PendingCount(w)
-			openCO, _ := checkout.Open(w)
+			recN, recOn, recErr := reconcile.Count(w)
+			taskN, taskErr := tasks.PendingCount(w)
+			openCO, checkoutErr := checkout.Open(w)
+			warnings := []string{}
+			for _, e := range []error{recErr, taskErr, checkoutErr} {
+				if e != nil {
+					warnings = append(warnings, e.Error())
+				}
+			}
 			if flagJSON {
 				out := map[string]any{
-					"root":           w.Root,
-					"pages":          len(scan.Pages),
-					"stray_root":     scan.StrayRoot,
-					"git":            git,
-					"initialized":    w.HasTOML,
-					"tasks_pending":  taskN,
-					"checkouts_open": len(openCO),
+					"root":                w.Root,
+					"pages":               len(scan.Pages),
+					"stray_root":          scan.StrayRoot,
+					"git":                 git,
+					"initialized":         w.HasTOML,
+					"tasks_pending":       taskN,
+					"checkouts_open":      len(openCO),
+					"tasks_available":     taskErr == nil,
+					"checkouts_available": checkoutErr == nil,
+					"reconcile_available": recErr == nil,
+					"warnings":            warnings,
+				}
+				if taskErr != nil {
+					out["tasks_pending"] = nil
+				}
+				if checkoutErr != nil {
+					out["checkouts_open"] = nil
 				}
 				if recOn {
 					out["unreconciled"] = recN
+				}
+				if recErr != nil {
+					out["unreconciled"] = nil
 				}
 				return emitJSON(out)
 			}
@@ -280,6 +305,9 @@ func cmdStatus() *cobra.Command {
 				parts = append(parts, fmt.Sprintf("%s %d", d, byDir[d]))
 			}
 			fmt.Printf(" (%s)\n", strings.Join(parts, ", "))
+			for _, warning := range warnings {
+				fmt.Printf("⚠ state unavailable: %s\n", warning)
+			}
 			if !w.HasTOML {
 				fmt.Println("init:  not adopted yet — run `canopy init`")
 			}
@@ -302,7 +330,13 @@ func cmdStatus() *cobra.Command {
 				if o.Modified {
 					state = "modified"
 				}
+				if o.Status != "" && o.Status != "open" {
+					state = o.Status
+				}
 				fmt.Printf("✎ checkout %s (%s) — `canopy checkin %s`\n", o.Slug, state, o.Slug)
+				if o.Diagnostic != "" {
+					fmt.Printf("  %s\n", o.Diagnostic)
+				}
 			}
 			return nil
 		},
@@ -341,7 +375,7 @@ func cmdReindex() *cobra.Command {
 					fmt.Fprintln(os.Stderr, "  "+s)
 				}
 			}
-			res, err := indexer.Reindex(w, st, scan, eng, progress)
+			res, err := indexer.EnsureCurrentContext(cmd.Context(), w, st, scan, eng, progress)
 			if err != nil {
 				return err
 			}
@@ -371,6 +405,9 @@ func cmdSearch() *cobra.Command {
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			query := strings.Join(args, " ")
+			if err := store.ValidateK(topK); err != nil {
+				return err
+			}
 			w, err := loadWiki()
 			if err != nil {
 				return err
@@ -398,7 +435,7 @@ func cmdSearch() *cobra.Command {
 				}
 			}
 
-			st, _, err := refreshIndex(w, eng)
+			st, _, err := refreshIndexContext(cmd.Context(), w, eng)
 			if err != nil {
 				return err
 			}
@@ -412,7 +449,7 @@ func cmdSearch() *cobra.Command {
 				}
 			}
 			if mode == "semantic" || mode == "hybrid" {
-				qv, err := eng.Embed([]string{query})
+				qv, err := embed.EmbedContext(cmd.Context(), eng, []string{query})
 				if err != nil {
 					return err
 				}
@@ -464,63 +501,80 @@ func cmdSearch() *cobra.Command {
 	return c
 }
 
-// modelFiles are fetched from Hugging Face by `canopy model pull`.
-// EmbeddedLLM/bge-m3-onnx-o2-cpu: fp32 CPU-optimized bge-m3 whose fused
-// ops require the ONNX Runtime backend (hence the ORT build tag).
-const modelRepo = "EmbeddedLLM/bge-m3-onnx-o2-cpu"
-
-var modelFiles = []string{
-	"model.onnx", "model.onnx.data", "config.json",
-	"tokenizer.json", "tokenizer_config.json", "special_tokens_map.json",
-}
-
 func cmdModel() *cobra.Command {
-	c := &cobra.Command{Use: "model", Short: "Manage the local embedding model"}
-	c.AddCommand(&cobra.Command{
-		Use:   "pull",
-		Short: "Download bge-m3 ONNX (~2.3GB) to $XDG_DATA_HOME/canopy/models",
+	c := &cobra.Command{Use: "model", Short: "Inspect, download and verify local embedding models"}
+	var repair bool
+	var pullDir string
+	pull := &cobra.Command{
+		Use: "pull", Short: "Download a pinned bge-m3 bundle, preserving the previous installation on failure",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			dir := embed.DefaultModelPath()
-			if err := os.MkdirAll(dir, 0o755); err != nil {
+			_, _ = loadWiki()
+			dir := pullDir
+			if dir == "" {
+				dir = embed.DefaultModelPath()
+			}
+			manifest, err := embed.Pull(cmd.Context(), dir, repair, func(msg string) { fmt.Fprintln(os.Stderr, msg) })
+			if err != nil {
 				return err
 			}
-			for _, f := range modelFiles {
-				dst := filepath.Join(dir, f)
-				if _, err := os.Stat(dst); err == nil {
-					fmt.Printf("  %s (cached)\n", f)
-					continue
-				}
-				fmt.Printf("  %s …\n", f)
-				if err := download("https://huggingface.co/"+modelRepo+"/resolve/main/"+f, dst); err != nil {
-					return fmt.Errorf("%s: %w", f, err)
-				}
+			if flagJSON {
+				return emitJSON(map[string]any{"ready": true, "path": dir, "manifest": manifest})
 			}
 			fmt.Println("✓ model ready:", dir)
 			if !embed.Available() {
-				fmt.Println("note: this binary lacks the ORT backend — rebuild with `make build` (-tags ORT)")
+				fmt.Println("note: this binary has no ORT backend; keyword search remains available")
 			}
 			return nil
 		},
-	})
+	}
+	pull.Flags().BoolVar(&repair, "repair", false, "replace an incomplete or explicitly selected bundle after staging and verification")
+	pull.Flags().StringVar(&pullDir, "dir", "", "explicit model directory")
+	c.AddCommand(pull)
 	c.AddCommand(&cobra.Command{
-		Use:   "status",
-		Short: "Show embedding stack status",
+		Use: "status", Short: "Show cheap bundle readiness and actual embedding profile",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Best-effort: inside a wiki, report the configured model dir
-			// (loadWiki applies it); outside one, fall back to the default.
 			_, _ = loadWiki()
+			dir := embed.DefaultModelPath()
+			status, err := embed.CheckModel(dir)
 			if flagJSON {
-				return emitJSON(map[string]any{
-					"ort_available":   embed.Available(),
-					"model_available": embed.ModelAvailable(),
-					"model_path":      embed.DefaultModelPath(),
-				})
+				out := map[string]any{"ort_available": embed.Available(), "model_available": err == nil && status != nil && status.Ready, "model_path": dir, "model": status, "effective": map[string]any{"pooling": embed.MeanPooling, "dimension": embed.Dimension, "target_runes": embed.TargetRunes, "max_runes": embed.MaxRunes}}
+				if err != nil {
+					out["error"] = err.Error()
+				}
+				return emitJSON(out)
 			}
-			fmt.Printf("ORT backend available: %v\n", embed.Available())
-			fmt.Printf("model downloaded:      %v (%s)\n", embed.ModelAvailable(), embed.DefaultModelPath())
+			fmt.Printf("ORT backend available: %v\nmodel directory: %s\n", embed.Available(), dir)
+			if err != nil {
+				fmt.Println("model unavailable:", err)
+				return nil
+			}
+			fmt.Printf("model ready: %v (legacy=%v, kind=%s)\nprofile: %s\n", status.Ready, status.Legacy, status.Kind, status.Profile)
 			return nil
 		},
 	})
+	var adopt bool
+	var verifyDir string
+	verify := &cobra.Command{Use: "verify", Short: "Verify model digests; --adopt records a manifest for a valid custom/legacy bundle",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			_, _ = loadWiki()
+			dir := verifyDir
+			if dir == "" {
+				dir = embed.DefaultModelPath()
+			}
+			manifest, err := embed.VerifyModel(dir, adopt)
+			if err != nil {
+				return err
+			}
+			if flagJSON {
+				return emitJSON(map[string]any{"verified": true, "path": dir, "manifest": manifest})
+			}
+			fmt.Println("✓ model verified:", dir)
+			return nil
+		},
+	}
+	verify.Flags().BoolVar(&adopt, "adopt", false, "record a digest manifest for an existing valid model")
+	verify.Flags().StringVar(&verifyDir, "dir", "", "explicit model directory")
+	c.AddCommand(verify)
 	return c
 }
 
@@ -577,31 +631,6 @@ is created if missing).`,
 	return c
 }
 
-func download(url, dst string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("HTTP %d", resp.StatusCode)
-	}
-	tmp := dst + ".part"
-	f, err := os.Create(tmp)
-	if err != nil {
-		return err
-	}
-	if _, err := io.Copy(f, resp.Body); err != nil {
-		f.Close()
-		os.Remove(tmp)
-		return err
-	}
-	if err := f.Close(); err != nil {
-		return err
-	}
-	return os.Rename(tmp, dst)
-}
-
 func cmdBacklinks() *cobra.Command {
 	var orphans bool
 	c := &cobra.Command{
@@ -637,12 +666,11 @@ func cmdBacklinks() *cobra.Command {
 			if len(args) != 1 {
 				return fmt.Errorf("usage: canopy backlinks <page> (or --orphans)")
 			}
-			slug := wiki.NormalizeLink(args[0])
-			p, ok := scan.BySlug[slug]
-			if !ok {
-				return fmt.Errorf("page not found: %s", args[0])
+			p, err := scan.Find(args[0])
+			if err != nil {
+				return err
 			}
-			sources := in[slug]
+			sources := in[strings.ToLower(p.Slug)]
 			if flagJSON {
 				return emitJSON(map[string]any{"page": p.RelPath, "backlinks": sources})
 			}
@@ -715,9 +743,9 @@ func cmdShow() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			p, ok := scan.BySlug[wiki.NormalizeLink(args[0])]
-			if !ok {
-				return fmt.Errorf("page not found: %s", args[0])
+			p, err := scan.Find(args[0])
+			if err != nil {
+				return err
 			}
 			data, err := os.ReadFile(filepath.Join(w.Root, p.RelPath))
 			if err != nil {

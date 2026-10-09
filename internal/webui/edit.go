@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -32,8 +33,8 @@ func (s *Server) handleEditForm(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	p, ok := scan.BySlug[wiki.NormalizeLink(r.PathValue("slug"))]
-	if !ok {
+	p, err := scan.Find(r.PathValue("slug"))
+	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
@@ -50,17 +51,24 @@ func (s *Server) handleEditSave(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	p, ok := scan.BySlug[wiki.NormalizeLink(r.PathValue("slug"))]
-	if !ok {
+	p, err := scan.Find(r.PathValue("slug"))
+	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 	// Browsers submit textarea content with CRLF line endings.
 	body := strings.ReplaceAll(r.FormValue("body"), "\r\n", "\n")
 	note := strings.TrimSpace(r.FormValue("note"))
+	if strings.TrimSpace(body) == "" && note == "" {
+		http.Error(w, "provide a proposed body or an edit request", http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(body) == "" {
+		body = ""
+	}
 	// An unchanged body with no note is a no-op, not a proposal.
 	if strings.TrimSpace(body) == strings.TrimSpace(p.Body) && note == "" {
-		http.Redirect(w, r, "/page/"+p.Slug, http.StatusSeeOther)
+		http.Redirect(w, r, pagePath(p), http.StatusSeeOther)
 		return
 	}
 	raw, err := os.ReadFile(filepath.Join(s.w.Root, p.RelPath))
@@ -68,9 +76,10 @@ func (s *Server) handleEditSave(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	if _, err := tasks.FileEdit(s.w, p.Slug, note, body, contentHash(raw), "web", time.Now()); err != nil {
+	task, err := tasks.FileEdit(s.w, p.Slug, note, body, contentHash(raw), "web", time.Now())
+	if err != nil {
 		s.fail(w, err)
 		return
 	}
-	http.Redirect(w, r, "/page/"+p.Slug+"?tasked=1", http.StatusSeeOther)
+	http.Redirect(w, r, pagePath(p)+"?tasked="+url.QueryEscape(task.ID), http.StatusSeeOther)
 }

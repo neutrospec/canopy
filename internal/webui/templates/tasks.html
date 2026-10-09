@@ -1,35 +1,19 @@
 {{define "content"}}
-<h1>{{t "tasks_title"}}</h1>
-<p class="muted">🤖 {{t "tasks_hint"}}</p>
-{{if .Pending}}
+<section class="pagehead"><div><h1>{{t "tasks_title"}}</h1><p class="muted">{{t "tasks_hint"}}</p></div><a class="chip" href="/browse">{{t "nav_browse"}}</a></section>
 <h2>{{t "tasks_pending_title"}} ({{len .Pending}})</h2>
-<ul class="tasklist">
-  {{range .Pending}}
-  <li>
-    <span class="chip histkind">{{.TypeLabel}}</span>
-    {{range .Pages}}<a class="wikilink" href="/page/{{.}}">{{.}}</a> {{end}}
-    {{if .Request}}{{.Request}}{{end}}
-    <span class="muted">· {{.Created}}{{if .Door}} · {{.Door}}{{end}}</span>
+{{if .Pending}}<ul class="tasklist queue">{{range .Pending}}{{template "taskrow" .}}{{end}}</ul>{{else}}<p class="empty">{{t "tasks_none"}}</p>{{end}}
+{{if .Closed}}<h2>{{t "tasks_closed_title"}}</h2><ul class="tasklist queue closedtasks">{{range .Closed}}{{template "taskrow" .}}{{end}}</ul>{{end}}
+{{end}}
+
+{{define "taskrow"}}
+<li id="task-{{.ID}}">
+  <div class="taskheading"><span class="chip histkind">{{.TypeLabel}}</span><span class="chip reason">{{.StatusLabel}}</span>
+    {{range .Pages}}<a class="wikilink" href="{{pageURL .}}">{{.}}</a>{{end}}
     {{if .CanCancel}}<form method="post" action="/task/cancel/{{.ID}}" class="inlineform"><button class="chip" title="{{t "tasks_cancel_title"}}">{{t "tasks_cancel"}}</button></form>{{end}}
-    {{if .Body}}<details class="proposal"><summary class="muted">{{t "tasks_proposal_view"}}</summary><pre>{{.Body}}</pre></details>{{end}}
-  </li>
-  {{end}}
-</ul>
-{{else}}
-<p class="muted">✓ {{t "tasks_none"}}</p>
-{{end}}
-{{if .Closed}}
-<h2>{{t "tasks_closed_title"}}</h2>
-<ul class="tasklist closedtasks">
-  {{range .Closed}}
-  <li>
-    <span class="chip histkind">{{.TypeLabel}}</span>
-    <span class="chip reason">{{.StatusLabel}}</span>
-    {{range .Pages}}<a class="wikilink" href="/page/{{.}}">{{.}}</a> {{end}}
-    {{if .Request}}{{.Request}}{{end}}
-    <span class="muted">· {{.Closed}}{{if .Note}} · {{.Note}}{{end}}</span>
-  </li>
-  {{end}}
-</ul>
-{{end}}
+  </div>
+  {{if .Request}}<p class="taskrequest">{{.Request}}</p>{{end}}
+  <p class="taskmeta muted">{{t "tasks_received"}} <time datetime="{{.Created}}">{{.Created}}</time>{{if .Door}} · {{.Door}}{{end}}{{if .Closed}}<br>{{t "tasks_closed"}} <time datetime="{{.Closed}}">{{.Closed}}</time>{{end}}{{if .Note}} · {{.Note}}{{end}}</p>
+  {{if .Body}}<details class="proposal"><summary>{{t "tasks_proposal_view"}}</summary><pre>{{.Body}}</pre></details>{{end}}
+  <details class="taskreceipt"><summary class="muted">{{t "tasks_receipt_details"}}</summary><p><code>{{.ID}}</code></p>{{if .Base}}<p>{{t "tasks_base_hint"}}</p><code class="hash">{{.Base}}</code>{{end}}</details>
+</li>
 {{end}}

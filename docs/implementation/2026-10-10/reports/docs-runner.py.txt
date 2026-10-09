@@ -1,0 +1,36 @@
+from pathlib import Path
+import os, subprocess, json, sys, time
+root=Path(__file__).parent
+env={k:v for k,v in os.environ.items() if k in ('PATH','LANG','LC_ALL','TZ','TERM')}
+env.update(HOME=str(root/'home'),XDG_CONFIG_HOME=str(root/'config'),XDG_CACHE_HOME=str(root/'cache'),XDG_DATA_HOME=str(root/'data'),XDG_STATE_HOME=str(root/'state'),TMPDIR=str(root/'tmp'),GOCACHE=str(root/'go-cache'),GOMODCACHE='/Users/nobocop/go/pkg/mod',GOPROXY='off',GOSUMDB='off',GOTOOLCHAIN='local',GOTELEMETRY='off',CGO_ENABLED='0',GIT_CONFIG_NOSYSTEM='1',GIT_CONFIG_GLOBAL='/dev/null',PI_CODING_AGENT_DIR='',CANOPY_WIKI='')
+cwd='/Users/nobocop/play/canopy'
+def run(name,argv):
+    start=time.time()
+    cp=subprocess.run(argv,cwd=cwd,env=env,text=True,capture_output=True)
+    rec=dict(name=name,argv=argv,exit=cp.returncode,seconds=round(time.time()-start,3),stdout=cp.stdout,stderr=cp.stderr)
+    (root/'evidence'/f'{name}.json').write_text(json.dumps(rec,ensure_ascii=False,indent=2)+'\n')
+    print(json.dumps(dict(name=name,exit=cp.returncode,seconds=rec['seconds'])),flush=True)
+    print(cp.stdout[-7000:],flush=True)
+    print(cp.stderr[-5000:],flush=True)
+    return cp
+sandbox=['/usr/bin/sandbox-exec','-f',str(root/'sandbox.sb')]
+if sys.argv[1]=='go':
+    run('skills-tests',sandbox+['/opt/homebrew/bin/go','test','-count=1','-v','./internal/skills/'])
+    run('lite-build',sandbox+['/opt/homebrew/bin/go','build','-buildvcs=false','-o',str(root/'canopy'),'./cmd/canopy'])
+elif sys.argv[1]=='build':
+    run('lite-build-final',sandbox+['/opt/homebrew/bin/go','build','-buildvcs=false','-o',str(root/'canopy'),'./cmd/canopy'])
+elif sys.argv[1]=='predicates':
+    run('lint-mermaid-tests',sandbox+['/opt/homebrew/bin/go','test','-count=1','-v','./internal/lint/','./internal/mermaid/'])
+elif sys.argv[1]=='contracts':
+    run('web-contract-tests',sandbox+['/opt/homebrew/bin/go','test','-count=1','-v','./internal/webui/','-run','TestRawHTMLCannotExecuteButGeneratedMarkupSurvives|TestWebEditFilesProposalNotFile'])
+    run('snooze-contract-tests',sandbox+['/opt/homebrew/bin/go','test','-count=1','-v','./internal/resurface/','-run','TestSnoozeDurationAcrossZones|TestLegacySnoozeDateStillLoads'])
+elif sys.argv[1]=='skillcreator':
+    import shutil
+    validator='/Users/nobocop/Library/Application Support/orca/codex-accounts/e1b92274-0cc8-4999-ab0e-5647ba525cb5/home/skills/.system/skill-creator/scripts/quick_validate.py'
+    for source,name in [('canopy_wiki.md','canopy-wiki'),('canopy_ingest.md','canopy-ingest')]:
+        dest=root/'skill-validation'/name
+        dest.mkdir(parents=True,exist_ok=True)
+        shutil.copyfile(Path(cwd)/'internal/skills'/source,dest/'SKILL.md')
+        run('skillcreator-'+name,['python3',validator,str(dest)])
+elif sys.argv[1]=='i18n':
+    run('i18n',['make','i18n-check'])

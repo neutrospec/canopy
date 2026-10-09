@@ -27,6 +27,9 @@ func cmdGrep() *cobra.Command {
 		Short: "Regexp search with line numbers (slug:line: text) — across the wiki or inside one page",
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if maxN < 1 || maxN > 10000 {
+				return fmt.Errorf("max must be between 1 and 10000")
+			}
 			pat := args[0]
 			if ignoreCase {
 				pat = "(?i)" + pat
@@ -46,9 +49,9 @@ func cmdGrep() *cobra.Command {
 			}
 			pages := scan.Pages
 			if len(args) == 2 {
-				p, ok := scan.BySlug[wiki.NormalizeLink(args[1])]
-				if !ok {
-					return fmt.Errorf("page not found: %s", args[1])
+				p, err := scan.Find(args[1])
+				if err != nil {
+					return err
 				}
 				pages = []*wiki.Page{p}
 			}

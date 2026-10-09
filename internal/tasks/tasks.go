@@ -1,7 +1,8 @@
 // Package tasks is the wiki's delegated-work queue: judgment-required
 // requests filed by any door (web UI button, CLI) and consumed by agent
-// loops (docs/agent-tasks.md). One file per task under _meta/tasks/ so
-// closing different tasks on different machines can never merge-conflict;
+// loops (docs/agent-tasks.md). One file per task under _meta/tasks/ reduces
+// overlap when devices close different tasks; ordinary Git conflicts still
+// require explicit recovery and are never automatically converged here.
 // files are self-versioned and travel with the wiki via git (AGENTS.md
 // 규칙 1b) — the queue itself is the interface, no gateway required.
 //
@@ -11,6 +12,8 @@
 package tasks
 
 import (
+	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -23,7 +26,10 @@ import (
 
 	"github.com/neutrospec/canopy/internal/attention"
 	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/safefile"
+	"github.com/neutrospec/canopy/internal/statefile"
 	"github.com/neutrospec/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/wikilock"
 )
 
 const (
@@ -85,7 +91,15 @@ func Load(w *config.Wiki) ([]*Task, error) {
 		out = append(out, t)
 	}
 	sort.Slice(out, func(i, j int) bool {
-		if out[i].Created != out[j].Created {
+		a, ae := time.Parse(time.RFC3339, out[i].Created)
+		b, be := time.Parse(time.RFC3339, out[j].Created)
+		if (ae == nil) != (be == nil) {
+			return ae == nil
+		}
+		if ae == nil && !a.Equal(b) {
+			return a.Before(b)
+		}
+		if ae != nil && out[i].Created != out[j].Created {
 			return out[i].Created < out[j].Created
 		}
 		return out[i].ID < out[j].ID
@@ -96,13 +110,19 @@ func Load(w *config.Wiki) ([]*Task, error) {
 // Get reads one task tolerantly: unknown fields and future versions
 // still load — only closing as done is version/type-gated.
 func Get(w *config.Wiki, id string) (*Task, error) {
+	if id == "" || filepath.Base(id) != id || id == "." || id == ".." || strings.ContainsAny(id, "\\\x00\r\n") {
+		return nil, fmt.Errorf("invalid task id %q", id)
+	}
 	data, err := os.ReadFile(pathOf(w, id))
 	if err != nil {
 		return nil, err
 	}
 	t := &Task{}
-	if err := json.Unmarshal(data, t); err != nil {
+	if err := statefile.Decode(data, t); err != nil {
 		return nil, err
+	}
+	if t.ID != id || t.Version < 1 || t.Status == "" {
+		return nil, fmt.Errorf("invalid task metadata or filename/id mismatch: %s", id)
 	}
 	return t, nil
 }
@@ -141,7 +161,33 @@ func writeTask(w *config.Wiki, id string, v any) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(pathOf(w, id), append(data, '\n'), 0o644)
+	return safefile.WriteFile(pathOf(w, id), append(data, '\n'), 0o644)
+}
+
+func createTask(w *config.Wiki, t *Task) error {
+	if err := os.MkdirAll(Dir(w), 0755); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(t, "", "  ")
+	if err != nil {
+		return err
+	}
+	return safefile.CreateFile(pathOf(w, t.ID), append(data, '\n'), 0644)
+}
+
+// Queue mutations share a wiki lease so sync cannot stage a half-completed
+// operation, then serialize the queue's read/modify/publish interval.
+func queueGuard(w *config.Wiki) (func(), error) {
+	g, err := wikilock.AcquireShared(context.Background(), w.Root)
+	if err != nil {
+		return nil, err
+	}
+	f, err := wikilock.AcquireFile(context.Background(), Dir(w))
+	if err != nil {
+		g.Unlock()
+		return nil, err
+	}
+	return func() { f.Unlock(); g.Unlock() }, nil
 }
 
 // ConnectID is deterministic (sorted pair) so refiling the same pair is
@@ -158,6 +204,11 @@ func ConnectID(a, b string) string {
 // FileConnect files a connect task. Filing never edits pages (T6).
 // created=false means a task for this pair already exists (any status).
 func FileConnect(w *config.Wiki, a, b string, sim float64, door string, now time.Time) (t *Task, created bool, err error) {
+	done, err := queueGuard(w)
+	if err != nil {
+		return nil, false, err
+	}
+	defer done()
 	a, b = strings.ToLower(a), strings.ToLower(b)
 	if a == b {
 		return nil, false, fmt.Errorf("connect needs two different pages")
@@ -165,9 +216,32 @@ func FileConnect(w *config.Wiki, a, b string, sim float64, door string, now time
 	if b < a {
 		a, b = b, a
 	}
+	list, loadErr := Load(w)
+	if loadErr != nil {
+		return nil, false, loadErr
+	}
+	for _, existing := range list {
+		if samePair(existing, a, b) {
+			return existing, false, nil
+		}
+	}
 	id := ConnectID(a, b)
 	if existing, err := Get(w, id); err == nil {
-		return existing, false, nil
+		if samePair(existing, a, b) {
+			return existing, false, nil
+		}
+		// Keep legacy IDs and judgments for their actual pair. Only a
+		// delimiter collision needs an unambiguous encoded identity.
+		sum := sha256.Sum256([]byte(a + "\x00" + b))
+		id = "connect-" + hex.EncodeToString(sum[:])
+		if existing, err := Get(w, id); err == nil {
+			if samePair(existing, a, b) {
+				return existing, false, nil
+			}
+			return nil, false, fmt.Errorf("task ID collision: %s", id)
+		} else if !os.IsNotExist(err) {
+			return nil, false, err
+		}
 	} else if !os.IsNotExist(err) {
 		return nil, false, err
 	}
@@ -175,11 +249,15 @@ func FileConnect(w *config.Wiki, a, b string, sim float64, door string, now time
 		Version: FormatVersion, ID: id, Type: TypeConnect, Status: StatusPending,
 		Door: door, Created: now.Format(time.RFC3339), Pages: []string{a, b}, Sim: sim,
 	}
-	if err := writeTask(w, id, t); err != nil {
+	if err := createTask(w, t); err != nil {
 		return nil, false, err
 	}
 	attention.LogLifecycle(w, now, "", door, attention.KindTaskFiled, id)
 	return t, true, nil
+}
+
+func samePair(t *Task, a, b string) bool {
+	return t.Type == TypeConnect && len(t.Pages) == 2 && ((strings.EqualFold(t.Pages[0], a) && strings.EqualFold(t.Pages[1], b)) || (strings.EqualFold(t.Pages[0], b) && strings.EqualFold(t.Pages[1], a)))
 }
 
 // FileEdit files an edit request: an instruction (request), a proposed
@@ -187,24 +265,27 @@ func FileConnect(w *config.Wiki, a, b string, sim float64, door string, now time
 // file's sha256 at filing time — verifyEdit later requires the content
 // to have moved.
 func FileEdit(w *config.Wiki, slug, request, body, base, door string, now time.Time) (*Task, error) {
+	done, err := queueGuard(w)
+	if err != nil {
+		return nil, err
+	}
+	defer done()
 	slug = strings.ToLower(slug)
 	if strings.TrimSpace(request) == "" && strings.TrimSpace(body) == "" {
 		return nil, fmt.Errorf("edit task needs a request or a proposed body")
 	}
 	stamp := now.Format("20060102-150405")
-	id := fmt.Sprintf("edit-%s-%s", slug, stamp)
-	for i := 2; ; i++ {
-		if _, err := os.Stat(pathOf(w, id)); os.IsNotExist(err) {
-			break
-		}
-		id = fmt.Sprintf("edit-%s-%s-%d", slug, stamp, i)
+	var nonce [12]byte
+	if _, err := rand.Read(nonce[:]); err != nil {
+		return nil, err
 	}
+	id := fmt.Sprintf("edit-%s-%s-%x", slug, stamp, nonce)
 	t := &Task{
 		Version: FormatVersion, ID: id, Type: TypeEdit, Status: StatusPending,
 		Door: door, Created: now.Format(time.RFC3339), Pages: []string{slug},
 		Request: request, Base: base, Body: body,
 	}
-	if err := writeTask(w, id, t); err != nil {
+	if err := createTask(w, t); err != nil {
 		return nil, err
 	}
 	attention.LogLifecycle(w, now, "", door, attention.KindTaskFiled, id)
@@ -218,6 +299,11 @@ func FileEdit(w *config.Wiki, slug, request, body, base, door string, now time.T
 // mixed-version fleet (규칙 1b). door tags the lifecycle event only —
 // the task file keeps its filing door.
 func Close(w *config.Wiki, scan *wiki.ScanResult, id, status, note, door string, now time.Time) (*Task, error) {
+	done, err := queueGuard(w)
+	if err != nil {
+		return nil, err
+	}
+	defer done()
 	if status != StatusDone && status != StatusDismissed {
 		return nil, fmt.Errorf("invalid status %q", status)
 	}
@@ -228,14 +314,17 @@ func Close(w *config.Wiki, scan *wiki.ScanResult, id, status, note, door string,
 	if err != nil {
 		return nil, err
 	}
-	t := &Task{}
-	if err := json.Unmarshal(data, t); err != nil {
+	t, err := Get(w, id)
+	if err != nil {
 		return nil, err
 	}
 	if t.Status != StatusPending {
 		return nil, fmt.Errorf("task %s is already %s", id, t.Status)
 	}
 	if status == StatusDone {
+		if t.Version > FormatVersion {
+			return nil, fmt.Errorf("task version %d is newer than supported version %d; upgrade before closing as done (dismiss is allowed)", t.Version, FormatVersion)
+		}
 		v, ok := verifiers[t.Type]
 		if !ok {
 			return nil, fmt.Errorf("unknown task type %q — filed by a newer canopy; upgrade before closing as done (dismiss is allowed)", t.Type)
@@ -247,15 +336,16 @@ func Close(w *config.Wiki, scan *wiki.ScanResult, id, status, note, door string,
 			return nil, fmt.Errorf("done rejected (%s): %w", t.Type, err)
 		}
 	}
-	var raw map[string]any
+	var raw map[string]json.RawMessage
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return nil, err
 	}
 	t.Status, t.Closed = status, now.Format(time.RFC3339)
-	raw["status"], raw["closed"] = t.Status, t.Closed
+	raw["status"], _ = json.Marshal(t.Status)
+	raw["closed"], _ = json.Marshal(t.Closed)
 	if note != "" {
 		t.Note = note
-		raw["note"] = note
+		raw["note"], _ = json.Marshal(note)
 	}
 	if err := writeTask(w, id, raw); err != nil {
 		return nil, err
@@ -268,16 +358,24 @@ func Close(w *config.Wiki, scan *wiki.ScanResult, id, status, note, door string,
 	return t, nil
 }
 
-// GC removes closed tasks whose Closed time is older than keep.
+// GC removes known closed tasks at least keep old, including the cutoff.
 // Pending tasks are never removed (invariant T8).
 func GC(w *config.Wiki, keep time.Duration, now time.Time) (int, error) {
+	done, err := queueGuard(w)
+	if err != nil {
+		return 0, err
+	}
+	defer done()
+	if keep < 0 {
+		return 0, fmt.Errorf("retention must not be negative")
+	}
 	list, err := Load(w)
 	if err != nil {
 		return 0, err
 	}
 	removed := 0
 	for _, t := range list {
-		if t.Status == StatusPending || t.Closed == "" {
+		if (t.Status != StatusDone && t.Status != StatusDismissed) || t.Version > FormatVersion || t.Closed == "" {
 			continue
 		}
 		closed, err := time.Parse(time.RFC3339, t.Closed)

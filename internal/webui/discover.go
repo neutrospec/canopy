@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"log"
 	"net/http"
 	"sort"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/neutrospec/canopy/internal/reads"
 	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/wikilock"
 )
 
 // Discovery ranks UNREAD pages — "새발견" is meeting a page for the
@@ -28,13 +30,9 @@ type discovery struct {
 
 const affinityRecentK = 10
 
-func (s *Server) discoverRanked(scan *wiki.ScanResult, rs *reads.State, now time.Time, loc *i18n.Localizer) []discovery {
-	// Vectors are best-effort: without the embedding index the
-	// affinity signal is 0 and newness+hubness still rank.
-	var vectors map[string][]float32
-	if st, err := store.Open(s.w.DBPath()); err == nil {
-		vectors, _ = st.PageVectors()
-		st.Close()
+func (s *Server) discoverRanked(scan *wiki.ScanResult, rs *reads.State, vectors map[string][]float32, now time.Time, loc *i18n.Localizer) []discovery {
+	if !rs.HumanAvailable() {
+		return nil // Unknown read state is not the same as an unread page.
 	}
 	var recentVecs [][]float32
 	// Affinity blends both doors: recall citations are interest too.
@@ -97,29 +95,57 @@ func (s *Server) discoverRanked(scan *wiki.ScanResult, rs *reads.State, now time
 func (s *Server) handleReadMark(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	slug := wiki.NormalizeLink(r.PathValue("slug"))
+	lease, err := wikilock.AcquireShared(r.Context(), s.w.Root)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	defer lease.Unlock()
+	slug := strings.ToLower(strings.TrimSpace(r.PathValue("slug")))
+	action := r.FormValue("action")
+	if action != "read" && action != "unread" {
+		http.Error(w, "unknown read action", http.StatusBadRequest)
+		return
+	}
 	rs, err := reads.Load(s.w)
 	if err != nil {
 		s.fail(w, err)
 		return
 	}
-	if r.FormValue("action") == "unread" {
-		rs.Unmark(slug)
-	} else {
-		// A repeat mark is the "다시 읽음" affordance: count/last advance
-		// and the event log keeps the distinction for instruments.
-		if rs.IsRead(slug) {
-			s.logEvent(slug, attention.KindReread, "")
-		} else {
-			s.logEvent(slug, attention.KindRead, "")
-		}
-		rs.Mark(slug, "explicit", time.Now())
-	}
-	if err := rs.Save(s.w); err != nil {
+	scan, err := wiki.Scan(s.w)
+	if err != nil {
 		s.fail(w, err)
 		return
 	}
-	http.Redirect(w, r, "/page/"+slug, http.StatusSeeOther)
+	p, findErr := scan.Find(r.PathValue("slug"))
+	if findErr == nil {
+		slug = strings.ToLower(p.Slug)
+	}
+	if findErr != nil && !(action == "unread" && rs.IsRead(slug)) {
+		http.NotFound(w, r)
+		return
+	}
+	kind := attention.KindRead
+	if action == "unread" {
+		rs.Unmark(slug)
+	} else {
+		if rs.IsRead(slug) {
+			kind = attention.KindReread
+		}
+		rs.Mark(slug, "explicit", time.Now())
+	}
+	if err := rs.SaveLocked(s.w); err != nil {
+		s.fail(w, err)
+		return
+	}
+	if action == "read" {
+		s.logEvent(slug, kind, "")
+	}
+	if p != nil {
+		http.Redirect(w, r, pagePath(p), http.StatusSeeOther)
+	} else {
+		http.Redirect(w, r, "/browse", http.StatusSeeOther)
+	}
 }
 
 // handleReadAuto records a dwell+scroll detected read. It never
@@ -127,28 +153,36 @@ func (s *Server) handleReadMark(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleReadAuto(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	slug := wiki.NormalizeLink(r.PathValue("slug"))
+	lease, err := wikilock.AcquireShared(r.Context(), s.w.Root)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	defer lease.Unlock()
+	slug := strings.ToLower(strings.TrimSpace(r.PathValue("slug")))
 	scan, err := wiki.Scan(s.w)
 	if err != nil {
 		s.fail(w, err)
 		return
 	}
-	if _, ok := scan.BySlug[slug]; !ok {
+	p, findErr := scan.Find(r.PathValue("slug"))
+	if findErr != nil {
 		http.NotFound(w, r)
 		return
 	}
+	slug = strings.ToLower(p.Slug)
 	rs, err := reads.Load(s.w)
 	if err != nil {
 		s.fail(w, err)
 		return
 	}
 	if !rs.IsRead(slug) {
-		s.logEvent(slug, attention.KindRead, "")
 		rs.Mark(slug, "auto", time.Now())
-		if err := rs.Save(s.w); err != nil {
+		if err := rs.SaveLocked(s.w); err != nil {
 			s.fail(w, err)
 			return
 		}
+		s.logEvent(slug, attention.KindRead, "")
 	}
 	s.emit(w, map[string]any{"read": true})
 }
@@ -159,13 +193,16 @@ func (s *Server) handleDiscover(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	rs, err := reads.Load(s.w)
-	if err != nil {
-		s.fail(w, err)
-		return
+	vectors, current, indexErr := s.currentVectors(r.Context(), scan)
+	if indexErr != nil {
+		log.Printf("discovery index: %v", indexErr)
+	}
+	rs, readErr := reads.Load(s.w)
+	if readErr != nil {
+		log.Printf("discovery reads: %v", readErr)
 	}
 	loc := s.loc(r)
-	ranked := s.discoverRanked(scan, rs, time.Now(), loc)
+	ranked := s.discoverRanked(scan, rs, vectors, time.Now(), loc)
 	readCount := 0
 	for _, p := range scan.Pages {
 		if rs.IsRead(p.Slug) {
@@ -177,10 +214,14 @@ func (s *Server) handleDiscover(w http.ResponseWriter, r *http.Request) {
 		pct = readCount * 100 / len(scan.Pages)
 	}
 	s.render(w, r, http.StatusOK, "discover.html", map[string]any{
-		"Title":     localizeString(loc, "title_discover"),
-		"Ranked":    ranked,
-		"ReadCount": readCount,
-		"Total":     len(scan.Pages),
-		"Pct":       pct,
+		"Title":             localizeString(loc, "title_discover"),
+		"Ranked":            ranked,
+		"ReadCount":         readCount,
+		"UnreadCount":       len(scan.Pages) - readCount,
+		"ReadAvailable":     rs.HumanAvailable(),
+		"ReadsPartial":      readErr != nil,
+		"SemanticAvailable": indexErr == nil && current != nil && current.SemanticReady,
+		"Total":             len(scan.Pages),
+		"Pct":               pct,
 	})
 }

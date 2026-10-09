@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -135,6 +136,23 @@ type Filter struct {
 
 // Query returns matching events, newest first.
 func (e *Events) Query(f Filter) ([]Event, error) {
+	out, err := e.queryAll(f)
+	if err != nil {
+		return nil, err
+	}
+	limit := f.Limit
+	if limit <= 0 {
+		limit = 200
+	}
+	if len(out) > limit {
+		out = out[:limit]
+	}
+	return out, nil
+}
+
+// Legacy rows retain their original offset. Parse instants in Go rather than
+// comparing timestamp text (or losing sub-millisecond precision in SQLite).
+func (e *Events) queryAll(f Filter) ([]Event, error) {
 	where := []string{"1=1"}
 	var args []any
 	switch {
@@ -149,36 +167,83 @@ func (e *Events) Query(f Filter) ([]Event, error) {
 		where = append(where, "slug = ?")
 		args = append(args, strings.ToLower(f.Slug))
 	}
-	if !f.Since.IsZero() {
-		where = append(where, "ts >= ?")
-		args = append(args, f.Since.Format(time.RFC3339))
-	}
 	if f.AttnOnly {
 		where = append(where, "instr(kind, '.') = 0")
 	}
-	limit := f.Limit
-	if limit <= 0 {
-		limit = 200
-	}
-	args = append(args, limit)
 	rows, err := e.db.Query(`SELECT ts, slug, door, kind, meta FROM events WHERE `+
-		strings.Join(where, " AND ")+` ORDER BY ts DESC, id DESC LIMIT ?`, args...)
+		strings.Join(where, " AND ")+` ORDER BY id DESC`, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	return scanEvents(rows)
+	out, err := scanEvents(rows)
+	if err != nil {
+		return nil, err
+	}
+	valid := out[:0]
+	for _, ev := range out {
+		t, err := time.Parse(time.RFC3339, ev.TS)
+		if !f.Since.IsZero() && (err != nil || t.Before(f.Since)) {
+			continue
+		}
+		valid = append(valid, ev)
+	}
+	sort.SliceStable(valid, func(i, j int) bool {
+		a, ea := time.Parse(time.RFC3339, valid[i].TS)
+		b, eb := time.Parse(time.RFC3339, valid[j].TS)
+		if ea != nil {
+			return false
+		}
+		if eb != nil {
+			return true
+		}
+		return a.After(b)
+	})
+	return valid, nil
 }
 
 // Prune deletes events older than the cutoff — the retention half of
 // `canopy events gc`. Machine-local only; the wiki is never touched (N5).
 func (e *Events) Prune(before time.Time) (int, error) {
-	res, err := e.db.Exec(`DELETE FROM events WHERE ts < ?`, before.Format(time.RFC3339))
+	rows, err := e.db.Query(`SELECT id, ts FROM events`)
 	if err != nil {
 		return 0, err
 	}
-	n, _ := res.RowsAffected()
-	return int(n), nil
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		var ts string
+		if err := rows.Scan(&id, &ts); err != nil {
+			rows.Close()
+			return 0, err
+		}
+		if instant, err := time.Parse(time.RFC3339, ts); err == nil && instant.Before(before) {
+			ids = append(ids, id)
+		}
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return 0, err
+	}
+	tx, err := e.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	removed := 0
+	for _, id := range ids {
+		res, err := tx.Exec(`DELETE FROM events WHERE id = ?`, id)
+		if err != nil {
+			return 0, err
+		}
+		n, err := res.RowsAffected()
+		if err != nil {
+			return 0, err
+		}
+		removed += int(n)
+	}
+	return removed, tx.Commit()
 }
 
 // CountBySlug returns how many events a page has accumulated — the
@@ -221,53 +286,74 @@ type Consumed struct {
 // consumption. Lifecycle events are excluded the same way (N3): a filed
 // task is not a read.
 func (e *Events) TopConsumed(since time.Time, n int) ([]Consumed, error) {
-	rows, err := e.db.Query(`
-		SELECT slug, COUNT(*),
-		       SUM(door = 'web'), SUM(door = 'agent')
-		FROM events
-		WHERE ts >= ? AND slug <> '' AND instr(kind, '.') = 0
-		GROUP BY slug
-		ORDER BY COUNT(*) DESC, slug
-		LIMIT ?`, since.Format(time.RFC3339), n)
+	if n < 0 {
+		return nil, fmt.Errorf("limit must not be negative")
+	}
+	rows, err := e.queryAll(Filter{Since: since, AttnOnly: true})
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	var out []Consumed
-	for rows.Next() {
-		var c Consumed
-		if err := rows.Scan(&c.Slug, &c.Total, &c.Web, &c.Agent); err != nil {
-			return nil, err
+	counts := map[string]*Consumed{}
+	for _, ev := range rows {
+		if ev.Slug == "" {
+			continue
 		}
-		out = append(out, c)
+		c := counts[ev.Slug]
+		if c == nil {
+			c = &Consumed{Slug: ev.Slug}
+			counts[ev.Slug] = c
+		}
+		c.Total++
+		if ev.Door == DoorWeb {
+			c.Web++
+		}
+		if ev.Door == DoorAgent {
+			c.Agent++
+		}
 	}
-	return out, rows.Err()
+	var out []Consumed
+	for _, c := range counts {
+		out = append(out, *c)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Total != out[j].Total {
+			return out[i].Total > out[j].Total
+		}
+		return out[i].Slug < out[j].Slug
+	})
+	if n > 0 && len(out) > n {
+		out = out[:n]
+	}
+	return out, nil
 }
 
 // WeeklyCounts buckets one page's events into per-week counts covering
 // the last `weeks` weeks, oldest bucket first — the sparkline's data.
 func (e *Events) WeeklyCounts(slug string, weeks int, now time.Time) ([]int, error) {
+	if weeks < 0 || weeks > 5200 {
+		return nil, fmt.Errorf("weeks must be between 0 and 5200")
+	}
+	if weeks == 0 {
+		return []int{}, nil
+	}
 	cutoff := now.Add(-time.Duration(weeks) * 7 * 24 * time.Hour)
-	rows, err := e.db.Query(`SELECT ts FROM events WHERE slug = ? AND ts >= ? AND instr(kind, '.') = 0`,
-		strings.ToLower(slug), cutoff.Format(time.RFC3339))
+	rows, err := e.queryAll(Filter{Slug: slug, Since: cutoff, AttnOnly: true})
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 	counts := make([]int, weeks)
-	for rows.Next() {
-		var ts string
-		if err := rows.Scan(&ts); err != nil {
-			return nil, err
-		}
-		t, err := time.Parse(time.RFC3339, ts)
-		if err != nil {
+	for _, ev := range rows {
+		t, err := time.Parse(time.RFC3339, ev.TS)
+		if err != nil || t.After(now) || t.Before(cutoff) {
 			continue
 		}
 		idx := weeks - 1 - int(now.Sub(t).Hours()/(24*7))
+		if idx == -1 && t.Equal(cutoff) {
+			idx = 0
+		}
 		if idx >= 0 && idx < weeks {
 			counts[idx]++
 		}
 	}
-	return counts, rows.Err()
+	return counts, nil
 }

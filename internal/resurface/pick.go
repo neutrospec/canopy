@@ -1,7 +1,9 @@
 package resurface
 
 import (
+	"container/heap"
 	"fmt"
+	"math"
 	"math/rand"
 	"sort"
 	"strings"
@@ -185,9 +187,44 @@ type BridgeSide struct {
 	Excerpt string `json:"excerpt"`
 }
 
+type bridgeCandidate struct {
+	a, b   string
+	score  float64
+	linked bool
+}
+type bridgeCandidates []bridgeCandidate
+
+func bridgeBetter(a, b bridgeCandidate) bool {
+	if a.score != b.score {
+		return a.score > b.score
+	}
+	for _, pair := range [][2]string{{a.a, b.a}, {a.b, b.b}} {
+		if x, y := strings.ToLower(pair[0]), strings.ToLower(pair[1]); x != y {
+			return x < y
+		}
+		if pair[0] != pair[1] {
+			return pair[0] < pair[1]
+		}
+	}
+	return false
+}
+func (h bridgeCandidates) Len() int           { return len(h) }
+func (h bridgeCandidates) Less(i, j int) bool { return bridgeBetter(h[j], h[i]) }
+func (h bridgeCandidates) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *bridgeCandidates) Push(x any)        { *h = append(*h, x.(bridgeCandidate)) }
+func (h *bridgeCandidates) Pop() any {
+	old := *h
+	x := old[len(old)-1]
+	*h = old[:len(old)-1]
+	return x
+}
+
 // PickBridges finds page pairs with cosine similarity >= minSim.
 // Linked pairs are excluded unless includeLinked is set.
 func PickBridges(scan *wiki.ScanResult, vectors map[string][]float32, st *State, minSim float64, n int, includeLinked bool, now time.Time) []Bridge {
+	if n <= 0 || math.IsNaN(minSim) || math.IsInf(minSim, 0) {
+		return []Bridge{}
+	}
 	linked := map[string]bool{}
 	for _, p := range scan.Pages {
 		from := normalizeSlug(p.Slug)
@@ -203,7 +240,7 @@ func PickBridges(scan *wiki.ScanResult, vectors map[string][]float32, st *State,
 	}
 	sort.Strings(slugs)
 
-	bridges := []Bridge{}
+	retained := make(bridgeCandidates, 0, min(n, len(slugs)))
 	for i := 0; i < len(slugs); i++ {
 		for j := i + 1; j < len(slugs); j++ {
 			a, b := slugs[i], slugs[j]
@@ -213,21 +250,28 @@ func PickBridges(scan *wiki.ScanResult, vectors map[string][]float32, st *State,
 				continue
 			}
 			sim := store.Cosine(vectors[a], vectors[b])
-			if sim < minSim {
+			if math.IsNaN(sim) || math.IsInf(sim, 0) || sim < minSim {
 				continue
 			}
-			pa, pb := scan.BySlug[na], scan.BySlug[nb]
-			bridges = append(bridges, Bridge{
-				A:          BridgeSide{Slug: pa.Slug, RelPath: pa.RelPath, Title: pa.Title, Excerpt: excerpt(pa.Body)},
-				B:          BridgeSide{Slug: pb.Slug, RelPath: pb.RelPath, Title: pb.Title, Excerpt: excerpt(pb.Body)},
-				Similarity: sim,
-				Linked:     isLinked,
-			})
+			c := bridgeCandidate{a: a, b: b, score: sim, linked: isLinked}
+			if len(retained) < n {
+				heap.Push(&retained, c)
+			} else if bridgeBetter(c, retained[0]) {
+				retained[0] = c
+				heap.Fix(&retained, 0)
+			}
 		}
 	}
-	sort.Slice(bridges, func(i, j int) bool { return bridges[i].Similarity > bridges[j].Similarity })
-	if len(bridges) > n {
-		bridges = bridges[:n]
+	// Exact pair comparison remains quadratic; candidate storage is O(n), and
+	// page excerpts are materialized only for the final retained pairs.
+	sort.Slice(retained, func(i, j int) bool { return bridgeBetter(retained[i], retained[j]) })
+	bridges := make([]Bridge, 0, len(retained))
+	for _, c := range retained {
+		pa, pb := scan.BySlug[normalizeSlug(c.a)], scan.BySlug[normalizeSlug(c.b)]
+		if pa == nil || pb == nil {
+			continue
+		}
+		bridges = append(bridges, Bridge{A: BridgeSide{Slug: pa.Slug, RelPath: pa.RelPath, Title: pa.Title, Excerpt: excerpt(pa.Body)}, B: BridgeSide{Slug: pb.Slug, RelPath: pb.RelPath, Title: pb.Title, Excerpt: excerpt(pb.Body)}, Similarity: c.score, Linked: c.linked})
 	}
 	return bridges
 }

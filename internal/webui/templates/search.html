@@ -4,7 +4,7 @@
 {{if .Results}}
 <ol class="results panel">
   {{range .Results}}
-  <li><a class="wikilink" href="/page/{{.Slug}}" data-slug="{{.Slug}}">{{.Title}}</a>{{if .Snippet}}<p class="snippet">{{.Snippet}}</p>{{end}}<span class="result-slug">{{.Slug}}</span></li>
+  <li><a class="wikilink" href="{{pageURL .Slug}}" data-slug="{{.Slug}}">{{.Title}}</a>{{if .Snippet}}<p class="snippet">{{.Snippet}}</p>{{end}}<span class="result-slug">{{.Slug}}</span></li>
   {{end}}
 </ol>
 {{else}}

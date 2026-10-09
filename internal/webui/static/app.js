@@ -45,6 +45,13 @@
     }
   });
 
+  const contextWide = matchMedia("(min-width: 1101px)");
+  document.querySelectorAll("details[data-desktop-open]").forEach((panel) => {
+    const adapt = () => { panel.open = contextWide.matches; };
+    adapt();
+    contextWide.addEventListener?.("change", adapt);
+  });
+
   // --- instant search --------------------------------------------------
   document.querySelectorAll(".searchbar").forEach((form, index) => {
     const input = form.querySelector("input[name=q]");
@@ -70,7 +77,7 @@
     function render() {
       box.innerHTML = items.map((it, i) =>
         `<a id="${box.id}-${i}" role="option" aria-selected="${i === sel}" tabindex="-1" ` +
-        `href="/page/${encodeURIComponent(it.Slug)}" class="${i === sel ? "sel" : ""}">` +
+        `href="${esc(it.URL || "/page/" + encodeURIComponent(it.Slug))}" class="${i === sel ? "sel" : ""}">` +
         `<b>${esc(it.Title || it.Slug)}</b><span class="muted">${esc(it.Slug)}</span></a>`
       ).join("");
       box.hidden = items.length === 0;
@@ -116,7 +123,7 @@
       if (box.hidden) return;
       if (e.key === "ArrowDown") { sel = Math.min(sel + 1, items.length - 1); render(); e.preventDefault(); }
       else if (e.key === "ArrowUp") { sel = Math.max(sel - 1, -1); render(); e.preventDefault(); }
-      else if (e.key === "Enter" && sel >= 0) { location.href = "/page/" + encodeURIComponent(items[sel].Slug); e.preventDefault(); }
+      else if (e.key === "Enter" && sel >= 0) { location.href = items[sel].URL || "/page/" + encodeURIComponent(items[sel].Slug); e.preventDefault(); }
     });
     document.addEventListener("click", (e) => { if (!form.contains(e.target)) close(); });
   });
@@ -129,7 +136,12 @@
     if (pop) { pop.remove(); pop = null; }
   }
   async function showPop(a) {
-    const slug = a.dataset.slug;
+    const href = a.getAttribute("href") || "";
+    if (!href.startsWith("/page/")) return;
+    let slug;
+    try { slug = decodeURIComponent(href.slice(6).split(/[?#]/, 1)[0]); }
+    catch { return; }
+    if (!slug) return;
     let d = cache.get(slug);
     if (!d) {
       try {
@@ -166,6 +178,15 @@
     s.src = src; s.onload = ok; s.onerror = bad;
     document.head.appendChild(s);
   });
+  const renderFailure = (where, id) => {
+    if (where.querySelector(`.rendererror[data-kind="${id}"]`)) return;
+    const status = document.createElement("p");
+    status.className = "rendererror";
+    status.dataset.kind = id;
+    status.setAttribute("role", "status");
+    status.textContent = t(id);
+    where.appendChild(status);
+  };
   const dark = matchMedia("(prefers-color-scheme: dark)").matches;
   const prose = document.querySelector(".prose");
   if (prose) {
@@ -221,10 +242,14 @@
     });
     const diagrams = prose.querySelectorAll("pre.mermaid, div.mermaid");
     if (diagrams.length) {
+      const sources = Array.from(diagrams, (node) => node.textContent);
       loadScript("/static/vendor/mermaid.min.js").then(() => {
-        window.mermaid.initialize({ startOnLoad: false, theme: dark ? "dark" : "default", securityLevel: "strict" });
+        window.mermaid.initialize({ startOnLoad: false, theme: dark ? "dark" : "default", securityLevel: "strict", suppressErrorRendering: true });
         return window.mermaid.run({ nodes: diagrams });
-      }).catch(() => {});
+      }).catch(() => {
+        diagrams.forEach((node, i) => { node.textContent = sources[i]; node.removeAttribute("data-processed"); });
+        renderFailure(prose, "diagram_failed");
+      });
     }
     const textOnly = (() => {
       const c = prose.cloneNode(true);
@@ -232,11 +257,34 @@
       return c.textContent;
     })();
     if (/\$\$[^$]+\$\$|(^|[^\\$])\$[^\s$][^$\n]*\$|\\\(|\\\[/.test(textOnly)) {
+      // Explicit package list: no autoload/require and no remote extensions.
+      // Color and physics are pinned local components (vendor/assets.json).
       window.MathJax = {
-        tex: { inlineMath: [["$", "$"], ["\\(", "\\)"]], displayMath: [["$$", "$$"], ["\\[", "\\]"]] },
+        loader: {
+          paths: { mathjax: "/static/vendor" },
+          load: ["[tex]/color", "[tex]/physics"],
+          source: { "[tex]/color": "/static/vendor/mathjax-color.js", "[tex]/physics": "/static/vendor/mathjax-physics.js" },
+        },
+        tex: {
+          packages: ["base", "ams", "newcommand", "color", "physics"],
+          inlineMath: [["$", "$"], ["\\(", "\\)"]], displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+          formatError: (jax, error) => {
+            renderFailure(prose, "math_failed");
+            const source = document.createElement("details");
+            source.className = "render-source";
+            const summary = document.createElement("summary"); summary.textContent = t("math_source");
+            const code = document.createElement("pre"); code.textContent = jax.latex;
+            source.appendChild(summary); source.appendChild(code); prose.appendChild(source);
+            return jax.formatError(error);
+          },
+        },
+        options: { enableMenu: false },
         svg: { fontCache: "global" },
+        startup: { typeset: false },
       };
-      loadScript("/static/vendor/tex-svg.js").catch(() => {});
+      loadScript("/static/vendor/tex-svg.js").then(() => window.MathJax.startup.promise)
+        .then(() => window.MathJax.typesetPromise([prose]))
+        .catch(() => { renderFailure(prose, "math_failed"); });
     }
   }
 
@@ -249,7 +297,7 @@
     });
     const secs = +article.dataset.readSecs;
     if (secs) {
-      const slug = article.dataset.slug;
+      const slug = article.dataset.readRef || article.dataset.slug;
       let visibleMs = 0, maxScroll = 0, sent = false;
       const scrolled = () => {
         const h = document.documentElement.scrollHeight;
@@ -266,13 +314,20 @@
           clearInterval(tick);
           try {
             const response = await fetch(`/api/read/${encodeURIComponent(slug)}?source=auto`, { method: "POST" });
-            if (!response.ok) return;
+            if (!response.ok || response.redirected) throw new Error(response.status === 401 ? "auth" : "read");
+            if (!/^application\/json(?:\s*;|$)/i.test(response.headers.get("content-type") || "")) throw new Error("read");
+            const data = await response.json();
+            if (data?.read !== true) throw new Error("read");
             const form = document.getElementById("readform");
             if (form) form.innerHTML =
               `<span class="chip readmark">✓ ${esc(t("page_read_label"))} <small>${esc(t("page_auto"))}</small></span>` +
               `<button class="chip" name="action" value="read" title="${esc(t("page_reread_title"))}">${esc(t("page_reread"))}</button>` +
               `<button class="chip" name="action" value="unread" title="${esc(t("page_unread_title"))}">${esc(t("page_cancel"))}</button>`;
-          } catch { /* Explicit read controls remain usable. */ }
+          } catch (error) {
+            // Preserve the native form and its input values on every failure.
+            const status = document.getElementById("read-status");
+            if (status) { status.hidden = false; status.textContent = t(error.message === "auth" ? "page_read_auth" : "page_read_failed"); }
+          }
         }
       }, 1000);
     }

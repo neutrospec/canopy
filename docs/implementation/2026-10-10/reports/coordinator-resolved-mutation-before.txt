@@ -1,0 +1,87 @@
+--- FAIL: TestMutationRewritesOnlyResolvedInboundLinks (0.20s)
+    --- FAIL: TestMutationRewritesOnlyResolvedInboundLinks/mv (0.08s)
+        address_mutation_test.go:43: rewrote a non-edge: <nil>
+            got ---
+            title: "Ref"
+            created: 2026-01-01
+            updated: 2026-01-01
+            type: concept
+            tags: []
+            sources: []
+            ---
+            
+            # Ref
+            
+            VALID [[concepts/delta.md#here|short]] AMBIGUOUS [[delta.md|which]] WRONG [[concepts/delta.md|entity]] NESTED [[concepts/delta.md|nested]] LONG [[concepts/alpha.md.md|long]] CODE `[[concepts/alpha.md]]`.
+            
+            want ---
+            title: "Ref"
+            created: 2026-01-01
+            updated: 2026-01-01
+            type: concept
+            tags: []
+            sources: []
+            ---
+            
+            # Ref
+            
+            VALID [[concepts/delta.md#here|short]] AMBIGUOUS [[alpha.md|which]] WRONG [[entities/alpha.md|entity]] NESTED [[concepts/nested/alpha.md|nested]] LONG [[concepts/alpha.md.md|long]] CODE `[[concepts/alpha.md]]`.
+    --- FAIL: TestMutationRewritesOnlyResolvedInboundLinks/rm (0.06s)
+        address_mutation_test.go:43: rewrote a non-edge: <nil>
+            got ---
+            title: "Ref"
+            created: 2026-01-01
+            updated: 2026-01-01
+            type: concept
+            tags: []
+            sources: []
+            ---
+            
+            # Ref
+            
+            VALID short AMBIGUOUS which WRONG entity NESTED nested LONG [[concepts/alpha.md.md|long]] CODE `[[concepts/alpha.md]]`.
+            
+            want ---
+            title: "Ref"
+            created: 2026-01-01
+            updated: 2026-01-01
+            type: concept
+            tags: []
+            sources: []
+            ---
+            
+            # Ref
+            
+            VALID short AMBIGUOUS [[alpha.md|which]] WRONG [[entities/alpha.md|entity]] NESTED [[concepts/nested/alpha.md|nested]] LONG [[concepts/alpha.md.md|long]] CODE `[[concepts/alpha.md]]`.
+    --- FAIL: TestMutationRewritesOnlyResolvedInboundLinks/archive (0.07s)
+        address_mutation_test.go:43: rewrote a non-edge: <nil>
+            got ---
+            title: "Ref"
+            created: 2026-01-01
+            updated: 2026-01-01
+            type: concept
+            tags: []
+            sources: []
+            ---
+            
+            # Ref
+            
+            VALID short AMBIGUOUS which WRONG entity NESTED nested LONG [[concepts/alpha.md.md|long]] CODE `[[concepts/alpha.md]]`.
+            
+            want ---
+            title: "Ref"
+            created: 2026-01-01
+            updated: 2026-01-01
+            type: concept
+            tags: []
+            sources: []
+            ---
+            
+            # Ref
+            
+            VALID short AMBIGUOUS [[alpha.md|which]] WRONG [[entities/alpha.md|entity]] NESTED [[concepts/nested/alpha.md|nested]] LONG [[concepts/alpha.md.md|long]] CODE `[[concepts/alpha.md]]`.
+--- FAIL: TestUnresolvedLinksDoNotBlockRemoval (0.00s)
+    address_mutation_test.go:60: unresolved paths were treated as backlinks: alpha has 1 backlink(s) (omega); use archive or --force
+FAIL
+FAIL	github.com/neutrospec/canopy/cmd/canopy	0.689s
+FAIL

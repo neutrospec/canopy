@@ -1,0 +1,16 @@
+Synthetic notice/manifest fixtures only; not release binaries.
+
+COMMAND: python3 scripts/check-assets.py --archive /private/tmp/canopy-web-20261010-livjwz1_/notices-fixture.tar.gz
+EXPECTED AND OBSERVED EXIT: 0
+PASS: 4 pinned assets, 6 notices, packaging declarations, 8 positive/negative controls
+PASS: actual archive notices and manifest: /private/tmp/canopy-web-20261010-livjwz1_/notices-fixture.tar.gz
+
+COMMAND: python3 scripts/check-assets.py --archive /private/tmp/canopy-web-20261010-livjwz1_/notices-fixture.zip
+EXPECTED AND OBSERVED EXIT: 0
+PASS: 4 pinned assets, 6 notices, packaging declarations, 8 positive/negative controls
+PASS: actual archive notices and manifest: /private/tmp/canopy-web-20261010-livjwz1_/notices-fixture.zip
+
+COMMAND: python3 scripts/check-assets.py --archive /private/tmp/canopy-web-20261010-livjwz1_/missing-manifest.tar.gz
+EXPECTED AND OBSERVED EXIT: 1
+FAIL: archive requires one internal/webui/static/vendor/assets.json; found 0
+

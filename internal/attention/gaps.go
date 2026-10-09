@@ -29,8 +29,8 @@ func GapsPath(w *config.Wiki) string {
 	return filepath.Join(w.Root, "_meta", "webui", "search-gaps.jsonl")
 }
 
-// LogGap appends one gap line. Append-only jsonl merges cleanly across
-// devices, unlike the aggregate JSON files.
+// LogGap appends one gap line. Git may still conflict on concurrent appends;
+// sync detects unresolved Git state and leaves it for explicit recovery.
 func LogGap(w *config.Wiki, door, query string, results int, top float64) error {
 	g := Gap{Time: time.Now().Format(time.RFC3339), Query: query, Results: results, Top: top, Door: door}
 	line, err := json.Marshal(g)

@@ -1,0 +1,11 @@
+2026/10/10 03:49:01 GET /page/alpha
+2026/10/10 03:49:01 GET /page/alpha
+2026/10/10 03:49:01 GET /
+--- FAIL: TestClientMessagesLocalized (0.03s)
+    --- FAIL: TestClientMessagesLocalized/en (0.01s)
+        workspace_test.go:69: static/app.js requires undelivered translation math_source
+    --- FAIL: TestClientMessagesLocalized/ko (0.00s)
+        workspace_test.go:69: static/app.js requires undelivered translation math_source
+FAIL
+FAIL	github.com/neutrospec/canopy/internal/webui	0.448s
+FAIL

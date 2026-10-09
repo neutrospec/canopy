@@ -1,0 +1,8 @@
+force-graph 1.51.4
+Copyright (c) 2018 Vasco Asturiano
+https://github.com/vasturiano/force-graph/tree/v1.51.4
+
+Canopy redistributes the unmodified package/dist/force-graph.min.js from the
+publisher's force-graph 1.51.4 npm archive. The full MIT license, including
+copyright and permission notice, is in LICENSE-force-graph.txt.
+This redistribution note was added by canopy; it is not an upstream NOTICE.

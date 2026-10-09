@@ -6,25 +6,27 @@
 단일 Go 바이너리로 제공합니다. 사람과 LLM 에이전트가 같은 위키를 함께 가꿀 수 있도록,
 "판단은 LLM이, 불변식은 코드가" 원칙으로 설계되었습니다.
 
-위키는 평범한 마크다운 + git 저장소입니다. canopy는 그 옆에서 스키마 검증, 인덱스 갱신,
-활동 로그, 임베딩 동기화, git sync를 코드로 강제하고 — Obsidian 등 기존 도구와
+위키는 평범한 마크다운 + git 저장소입니다. canopy는 그 옆에서 명령별 검증, 인덱스 갱신,
+활동 로그, 임베딩 동기화, git sync를 맡고 — Obsidian 등 기존 도구와
 그대로 공존합니다.
 
 ## 주요 기능
 
-- **스키마가 강제되는 쓰기** — `new/update/mv/rm/archive` 모든 변경이 타입·태그
-  taxonomy 검증을 거치고, 인덱스·로그·임베딩이 자동으로 따라 갱신됩니다.
-  이동 시 인바운드 위키링크까지 자동 재작성됩니다.
+- **검증과 후처리를 갖춘 쓰기** — `new`는 타입·태그·slug·`--links`를 검증하고,
+  `checkin`은 편집 사본의 스키마와 base를 확인합니다. `update`는 기존 frontmatter를
+  유지합니다. 쓰기 뒤 인덱스·로그·임베딩이 갱신되고, 이동 시 인바운드 링크를
+  재작성합니다. 본문 링크와 외부 편집의 구조 문제는 `lint`로 확인합니다.
 - **하이브리드 검색** — BM25 키워드 + 시맨틱 벡터(bge-m3, 완전 로컬 ONNX 추론)를
   융합합니다. 한국어·영어 혼용 문서에서 동작하며, 외부 API 호출이 없습니다.
 - **웹 UI** (`canopy serve`) — 검색에서 시작하는 위키 브라우징: 인스턴트 서치,
-  백링크, hover 미리보기, dir×type×tag facet 탐색, 로컬 링크 그래프, 본문 편집까지.
+  백링크, hover 미리보기, dir×type×tag facet 탐색, 로컬 링크 그래프, 본문 수정 제안까지.
 - **Second brain 루프** — 잊힌 페이지 재발견(`resurface`), 유사하지만 연결 안 된
   페이지 발견(`bridge`), 근거 청크 회수(`recall`), 기간 회고(`digest`).
-- **에이전트 연동** — 모든 명령이 `--json`을 지원하고, 에이전트용 스킬 문서가
-  바이너리에 내장되어 한 명령으로 설치됩니다.
+- **에이전트 연동** — 기계 출력용 `--json`을 제공하며, 에이전트용 스킬 문서를
+  바이너리에 내장해 한 명령으로 설치합니다.
 - **가벼운 설치 공간** — 단일 바이너리, XDG Base Directory 준수. 위키 저장소 안에는
-  스키마 파일(`canopy.toml`) 외에 아무것도 남기지 않습니다.
+  스키마·파생 Markdown 인덱스·활동 로그·동기화할 상태를 두고, 검색 DB와 모델은
+  위키 밖에 저장합니다.
 
 ## 설치
 
@@ -51,22 +53,20 @@ make install               # ~/.local/bin (없으면 /opt/homebrew/bin)
 ## 빠른 시작
 
 ```bash
-# 1. 위키 지정 (어느 디렉토리에서든 canopy가 위키를 찾도록)
-mkdir -p ~/.config/canopy
-echo 'default_wiki = "/path/to/wiki"' > ~/.config/canopy/config.toml
-
-# 2. 위키 채택 — 스키마(canopy.toml) 생성 + 인덱싱
-canopy init
-
-# 3. (선택) 시맨틱 검색 준비 — 임베딩 모델 다운로드 후 전체 인덱싱 (1회)
-canopy model pull          # bge-m3 ONNX ~2.3GB
-canopy reindex
-
-# 4. 사용 시작
-canopy new "첫 페이지" --type concept --tags tool
-canopy search "아무거나"
-canopy serve               # → http://localhost:8737
+# 새 폴더를 지정한다. 모델·Git·서비스 없이 첫 페이지와 검색을 확인할 수 있다.
+wiki="$HOME/canopy-demo"
+mkdir -p "$wiki"
+canopy init --wiki "$wiki"
+canopy status --wiki "$wiki" --json   # root가 지정한 위키인지 확인
+canopy new "첫 페이지" --slug first-page --type concept --tags tool --wiki "$wiki"
+canopy search "첫 페이지" --mode keyword --wiki "$wiki"
+canopy show first-page --wiki "$wiki"
 ```
+
+`init`은 비어 있는 `default_wiki`만 채우며 기존 전역 설정을 덮어쓰지 않습니다.
+시맨틱 검색은 선택입니다: ORT 빌드에서 `canopy model pull` 후
+`canopy reindex --wiki "$wiki"`를 실행하세요. 웹은 `canopy serve --wiki "$wiki"`로
+엽니다. Git 저장과 원격 연결은 입문 가이드의 별도 단계입니다.
 
 처음이라면 [docs/getting-started.md](docs/getting-started.md)의 15분 튜토리얼을 권합니다.
 
@@ -75,7 +75,7 @@ canopy serve               # → http://localhost:8737
 `canopy serve`는 위키를 검색-우선(search-first) 웹사이트로 띄웁니다.
 
 - **검색이 입구** — 홈의 검색박스에서 타이핑하면 즉시 결과가 뜨고(↑↓/Enter 키보드
-  탐색), 제목이 정확히 일치하면 바로 그 페이지로 이동합니다. 결과에는 페이지 제목이
+  탐색), slug가 정확히 일치하면 바로 그 페이지로 이동합니다. 결과에는 페이지 제목이
   아니라 **실제로 매칭된 문단**이 표시됩니다.
 - **현대적인 마크다운 뷰어** — 코드 블록 문법 하이라이팅(서버사이드, 라이트/다크
   테마), **mermaid 다이어그램**, LaTeX 수식($…$/$$…$$, MathJax SVG), 코드 복사
@@ -99,12 +99,11 @@ canopy serve               # → http://localhost:8737
   없는 페어)가 뜨고, 각 페이지 하단에는 아직 연결 안 된 유사 페이지가
   **제안 링크**로 표시됩니다. 답을 못 찾은 검색은 갭 로그로 쌓여 페이지 생성
   후보가 됩니다(점검 → 검색 갭).
-- **본문 편집** — 페이지의 `✎ 편집`으로 본문을 수정할 수 있습니다. 웹 편집은 CLI
-  `update`와 완전히 같은 파이프라인(검증·인덱스·로그·임베딩)을 지나며, 편집 충돌은
-  낙관적 잠금으로 감지합니다. frontmatter와 페이지 생성/이동/삭제는 CLI 전용입니다.
-  단, 웹 편집의 용도는 **오타·한 줄 정정 같은 작은 수정**입니다 — 본격적인 작성과
-  개편은 에이전트를 거치는 것이 원칙입니다(콘텐츠 판단 규칙까지 지켜지는 유일한
-  경로, [philosophy 원칙 9](docs/philosophy.md)).
+- **본문 수정 제안** — 페이지의 `✎ 편집`에서 저장하면 본문 전문이 edit 태스크로
+  접수됩니다. **접수는 페이지 반영이 아닙니다.** `할 일` 화면에서 제안 상태를 보고,
+  에이전트가 검토·반영한 뒤 현재 페이지를 확인하세요. canopy는 에이전트를 자동으로
+  실행하지 않습니다. frontmatter와 페이지 생성/이동/삭제는 CLI로 처리합니다
+  ([태스크 계약](docs/agent-tasks.md)).
 - **안전한 기본값** — 기본은 localhost에만 바인딩됩니다. 외부에서 접근 가능한
   주소로 열면 인증이 필수가 되며, 최초 1회 터미널에 출력되는 설정 코드로
   계정(id/pw)을 만듭니다. 다크 모드·모바일 대응. 서버는 커밋하지 않습니다 —
@@ -127,6 +126,7 @@ canopy serve --addr :8737   # 모든 인터페이스 — 인증 필수 (최초 �
 | `canopy list [--type T] [--tag t]` | 전체 페이지 목록 (slug·type·title) |
 | `canopy tags` | 유효 type·태그 taxonomy 조회 (`new` 검증과 동일 소스) |
 | `canopy show <page>` (alias `view`) | 페이지 출력 (경로 헤더는 stderr, 본문은 stdout) |
+| `canopy grep "패턴" [page]` | 줄 번호가 있는 정규식 검색 |
 | `canopy status` · `canopy lint` | 위키 상태 · 스키마/링크/신선도 검사 |
 
 **쓰기** — 실행 후 index/log/임베딩 자동 갱신
@@ -135,15 +135,16 @@ canopy serve --addr :8737   # 모든 인터페이스 — 인증 필수 (최초 �
 |------|------|
 | `canopy new <title> --type T --tags a,b [--slug s] [--body-file f\|-] [--links p1,p2]` | 검증된 생성 + 관련 페이지 제안 |
 | `canopy update <page> [--body-file f]` | updated 갱신 (+본문 교체) |
+| `canopy checkout <page>` / `canopy checkin <page>` | 위키 밖 사본에서 부분 편집 → 검증·반영·사본 회수 |
 | `canopy mv <page> [--type T] [--slug s]` | 이동/개명 — 인바운드 링크 자동 재작성 |
 | `canopy rm <page> [--force]` / `canopy archive <page>` | 삭제(백링크 있으면 거부) / 아카이브 |
-| `canopy sync [-m msg]` | pull --rebase → commit → push → 인덱스 갱신 |
+| `canopy sync [-m msg]` | pull --rebase → Markdown 인덱스 재생성 → commit → push → 검색 캐시 갱신 |
 
-**Second brain** — 후보 선정은 canopy(결정론)가, 판단·전달은 에이전트나 사람이 ([상세](docs/second-brain.md))
+**Second brain** — canopy가 조건·점수로 후보를 추리고, 에이전트나 사람이 판단·전달합니다. `resurface auto/random`은 적격 후보에서 표본을 고릅니다. ([상세](docs/second-brain.md))
 
 | 명령 | 설명 |
 |------|------|
-| `canopy recall "질문" [-k N] [--per-page N]` | 청크 단위 근거 + 출처 slug (에이전트 컨텍스트 주입용) |
+| `canopy recall "질문" [-k N] [--per-page N]` | 청크 원문 + 출처 slug. 임베딩 필수; 없으면 keyword search + show 사용 |
 | `canopy resurface [-n N] [--strategy auto\|random\|hub]` | 잊힌 페이지 / 낡은 허브 재발견 후보 |
 | `canopy resurface feedback <page> --up\|--down\|--snooze N` | 반응 기록 → 이후 후보 선정에 반영 |
 | `canopy bridge [-n N] [--min-sim 0.7] [--include-linked]` | 유사하지만 연결 안 된 페이지 페어 발견 |
@@ -151,7 +152,14 @@ canopy serve --addr :8737   # 모든 인터페이스 — 인증 필수 (최초 �
 
 **관리**: `canopy reindex [--no-embed]` · `canopy model pull/status` · `canopy skills install` · `canopy version` · `canopy migrate [status]`
 
-모든 명령이 `--json`을 지원합니다. `--peek`(resurface/bridge)은 상태 기록 없이 미리보기합니다.
+작업 큐는 `canopy tasks list --json`, 외부 편집 검토는 `canopy reconcile --json`,
+머신 활동 조회는 `canopy events --json`에서 시작합니다.
+자동화는 명령별 `--json` 출력·stderr·exit를 함께 확인하세요. 인자 파싱·초기화 실패는
+JSON 없이 종료될 수 있습니다. JSON 모드와 `show`에는 상태 배너가 없으므로
+`canopy status --json`으로 대상·dirty·열린 사본·대기 작업을 확인합니다.
+여섯 페이지 변경 명령의 응답·부분 반영·복구 계약은 [mutation-results.md](docs/mutation-results.md)에
+있습니다. exit 0은 요청한 단계 완료이며 내용의 정확성까지 검증하지는 않습니다.
+`--peek`(resurface/bridge)은 노출 상태를 기록하지 않습니다.
 
 ## 에이전트 연동
 
@@ -161,17 +169,21 @@ LLM 에이전트에게 canopy 사용법을 가르치는 스킬 2종(`canopy-wiki
 
 ```bash
 canopy skills install              # 감지된 모든 에이전트에 설치/갱신 (업그레이드 후 이 한 명령)
-canopy skills install --dir <path> # 특정 디렉토리만 (없으면 생성 — 새 에이전트 최초 등록에 사용)
+canopy skills install --dir <path> # 지정한 스킬 디렉토리만 설치/갱신 (없으면 생성)
 ```
 
-- 자동 감지 대상: `~/.hermes/skills`(hermes), `~/.claude/skills`(Claude Code) 중
-  **존재하는 모든 디렉토리**. 일반 에이전트에는 `<skill>/SKILL.md` flat
+- 자동 감지 대상: 존재하는 `~/.hermes/skills`(hermes), `~/.claude/skills`(Claude Code),
+  pi의 agent 홈(`PI_CODING_AGENT_DIR`, 기본 `~/.pi/agent`)입니다. pi는 홈이 있으면
+  `skills/`를 생성합니다. 일반 에이전트에는 `<skill>/SKILL.md` flat
   레이아웃으로, hermes에는 카테고리 레이아웃(`note-taking/…`)으로 설치됩니다.
-  처음 쓰는 에이전트는 `--dir`로 한 번 설치하면 이후 자동 감지에 포함됩니다.
+  `--dir`은 임의 경로를 자동 감지에 등록하지 않으므로 이후 갱신에도 같은 경로를
+  지정하세요. 설치와 활성화는 별개입니다. 해당 에이전트의 스킬 탐색·로드 규칙을 확인하세요.
 - 설치본의 진실 소스는 바이너리입니다 — 설치된 SKILL.md를 직접 수정하지 마세요
   (다음 install이 되돌립니다). canopy 업그레이드 후 재실행하면 새 명령이 반영됩니다.
-- 핵심 규칙: **에이전트가 위키 파일을 직접 편집하지 않고 항상 canopy 명령을
-  거치게** 하세요. 스키마 위반이 원천 차단됩니다.
+- 페이지 생성·수정·이동·삭제는 **canopy 명령을 거치게** 하세요. 부분 편집은
+  `checkout` 사본에서 하고 `checkin`으로 반영합니다. 원본 자료를 `raw/`에 추가하거나
+  `canopy.toml` 설정을 수정할 때는 해당 파일을 직접 다루되 기존 내용을 보존합니다.
+  명령별 검증과 후처리를 사용하고 내용·관련 lint 결과를 확인합니다.
 - 주기 실행(주간 저널, lint 등) 레시피는 [docs/second-brain.md](docs/second-brain.md) 참조.
 
 ## 데이터 배치 (XDG Base Directory 준수)
@@ -179,6 +191,9 @@ canopy skills install --dir <path> # 특정 디렉토리만 (없으면 생성 �
 | 위치 | 성격 |
 |------|------|
 | `<wiki>/canopy.toml` | 위키의 스키마 (타입·태그 taxonomy) — 데이터와 함께 여행하므로 위키에 커밋 |
+| `<wiki>/index.md`, `<wiki>/index/` | 전체 재생성되는 Markdown 인덱스 — 직접 편집하지 않음 |
+| `<wiki>/logs/*.jsonl` | append-only 활동 이력 — 현재 페이지에서 재구축할 수 없으므로 보존 |
+| `<wiki>/_meta/tasks/`, `<wiki>/_meta/reconcile/` | 위임 큐·검토 기준선 — 위키와 함께 커밋 |
 | `<wiki>/_meta/resurface/` | 재현 불가 상태 (재발견 노출 이력·피드백) — 위키에 커밋 |
 | `<wiki>/_meta/webui/` | 재현 불가 상태 (읽기 이력·검색 갭) — 위키에 커밋, 기기 간 동기화 |
 | `<wiki>/_meta/attention/` | 재현 불가 상태 (에이전트 접근 집계, 일 단위) — 위키에 커밋 |
@@ -189,20 +204,24 @@ canopy skills install --dir <path> # 특정 디렉토리만 (없으면 생성 �
 | `~/.config/canopy/webauth.json` | 웹 UI 계정 (bcrypt 해시) — 비밀이므로 위키 밖, 머신 로컬 |
 | `~/.local/share/canopy/models/` | ONNX 모델, 빌드용 정적 라이브러리 |
 
-`XDG_CONFIG_HOME`/`XDG_CACHE_HOME`/`XDG_DATA_HOME` 환경변수를 존중합니다.
-위키 저장소 안에 canopy가 두는 것은 위의 스키마와 `_meta/` 상태뿐이며, 전부
-"위키와 함께 여행해야 하는 이유"가 있는 것들입니다. 비밀은 위키에 넣지 않습니다.
+`XDG_CONFIG_HOME`/`XDG_CACHE_HOME`/`XDG_DATA_HOME`/`XDG_STATE_HOME` 환경변수를
+존중합니다. 캐시 삭제는 활동 이력이나 `_meta/`의 복구 방법이 아닙니다. 머신-로컬
+재현 불가 상태는 마이그레이션 사다리, 여행하는 `_meta/*`는 파일 안의 version,
+파생 검색 DB는 캐시 버전과 재구축으로 진화합니다. 비밀은 위키에 넣지 않습니다.
 
 ## 성능
 
-Apple Silicon, int8 양자화 모델 기준:
+이전 Apple Silicon·int8 양자화 모델 측정값입니다. 이번 릴리스의 전체 성능·품질 보증은 아닙니다.
 
 - 임베딩 ~11ms/청크, 모델 로드 ~0.5초(워밍업 상태) — fp32 대비 2.4× 빠르고
   임베딩 품질은 코사인 유사도 ≥0.988로 유지
 - 무변경 `reindex` ≈ 1초, keyword 검색 <100ms (모델 로드 없음), 웹 UI 인스턴트
   서치 ~40ms/쿼리
-- int8 양자화는 선택입니다: `canopy model pull`(fp32) 후
-  `scripts/quantize-model.py`를 1회 실행 (변환에만 파이썬 필요, 런타임은 무관)
+- int8 양자화는 선택입니다. `canopy model pull`(fp32) 후 저장소의
+  `scripts/quantize-model.py --help`에서 변환 의존성·경로를 확인하고 실행합니다.
+  기본 출력은 별도 `bge-m3-int8` 디렉토리입니다. 대상 위키의 `canopy.toml`에서
+  `[embedding]`의 `model`을 `bge-m3-int8`로 바꾸고 같은 `--wiki`로
+  `canopy model status`를 확인한 뒤 `canopy reindex`를 실행합니다.
 
 ## 문서
 
@@ -222,6 +241,7 @@ Apple Silicon, int8 양자화 모델 기준:
 | [docs/getting-started.md](docs/getting-started.md) | 처음 시작하는 사람용 — 개념·용어·15분 튜토리얼·일상 사용 |
 | [docs/upgrading.md](docs/upgrading.md) | 설치·운영 이행 가이드 (소스/make install → Homebrew + brew services, 정기 업그레이드) |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | 자주 만나는 문제 (PATH, 시맨틱 검색, 웹 UI 인증) |
+| [docs/mutation-results.md](docs/mutation-results.md) | 쓰기 JSON·부분 반영·checkout 복구·협력 쓰기 범위 |
 
 **설계 기록** — 각 기능이 어떤 결정으로 태어났나
 
@@ -234,7 +254,7 @@ Apple Silicon, int8 양자화 모델 기준:
 | [docs/web-ui-plan-2.md](docs/web-ui-plan-2.md) | 2차(M5–M8): 보안, 읽기 이력·새발견, 제안 링크, 말 거는 홈 |
 | [docs/web-ui-plan-3.md](docs/web-ui-plan-3.md) | 3차(M9–M10+): 현대 뷰어, 지식 그래프, 섬 검출 |
 | [docs/web-ui-plan-4.md](docs/web-ui-plan-4.md) | 4차(M11–M13): 주의(attention) 2계층 저장, 접근 추적, 계기판·비주얼 리프레시 |
-| [docs/web-ui-write-design.md](docs/web-ui-write-design.md) | 웹 쓰기의 동시성·충돌 설계 (단일 쓰기 파이프라인) |
+| [docs/web-ui-write-design.md](docs/web-ui-write-design.md) | 과거 직접 저장 설계와 명시적 sync 결정 — 현재 웹 제안 계약은 agent-tasks 참고 |
 | [docs/web-ui-i18n.md](docs/web-ui-i18n.md) | 웹 UI 다국어 — go-i18n, 로케일 협상, 언어 선택 (invariants M) |
 | [docs/reconcile-design.md](docs/reconcile-design.md) | 정규화 게이트 설계 — 편집은 어디서든, 정규화는 한 문으로 (모든 문의 변경을 본길이 재판단) |
 | [docs/agent-tasks.md](docs/agent-tasks.md) | 에이전트 태스크 큐 — 웹의 위임(연결·수정 요청)을 파일 큐로, 완료는 유형별 코드 검증으로 (invariants T) |
@@ -245,7 +265,7 @@ Apple Silicon, int8 양자화 모델 기준:
 
 | 문서 | 내용 |
 |------|------|
-| [docs/invariants.md](docs/invariants.md) | 점검 가능한 불변식 목록(A–I) + 감사 절차 |
+| [docs/invariants.md](docs/invariants.md) | 점검 가능한 불변식 목록 + 실행 전제·감사 절차 |
 
 기여 규칙 하나: **점검 명령이 없는 주장은 원칙이 아닙니다.** 새 기능은 불변식과
 점검 방법을 invariants.md에 먼저 적고 구현합니다. 개발 규칙(빌드·버전·마이그레이션·

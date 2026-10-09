@@ -27,7 +27,7 @@ type PageRef struct {
 type Result struct {
 	Since        string         `json:"since"` // YYYY-MM-DD (inclusive)
 	CreatedPages []PageRef      `json:"created_pages"`
-	UpdatedPages []PageRef      `json:"updated_pages"` // updated in window but created earlier
+	UpdatedPages []PageRef      `json:"updated_pages"` // updated in window, not counted as created in window
 	TagCounts    map[string]int `json:"tag_counts"`    // tags of created pages
 	Decisions    []PageRef      `json:"decisions"`     // pages tagged `decision`, whole wiki, chronological
 	Stats        Stats          `json:"stats"`
@@ -35,7 +35,16 @@ type Result struct {
 	// actually accessed in the window, measured from the machine-local
 	// event log (invariant G8). The cmd layer attaches it — this package
 	// stays a pure scan collector.
-	TopConsumed []Consumed `json:"top_consumed"`
+	TopConsumed  []Consumed  `json:"top_consumed"`
+	InvalidDates []DateIssue `json:"invalid_dates"`
+}
+
+type DateIssue struct {
+	Slug    string `json:"slug"`
+	RelPath string `json:"rel_path"`
+	Field   string `json:"field"`
+	Value   string `json:"value"`
+	Reason  string `json:"reason"`
 }
 
 // Consumed is one page's access tally for the window.
@@ -84,17 +93,30 @@ func Collect(scan *wiki.ScanResult, since time.Time) *Result {
 		UpdatedPages: []PageRef{},
 		Decisions:    []PageRef{},
 		TopConsumed:  []Consumed{},
+		InvalidDates: []DateIssue{},
 	}
 	res.Stats.Total = len(scan.Pages)
-	cutoff := since.Format("2006-01-02")
+	cutoff, _ := time.Parse("2006-01-02", res.Since)
+	date := func(p *wiki.Page, field, value string) (time.Time, bool) {
+		parsed, err := time.Parse("2006-01-02", value)
+		if err != nil {
+			reason := "expected YYYY-MM-DD"
+			if value == "" {
+				reason = "missing YYYY-MM-DD"
+			}
+			res.InvalidDates = append(res.InvalidDates, DateIssue{Slug: p.Slug, RelPath: p.RelPath, Field: field, Value: value, Reason: reason})
+		}
+		return parsed, err == nil
+	}
 
 	ref := func(p *wiki.Page) PageRef {
 		return PageRef{Slug: p.Slug, RelPath: p.RelPath, Title: p.Title, Type: p.Type, Created: p.Created, Updated: p.Updated}
 	}
 	for _, p := range scan.Pages {
-		// String compare works: dates are normalized YYYY-MM-DD.
-		createdIn := p.Created >= cutoff && p.Created != ""
-		updatedIn := p.Updated >= cutoff && p.Updated != ""
+		created, createdOK := date(p, "created", p.Created)
+		updated, updatedOK := date(p, "updated", p.Updated)
+		createdIn := createdOK && !created.Before(cutoff)
+		updatedIn := updatedOK && !updated.Before(cutoff)
 		switch {
 		case createdIn:
 			res.CreatedPages = append(res.CreatedPages, ref(p))
@@ -113,6 +135,11 @@ func Collect(scan *wiki.ScanResult, since time.Time) *Result {
 	}
 	byCreated := func(list []PageRef) {
 		sort.Slice(list, func(i, j int) bool {
+			_, a := time.Parse("2006-01-02", list[i].Created)
+			_, b := time.Parse("2006-01-02", list[j].Created)
+			if (a == nil) != (b == nil) {
+				return a == nil
+			}
 			if list[i].Created != list[j].Created {
 				return list[i].Created < list[j].Created
 			}
@@ -129,6 +156,12 @@ func Collect(scan *wiki.ScanResult, since time.Time) *Result {
 	})
 	res.Stats.Created = len(res.CreatedPages)
 	res.Stats.Updated = len(res.UpdatedPages)
+	sort.Slice(res.InvalidDates, func(i, j int) bool {
+		if res.InvalidDates[i].RelPath != res.InvalidDates[j].RelPath {
+			return res.InvalidDates[i].RelPath < res.InvalidDates[j].RelPath
+		}
+		return res.InvalidDates[i].Field < res.InvalidDates[j].Field
+	})
 	return res
 }
 
@@ -137,6 +170,12 @@ func (r *Result) Render() string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "digest since %s — created %d, updated %d (total %d pages)\n",
 		r.Since, r.Stats.Created, r.Stats.Updated, r.Stats.Total)
+	if len(r.InvalidDates) > 0 {
+		b.WriteString("\nINVALID DATES (excluded from date-window counts)\n")
+		for _, issue := range r.InvalidDates {
+			fmt.Fprintf(&b, "  %s.%s: %q — %s\n", issue.Slug, issue.Field, issue.Value, issue.Reason)
+		}
+	}
 	if len(r.CreatedPages) > 0 {
 		b.WriteString("\nCREATED\n")
 		for _, p := range r.CreatedPages {

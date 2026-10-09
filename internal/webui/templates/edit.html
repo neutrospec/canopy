@@ -1,10 +1,11 @@
 {{define "content"}}
 <section class="pagehead"><div><h1>{{t "edit_heading"}} {{.Page.Title}}</h1><p class="muted">{{t "edit_propose_help"}}</p></div></section>
-<form class="editform" method="post" action="/edit/{{.Page.Slug}}">
+<p class="notice">{{t "edit_reception_hint"}}</p>
+<form class="editform" method="post" action="/edit/{{pathref .Page.RelPath}}">
   <label for="proposal-body">{{t "edit_body_label"}}</label>
   <textarea id="proposal-body" name="body" spellcheck="false">{{.Body}}</textarea>
   <label for="proposal-note">{{t "edit_note_label"}}</label>
   <input id="proposal-note" type="text" name="note" class="proposenote" placeholder="{{t "edit_note_placeholder"}}">
-  <div class="editactions"><button type="submit">{{t "edit_propose_submit"}}</button><a class="wikilink" href="/page/{{.Page.Slug}}">{{t "edit_cancel"}}</a></div>
+  <div class="editactions"><button type="submit">{{t "edit_propose_submit"}}</button><a class="wikilink" href="{{pageURL .Page.Slug}}">{{t "edit_cancel"}}</a></div>
 </form>
 {{end}}

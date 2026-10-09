@@ -1,0 +1,35 @@
+from runner import *
+import hashlib, shutil, re
+BIN=ROOT/'canopy'
+results=[]
+def hashfile(p): return hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else None
+def cmd(label,w,*args):
+ r=run(label,[BIN,'--wiki',w,*args,'--json']); results.append(r); return r
+def seed(name,pages):
+ w=ROOT/'fixtures'/name; (w/'concepts').mkdir(parents=True)
+ for filename,body in pages.items(): (w/'concepts'/filename).write_text('---\ntitle: "'+filename+'"\ntype: concept\ncreated: 2026-01-01\nupdated: 2026-01-01\ntags: []\n---\n\n'+body+'\n')
+ cmd(name+'-init',w,'init'); return w
+w=seed('dotted',{'foo.md':'short original','foo.md.md':'long original','alpha.md':'normal original'})
+co={}
+for name in ['foo.md','foo.md.md','alpha.md']:
+ r=cmd('checkout-'+name,w,'checkout','concepts/'+name)
+ co[name]=Path(json.loads(r['stdout'])['path'])
+ co[name].write_text(co[name].read_text()+'\nUNIQUE EDIT '+name+'\n')
+before={name:{'path':str(p),'sha256':hashfile(p)} for name,p in co.items()}
+r=cmd('ambiguous-discard',w,'checkin','foo.md','--discard')
+after={name:hashfile(p) for name,p in co.items()}
+results.append({'probe':'ambiguous-discard','before':before,'after':after,'response':json.loads(r['stdout'])})
+r=cmd('explicit-long-checkin',w,'checkin','concepts/foo.md.md')
+results.append({'probe':'explicit-checkin-control','exit':r['exit'],'page':(w/'concepts/foo.md.md').read_text(),'short_page':(w/'concepts/foo.md').read_text(),'alpha_copy_preserved':hashfile(co['alpha.md'])==before['alpha.md']['sha256']})
+r=cmd('dotted-sync-index',w,'sync')
+# Non-git control generates indexes via a successful normal update instead.
+r=cmd('dotted-index-update',w,'update','alpha','--title','Normal updated')
+results.append({'probe':'generated-index','category_text':(w/'index/concepts.md').read_text(),'dashboard_text':(w/'index.md').read_text(),'ambiguous_link':bool(re.search(r'\[\[foo\.md\]\]',(w/'index/concepts.md').read_text()))})
+q=seed('task-time',{'alpha.md':'time'})
+(q/'_meta/tasks').mkdir(parents=True)
+for id,created in [('earlier','2026-10-10T10:00:00+09:00'),('later','2026-10-10T02:00:00Z')]:
+ (q/'_meta/tasks'/f'{id}.json').write_text(json.dumps({'version':1,'id':id,'type':'edit','status':'pending','pages':['alpha'],'created':created,'request':id}))
+r=cmd('task-mixed-offset',q,'tasks','list')
+results.append({'probe':'task-order','expected_oldest_first':['earlier','later'],'stdout':r['stdout']})
+(ROOT/'first-probes.json').write_text(json.dumps(results,indent=2)+'\n')
+print(json.dumps([x for x in results if 'probe' in x],indent=2))

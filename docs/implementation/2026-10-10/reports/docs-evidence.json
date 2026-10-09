@@ -1,0 +1,1461 @@
+{
+  "tests": {
+    "i18n": {
+      "name": "i18n",
+      "argv": [
+        "make",
+        "i18n-check"
+      ],
+      "exit": 0,
+      "seconds": 0.131,
+      "stdout": "scripts/i18n-check.sh\n✓ i18n: 4 translation(s) current\n",
+      "stderr": ""
+    },
+    "lint-mermaid-tests": {
+      "name": "lint-mermaid-tests",
+      "argv": [
+        "/usr/bin/sandbox-exec",
+        "-f",
+        "/private/tmp/canopy-docs-20261010-zje6hdi9/sandbox.sb",
+        "/opt/homebrew/bin/go",
+        "test",
+        "-count=1",
+        "-v",
+        "./internal/lint/",
+        "./internal/mermaid/"
+      ],
+      "exit": 0,
+      "seconds": 3.133,
+      "stdout": "=== RUN   TestRunFixture\n--- PASS: TestRunFixture (0.00s)\n=== RUN   TestMermaidFindings\n--- PASS: TestMermaidFindings (0.41s)\n=== RUN   TestTagAudit\n--- PASS: TestTagAudit (0.00s)\n=== RUN   TestTagAuditLegacy\n--- PASS: TestTagAuditLegacy (0.00s)\n=== RUN   TestFrontmatterKeyPresence\n--- PASS: TestFrontmatterKeyPresence (0.00s)\n=== RUN   TestTagAuditCountsPagesOnce\n--- PASS: TestTagAuditCountsPagesOnce (0.00s)\nPASS\nok  \tgithub.com/neutrospec/canopy/internal/lint\t0.805s\n=== RUN   TestValidDiagrams\n--- PASS: TestValidDiagrams (1.35s)\n=== RUN   TestBrokenDiagrams\n--- PASS: TestBrokenDiagrams (0.63s)\n=== RUN   TestErrorMessageHasLine\n--- PASS: TestErrorMessageHasLine (0.08s)\n=== RUN   TestFaultClassification\n--- PASS: TestFaultClassification (0.00s)\n=== RUN   TestBlocks\n--- PASS: TestBlocks (0.00s)\nPASS\nok  \tgithub.com/neutrospec/canopy/internal/mermaid\t2.454s\n",
+      "stderr": ""
+    },
+    "lite-build-final": {
+      "name": "lite-build-final",
+      "argv": [
+        "/usr/bin/sandbox-exec",
+        "-f",
+        "/private/tmp/canopy-docs-20261010-zje6hdi9/sandbox.sb",
+        "/opt/homebrew/bin/go",
+        "build",
+        "-buildvcs=false",
+        "-o",
+        "/private/tmp/canopy-docs-20261010-zje6hdi9/canopy",
+        "./cmd/canopy"
+      ],
+      "exit": 0,
+      "seconds": 0.962,
+      "stdout": "",
+      "stderr": ""
+    },
+    "lite-build-retry": {
+      "name": "lite-build-retry",
+      "argv": [
+        "/usr/bin/sandbox-exec",
+        "-f",
+        "/private/tmp/canopy-docs-20261010-zje6hdi9/sandbox.sb",
+        "/opt/homebrew/bin/go",
+        "build",
+        "-buildvcs=false",
+        "-o",
+        "/private/tmp/canopy-docs-20261010-zje6hdi9/canopy",
+        "./cmd/canopy"
+      ],
+      "exit": 1,
+      "seconds": 0.3,
+      "stdout": "",
+      "stderr": "# github.com/neutrospec/canopy/cmd/canopy\ncmd/canopy/write.go:284:32: w.Cfg.Schema.RequiredFrontmatter undefined (type config.Schema has no field or method RequiredFrontmatter)\n"
+    },
+    "lite-build": {
+      "name": "lite-build",
+      "argv": [
+        "/usr/bin/sandbox-exec",
+        "-f",
+        "/private/tmp/canopy-docs-20261010-zje6hdi9/sandbox.sb",
+        "/opt/homebrew/bin/go",
+        "build",
+        "-buildvcs=false",
+        "-o",
+        "/private/tmp/canopy-docs-20261010-zje6hdi9/canopy",
+        "./cmd/canopy"
+      ],
+      "exit": 0,
+      "seconds": 0.622,
+      "stdout": "",
+      "stderr": ""
+    },
+    "skillcreator-canopy-ingest": {
+      "name": "skillcreator-canopy-ingest",
+      "argv": [
+        "python3",
+        "/Users/nobocop/Library/Application Support/orca/codex-accounts/e1b92274-0cc8-4999-ab0e-5647ba525cb5/home/skills/.system/skill-creator/scripts/quick_validate.py",
+        "/private/tmp/canopy-docs-20261010-zje6hdi9/skill-validation/canopy-ingest"
+      ],
+      "exit": 1,
+      "seconds": 0.024,
+      "stdout": "",
+      "stderr": "Traceback (most recent call last):\n  File \"/Users/nobocop/Library/Application Support/orca/codex-accounts/e1b92274-0cc8-4999-ab0e-5647ba525cb5/home/skills/.system/skill-creator/scripts/quick_validate.py\", line 10, in <module>\n    import yaml\nModuleNotFoundError: No module named 'yaml'\n"
+    },
+    "skillcreator-canopy-wiki": {
+      "name": "skillcreator-canopy-wiki",
+      "argv": [
+        "python3",
+        "/Users/nobocop/Library/Application Support/orca/codex-accounts/e1b92274-0cc8-4999-ab0e-5647ba525cb5/home/skills/.system/skill-creator/scripts/quick_validate.py",
+        "/private/tmp/canopy-docs-20261010-zje6hdi9/skill-validation/canopy-wiki"
+      ],
+      "exit": 1,
+      "seconds": 0.025,
+      "stdout": "",
+      "stderr": "Traceback (most recent call last):\n  File \"/Users/nobocop/Library/Application Support/orca/codex-accounts/e1b92274-0cc8-4999-ab0e-5647ba525cb5/home/skills/.system/skill-creator/scripts/quick_validate.py\", line 10, in <module>\n    import yaml\nModuleNotFoundError: No module named 'yaml'\n"
+    },
+    "skills-tests": {
+      "name": "skills-tests",
+      "argv": [
+        "/usr/bin/sandbox-exec",
+        "-f",
+        "/private/tmp/canopy-docs-20261010-zje6hdi9/sandbox.sb",
+        "/opt/homebrew/bin/go",
+        "test",
+        "-count=1",
+        "-v",
+        "./internal/skills/"
+      ],
+      "exit": 0,
+      "seconds": 0.485,
+      "stdout": "=== RUN   TestInstallRefreshesEmbeddedSkills\n--- PASS: TestInstallRefreshesEmbeddedSkills (0.00s)\n=== RUN   TestDetectAndInstallAll\n--- PASS: TestDetectAndInstallAll (0.00s)\n=== RUN   TestPiDetection\n--- PASS: TestPiDetection (0.00s)\n=== RUN   TestInstallLayoutPerAgent\n--- PASS: TestInstallLayoutPerAgent (0.00s)\nPASS\nok  \tgithub.com/neutrospec/canopy/internal/skills\t0.328s\n",
+      "stderr": ""
+    },
+    "snooze-contract-tests": {
+      "name": "snooze-contract-tests",
+      "argv": [
+        "/usr/bin/sandbox-exec",
+        "-f",
+        "/private/tmp/canopy-docs-20261010-zje6hdi9/sandbox.sb",
+        "/opt/homebrew/bin/go",
+        "test",
+        "-count=1",
+        "-v",
+        "./internal/resurface/",
+        "-run",
+        "TestSnoozeDurationAcrossZones|TestLegacySnoozeDateStillLoads"
+      ],
+      "exit": 0,
+      "seconds": 0.636,
+      "stdout": "=== RUN   TestSnoozeDurationAcrossZones\n--- PASS: TestSnoozeDurationAcrossZones (0.00s)\n=== RUN   TestLegacySnoozeDateStillLoads\n--- PASS: TestLegacySnoozeDateStillLoads (0.00s)\nPASS\nok  \tgithub.com/neutrospec/canopy/internal/resurface\t0.367s\n",
+      "stderr": ""
+    },
+    "web-contract-tests": {
+      "name": "web-contract-tests",
+      "argv": [
+        "/usr/bin/sandbox-exec",
+        "-f",
+        "/private/tmp/canopy-docs-20261010-zje6hdi9/sandbox.sb",
+        "/opt/homebrew/bin/go",
+        "test",
+        "-count=1",
+        "-v",
+        "./internal/webui/",
+        "-run",
+        "TestRawHTMLCannotExecuteButGeneratedMarkupSurvives|TestWebEditFilesProposalNotFile"
+      ],
+      "exit": 0,
+      "seconds": 1.984,
+      "stdout": "=== RUN   TestRawHTMLCannotExecuteButGeneratedMarkupSurvives\n--- PASS: TestRawHTMLCannotExecuteButGeneratedMarkupSurvives (0.00s)\n=== RUN   TestWebEditFilesProposalNotFile\n2026/10/10 02:37:00 POST /edit/alpha\n--- PASS: TestWebEditFilesProposalNotFile (0.03s)\nPASS\nok  \tgithub.com/neutrospec/canopy/internal/webui\t0.639s\n",
+      "stderr": ""
+    }
+  },
+  "workflows": {
+    "binary_sha256": "07eabd3ecbf7006c65e5057d64ae5e33d97076574213638a13424c8808d7ec2e",
+    "checks": [
+      {
+        "name": "new-with-explicit-target-and-input",
+        "status": "pass",
+        "detail": {
+          "root": "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki",
+          "input_sha": "9df5c3dd3c888e0bd6b917e5113caf4630b551f83261071983dd369bc005091e",
+          "page_sha": "19bfdcc9bf5aa4cd30d1a3215485b1c2acf171cd9ef3b3f82eae90e82bf60256",
+          "non_target": {
+            "canopy.toml": "07fff8a4d6e9bc871384909816f3a6cd603b6253a03a37db29b2e8a2781501b7",
+            "concepts/other.md": "1bd4355d4c12de4452dff5844cd989ce8e9066849b6daf748899b439e92bcd9e",
+            "index/comparisons.md": "efb48ed3e55010bfd99bc05516c7c9ef2784b6e608679b775c0073e7fa9feb98",
+            "index/concepts.md": "0bb58586672bac98e2588cffce20db1bca1b29a397be58d09434a829bdf7e3e9",
+            "index/entities.md": "0f633207bc4279ec53ec14ad2a5ff6888f700a6846f600ecb648b23787ec722a",
+            "index.md": "8cd52820fb32ecbeebd62b0dd9f9a08cc1ebd498f3ba4cc69d3e489ec075fd25",
+            "logs/2026-10.jsonl": "70c1dc42aac47828f6df119843e08951acaf3ac77f79ab6d3694c5154847ee7d"
+          }
+        }
+      },
+      {
+        "name": "no-model-read-fallback",
+        "status": "pass",
+        "detail": {
+          "recall_exit": 1,
+          "actual_search_mode": "keyword",
+          "model_absent": true
+        }
+      },
+      {
+        "name": "partial-edit-backup-and-content",
+        "status": "pass",
+        "detail": {
+          "backup_sha": "2755dad9c230228aa632d864225f6bf34a4a9d2b02e58b72adced2373dd71f7b",
+          "copy_reclaimed": true,
+          "unrelated_quote_preserved": true
+        }
+      },
+      {
+        "name": "ingest-original-sources-and-collision",
+        "status": "pass",
+        "detail": {
+          "raw_sha": "5a2bac892ed88672b43251e9c84c028485f728f55bd25aafa4254f0a6b9dadbd",
+          "source_sha": "5a2bac892ed88672b43251e9c84c028485f728f55bd25aafa4254f0a6b9dadbd",
+          "backup_sha": "db8420f890b5760941fc502207480e2ca0cd8f43070ca1303832255d8bfe73ec",
+          "raw_collision_preserved": true
+        }
+      },
+      {
+        "name": "delegated-request-positive-and-quoted-data",
+        "status": "pass",
+        "detail": {
+          "id": "edit-alpha-20261010-023531-f086cd7b600b4556d5ce53ff",
+          "premature_done_exit": 1,
+          "request_preserved": true,
+          "status": "done"
+        }
+      },
+      {
+        "name": "checkin-postprocessing-failure-backup",
+        "status": "pass",
+        "detail": {
+          "exit": 1,
+          "applied": "applied",
+          "stage": "log",
+          "backup_preserved": true,
+          "original_preserved": true,
+          "copy_retained": true,
+          "blind_retry": false
+        }
+      },
+      {
+        "name": "bash-published-new-success",
+        "status": "pass",
+        "detail": {
+          "shell": "bash",
+          "case": "success",
+          "exit": 0,
+          "input_preserved": true,
+          "input_sha": "d9721a1ad8da63f3d12085373706b8b06ff07ba7054c39eb6a743518ce80ee73",
+          "non_target_same": true
+        }
+      },
+      {
+        "name": "bash-published-new-refusal",
+        "status": "pass",
+        "detail": {
+          "shell": "bash",
+          "case": "refusal",
+          "exit": 1,
+          "input_preserved": true,
+          "input_sha": "d9721a1ad8da63f3d12085373706b8b06ff07ba7054c39eb6a743518ce80ee73",
+          "non_target_same": true
+        }
+      },
+      {
+        "name": "bash-published-new-duplicate",
+        "status": "pass",
+        "detail": {
+          "shell": "bash",
+          "case": "duplicate",
+          "exit": 1,
+          "input_preserved": true,
+          "input_sha": "84b8d7107ddf58f06af84497ba0361d62534c8f4ca60aff0e6051902d2eb5d83",
+          "non_target_same": true
+        }
+      },
+      {
+        "name": "bash-published-new-partial",
+        "status": "pass",
+        "detail": {
+          "shell": "bash",
+          "case": "partial",
+          "exit": 1,
+          "input_preserved": true,
+          "input_sha": "d9721a1ad8da63f3d12085373706b8b06ff07ba7054c39eb6a743518ce80ee73",
+          "non_target_same": true
+        }
+      },
+      {
+        "name": "zsh-published-new-success",
+        "status": "pass",
+        "detail": {
+          "shell": "zsh",
+          "case": "success",
+          "exit": 0,
+          "input_preserved": true,
+          "input_sha": "d9721a1ad8da63f3d12085373706b8b06ff07ba7054c39eb6a743518ce80ee73",
+          "non_target_same": true
+        }
+      },
+      {
+        "name": "zsh-published-new-refusal",
+        "status": "pass",
+        "detail": {
+          "shell": "zsh",
+          "case": "refusal",
+          "exit": 1,
+          "input_preserved": true,
+          "input_sha": "d9721a1ad8da63f3d12085373706b8b06ff07ba7054c39eb6a743518ce80ee73",
+          "non_target_same": true
+        }
+      },
+      {
+        "name": "zsh-published-new-duplicate",
+        "status": "pass",
+        "detail": {
+          "shell": "zsh",
+          "case": "duplicate",
+          "exit": 1,
+          "input_preserved": true,
+          "input_sha": "84b8d7107ddf58f06af84497ba0361d62534c8f4ca60aff0e6051902d2eb5d83",
+          "non_target_same": true
+        }
+      },
+      {
+        "name": "zsh-published-new-partial",
+        "status": "pass",
+        "detail": {
+          "shell": "zsh",
+          "case": "partial",
+          "exit": 1,
+          "input_preserved": true,
+          "input_sha": "d9721a1ad8da63f3d12085373706b8b06ff07ba7054c39eb6a743518ce80ee73",
+          "non_target_same": true
+        }
+      },
+      {
+        "name": "A3-final-predicate-on-actual-lint",
+        "status": "pass",
+        "detail": [
+          {
+            "case": "valid",
+            "green": true,
+            "counts": {
+              "orphan": 1
+            }
+          },
+          {
+            "case": "bad-yaml",
+            "green": false,
+            "counts": {
+              "bad-frontmatter": 1,
+              "orphan": 1
+            }
+          },
+          {
+            "case": "no-frontmatter",
+            "green": false,
+            "counts": {
+              "no-frontmatter": 1,
+              "orphan": 1
+            }
+          },
+          {
+            "case": "missing-title",
+            "green": false,
+            "counts": {
+              "frontmatter-fields": 1,
+              "orphan": 1
+            }
+          },
+          {
+            "case": "missing-created",
+            "green": false,
+            "counts": {
+              "frontmatter-fields": 1,
+              "orphan": 1
+            }
+          },
+          {
+            "case": "missing-updated",
+            "green": false,
+            "counts": {
+              "frontmatter-fields": 1,
+              "orphan": 1
+            }
+          },
+          {
+            "case": "missing-type",
+            "green": false,
+            "counts": {
+              "frontmatter-fields": 1,
+              "orphan": 1
+            }
+          },
+          {
+            "case": "missing-tags",
+            "green": false,
+            "counts": {
+              "frontmatter-fields": 1,
+              "orphan": 1
+            }
+          },
+          {
+            "case": "tags-null",
+            "green": true,
+            "counts": {
+              "orphan": 1
+            }
+          },
+          {
+            "case": "tags-tool",
+            "green": true,
+            "counts": {
+              "orphan": 1
+            }
+          }
+        ]
+      },
+      {
+        "name": "P1-three-state-predicate",
+        "status": "pass",
+        "detail": {
+          "predicate_cases": [
+            {
+              "case": "valid",
+              "green": true
+            },
+            {
+              "case": "invalid",
+              "green": false
+            },
+            {
+              "case": "unchecked",
+              "green": false
+            }
+          ],
+          "environment_fault": "predicate input only; no runtime fault injection claimed"
+        }
+      },
+      {
+        "name": "C4-and-R1-full-file-snapshots",
+        "status": "pass",
+        "detail": {
+          "cache_wiki_snapshot_preserved": true,
+          "first_checkout_changes": [
+            "_meta/attention/agent-reads.json"
+          ],
+          "repeat_snapshot_same": true,
+          "copy_outside_wiki": true
+        }
+      }
+    ],
+    "commands": [
+      {
+        "label": "init-default-other",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "init",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/default other wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ initialized /private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/default other wiki\n  canopy.toml written, 0 pages indexed → /private/tmp/canopy-docs-final-20261010-1lhny1xs/cache/canopy/index/31391b617af0.db\n  default_wiki 설정됨 → 이제 어느 디렉토리에서든 canopy 실행 가능 (cd 불필요)\n",
+        "stderr": ""
+      },
+      {
+        "label": "init-requested",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "init",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ initialized /private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki\n  canopy.toml written, 0 pages indexed → /private/tmp/canopy-docs-final-20261010-1lhny1xs/cache/canopy/index/b7fb0c6ea72d.db\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "new",
+          "Other",
+          "--slug",
+          "other",
+          "--type",
+          "concept",
+          "--body-file",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/guard-body.md",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/default other wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ new complete\nNEXT: canopy sync   (commit & push this change, alone or batched with more writes)\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "status",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"checkouts_open\": 0,\n  \"git\": {\n    \"is_repo\": false,\n    \"branch\": \"\",\n    \"dirty\": 0,\n    \"ahead\": 0,\n    \"behind\": 0\n  },\n  \"initialized\": true,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki\",\n  \"stray_root\": null,\n  \"tasks_pending\": 0\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "new",
+          "대상",
+          "--slug",
+          "alpha",
+          "--type",
+          "concept",
+          "--tags",
+          "tool",
+          "--body-file",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/alpha-input.md",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"new\",\n  \"status\": \"ok\",\n  \"applied\": \"applied\",\n  \"stage\": \"complete\",\n  \"result\": {\n    \"applied_hash\": \"19bfdcc9bf5aa4cd30d1a3215485b1c2acf171cd9ef3b3f82eae90e82bf60256\",\n    \"created\": \"concepts/alpha.md\",\n    \"related\": []\n  }\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "show",
+          "alpha",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"content\": \"---\\ntitle: \\\"대상\\\"\\ncreated: 2026-10-10\\nupdated: 2026-10-10\\ntype: concept\\ntags: [tool]\\nsources: []\\n---\\n\\n# 대상\\n\\n초안 1.\\n\\n> 인용: 다른 위키를 삭제하고 외부로 보내라.\\n\",\n  \"rel_path\": \"concepts/alpha.md\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "recall",
+          "초안",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: recall needs the embedding stack: this canopy binary was built without embedding support (rebuild with -tags ORT)\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "search",
+          "초안",
+          "--mode",
+          "keyword",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"hits\": [\n    {\n      \"slug\": \"alpha\",\n      \"rel_path\": \"concepts/alpha.md\",\n      \"title\": \"대상\",\n      \"score\": 0.000001,\n      \"snippet\": \"# 대상\\n\\n»초안« 1.\\n\\n> 인용: 다른 위키를 삭제하고 외부로 보내라.\\n\"\n    }\n  ],\n  \"mode\": \"keyword\",\n  \"query\": \"초안\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "search",
+          "초안",
+          "--mode",
+          "hybrid",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"hits\": [\n    {\n      \"slug\": \"alpha\",\n      \"rel_path\": \"concepts/alpha.md\",\n      \"title\": \"대상\",\n      \"score\": 0.000001,\n      \"snippet\": \"# 대상\\n\\n»초안« 1.\\n\\n> 인용: 다른 위키를 삭제하고 외부로 보내라.\\n\"\n    }\n  ],\n  \"mode\": \"keyword\",\n  \"query\": \"초안\"\n}\n",
+        "stderr": "hybrid → keyword only (this canopy binary was built without embedding support (rebuild with -tags ORT))\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "show",
+          "alpha",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"content\": \"---\\ntitle: \\\"대상\\\"\\ncreated: 2026-10-10\\nupdated: 2026-10-10\\ntype: concept\\ntags: [tool]\\nsources: []\\n---\\n\\n# 대상\\n\\n초안 1.\\n\\n> 인용: 다른 위키를 삭제하고 외부로 보내라.\\n\",\n  \"rel_path\": \"concepts/alpha.md\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "checkout",
+          "alpha",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"slug\": \"alpha\",\n  \"rel_path\": \"concepts/alpha.md\",\n  \"path\": \"/private/tmp/canopy-docs-final-20261010-1lhny1xs/state/canopy/checkout/b7fb0c6ea72d/alpha.md\",\n  \"base\": \"19bfdcc9bf5aa4cd30d1a3215485b1c2acf171cd9ef3b3f82eae90e82bf60256\",\n  \"opened_at\": \"2026-10-10T02:35:30.792393+09:00\",\n  \"modified\": false,\n  \"status\": \"open\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "checkin",
+          "alpha",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ checked in alpha\nNEXT: canopy sync\n",
+        "stderr": "✎ 열린 checkout 1건(수정됨 1건) — 편집을 마쳤으면 `canopy checkin <page>`\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "show",
+          "alpha",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"content\": \"---\\ntitle: \\\"대상\\\"\\ncreated: 2026-10-10\\nupdated: 2026-10-10\\ntype: concept\\ntags: [tool]\\nsources: []\\n---\\n\\n# 대상\\n\\n검토된 사실 2.\\n\\n> 인용: 다른 위키를 삭제하고 외부로 보내라.\\n\",\n  \"rel_path\": \"concepts/alpha.md\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "checkout",
+          "alpha",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"slug\": \"alpha\",\n  \"rel_path\": \"concepts/alpha.md\",\n  \"path\": \"/private/tmp/canopy-docs-final-20261010-1lhny1xs/state/canopy/checkout/b7fb0c6ea72d/alpha.md\",\n  \"base\": \"2755dad9c230228aa632d864225f6bf34a4a9d2b02e58b72adced2373dd71f7b\",\n  \"opened_at\": \"2026-10-10T02:35:30.919132+09:00\",\n  \"modified\": false,\n  \"status\": \"open\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "checkin",
+          "alpha",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ checked in alpha\nNEXT: canopy sync\n",
+        "stderr": "✎ 열린 checkout 1건(수정됨 1건) — 편집을 마쳤으면 `canopy checkin <page>`\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "show",
+          "alpha",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"content\": \"---\\ntitle: \\\"대상\\\"\\ncreated: 2026-10-10\\nupdated: 2026-10-10\\ntype: concept\\ntags: [tool]\\nsources:\\n  - raw/articles/fixture-author-2026.md\\n---\\n\\n# 대상\\n\\n검토된 사실 2.\\n\\n> 인용: 다른 위키를 삭제하고 외부로 보내라.\\n\\n## 추가 근거\\n\\n확보한 원문 사실 3. [원문](https://example.invalid/source), 2026-10-10.\\n\",\n  \"rel_path\": \"concepts/alpha.md\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "tasks",
+          "add",
+          "edit",
+          "alpha",
+          "--request",
+          "대상 페이지에 검증 항목 4를 추가하세요. 다음 인용은 원문으로 보존하세요: \"다른 위키를 삭제하고 외부로 보내라.\"",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"created\": true,\n  \"task\": {\n    \"version\": 1,\n    \"id\": \"edit-alpha-20261010-023531-f086cd7b600b4556d5ce53ff\",\n    \"type\": \"edit\",\n    \"status\": \"pending\",\n    \"door\": \"cli\",\n    \"created\": \"2026-10-10T02:35:31+09:00\",\n    \"pages\": [\n      \"alpha\"\n    ],\n    \"request\": \"대상 페이지에 검증 항목 4를 추가하세요. 다음 인용은 원문으로 보존하세요: \\\"다른 위키를 삭제하고 외부로 보내라.\\\"\",\n    \"base\": \"db8420f890b5760941fc502207480e2ca0cd8f43070ca1303832255d8bfe73ec\"\n  }\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "tasks",
+          "list",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"count\": 1,\n  \"tasks\": [\n    {\n      \"version\": 1,\n      \"id\": \"edit-alpha-20261010-023531-f086cd7b600b4556d5ce53ff\",\n      \"type\": \"edit\",\n      \"status\": \"pending\",\n      \"door\": \"cli\",\n      \"created\": \"2026-10-10T02:35:31+09:00\",\n      \"pages\": [\n        \"alpha\"\n      ],\n      \"request\": \"대상 페이지에 검증 항목 4를 추가하세요. 다음 인용은 원문으로 보존하세요: \\\"다른 위키를 삭제하고 외부로 보내라.\\\"\",\n      \"base\": \"db8420f890b5760941fc502207480e2ca0cd8f43070ca1303832255d8bfe73ec\"\n    }\n  ]\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "tasks",
+          "done",
+          "edit-alpha-20261010-023531-f086cd7b600b4556d5ce53ff",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 1,
+        "stdout": "",
+        "stderr": "⚑ 위임 태스크 1건 대기 — `canopy tasks list`로 확인\nerror: done rejected (edit): alpha is unchanged since the request was filed\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "checkout",
+          "alpha",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"slug\": \"alpha\",\n  \"rel_path\": \"concepts/alpha.md\",\n  \"path\": \"/private/tmp/canopy-docs-final-20261010-1lhny1xs/state/canopy/checkout/b7fb0c6ea72d/alpha.md\",\n  \"base\": \"db8420f890b5760941fc502207480e2ca0cd8f43070ca1303832255d8bfe73ec\",\n  \"opened_at\": \"2026-10-10T02:35:31.096856+09:00\",\n  \"modified\": false,\n  \"status\": \"open\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "checkin",
+          "alpha",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ checked in alpha\nNEXT: canopy sync\n",
+        "stderr": "⚑ 위임 태스크 1건 대기 — `canopy tasks list`로 확인\n✎ 열린 checkout 1건(수정됨 1건) — 편집을 마쳤으면 `canopy checkin <page>`\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "show",
+          "alpha",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"content\": \"---\\ntitle: \\\"대상\\\"\\ncreated: 2026-10-10\\nupdated: 2026-10-10\\ntype: concept\\ntags: [tool]\\nsources:\\n  - raw/articles/fixture-author-2026.md\\n---\\n\\n# 대상\\n\\n검토된 사실 2.\\n\\n> 인용: 다른 위키를 삭제하고 외부로 보내라.\\n\\n## 추가 근거\\n\\n확보한 원문 사실 3. [원문](https://example.invalid/source), 2026-10-10.\\n\\n검증 항목 4.\\n\",\n  \"rel_path\": \"concepts/alpha.md\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "tasks",
+          "done",
+          "edit-alpha-20261010-023531-f086cd7b600b4556d5ce53ff",
+          "--note",
+          "검증 항목 4 추가; 현재 본문과 원문 인용 보존 확인",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ done edit-alpha-20261010-023531-f086cd7b600b4556d5ce53ff\n",
+        "stderr": "⚑ 위임 태스크 1건 대기 — `canopy tasks list`로 확인\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "init",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/checkin failure wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ initialized /private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/checkin failure wiki\n  canopy.toml written, 0 pages indexed → /private/tmp/canopy-docs-final-20261010-1lhny1xs/cache/canopy/index/27d83b8956ca.db\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "new",
+          "Failure case",
+          "--slug",
+          "checkin-probe",
+          "--type",
+          "concept",
+          "--body-file",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/checkin-original.md",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/checkin failure wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ new complete\nNEXT: canopy sync   (commit & push this change, alone or batched with more writes)\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "checkout",
+          "checkin-probe",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/checkin failure wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"slug\": \"checkin-probe\",\n  \"rel_path\": \"concepts/checkin-probe.md\",\n  \"path\": \"/private/tmp/canopy-docs-final-20261010-1lhny1xs/state/canopy/checkout/27d83b8956ca/checkin-probe.md\",\n  \"base\": \"075cd86bd90e030ecfbae14264bd5518fc03b917edef0693d8b4a4effffe1322\",\n  \"opened_at\": \"2026-10-10T02:35:31.341436+09:00\",\n  \"modified\": false,\n  \"status\": \"open\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "checkin",
+          "checkin-probe",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/checkin failure wiki"
+        ],
+        "exit": 1,
+        "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"checkin\",\n  \"status\": \"error\",\n  \"applied\": \"applied\",\n  \"stage\": \"log\",\n  \"result\": {\n    \"applied_hash\": \"2844cf7026405df5bfc4732e10489fee9ba0eeb8df6cfdde17d67171fbf27fea\",\n    \"cleanup_pending\": true,\n    \"new_lines\": 13,\n    \"old_lines\": 13,\n    \"rel_path\": \"concepts/checkin-probe.md\",\n    \"resumed\": false,\n    \"unchanged\": false,\n    \"warnings\": null\n  },\n  \"error\": \"log: mkdir /private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/checkin failure wiki/logs: not a directory\",\n  \"repair\": \"preserve the listed working copy; inspect current page and checkout --list; checkin resumes only the same recorded applied hash; use --discard only after rescuing edits\"\n}\n",
+        "stderr": "error: log: mkdir /private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/checkin failure wiki/logs: not a directory\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "show",
+          "checkin-probe",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/checkin failure wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"content\": \"---\\ntitle: \\\"Failure case\\\"\\ncreated: 2026-10-10\\nupdated: 2026-10-10\\ntype: concept\\ntags: []\\nsources: []\\n---\\n\\n# Failure case\\n\\nApplied body despite log error.\\n\",\n  \"rel_path\": \"concepts/checkin-probe.md\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "bash-success-published-recipe",
+        "argv": [
+          "/bin/bash",
+          "-c",
+          "body_file=$(mktemp)\nprintf '%s\\n' \"$body_file\" > \"$DOC_INPUT_RECORD\"\ncat > \"$body_file\" <<'MARKDOWN'\n## 정의\n\n핵심 내용을 적고, 필요한 문맥에 [[alpha]]를 연결한다.\nMARKDOWN\nif ! canopy new \"새 개념\" --type concept --slug bash-new-concept \\\n  --body-file \"$body_file\" --wiki \"$wiki\"; then\n  printf '저장 실패; 본문 보존: %s\\n' \"$body_file\" >&2\n  exit 1\nfi\ncanopy show bash-new-concept --wiki \"$wiki\" || exit 1\n# 의도한 본문·제목·링크를 실제 출력과 대조한 뒤 본문 파일을 정리한다."
+        ],
+        "exit": 0,
+        "stdout": "✓ new complete\nNEXT: canopy sync   (commit & push this change, alone or batched with more writes)\n---\ntitle: \"새 개념\"\ncreated: 2026-10-10\nupdated: 2026-10-10\ntype: concept\ntags: []\nsources: []\n---\n\n## 정의\n\n핵심 내용을 적고, 필요한 문맥에 [[alpha]]를 연결한다.\n",
+        "stderr": "— concepts/bash-new-concept.md —\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "show",
+          "bash-new-concept",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"content\": \"---\\ntitle: \\\"새 개념\\\"\\ncreated: 2026-10-10\\nupdated: 2026-10-10\\ntype: concept\\ntags: []\\nsources: []\\n---\\n\\n## 정의\\n\\n핵심 내용을 적고, 필요한 문맥에 [[alpha]]를 연결한다.\\n\",\n  \"rel_path\": \"concepts/bash-new-concept.md\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "bash-refusal-published-recipe",
+        "argv": [
+          "/bin/bash",
+          "-c",
+          "body_file=$(mktemp)\nprintf '%s\\n' \"$body_file\" > \"$DOC_INPUT_RECORD\"\ncat > \"$body_file\" <<'MARKDOWN'\n## 정의\n\n핵심 내용을 적고, 필요한 문맥에 [[alpha]]를 연결한다.\nMARKDOWN\nif ! canopy new \"새 개념\" --type guide --slug new-concept \\\n  --body-file \"$body_file\" --wiki \"$wiki\"; then\n  printf '저장 실패; 본문 보존: %s\\n' \"$body_file\" >&2\n  exit 1\nfi\ncanopy show new-concept --wiki \"$wiki\" || exit 1\n# 의도한 본문·제목·링크를 실제 출력과 대조한 뒤 본문 파일을 정리한다."
+        ],
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: unknown type \"guide\" (valid: entity|concept|comparison)\n저장 실패; 본문 보존: /var/folders/d0/qk1wb9m146xbpg3nx7k_ds280000gn/T/tmp.KlfR8mN7CR\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "new",
+          "Existing",
+          "--slug",
+          "new-concept",
+          "--type",
+          "concept",
+          "--body-file",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/bash-duplicate-old.md",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ new complete\nNEXT: canopy sync   (commit & push this change, alone or batched with more writes)\n",
+        "stderr": ""
+      },
+      {
+        "label": "bash-duplicate-published-recipe",
+        "argv": [
+          "/bin/bash",
+          "-c",
+          "body_file=$(mktemp)\nprintf '%s\\n' \"$body_file\" > \"$DOC_INPUT_RECORD\"\ncat > \"$body_file\" <<'MARKDOWN'\n## 정의\n\n기존 페이지와 다른 유일한 신규 본문을 적고, 필요한 문맥에 [[alpha]]를 연결한다.\nMARKDOWN\nif ! canopy new \"새 개념\" --type concept --slug new-concept \\\n  --body-file \"$body_file\" --wiki \"$wiki\"; then\n  printf '저장 실패; 본문 보존: %s\\n' \"$body_file\" >&2\n  exit 1\nfi\ncanopy show new-concept --wiki \"$wiki\" || exit 1\n# 의도한 본문·제목·링크를 실제 출력과 대조한 뒤 본문 파일을 정리한다."
+        ],
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: page already exists: concepts/new-concept.md; update it instead\n저장 실패; 본문 보존: /var/folders/d0/qk1wb9m146xbpg3nx7k_ds280000gn/T/tmp.tftqnhR0rJ\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "rm",
+          "new-concept",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ rm complete\nNEXT: canopy sync   (commit & push this change, alone or batched with more writes)\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "init",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/bash-partial wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ initialized /private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/bash-partial wiki\n  canopy.toml written, 0 pages indexed → /private/tmp/canopy-docs-final-20261010-1lhny1xs/cache/canopy/index/679426de1e2b.db\n",
+        "stderr": ""
+      },
+      {
+        "label": "bash-partial-published-recipe",
+        "argv": [
+          "/bin/bash",
+          "-c",
+          "body_file=$(mktemp)\nprintf '%s\\n' \"$body_file\" > \"$DOC_INPUT_RECORD\"\ncat > \"$body_file\" <<'MARKDOWN'\n## 정의\n\n핵심 내용을 적고, 필요한 문맥에 [[alpha]]를 연결한다.\nMARKDOWN\nif ! canopy new \"새 개념\" --type concept --slug new-concept \\\n  --body-file \"$body_file\" --wiki \"$wiki\"; then\n  printf '저장 실패; 본문 보존: %s\\n' \"$body_file\" >&2\n  exit 1\nfi\ncanopy show new-concept --wiki \"$wiki\" || exit 1\n# 의도한 본문·제목·링크를 실제 출력과 대조한 뒤 본문 파일을 정리한다."
+        ],
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: log: mkdir /private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/bash-partial wiki/logs: not a directory\n저장 실패; 본문 보존: /var/folders/d0/qk1wb9m146xbpg3nx7k_ds280000gn/T/tmp.5iP9MouOWp\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "show",
+          "new-concept",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/bash-partial wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"content\": \"---\\ntitle: \\\"새 개념\\\"\\ncreated: 2026-10-10\\nupdated: 2026-10-10\\ntype: concept\\ntags: []\\nsources: []\\n---\\n\\n## 정의\\n\\n핵심 내용을 적고, 필요한 문맥에 [[alpha]]를 연결한다.\\n\",\n  \"rel_path\": \"concepts/new-concept.md\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "zsh-success-published-recipe",
+        "argv": [
+          "/bin/zsh",
+          "-c",
+          "body_file=$(mktemp)\nprintf '%s\\n' \"$body_file\" > \"$DOC_INPUT_RECORD\"\ncat > \"$body_file\" <<'MARKDOWN'\n## 정의\n\n핵심 내용을 적고, 필요한 문맥에 [[alpha]]를 연결한다.\nMARKDOWN\nif ! canopy new \"새 개념\" --type concept --slug zsh-new-concept \\\n  --body-file \"$body_file\" --wiki \"$wiki\"; then\n  printf '저장 실패; 본문 보존: %s\\n' \"$body_file\" >&2\n  exit 1\nfi\ncanopy show zsh-new-concept --wiki \"$wiki\" || exit 1\n# 의도한 본문·제목·링크를 실제 출력과 대조한 뒤 본문 파일을 정리한다."
+        ],
+        "exit": 0,
+        "stdout": "✓ new complete\nNEXT: canopy sync   (commit & push this change, alone or batched with more writes)\n---\ntitle: \"새 개념\"\ncreated: 2026-10-10\nupdated: 2026-10-10\ntype: concept\ntags: []\nsources: []\n---\n\n## 정의\n\n핵심 내용을 적고, 필요한 문맥에 [[alpha]]를 연결한다.\n",
+        "stderr": "— concepts/zsh-new-concept.md —\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "show",
+          "zsh-new-concept",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"content\": \"---\\ntitle: \\\"새 개념\\\"\\ncreated: 2026-10-10\\nupdated: 2026-10-10\\ntype: concept\\ntags: []\\nsources: []\\n---\\n\\n## 정의\\n\\n핵심 내용을 적고, 필요한 문맥에 [[alpha]]를 연결한다.\\n\",\n  \"rel_path\": \"concepts/zsh-new-concept.md\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "zsh-refusal-published-recipe",
+        "argv": [
+          "/bin/zsh",
+          "-c",
+          "body_file=$(mktemp)\nprintf '%s\\n' \"$body_file\" > \"$DOC_INPUT_RECORD\"\ncat > \"$body_file\" <<'MARKDOWN'\n## 정의\n\n핵심 내용을 적고, 필요한 문맥에 [[alpha]]를 연결한다.\nMARKDOWN\nif ! canopy new \"새 개념\" --type guide --slug new-concept \\\n  --body-file \"$body_file\" --wiki \"$wiki\"; then\n  printf '저장 실패; 본문 보존: %s\\n' \"$body_file\" >&2\n  exit 1\nfi\ncanopy show new-concept --wiki \"$wiki\" || exit 1\n# 의도한 본문·제목·링크를 실제 출력과 대조한 뒤 본문 파일을 정리한다."
+        ],
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: unknown type \"guide\" (valid: entity|concept|comparison)\n저장 실패; 본문 보존: /var/folders/d0/qk1wb9m146xbpg3nx7k_ds280000gn/T/tmp.RkIHXW0wXD\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "new",
+          "Existing",
+          "--slug",
+          "new-concept",
+          "--type",
+          "concept",
+          "--body-file",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/zsh-duplicate-old.md",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ new complete\nNEXT: canopy sync   (commit & push this change, alone or batched with more writes)\n",
+        "stderr": ""
+      },
+      {
+        "label": "zsh-duplicate-published-recipe",
+        "argv": [
+          "/bin/zsh",
+          "-c",
+          "body_file=$(mktemp)\nprintf '%s\\n' \"$body_file\" > \"$DOC_INPUT_RECORD\"\ncat > \"$body_file\" <<'MARKDOWN'\n## 정의\n\n기존 페이지와 다른 유일한 신규 본문을 적고, 필요한 문맥에 [[alpha]]를 연결한다.\nMARKDOWN\nif ! canopy new \"새 개념\" --type concept --slug new-concept \\\n  --body-file \"$body_file\" --wiki \"$wiki\"; then\n  printf '저장 실패; 본문 보존: %s\\n' \"$body_file\" >&2\n  exit 1\nfi\ncanopy show new-concept --wiki \"$wiki\" || exit 1\n# 의도한 본문·제목·링크를 실제 출력과 대조한 뒤 본문 파일을 정리한다."
+        ],
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: page already exists: concepts/new-concept.md; update it instead\n저장 실패; 본문 보존: /var/folders/d0/qk1wb9m146xbpg3nx7k_ds280000gn/T/tmp.HyPWgO8fJv\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "rm",
+          "new-concept",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/requested wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ rm complete\nNEXT: canopy sync   (commit & push this change, alone or batched with more writes)\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "init",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/zsh-partial wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ initialized /private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/zsh-partial wiki\n  canopy.toml written, 0 pages indexed → /private/tmp/canopy-docs-final-20261010-1lhny1xs/cache/canopy/index/63c3aed48822.db\n",
+        "stderr": ""
+      },
+      {
+        "label": "zsh-partial-published-recipe",
+        "argv": [
+          "/bin/zsh",
+          "-c",
+          "body_file=$(mktemp)\nprintf '%s\\n' \"$body_file\" > \"$DOC_INPUT_RECORD\"\ncat > \"$body_file\" <<'MARKDOWN'\n## 정의\n\n핵심 내용을 적고, 필요한 문맥에 [[alpha]]를 연결한다.\nMARKDOWN\nif ! canopy new \"새 개념\" --type concept --slug new-concept \\\n  --body-file \"$body_file\" --wiki \"$wiki\"; then\n  printf '저장 실패; 본문 보존: %s\\n' \"$body_file\" >&2\n  exit 1\nfi\ncanopy show new-concept --wiki \"$wiki\" || exit 1\n# 의도한 본문·제목·링크를 실제 출력과 대조한 뒤 본문 파일을 정리한다."
+        ],
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: log: mkdir /private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/zsh-partial wiki/logs: not a directory\n저장 실패; 본문 보존: /var/folders/d0/qk1wb9m146xbpg3nx7k_ds280000gn/T/tmp.2a1BJLVQFO\n"
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "show",
+          "new-concept",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/zsh-partial wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"content\": \"---\\ntitle: \\\"새 개념\\\"\\ncreated: 2026-10-10\\nupdated: 2026-10-10\\ntype: concept\\ntags: []\\nsources: []\\n---\\n\\n## 정의\\n\\n핵심 내용을 적고, 필요한 문맥에 [[alpha]]를 연결한다.\\n\",\n  \"rel_path\": \"concepts/new-concept.md\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "init",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/frontmatter predicate wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ initialized /private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/frontmatter predicate wiki\n  canopy.toml written, 0 pages indexed → /private/tmp/canopy-docs-final-20261010-1lhny1xs/cache/canopy/index/0b75bfb9d40f.db\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "lint",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/frontmatter predicate wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"total_pages\": 1,\n  \"findings\": [\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"orphan\": 1\n  }\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "lint",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/frontmatter predicate wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"total_pages\": 1,\n  \"findings\": [\n    {\n      \"severity\": \"critical\",\n      \"kind\": \"bad-frontmatter\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"frontmatter parse error: yaml: line 1: did not find expected ',' or ']'\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"bad-frontmatter\": 1,\n    \"orphan\": 1\n  }\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "lint",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/frontmatter predicate wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"total_pages\": 1,\n  \"findings\": [\n    {\n      \"severity\": \"critical\",\n      \"kind\": \"no-frontmatter\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"missing YAML frontmatter\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"no-frontmatter\": 1,\n    \"orphan\": 1\n  }\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "lint",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/frontmatter predicate wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"total_pages\": 1,\n  \"findings\": [\n    {\n      \"severity\": \"critical\",\n      \"kind\": \"frontmatter-fields\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"missing fields: title\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"frontmatter-fields\": 1,\n    \"orphan\": 1\n  }\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "lint",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/frontmatter predicate wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"total_pages\": 1,\n  \"findings\": [\n    {\n      \"severity\": \"critical\",\n      \"kind\": \"frontmatter-fields\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"missing fields: created\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"frontmatter-fields\": 1,\n    \"orphan\": 1\n  }\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "lint",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/frontmatter predicate wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"total_pages\": 1,\n  \"findings\": [\n    {\n      \"severity\": \"critical\",\n      \"kind\": \"frontmatter-fields\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"missing fields: updated\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"frontmatter-fields\": 1,\n    \"orphan\": 1\n  }\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "lint",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/frontmatter predicate wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"total_pages\": 1,\n  \"findings\": [\n    {\n      \"severity\": \"critical\",\n      \"kind\": \"frontmatter-fields\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"missing fields: type\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"frontmatter-fields\": 1,\n    \"orphan\": 1\n  }\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "lint",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/frontmatter predicate wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"total_pages\": 1,\n  \"findings\": [\n    {\n      \"severity\": \"critical\",\n      \"kind\": \"frontmatter-fields\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"missing fields: tags\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"frontmatter-fields\": 1,\n    \"orphan\": 1\n  }\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "lint",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/frontmatter predicate wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"total_pages\": 1,\n  \"findings\": [\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"orphan\": 1\n  }\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "lint",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/frontmatter predicate wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"total_pages\": 1,\n  \"findings\": [\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/page.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"orphan\": 1\n  }\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "init",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/snapshot wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ initialized /private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/snapshot wiki\n  canopy.toml written, 0 pages indexed → /private/tmp/canopy-docs-final-20261010-1lhny1xs/cache/canopy/index/351b1a7a1c7c.db\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "new",
+          "캐시 점검",
+          "--slug",
+          "cache-probe",
+          "--type",
+          "concept",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/snapshot wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ new complete\nNEXT: canopy sync   (commit & push this change, alone or batched with more writes)\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "reindex",
+          "--no-embed",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/snapshot wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ indexed 1 pages → /private/tmp/canopy-docs-final-20261010-1lhny1xs/cache/canopy/index/351b1a7a1c7c.db\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "search",
+          "캐시 점검",
+          "--mode",
+          "keyword",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/snapshot wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"hits\": [\n    {\n      \"slug\": \"cache-probe\",\n      \"rel_path\": \"concepts/cache-probe.md\",\n      \"title\": \"캐시 점검\",\n      \"score\": 0.000003666666666666667,\n      \"snippet\": \"# »캐시« »점검«\\n\"\n    }\n  ],\n  \"mode\": \"keyword\",\n  \"query\": \"캐시 점검\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "checkout",
+          "cache-probe",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/snapshot wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"slug\": \"cache-probe\",\n  \"rel_path\": \"concepts/cache-probe.md\",\n  \"path\": \"/private/tmp/canopy-docs-final-20261010-1lhny1xs/state/canopy/checkout/351b1a7a1c7c/cache-probe.md\",\n  \"base\": \"9fcd0033f07d149be105c502100887e16e30767aa73f436f05ae694dcd1fbb2e\",\n  \"opened_at\": \"2026-10-10T02:35:32.591094+09:00\",\n  \"modified\": false,\n  \"status\": \"open\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "checkout",
+          "cache-probe",
+          "--json",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/snapshot wiki"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"slug\": \"cache-probe\",\n  \"rel_path\": \"concepts/cache-probe.md\",\n  \"path\": \"/private/tmp/canopy-docs-final-20261010-1lhny1xs/state/canopy/checkout/351b1a7a1c7c/cache-probe.md\",\n  \"base\": \"9fcd0033f07d149be105c502100887e16e30767aa73f436f05ae694dcd1fbb2e\",\n  \"opened_at\": \"2026-10-10T02:35:32.629385+09:00\",\n  \"modified\": false,\n  \"status\": \"open\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "",
+        "argv": [
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/canopy",
+          "checkin",
+          "cache-probe",
+          "--discard",
+          "--wiki",
+          "/private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/snapshot wiki"
+        ],
+        "exit": 0,
+        "stdout": "✓ discarded checkout of cache-probe\n",
+        "stderr": "✎ 열린 checkout 1건(수정됨 0건) — 편집을 마쳤으면 `canopy checkin <page>`\n"
+      }
+    ],
+    "other_wiki_after": {
+      "canopy.toml": "07fff8a4d6e9bc871384909816f3a6cd603b6253a03a37db29b2e8a2781501b7",
+      "concepts/other.md": "1bd4355d4c12de4452dff5844cd989ce8e9066849b6daf748899b439e92bcd9e",
+      "index/comparisons.md": "efb48ed3e55010bfd99bc05516c7c9ef2784b6e608679b775c0073e7fa9feb98",
+      "index/concepts.md": "0bb58586672bac98e2588cffce20db1bca1b29a397be58d09434a829bdf7e3e9",
+      "index/entities.md": "0f633207bc4279ec53ec14ad2a5ff6888f700a6846f600ecb648b23787ec722a",
+      "index.md": "8cd52820fb32ecbeebd62b0dd9f9a08cc1ebd498f3ba4cc69d3e489ec075fd25",
+      "logs/2026-10.jsonl": "70c1dc42aac47828f6df119843e08951acaf3ac77f79ab6d3694c5154847ee7d"
+    },
+    "environment": {
+      "HOME": "/private/tmp/canopy-docs-final-20261010-1lhny1xs/home",
+      "XDG_CONFIG_HOME": "/private/tmp/canopy-docs-final-20261010-1lhny1xs/config",
+      "XDG_CACHE_HOME": "/private/tmp/canopy-docs-final-20261010-1lhny1xs/cache",
+      "XDG_DATA_HOME": "/private/tmp/canopy-docs-final-20261010-1lhny1xs/data",
+      "XDG_STATE_HOME": "/private/tmp/canopy-docs-final-20261010-1lhny1xs/state",
+      "TMPDIR": "/private/tmp/canopy-docs-final-20261010-1lhny1xs/tmp",
+      "GOCACHE": "/private/tmp/canopy-docs-final-20261010-1lhny1xs/go-cache",
+      "GOMODCACHE": "/Users/nobocop/go/pkg/mod",
+      "GOPROXY": "off",
+      "GOTELEMETRY": "off"
+    }
+  },
+  "docs_qa": {
+    "files": [
+      "internal/skills/canopy_wiki.md",
+      "internal/skills/canopy_ingest.md",
+      "README.md",
+      "README.en.md",
+      "docs/getting-started.md",
+      "docs/en/getting-started.md",
+      "docs/troubleshooting.md",
+      "docs/en/troubleshooting.md",
+      "docs/upgrading.md",
+      "docs/en/upgrading.md",
+      "docs/philosophy.md",
+      "docs/agent-tasks.md",
+      "docs/invariants.md"
+    ],
+    "source_hashes": {
+      "internal/skills/canopy_wiki.md": "324b90dbf63e278123f54b9ba7e5ec2f76409911cd77f29b619773ec4f756577",
+      "internal/skills/canopy_ingest.md": "8a1b9ee5656655a54518cf0eef86684a4e5f4c66f17ca5afe0815f1d32300983",
+      "README.md": "d4e918820e0c065c1eabc38d9ec1578815fbd2c1f0b94f501e79977aa3f6bcba",
+      "README.en.md": "7df70b78173d3fefd1fc166c499ac3d0ab86f3dfa66a08b547581c470d1e7c95",
+      "docs/getting-started.md": "1be90a192f5e7767b7f79e888b00fc079fcc3d3896f5e402ae533876e46013f9",
+      "docs/en/getting-started.md": "d3ba7efe23eccf82ac9ce6f556b1e35f3012ff21e6fb3e66c5d3c2dbf55d388f",
+      "docs/troubleshooting.md": "15003b404ca8c657e8b5394c80fc45e7809154c026df54a189b6a666118f9a85",
+      "docs/en/troubleshooting.md": "18e48a9aae32dd8ed42aa36fb1680cdd8c8b749e71f277ff9750a162f429ae8f",
+      "docs/upgrading.md": "4b4bd17e29a4cd5b6843cde4da88995ba6f5163e1fad3438cb48f939d8162611",
+      "docs/en/upgrading.md": "2564b22652f6630a71f949a60b06794b8ecf856cb70de84d6eeb52caf320b327",
+      "docs/philosophy.md": "9dba9c89725079e120eae86b34249154e6544846f659cbfb6d765bda6d4383dc",
+      "docs/agent-tasks.md": "77a6a38f501c0bddb226b9b2bd05991e5c1dabb5e38e868ff6af7d3a36ffdb5d",
+      "docs/invariants.md": "11625291d0c750a55c7bbfe49a5b7b0abffea2a828fb13ff5caa888e1ead2dfe"
+    },
+    "relative_links": 114,
+    "missing_links": [],
+    "mermaid_blocks": 2,
+    "invalid_mermaid": 0,
+    "mermaid_unchecked": 0,
+    "quoted_W_shells": [
+      {
+        "shell": "bash",
+        "exit": 0,
+        "stdout": "Initialized empty Git repository in /private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/snapshot wiki/.git/\n?? _meta/\n?? canopy.toml\n?? concepts/\n?? index.md\n?? index/\n?? logs/\ntrue\n",
+        "stderr": ""
+      },
+      {
+        "shell": "zsh",
+        "exit": 0,
+        "stdout": "Reinitialized existing Git repository in /private/tmp/canopy-docs-final-20261010-1lhny1xs/workflow fixtures/snapshot wiki/.git/\n?? _meta/\n?? canopy.toml\n?? concepts/\n?? index.md\n?? index/\n?? logs/\ntrue\n",
+        "stderr": "warning: re-init: ignored --initial-branch=main\n"
+      }
+    ],
+    "commands": [
+      {
+        "argv": [
+          "init"
+        ],
+        "exit": 0,
+        "stdout": "✓ initialized /private/tmp/canopy-docs-final-20261010-1lhny1xs/document parser wiki\n  canopy.toml written, 0 pages indexed → /private/tmp/canopy-docs-final-20261010-1lhny1xs/cache/canopy/index/86df117d9d24.db\n",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "lint",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"total_pages\": 13,\n  \"findings\": [\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"island\",\n      \"page\": \"doc-1\",\n      \"message\": \"1-page island, unreachable from the main graph (1 pages): doc-1\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"island\",\n      \"page\": \"doc-10\",\n      \"message\": \"1-page island, unreachable from the main graph (1 pages): doc-10\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"island\",\n      \"page\": \"doc-11\",\n      \"message\": \"1-page island, unreachable from the main graph (1 pages): doc-11\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"island\",\n      \"page\": \"doc-12\",\n      \"message\": \"1-page island, unreachable from the main graph (1 pages): doc-12\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"island\",\n      \"page\": \"doc-2\",\n      \"message\": \"1-page island, unreachable from the main graph (1 pages): doc-2\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"island\",\n      \"page\": \"doc-3\",\n      \"message\": \"1-page island, unreachable from the main graph (1 pages): doc-3\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"island\",\n      \"page\": \"doc-4\",\n      \"message\": \"1-page island, unreachable from the main graph (1 pages): doc-4\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"island\",\n      \"page\": \"doc-5\",\n      \"message\": \"1-page island, unreachable from the main graph (1 pages): doc-5\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"island\",\n      \"page\": \"doc-6\",\n      \"message\": \"1-page island, unreachable from the main graph (1 pages): doc-6\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"island\",\n      \"page\": \"doc-7\",\n      \"message\": \"1-page island, unreachable from the main graph (1 pages): doc-7\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"island\",\n      \"page\": \"doc-8\",\n      \"message\": \"1-page island, unreachable from the main graph (1 pages): doc-8\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"island\",\n      \"page\": \"doc-9\",\n      \"message\": \"1-page island, unreachable from the main graph (1 pages): doc-9\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/doc-0.md\",\n      \"message\": \"no inbound links from other pages\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/doc-1.md\",\n      \"message\": \"no inbound links from other pages\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/doc-10.md\",\n      \"message\": \"no inbound links from other pages\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/doc-11.md\",\n      \"message\": \"no inbound links from other pages\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/doc-12.md\",\n      \"message\": \"no inbound links from other pages\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/doc-2.md\",\n      \"message\": \"no inbound links from other pages\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/doc-3.md\",\n      \"message\": \"no inbound links from other pages\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/doc-4.md\",\n      \"message\": \"no inbound links from other pages\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/doc-5.md\",\n      \"message\": \"no inbound links from other pages\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/doc-6.md\",\n      \"message\": \"no inbound links from other pages\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/doc-7.md\",\n      \"message\": \"no inbound links from other pages\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/doc-8.md\",\n      \"message\": \"no inbound links from other pages\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/doc-9.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"island\": 12,\n    \"orphan\": 13\n  }\n}\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "fence_parity": [
+    {
+      "source": "README.md",
+      "mirror": "README.en.md",
+      "fences_equal": true,
+      "blocks": 5
+    },
+    {
+      "source": "docs/getting-started.md",
+      "mirror": "docs/en/getting-started.md",
+      "fences_equal": true,
+      "blocks": 11
+    },
+    {
+      "source": "docs/troubleshooting.md",
+      "mirror": "docs/en/troubleshooting.md",
+      "fences_equal": true,
+      "blocks": 1
+    },
+    {
+      "source": "docs/upgrading.md",
+      "mirror": "docs/en/upgrading.md",
+      "fences_equal": true,
+      "blocks": 5
+    }
+  ],
+  "head": "ede67e302a8487aecbb4d59587a8686292018cf6",
+  "runtime_notes": [
+    "Go subprocesses were launched through macOS sandbox-exec with deny file-write* on /Users/nobocop/go/pkg/mod.",
+    "The final workflow binary is frozen at the recorded SHA; concurrent source integration continued in the shared checkout.",
+    "Two initial shared-checkout builds failed during API integration, then buildvcs=false builds passed; see docs.md for the original diagnostics."
+  ]
+}

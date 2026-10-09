@@ -4,7 +4,7 @@
 
 > "LLM으로 위키를 관리한다"는 게 처음이라면 이 문서부터 읽으세요.
 > 개념 → 용어 → 15분 따라하기 → 일상 사용 순서로 안내합니다.
-> 여기 나오는 모든 명령은 빈 폴더에서 실제로 실행해 검증된 것입니다.
+> 먼저 모델·Git 없이 페이지 생성과 keyword 검색을 확인하고, 필요한 기능을 추가합니다.
 
 ## 1. 이게 뭔가요?
 
@@ -24,18 +24,19 @@ Andrej Karpathy가 제안한 "LLM wiki"는 이 문제에 대한 답입니다. �
 canopy는 이 방식을 실제로 굴러가게 하는 도구입니다. 원래는 에이전트에게
 "인덱스 갱신해라, 로그 남겨라, 링크 깨뜨리지 마라" 같은 규칙을 긴 지시문으로
 지키게 했는데, 에이전트도 사람처럼 깜빡합니다. canopy는 그 규칙들을
-**명령어 안에 코드로** 넣어서, 깜빡하는 것 자체가 불가능하게 만들었습니다.
+**명령어 안에 코드로** 넣었습니다. 검증 범위는 명령마다 다르며, 내용의 정확성과
+요청 만족은 사람·에이전트가 확인합니다.
 
 ## 2. 미리 알아둘 용어 8개
 
 | 용어 | 뜻 |
 |------|-----|
 | **페이지** | 마크다운 파일 하나 = 지식 한 조각. `concepts/`(개념), `entities/`(사람·제품·조직), `comparisons/`(비교) 세 폴더 중 하나에 산다 |
-| **slug** | 파일 이름 (확장자 제외). `opc-ua.md`의 slug는 `opc-ua`. 영문 소문자와 하이픈만 쓴다 |
+| **slug** | 파일 이름 (확장자 제외). `opc-ua.md`의 slug는 `opc-ua`. 영문 소문자·숫자·하이픈을 쓴다 |
 | **frontmatter** | 페이지 맨 위의 `---`로 감싼 메타데이터 (제목, 날짜, 태그). canopy가 자동으로 만들어준다 |
 | **위키링크** | 본문 속 `[[다른-페이지]]` — 페이지끼리의 연결. 연결이 많을수록 지식이 그물이 된다 |
 | **백링크** | 반대 방향: "누가 이 페이지를 참조하지?" `canopy backlinks <페이지>`로 확인 |
-| **시맨틱 검색** | 단어가 아니라 **의미**로 찾는 검색. "벡터 캐시"로 검색하면 그 단어가 없어도 KV-cache 페이지가 나온다. canopy에 내장된 AI 모델(bge-m3)이 처리하며, 인터넷·외부 서버가 필요 없다 |
+| **시맨틱 검색** | 단어가 아니라 **의미**로 찾는 검색. "벡터 캐시"와 KV-cache처럼 표현이 다른 근거도 찾을 수 있다. 내장 추론 코드와 별도로 설치한 로컬 bge-m3 모델이 처리하며, 준비 후에는 인터넷·외부 서버가 필요 없다 |
 | **facet** | 웹 UI의 분류 방식. 고정된 폴더 트리 대신 폴더×타입×태그를 **교차 필터**로 조합해 탐색한다 |
 | **섬** | 서로는 링크됐지만 위키의 본체(최대 연결 덩어리)와 끊어진 페이지 무리. 고아 검사는 통과하므로 `canopy lint`가 따로 잡아준다 |
 
@@ -54,26 +55,28 @@ canopy는 이 방식을 실제로 굴러가게 하는 도구입니다. 원래는
 ```bash
 git clone https://github.com/neutrospec/canopy && cd canopy
 make build && make install        # canopy → ~/.local/bin
-which canopy                      # 안 나오면 README의 "PATH 설정" 참조
+which canopy                      # 안 나오면 troubleshooting.md의 PATH 항목 참조
 ```
 
 ### 4-2. 위키 만들기
 
 ```bash
-mkdir ~/wiki && cd ~/wiki && git init -b main    # 위키는 git 저장소다 (히스토리 = 지식의 성장 기록)
-mkdir -p ~/.config/canopy
-echo 'default_wiki = "'$HOME'/wiki"' > ~/.config/canopy/config.toml   # 어디서든 canopy가 위키를 찾도록
-canopy init
+wiki="$HOME/canopy-demo"           # 아직 canopy.toml이 없는 새 폴더를 선택
+mkdir -p "$wiki"
+canopy init --wiki "$wiki"
+canopy status --wiki "$wiki" --json # root가 이 경로인지 확인
 ```
 
 `canopy.toml`이라는 파일이 생깁니다 — 이 위키의 규칙(허용 태그, 페이지 종류)이
-적힌 파일로, 나중에 태그를 늘리고 싶으면 여기를 고치면 됩니다.
+적힌 파일입니다. `init`은 전역 `default_wiki`가 비어 있을 때만 채웁니다. 기존 설정은
+유지됩니다. 이 안내에서는 모든 위키 명령에 `--wiki "$wiki"`를 붙여 대상을 고정합니다.
 
 ### 4-3. 첫 페이지
 
 ```bash
 echo "OPC-UA는 산업 장비들이 서로 대화할 때 쓰는 표준 프로토콜이다." | \
-  canopy new "OPC-UA란 무엇인가" --slug opc-ua --type concept --tags infrastructure --body-file -
+  canopy new "OPC-UA란 무엇인가" --slug opc-ua --type concept --tags infrastructure --body-file - --wiki "$wiki"
+canopy show opc-ua --wiki "$wiki"
 ```
 
 ```
@@ -86,31 +89,45 @@ NEXT: canopy sync   (commit & push this change, ...)
 했던 것들입니다.
 
 > 제목이 한글뿐이면 `--slug`로 영문 파일명을 꼭 지정하세요. 제목은 한글이어도
-> 파일명은 영문이어야 검색·동기화가 안전합니다.
+> ASCII 문자가 없는 제목에서는 파일명을 자동으로 만들 수 없습니다.
+> `show`가 성공했다는 것과 요청한 본문이 맞다는 것은 별개이므로 실제 내용을 확인하세요.
 
-### 4-4. 저장 (sync)
+### 4-4. Git에 저장하기 (선택)
+
+페이지는 이미 로컬 파일에 저장됐습니다. Git 이력을 남기려면 저장소와 작성자 설정이
+필요합니다. 아래 이름·이메일은 자신의 값으로 바꾸세요. 원격 없이도 로컬 commit은 됩니다.
 
 ```bash
-canopy sync -m "첫 페이지"
+git -C "$wiki" init -b main
+git -C "$wiki" config user.name "Your Name"
+git -C "$wiki" config user.email "you@example.com"
+canopy sync -m "첫 페이지" --wiki "$wiki"
 ```
 
-sync = git pull → commit → push를 한 번에. 잊어버려도 괜찮습니다 —
-**모든 canopy 명령이 미저장 상태면 ⚠ 경고를 띄워주니까요.**
+sync는 upstream이 있으면 pull → commit → push하고, 없으면 원격 단계를 건너뜁니다.
+기존 변경을 포함한 **위키 전체 dirty 파일**이 대상입니다. 여러 기기에서 쓰려면 원격
+저장소를 연결하고 첫 push의 upstream을 설정하세요. 충돌이나 실패가 나면 현재 Git
+상태를 확인하고 해결합니다. 일반 text 명령에는 상태 배너가 있지만 JSON과 `show`에는
+없으므로 `canopy status --json --wiki "$wiki"`로 직접 확인합니다.
 
 ### 4-5. 검색
 
 ```bash
-canopy search "산업 장비 통신"        # 의미 기반 — 정확한 단어가 아니어도 찾는다
-canopy search "OPC" --mode keyword   # 단어 기반 — 모델 로드 없이 즉시
+canopy search "OPC" --mode keyword --wiki "$wiki"   # 모델 없이 동작
+canopy search "산업 장비 통신" --wiki "$wiki"        # hybrid, 미준비면 keyword 강등
 ```
 
-첫 시맨틱 검색 전에 한 번만: `canopy model pull` (AI 모델 2.3GB 다운로드,
-이후 완전 오프라인 동작. int8 축소는 `scripts/quantize-model.py` 참조).
+첫 시맨틱 검색 전에 `canopy model pull --wiki "$wiki"`로 모델을 받고(약 2.3GB),
+`canopy reindex --wiki "$wiki"`로 임베딩을 만듭니다. 선택적인 int8 변환은 저장소의
+`scripts/quantize-model.py --help`에서 의존성·경로를 확인하세요. 기본 출력인
+`bge-m3-int8`을 쓰려면 위키 `canopy.toml`의 `[embedding]`에서 `model`을 그 이름으로
+바꾸고, 같은 `--wiki`로 `model status` 확인과 `reindex`를 실행합니다. lite 빌드는 keyword 전용입니다. `recall`은 임베딩이
+필수이므로 준비되지 않았다면 keyword search와 show로 근거를 확인합니다.
 
 ### 4-6. 웹으로 보기
 
 ```bash
-canopy serve      # → http://localhost:8737
+canopy serve --wiki "$wiki"      # → http://localhost:8737
 ```
 
 브라우저에서 위키가 검색-우선 웹사이트로 열립니다: 검색박스에 타이핑하면
@@ -121,22 +138,27 @@ canopy serve      # → http://localhost:8737
 
 ### 4-7. Obsidian으로 보기 (선택)
 
-Obsidian → "Open folder as vault" → `~/wiki` 선택. 끝입니다.
+Obsidian → "Open folder as vault" → 이 실습에서 만든 `~/canopy-demo`를 선택합니다.
+기존 위키로 진행했다면 `$wiki`가 가리키는 폴더를 선택하세요.
 위키링크가 클릭 가능해지고, Graph View에서 지식 그물이 보입니다.
 canopy와 Obsidian은 같은 파일을 다루므로 어느 쪽에서 고쳐도 됩니다 —
-단, Obsidian에서 고쳤다면 `canopy update <페이지>`로 알려주세요
-(수정 날짜·검색 인덱스가 갱신됩니다).
+단, Obsidian에서 고쳤다면 `canopy reconcile --wiki "$wiki"`로 외부 변경을 검토하고,
+필요한 내용을 정규화한 뒤 `update` 또는 `reconcile bless`로 수용합니다
+([정규화 계약](reconcile-design.md)). 부분 편집에는 위키 밖 사본을 빌리는
+`checkout`/`checkin`도 사용할 수 있습니다.
 
 ## 5. 일상 사용
 
 ### 혼자 쓸 때
 
 ```bash
-canopy search "주제"          # 뭔가 적기 전에 항상: 이미 있나? 뭐랑 연결되나?
-canopy list                   # 전체 페이지 훑어보기 (--type, --tag로 필터)
-canopy new ... --links 관련페이지   # 있는 페이지와 연결하며 추가
-canopy sync                   # 하루의 끝, 또는 작업 단위마다
-canopy lint                   # 가끔: 깨진 링크·고아 페이지 점검
+canopy search "주제" --wiki "$wiki"   # 이미 있나? 뭐랑 연결되나?
+canopy list --wiki "$wiki"            # --type, --tag로 필터
+canopy checkout opc-ua --wiki "$wiki" # 반환된 사본에서 부분 편집
+# 편집 사본을 별도 백업한 뒤 checkin, 현재 내용 확인
+canopy checkin opc-ua --wiki "$wiki"
+canopy lint --wiki "$wiki"            # 관련 구조·링크 finding 검토
+canopy sync --wiki "$wiki"            # 전체 변경을 저장할 범위일 때
 ```
 
 ### 에이전트와 함께 쓸 때 (진짜 재미는 여기부터)
@@ -147,35 +169,39 @@ canopy lint                   # 가끔: 깨진 링크·고아 페이지 점검
 canopy skills install    # 에이전트용 사용 설명서 2개를 스킬 폴더에 설치
 ```
 
-이후 역할 분담은 이렇게 됩니다:
+자동 감지는 지원하는 에이전트 경로에 한정됩니다. 임의 경로는
+`canopy skills install --dir <path>`로 매번 지정하며, 설치 후 해당 에이전트의
+스킬 활성화·로드 방법도 확인하세요. 이후 역할 분담은 이렇게 됩니다:
 
 | 사람 | 에이전트 | canopy |
 |------|----------|--------|
 | 소스를 던진다 ("이 글 정리해줘") | 읽고 요약하고 페이지 작성 | 규칙 검사·인덱스·로그·저장 |
-| 질문한다 | `canopy recall`로 위키에서 근거를 찾아 답변 | 근거 청크와 출처 제공 |
+| 질문한다 | recall 또는 keyword search + show로 근거를 찾아 답변 | 근거와 출처 제공 |
 | 판단한다 ("연결해" / "아니야") | 실행 | 기록 |
 
-핵심 규칙 하나만 기억하세요: **에이전트가 위키를 직접 편집하게 하지 말고,
-항상 canopy 명령을 거치게** 하세요. 그래야 규칙 위반이 원천 차단됩니다.
+페이지 생성·수정·이동·삭제는 **canopy 명령을 거치게** 하세요. 부분 편집은
+`checkout` 사본에서 하고 `checkin`으로 반영합니다. `raw/`에 원본 자료를 추가하거나
+`canopy.toml` 설정을 수정할 때는 기존 내용을 보존하며 해당 파일을 직접 다룹니다.
+명령의 검증과 실제 내용 확인을 함께 사용합니다.
+읽기 질문은 근거와 한계로 마치며 자동으로 페이지나 sync 작업을 만들지 않습니다.
 
 ### 브라우저로 읽을 때
 
 ```bash
-canopy serve               # localhost:8737 — 내 컴퓨터에서만, 인증 없음
-canopy serve --addr :8737  # 모든 기기에서 접근 — 인증 필수 (아래 참고)
+canopy serve --wiki "$wiki"               # localhost:8737 — 인증 없음
+canopy serve --addr :8737 --wiki "$wiki"   # 외부 접근 — 인증 필수
 ```
 
 검색박스에서 시작해 페이지·백링크·태그(facet)·전체 그래프로 이동하는 웹
 UI입니다. 없는 페이지로 가면 Wikipedia처럼 검색 결과를 대신 보여주고,
-페이지의 "✎ 편집"으로 본문을 고칠 수 있습니다 — 웹 편집은 CLI `update`와
-완전히 같은 파이프라인(인덱스·로그·임베딩)을 지나므로 CLI·에이전트와 동시에
-써도 안전합니다. frontmatter와 페이지 생성/이동/삭제는 CLI 전용입니다.
+페이지의 "✎ 편집"에서 본문 수정안을 제출할 수 있습니다. 저장하면 전문이 edit
+태스크로 접수되고 **현재 페이지는 그대로**입니다. `할 일` 화면에서 제안을 확인하고,
+에이전트가 처리한 뒤 실제 페이지를 확인하세요. canopy가 에이전트를 자동으로 실행하거나
+처리 시간을 보장하지는 않습니다. frontmatter와 페이지 생성/이동/삭제는 CLI 전용입니다.
 
-한 가지 원칙: 웹 편집(그리고 Obsidian 직접 수정)은 **오타·한 줄 정정 같은
-작은 수정**에만 쓰세요. 본격적인 작성·개편은 에이전트에게 시키는 게 정도(正道)
-입니다 — "작성 전 검색, 중복 대신 갱신, 모순 병기" 같은 콘텐츠 규칙은
-에이전트의 스킬에 들어 있어서, 사람이 직접 쓰면 그 검문소를 그냥 지나치게
-되거든요.
+웹 요청은 에이전트의 검토를 거치는 접수 경로입니다. 기존 내용을 검색하고 중복·
+모순·출처를 판단해 반영합니다. 위임 큐 처리 절차와 done의 검사 범위는
+[agent-tasks.md](agent-tasks.md)에 있습니다.
 
 폰이나 다른 컴퓨터에서도 보려면 두 번째 형태로 열면 되는데, 이때는
 **인증이 자동으로 요구됩니다**: 최초 1회 serve를 실행한 터미널에 설정 코드가
@@ -188,9 +214,9 @@ UI입니다. 없는 페이지로 가면 Wikipedia처럼 검색 결과를 대신 
 쌓기만 하는 위키는 창고입니다. canopy에는 **잊힌 지식을 되살리는** 명령이 있어요:
 
 ```bash
-canopy resurface     # "이 페이지, 59일째 안 봤어요" — 잊힌 페이지 재발견
-canopy bridge        # "이 두 페이지, 비슷한데 연결이 없네요" — 숨은 관계 발견
-canopy digest --since 30d   # "이번 달 뭘 배웠나" — 회고 소재
+canopy resurface --wiki "$wiki"         # 잊힌 페이지 재발견
+canopy bridge --wiki "$wiki"            # 유사하지만 연결 안 된 페이지
+canopy digest --since 30d --wiki "$wiki" # 회고 소재
 ```
 
 이 루프는 두 접점으로 동작합니다:
@@ -217,16 +243,21 @@ canopy digest --since 30d   # "이번 달 뭘 배웠나" — 회고 소재
 
 **Q. 태그를 새로 쓰고 싶은데 거부당해요.**
 의도된 동작입니다 — 태그가 아무렇게나 늘면 분류가 무의미해져요.
-정말 필요하면 `canopy.toml`의 tags 목록에 먼저 추가하세요.
+먼저 `canopy tags --wiki "$wiki"`로 기존 태그를 확인하세요. 새 topic은 적용할
+페이지가 3개 이상일 때 `canopy.toml`의 `topics`에 추가하고 기존 페이지도 retag합니다.
+`forms`는 닫힌 집합이며 구형 `tags`는 호환용입니다. 새 init의 추천 목록은 bootstrap이므로
+처음부터 모두 사용할 필요는 없습니다. `tags --audit`로 운영 중 수요에 맞춰 정리합니다.
 
 **Q. 여러 컴퓨터에서 써도 되나요?**
 네, 그게 git을 쓰는 이유입니다. 각 기기에서 `canopy sync`만 잘 하면 되고,
-sync가 pull을 먼저 하므로 충돌이 잘 안 납니다.
+sync는 pull을 먼저 하지만 충돌할 수 있습니다. 실패 시 양쪽 내용을 보존하고
+Git 상태를 확인해 해결한 뒤 진행하세요.
 
 **Q. 위키가 망가진 것 같아요.**
 `canopy lint`가 뭐가 문제인지 알려줍니다. 검색 인덱스가 이상하면
-`rm -rf ~/.cache/canopy && canopy reindex` — 인덱스는 언제든 다시 만들 수 있는
-캐시라 지워도 안전합니다. **진짜 지식은 전부 마크다운 파일과 git에 있어요.**
+`canopy reindex --wiki "$wiki"`로 재구축하세요. 검색 DB는 파생 캐시이지만
+`logs/`와 `_meta/`는 복원할 수 없는 이력·상태를 포함하므로 보존해야 합니다.
+**페이지·raw·이력·상태를 함께 Git에 저장하세요.**
 
 ## 8. 다음 읽을 문서
 

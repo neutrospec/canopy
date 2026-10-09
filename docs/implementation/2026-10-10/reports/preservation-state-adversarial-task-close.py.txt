@@ -1,0 +1,10 @@
+from runner import *
+import hashlib
+w=ROOT/'fixtures/task-concurrent';BIN=ROOT/'canopy-fixed';cases=[]
+for version,kind in [(1,'edit'),(99,'future-kind')]:
+ id=f'raw-close-{version}';path=w/'_meta/tasks'/f'{id}.json'
+ raw={'version':version,'id':id,'type':kind,'status':'pending','created':'2026-10-10T00:00:00Z','pages':['a'],'request':'Keep quoted "intent" and 한글','body':'EXACT PROPOSAL\n[[untrusted quoted target]]\n','future':{'null':None,'large':90071992547409931234567890,'array':[None,{'huge':90071992547409931234567891}]}}
+ path.write_text(json.dumps(raw,ensure_ascii=False));before=path.read_bytes();r=run(id,[BIN,'--wiki',w,'tasks','dismiss',id,'--note','review judgement','--json']);after=path.read_bytes();saved=json.loads(after)
+ unchanged=all(saved[k]==v for k,v in raw.items() if k!='status')
+ cases.append({'input':raw,'command':r,'before_sha256':hashlib.sha256(before).hexdigest(),'after_sha256':hashlib.sha256(after).hexdigest(),'saved':saved,'passes':{'exit0':r['exit']==0,'closed_dismissed':saved['status']=='dismissed' and bool(saved['closed']),'all_original_payload_extensions_exact':unchanged,'note_recorded':saved['note']=='review judgement'}})
+(ROOT/'task-close-probes.json').write_text(json.dumps(cases,indent=2,ensure_ascii=False)+'\n');print(json.dumps([x['passes'] for x in cases],indent=2))

@@ -1,0 +1,41 @@
+from pathlib import Path
+import runpy,sys,re,subprocess,json,hashlib
+sys.argv=['run.py','docs'];ctx=runpy.run_path(str(Path(__file__).with_name('run.py')))
+root=ctx['root'];env=ctx['env'];repo=Path('/Users/nobocop/play/canopy');binary=root/'canopy'
+files=['internal/skills/canopy_wiki.md','internal/skills/canopy_ingest.md','README.md','README.en.md','docs/getting-started.md','docs/en/getting-started.md','docs/troubleshooting.md','docs/en/troubleshooting.md','docs/upgrading.md','docs/en/upgrading.md','docs/philosophy.md','docs/agent-tasks.md','docs/invariants.md']
+w=root/'document parser wiki';w.mkdir()
+commands=[]
+def cli(args):
+    cp=subprocess.run([str(binary),*args,'--wiki',str(w)],env=env,text=True,capture_output=True,cwd=repo)
+    commands.append(dict(argv=args,exit=cp.returncode,stdout=cp.stdout,stderr=cp.stderr));assert cp.returncode==0,cp.stderr
+    return cp
+cli(['init'])
+(w/'concepts').mkdir()
+links=[];missing=[];diagrams=0
+for i,name in enumerate(files):
+    source=repo/name;text=source.read_text()
+    for target in re.findall(r'(?<!!)\[[^\]\n]+\]\(([^)\n]+)\)',text):
+        clean=target.split('#')[0]
+        if not clean or re.match(r'[a-z]+:',clean):continue
+        exists=(source.parent/clean).exists();links.append(dict(source=name,target=target,exists=exists))
+        if not exists:missing.append(dict(source=name,target=target))
+    diagrams+=len(re.findall(r'^```mermaid\s*$',text,re.M))
+    fm='---\ntitle: Doc\ncreated: 2026-10-10\nupdated: 2026-10-10\ntype: concept\ntags: []\n---\n\n'
+    (w/'concepts'/f'doc-{i}.md').write_text(fm+text)
+report=json.loads(cli(['lint','--json']).stdout)
+assert report['counts'].get('invalid-mermaid',0)==0,report
+assert report['counts'].get('mermaid-unchecked',0)==0,report
+assert not missing,missing
+shell=[]
+for sh in ('bash','zsh'):
+    # These are the documented W path positions, with a space-containing wiki.
+    script='canopy status --wiki "$W" --json > "$DOC_STATUS"\ngit -C "$W" init -b main\ngit -C "$W" status --short\njq -e \'.agent["cache-probe"].days == 1\' "$W/_meta/attention/agent-reads.json"\n'
+    target=root/'workflow fixtures/snapshot wiki'
+    e=dict(env,PATH=str(root)+':'+env['PATH'],W=str(target),DOC_STATUS=str(root/f'{sh}-quoted-status.json'))
+    cp=subprocess.run([f'/bin/{sh}','-c',script],env=e,text=True,capture_output=True,cwd=repo)
+    assert cp.returncode==0,(sh,cp.stderr)
+    assert Path(json.loads((root/f'{sh}-quoted-status.json').read_text())['root']).resolve()==target.resolve()
+    shell.append(dict(shell=sh,exit=cp.returncode,stdout=cp.stdout,stderr=cp.stderr))
+result=dict(files=files,source_hashes={name:hashlib.sha256((repo/name).read_bytes()).hexdigest() for name in files},relative_links=len(links),missing_links=missing,mermaid_blocks=diagrams,invalid_mermaid=report['counts'].get('invalid-mermaid',0),mermaid_unchecked=report['counts'].get('mermaid-unchecked',0),quoted_W_shells=shell,commands=commands)
+(root/'evidence/docs-qa.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({k:v for k,v in result.items() if k not in ('commands','source_hashes','files')},ensure_ascii=False,indent=2))

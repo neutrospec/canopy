@@ -1,0 +1,26 @@
+import os,pathlib,subprocess,sys
+root=pathlib.Path(__file__).parent
+for n in ['home','config','cache','data','state','tmp','go-cache','logs']: (root/n).mkdir(exist_ok=True)
+env={k:v for k,v in os.environ.items() if k in ['PATH','LANG','LC_ALL','TZ','TERM']}
+env.update(HOME=str(root/'home'),XDG_CONFIG_HOME=str(root/'config'),XDG_CACHE_HOME=str(root/'cache'),XDG_DATA_HOME=str(root/'data'),XDG_STATE_HOME=str(root/'state'),TMPDIR=str(root/'tmp'),GOCACHE=str(root/'go-cache'),GOMODCACHE='/Users/nobocop/go/pkg/mod',GOTELEMETRY='off',GOPROXY='off',GOSUMDB='off',GOTOOLCHAIN='local',CGO_ENABLED='0',GIT_CONFIG_NOSYSTEM='1',GIT_CONFIG_GLOBAL='/dev/null',CANOPY_WIKI='',PI_CODING_AGENT_DIR='')
+profile=root/'sandbox.sb';profile.write_text('(version 1)\n(allow default)\n(deny file-write* (subpath "/Users/nobocop/go/pkg/mod"))\n')
+label=sys.argv[1];cmd=sys.argv[2:]
+log=root/'logs'/(label+'.log')
+with log.open('w') as out:
+ p=subprocess.run(['/usr/bin/sandbox-exec','-f',str(profile),*cmd],cwd='/Users/nobocop/play/canopy',env=env,stdout=out,stderr=subprocess.STDOUT)
+print('exit',p.returncode,'log',log)
+if '-json' in cmd:
+ import json
+ events=[]
+ for line in log.read_text().splitlines():
+  try: events.append(json.loads(line))
+  except ValueError: print(line)
+ for package in sorted({e.get('Package','') for e in events}):
+  group=[e for e in events if e.get('Package')==package]
+  tests=[e for e in group if e.get('Action')=='pass' and 'Test' in e]
+  failed=[e for e in group if e.get('Action')=='fail']
+  print(package,'top-level passed',sum('/' not in e['Test'] for e in tests),'including subtests',len(tests),'failures',len(failed))
+  for e in group:
+   if e.get('Action')=='output' and ('.go:' in e.get('Output','') or '--- FAIL' in e.get('Output','')): print(e['Output'].strip())
+else: print('\n'.join(log.read_text().splitlines()[-30:]))
+sys.exit(p.returncode)

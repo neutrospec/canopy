@@ -6,7 +6,8 @@ const vm = require('node:vm');
 const source = readFileSync(join(__dirname, '../static/app.js'), 'utf8');
 
 // A small event/clock adapter runs the shipped script without npm or a
-// browser. Layout, native focus, and real markup are checked in the browser.
+// browser. Layout, native focus, IME, and accessibility require a real browser
+// and remain unverified when that browser cannot be started.
 class Element {
   constructor(tag = 'DIV') {
     this.tagName = tag.toUpperCase();
@@ -84,7 +85,7 @@ function harness(options = {}) {
   context.fetch = (url, init = {}) => {
     if (url.startsWith('/api/read/')) {
       requests.push({ url, init });
-      return options.readNetworkFailure ? Promise.reject(new Error('offline')) : Promise.resolve({ ok: options.readOK !== false });
+      return options.readNetworkFailure ? Promise.reject(new Error('offline')) : Promise.resolve(options.readResponse || Response.json({ read: true }, { status: options.readOK === false ? 500 : 200 }));
     }
     return new Promise((resolve) => requests.push({ url, init, resolve }));
   };
@@ -112,10 +113,14 @@ function harness(options = {}) {
     sidebar = new Element('NAV'); toggle = new Element('BUTTON');
     ids.set('site-nav', sidebar); ids.set('navtoggle', toggle);
   }
-  let pre, code, heading, outline, toc, bodyTitle;
+  let prose, pre, code, heading, outline, toc, bodyTitle, diagram;
   if (options.prose) {
-    const prose = new Element();
-    prose.textContent = 'Ordinary prose';
+    prose = new Element();
+    prose.textContent = options.math ? '$\\frac{1}{x}$' : 'Ordinary prose';
+    if (options.diagram) {
+      diagram = new Element('PRE'); diagram.textContent = 'graph LR; A["literal <x>"] --> B';
+      prose.selectors.set('pre.mermaid, div.mermaid', [diagram]);
+    }
     if (options.bodyTitle) {
       const pageTitle = new Element('H1'); pageTitle.textContent = 'Page title';
       bodyTitle = new Element('H1'); bodyTitle.textContent = options.bodyTitle;
@@ -146,11 +151,12 @@ function harness(options = {}) {
     readform = new Element('FORM'); readform.innerHTML = 'explicit controls';
     readbutton = new Element('BUTTON'); readform.appendChild(readbutton);
     ids.set('readform', readform);
+    const status = new Element('SPAN'); status.hidden = true; ids.set('read-status', status);
     document.selectors.set('#readform button[value="read"]', readbutton);
   }
   vm.runInNewContext(source, context);
   const box = form.children[1];
-  return { document, input, form, box, requests, context, runTimeouts, tick, mobile, sidebar, toggle, pre, code, heading, outline, toc, bodyTitle, readform, readbutton };
+  return { document, input, form, box, requests, context, runTimeouts, tick, mobile, sidebar, toggle, prose, pre, code, heading, outline, toc, bodyTitle, diagram, readform, readbutton };
 }
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 function search(env, value) { env.input.value = value; env.input.fire('input'); env.runTimeouts(); }
@@ -158,6 +164,20 @@ async function results(request, slug) {
   request.resolve({ ok: true, json: async () => ({ results: [{ Slug: slug, Title: slug }] }) });
   await settle();
 }
+
+test('hover preview follows the canonical page address instead of an ambiguous slug', async () => {
+  const env = harness({ search: false });
+  const a = new Element('A');
+  a.dataset.slug = 'foo.md';
+  a.setAttribute('href', '/page/concepts%2Ffoo.md.md#section');
+  a.closest = () => a;
+  await env.document.fire('mouseover', { target: a });
+  env.runTimeouts();
+  assert.equal(env.requests.length, 1);
+  assert.equal(env.requests[0].url, '/api/preview/concepts%2Ffoo.md.md');
+  env.requests[0].resolve(Response.json({ exists: false }));
+  await settle();
+});
 
 // The adapter deliberately ignores abort signals: sequence checks must still
 // protect the screen if the server or response decoding finishes after abort.
@@ -311,4 +331,73 @@ test('read shortcut respects editable content and key repeats', async () => {
   await env.document.fire('keydown', { key: 'r', target: editable });
   await env.document.fire('keydown', { key: 'r', repeat: true });
   assert.equal(env.readbutton.clickCount, undefined);
+});
+
+for (const [name, response] of [
+  ['HTML login', new Response('<form action="/login">sign in</form>', { headers: { 'Content-Type': 'text/html' } })],
+  ['read false', Response.json({ read: false })],
+  ['missing read', Response.json({ ok: true })],
+  ['string read', Response.json({ read: 'true' })],
+  ['bad JSON', new Response('{invalid', { headers: { 'Content-Type': 'application/json' } })],
+  ['wrong content type', new Response('{"read":true}', { headers: { 'Content-Type': 'text/html' } })],
+  ['expired session', Response.json({ error: 'authentication_required' }, { status: 401 })],
+]) {
+  test(`real Response: ${name} preserves explicit controls and state`, async () => {
+    const env = harness({ article: true, search: false, readResponse: response });
+    env.readbutton.value = 'read';
+    await env.tick();
+    assert.equal(env.readform.innerHTML, 'explicit controls');
+    assert.equal(env.readbutton.value, 'read');
+    assert.equal(env.document.getElementById('read-status').hidden, false);
+    await env.document.fire('keydown', { key: 'r' });
+    assert.equal(env.readbutton.clickCount, 1);
+  });
+}
+
+test('a real followed HTTP login redirect cannot confirm a read', async () => {
+  const http = require('node:http');
+  const server = http.createServer((req, res) => {
+    if (req.url === '/read') { res.writeHead(302, { Location: '/login' }); res.end(); }
+    else { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end('<form>login</form>'); }
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/read`);
+    assert.equal(response.redirected, true);
+    const env = harness({ article: true, search: false, readResponse: response });
+    await env.tick();
+    assert.equal(env.readform.innerHTML, 'explicit controls');
+  } finally { await new Promise((resolve) => server.close(resolve)); }
+});
+
+test('Mermaid load failure keeps the exact diagram source and shows an error', async () => {
+  const env = harness({ prose: true, search: false, diagram: true });
+  const original = env.diagram.textContent;
+  env.document.head.children[0].onerror(new Error('offline'));
+  await settle();
+  assert.equal(env.diagram.textContent, original);
+  assert.equal(env.prose.children.at(-1).className, 'rendererror');
+});
+test('Mermaid parse failure restores source after a renderer changed the node', async () => {
+  const env = harness({ prose: true, search: false, diagram: true });
+  const original = env.diagram.textContent;
+  env.context.mermaid = { initialize() {}, run: async () => { env.diagram.textContent = 'renderer error markup'; throw new Error('parse'); } };
+  env.document.head.children[0].onload(); await settle();
+  assert.equal(env.diagram.textContent, original);
+  assert.equal(env.prose.children.at(-1).getAttribute('role'), 'status');
+});
+test('MathJax load failure leaves source visible and reports failure', async () => {
+  const env = harness({ prose: true, search: false, math: true });
+  const original = env.prose.textContent;
+  env.document.head.children[0].onerror(new Error('offline')); await settle();
+  assert.equal(env.prose.textContent, original);
+  assert.equal(env.prose.children.at(-1).dataset.kind, 'math_failed');
+  assert.deepEqual(Array.from(env.context.MathJax.tex.packages), ['base', 'ams', 'newcommand', 'color', 'physics']);
+});
+test('MathJax parse failure retains exact TeX as text, including HTML-looking characters', () => {
+  const env = harness({ prose: true, search: false, math: true });
+  const source = String.raw`\badmacro{<img onerror="bad"> & $}`;
+  const marker = {};
+  assert.equal(env.context.MathJax.tex.formatError({ latex: source, formatError: () => marker }, new Error('invalid')), marker);
+  assert.equal(env.prose.children.at(-1).children[1].textContent, source);
 });

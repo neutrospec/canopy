@@ -91,6 +91,9 @@ func Run(w *config.Wiki, scan *wiki.ScanResult, mv *mermaid.Validator) *Report {
 					missing = append(missing, k)
 				}
 			}
+			if !p.HasField("tags") {
+				missing = append(missing, "tags")
+			}
 			if len(missing) > 0 {
 				sort.Strings(missing)
 				add(Critical, "frontmatter-fields", p.RelPath, "missing fields: "+strings.Join(missing, ", "))
@@ -112,6 +115,9 @@ func Run(w *config.Wiki, scan *wiki.ScanResult, mv *mermaid.Validator) *Report {
 			}
 		}
 
+		for _, target := range p.BrokenLinks {
+			add(Critical, "broken-link", p.RelPath, "unresolved or ambiguous wikilink [["+target+"]]")
+		}
 		for _, target := range p.Links {
 			if _, ok := scan.BySlug[target]; !ok {
 				add(Critical, "broken-link", p.RelPath, "broken wikilink [["+target+"]]")

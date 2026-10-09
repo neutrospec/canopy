@@ -35,6 +35,7 @@ func taskTestServer(t *testing.T) (*Server, *config.Wiki) {
 func postForm(t *testing.T, h http.Handler, path string, form url.Values) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest("POST", path, strings.NewReader(form.Encode()))
+	req.Host = "localhost"
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
@@ -88,8 +89,8 @@ func TestWebTaskFilingRejectsBadInput(t *testing.T) {
 	if rec := postForm(t, h, "/task/connect", url.Values{"a": {"alpha"}, "b": {"no-such"}}); rec.Code != http.StatusBadRequest {
 		t.Fatalf("missing page: status %d", rec.Code)
 	}
-	// blank request: bounce back without filing
-	if rec := postForm(t, h, "/task/edit/alpha", url.Values{"request": {"   "}}); rec.Code != http.StatusSeeOther {
+	// Blank requests are rejected without filing.
+	if rec := postForm(t, h, "/task/edit/alpha", url.Values{"request": {"   "}}); rec.Code != http.StatusBadRequest {
 		t.Fatalf("blank request: status %d", rec.Code)
 	}
 	if list, _ := tasks.Load(w); len(list) != 0 {
@@ -109,8 +110,8 @@ func TestWebConnectRefilingAndTodoList(t *testing.T) {
 		t.Fatalf("refiling created a duplicate, got %d tasks", len(list))
 	}
 
-	views, filed := s.pageTasks("alpha", s.i18n.localizer(defaultLang))
-	if len(views) != 1 || views[0].Other != "beta" {
+	views, filed, err := s.pageTasks("alpha", s.i18n.localizer(defaultLang))
+	if err != nil || len(views) != 1 || views[0].Other != "beta" {
 		t.Fatalf("todo list: %+v", views)
 	}
 	if !filed["beta"] {
@@ -119,14 +120,16 @@ func TestWebConnectRefilingAndTodoList(t *testing.T) {
 
 	// The page view actually renders the todo list, the edit-request
 	// form, and the filed notice (template executes, not just parses).
-	req := httptest.NewRequest("GET", "/page/alpha?tasked=1", nil)
+	list, _ := tasks.Load(w)
+	req := httptest.NewRequest("GET", "/page/alpha?tasked="+list[0].ID, nil)
+	req.Host = "localhost"
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("page render: status %d", rec.Code)
 	}
 	body := rec.Body.String()
-	for _, want := range []string{"tasklist", "/task/edit/alpha", "task_filed_notice", "/page/beta"} {
+	for _, want := range []string{"tasklist", "/task/edit/concepts%2Falpha.md", "task_filed_notice", "/page/beta"} {
 		if want == "task_filed_notice" {
 			continue // localized text, checked via the notice element below
 		}
@@ -135,7 +138,7 @@ func TestWebConnectRefilingAndTodoList(t *testing.T) {
 		}
 	}
 	if !strings.Contains(body, "notice") {
-		t.Fatal("tasked=1 must show the filed notice")
+		t.Fatal("A real task receipt must show the filed notice")
 	}
 }
 
@@ -151,7 +154,7 @@ func TestWebEditFilesProposalNotFile(t *testing.T) {
 		"body": {"rewritten body\r\nline two with [[beta]]"},
 		"note": {"인트로를 다듬음"},
 	})
-	if rec.Code != http.StatusSeeOther || !strings.Contains(rec.Header().Get("Location"), "tasked=1") {
+	if rec.Code != http.StatusSeeOther || !strings.Contains(rec.Header().Get("Location"), "tasked=") {
 		t.Fatalf("proposal save: status %d loc %s", rec.Code, rec.Header().Get("Location"))
 	}
 	after, _ := os.ReadFile(pagePath)
@@ -179,7 +182,7 @@ func TestWebEditNoopFilesNothing(t *testing.T) {
 	s, w := taskTestServer(t)
 	h := s.Handler()
 	rec := postForm(t, h, "/edit/alpha", url.Values{"body": {"body of alpha"}, "note": {""}})
-	if rec.Code != http.StatusSeeOther || strings.Contains(rec.Header().Get("Location"), "tasked=1") {
+	if rec.Code != http.StatusSeeOther || strings.Contains(rec.Header().Get("Location"), "tasked=") {
 		t.Fatalf("no-op save: status %d loc %s", rec.Code, rec.Header().Get("Location"))
 	}
 	if list, _ := tasks.Load(w); len(list) != 0 {
@@ -196,6 +199,7 @@ func TestTasksScreenAndWithdraw(t *testing.T) {
 	postForm(t, h, "/task/connect", url.Values{"a": {"alpha"}, "b": {"beta"}, "sim": {"0.8"}})
 
 	req := httptest.NewRequest("GET", "/special/tasks", nil)
+	req.Host = "localhost"
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
@@ -235,19 +239,20 @@ func TestSuggestedSectionTaskButtons(t *testing.T) {
 	s, _ := taskTestServer(t)
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/page/alpha", nil)
+	req.Host = "localhost"
 	data := map[string]any{
 		"Title":     "alpha",
 		"Page":      map[string]any{"Slug": "alpha", "Title": "alpha", "Type": "concept", "Tags": []string{}, "Updated": "2026-08-02", "RelPath": "concepts/alpha.md"},
 		"Body":      "",
 		"Backlinks": []string{},
 		"Suggested": []suggestion{
-			{Slug: "beta", Title: "beta", Sim: 0.81},
+			{Slug: "beta", Ref: "concepts/beta.md", Title: "beta", Sim: 0.81},
 			{Slug: "gamma", Title: "gamma", Sim: 0.75, Requested: true},
 		},
 	}
 	s.render(rec, req, http.StatusOK, "page.html", data)
 	body := rec.Body.String()
-	if !strings.Contains(body, `action="/task/connect"`) || !strings.Contains(body, `value="beta"`) {
+	if !strings.Contains(body, `action="/task/connect"`) || !strings.Contains(body, `value="concepts/beta.md"`) {
 		t.Fatal("fresh suggestion must render the connect-request form")
 	}
 	if !strings.Contains(body, "⏳") {

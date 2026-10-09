@@ -232,7 +232,7 @@ func (s *Server) guard(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			if o := r.Header.Get("Origin"); o != "" {
-				if u, err := url.Parse(o); err != nil || u.Host != r.Host {
+				if u, err := url.Parse(o); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.User != nil || !strings.EqualFold(u.Host, r.Host) || u.Path != "" || u.RawQuery != "" || u.Fragment != "" {
 					http.Error(w, "cross-origin request rejected", http.StatusForbidden)
 					return
 				}
@@ -249,6 +249,12 @@ func (s *Server) guard(next http.Handler) http.Handler {
 		}
 		if s.sessionOK(r) {
 			next.ServeHTTP(w, r)
+			return
+		}
+		if strings.HasPrefix(p, "/api/") {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]any{"error": "authentication_required"})
 			return
 		}
 		if !s.auth.hasAccount() {
@@ -335,7 +341,7 @@ func (s *Server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
-	if c, err := r.Cookie(sessionCookie); err == nil {
+	if c, err := r.Cookie(sessionCookie); err == nil && s.auth != nil {
 		s.auth.dropSession(c.Value)
 	}
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1})

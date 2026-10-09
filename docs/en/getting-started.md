@@ -1,11 +1,11 @@
-<!-- i18n-source: docs/getting-started.md sha:bbfbdf4d28cac06061dc725514aa15b8d13936c6 -->
+<!-- i18n-source: docs/getting-started.md sha:32f130d27d498026894dbdc88562482daf36dbd1 -->
 > [한국어](../getting-started.md) · **English**
 
 # Getting Started
 
 > If "managing a wiki with an LLM" is new to you, start here.
 > The order is concept → vocabulary → 15-minute walkthrough → daily use.
-> Every command here was actually run in an empty folder and verified.
+> First check page creation and keyword search without a model or Git, then add what you need.
 
 ## 1. What is this?
 
@@ -29,19 +29,19 @@ The more you ask and read, the richer the wiki becomes.
 canopy is the tool that makes this actually work. Originally the rules —
 "regenerate the index, write the log, don't break links" — were kept as long
 prose instructions for the agent to follow, but agents forget, like people do.
-canopy puts those rules **in code, inside the commands**, so forgetting becomes
-impossible.
+canopy puts those rules **in code, inside the commands**. Validation differs by
+command; people and agents still check factual accuracy and whether the request is satisfied.
 
 ## 2. Eight terms to know up front
 
 | Term | Meaning |
 |------|-----|
 | **page** | One markdown file = one piece of knowledge. It lives in one of three folders: `concepts/`, `entities/` (people, products, orgs), `comparisons/` |
-| **slug** | The filename (without extension). The slug of `opc-ua.md` is `opc-ua`. Lowercase ASCII letters and hyphens only |
+| **slug** | The filename (without extension). The slug of `opc-ua.md` is `opc-ua`. Lowercase ASCII letters, digits, and hyphens |
 | **frontmatter** | The `---`-wrapped metadata at the top of a page (title, dates, tags). canopy creates it for you |
 | **wikilink** | `[[another-page]]` in the body — a connection between pages. The more links, the more knowledge becomes a web |
 | **backlink** | The reverse direction: "who references this page?" Check with `canopy backlinks <page>` |
-| **semantic search** | Search by **meaning**, not words. Searching "vector cache" surfaces the KV-cache page even without that exact term. The AI model embedded in canopy (bge-m3) handles it, needing no internet or external server |
+| **semantic search** | Search by **meaning**, not words. It can find evidence with different wording, such as "vector cache" and KV-cache. Built-in inference code uses a separately installed local bge-m3 model; after preparation, no internet or external server is needed |
 | **facet** | The web UI's way of classifying. Instead of a fixed folder tree, it combines folder × type × tag as **cross filters** to browse |
 | **island** | A cluster of pages linked to each other but cut off from the wiki's mainland (largest connected component). It passes the orphan check, so `canopy lint` catches it separately |
 
@@ -60,26 +60,28 @@ impossible.
 ```bash
 git clone https://github.com/neutrospec/canopy && cd canopy
 make build && make install        # canopy → ~/.local/bin
-which canopy                      # nothing? see the README's "PATH setup"
+which canopy                      # 안 나오면 troubleshooting.md의 PATH 항목 참조
 ```
 
 ### 4-2. Create a wiki
 
 ```bash
-mkdir ~/wiki && cd ~/wiki && git init -b main    # the wiki is a git repo (history = the record of knowledge growing)
-mkdir -p ~/.config/canopy
-echo 'default_wiki = "'$HOME'/wiki"' > ~/.config/canopy/config.toml   # so canopy finds the wiki from anywhere
-canopy init
+wiki="$HOME/canopy-demo"           # 아직 canopy.toml이 없는 새 폴더를 선택
+mkdir -p "$wiki"
+canopy init --wiki "$wiki"
+canopy status --wiki "$wiki" --json # root가 이 경로인지 확인
 ```
 
 A file called `canopy.toml` appears — it holds this wiki's rules (allowed
-tags, page kinds). To add tags later, edit it there.
+tags and page kinds). `init` only fills an empty global `default_wiki`; it keeps
+existing settings. This guide pins every wiki command with `--wiki "$wiki"`.
 
 ### 4-3. Your first page
 
 ```bash
-echo "OPC-UA is a standard protocol industrial devices use to talk to each other." | \
-  canopy new "What is OPC-UA" --slug opc-ua --type concept --tags infrastructure --body-file -
+echo "OPC-UA는 산업 장비들이 서로 대화할 때 쓰는 표준 프로토콜이다." | \
+  canopy new "OPC-UA란 무엇인가" --slug opc-ua --type concept --tags infrastructure --body-file - --wiki "$wiki"
+canopy show opc-ua --wiki "$wiki"
 ```
 
 ```
@@ -93,33 +95,48 @@ recorded an activity log. These are all things a person/agent used to have to
 remember.
 
 > If a title is Korean-only, be sure to give an English filename with `--slug`.
-> The title can be Korean, but the filename must be English for search and sync
-> to be safe.
+> A title with no ASCII characters cannot produce an automatic filename.
+> A successful `show` does not prove the requested body is correct; inspect the content.
 
-### 4-4. Save (sync)
+### 4-4. Save in Git (optional)
+
+The page is already a local file. Git history requires a repository and an author
+identity. Replace the example name and email with your own. Local commits work without a remote.
 
 ```bash
-canopy sync -m "first page"
+git -C "$wiki" init -b main
+git -C "$wiki" config user.name "Your Name"
+git -C "$wiki" config user.email "you@example.com"
+canopy sync -m "첫 페이지" --wiki "$wiki"
 ```
 
-sync = git pull → commit → push in one step. It's fine if you forget —
-**every canopy command shows a ⚠ warning when there are unsaved changes.**
+With an upstream, sync pulls, commits, and pushes; without one, it skips remote
+steps. It includes **all dirty files in the wiki**, including existing changes.
+For several devices, connect a remote and set the upstream on the first push.
+On conflicts or failure, inspect and resolve the current Git state. Ordinary text
+commands have a status banner; JSON and `show` do not, so check
+`canopy status --json --wiki "$wiki"` directly.
 
 ### 4-5. Search
 
 ```bash
-canopy search "industrial device communication"   # by meaning — finds it without the exact words
-canopy search "OPC" --mode keyword                 # by word — instant, no model load
+canopy search "OPC" --mode keyword --wiki "$wiki"   # 모델 없이 동작
+canopy search "산업 장비 통신" --wiki "$wiki"        # hybrid, 미준비면 keyword 강등
 ```
 
-Once, before your first semantic search: `canopy model pull` (downloads the
-2.3GB AI model, then works fully offline; for the int8 shrink see
-`scripts/quantize-model.py`).
+Before your first semantic search, download the model with `canopy model pull --wiki "$wiki"`
+(about 2.3GB), then create embeddings with `canopy reindex --wiki "$wiki"`.
+For optional int8 conversion, check dependencies and paths with
+`scripts/quantize-model.py --help` in the repository. To use its default output,
+set `model` under `[embedding]` in the wiki's `canopy.toml` to `bge-m3-int8`, then
+check `model status` and run `reindex` with the same `--wiki`. Lite builds provide keyword
+search. `recall` requires embeddings; when unavailable, use keyword search and
+show to check evidence.
 
 ### 4-6. View in the browser
 
 ```bash
-canopy serve      # → http://localhost:8737
+canopy serve --wiki "$wiki"      # → http://localhost:8737
 ```
 
 The wiki opens in your browser as a search-first website: type in the search
@@ -130,22 +147,27 @@ home "Discover" panel recommends pages you haven't read yet.
 
 ### 4-7. View in Obsidian (optional)
 
-Obsidian → "Open folder as vault" → pick `~/wiki`. That's it.
+Obsidian → "Open folder as vault" → select `~/canopy-demo`, created in this tutorial.
+If you used an existing wiki, select the folder that `$wiki` points to.
 Wikilinks become clickable and the Graph View shows the web of knowledge.
-canopy and Obsidian work on the same files, so you can edit from either — but
-if you edited in Obsidian, tell canopy with `canopy update <page>` (it refreshes
-the modified date and the search index).
+canopy and Obsidian work on the same files. After editing in Obsidian, review
+external changes with `canopy reconcile --wiki "$wiki"`, normalize the content
+as needed, then accept it with `update` or `reconcile bless`
+([reconciliation contract](../reconcile-design.md)). For partial edits you can
+also borrow an external working copy with `checkout`/`checkin`.
 
 ## 5. Daily use
 
 ### Solo
 
 ```bash
-canopy search "topic"          # always, before writing anything: does it exist? what connects?
-canopy list                    # skim all pages (filter with --type, --tag)
-canopy new ... --links related-page   # add while linking to existing pages
-canopy sync                    # end of day, or per unit of work
-canopy lint                    # occasionally: check broken links and orphans
+canopy search "주제" --wiki "$wiki"   # 이미 있나? 뭐랑 연결되나?
+canopy list --wiki "$wiki"            # --type, --tag로 필터
+canopy checkout opc-ua --wiki "$wiki" # 반환된 사본에서 부분 편집
+# 편집 사본을 별도 백업한 뒤 checkin, 현재 내용 확인
+canopy checkin opc-ua --wiki "$wiki"
+canopy lint --wiki "$wiki"            # 관련 구조·링크 finding 검토
+canopy sync --wiki "$wiki"            # 전체 변경을 저장할 범위일 때
 ```
 
 ### With an agent (this is where the real fun starts)
@@ -153,39 +175,45 @@ canopy lint                    # occasionally: check broken links and orphans
 Teaching an agent how to use canopy is one command:
 
 ```bash
-canopy skills install    # install the two agent how-to guides into the skills folder
+canopy skills install    # 에이전트용 사용 설명서 2개를 스킬 폴더에 설치
 ```
 
-After that the division of labor is:
+Automatic detection covers supported agent paths. Specify an arbitrary path
+with `canopy skills install --dir <path>` on every update, and check the agent's
+skill activation and loading instructions after installation. The division of labor is:
 
 | Human | Agent | canopy |
 |------|----------|--------|
 | Throws sources ("organize this article") | Reads, summarizes, writes the page | Checks rules, index, log, save |
-| Asks questions | Finds evidence in the wiki with `canopy recall` and answers | Provides evidence chunks with sources |
+| Asks questions | Uses recall or keyword search + show to find evidence and answer | Provides evidence and sources |
 | Judges ("link it" / "no") | Executes | Records |
 
-Remember one core rule: **don't let the agent edit the wiki directly — always
-go through canopy commands.** That's what blocks rule violations at the source.
+Create, update, move, and delete pages **through canopy commands**. Make partial
+edits in a `checkout` copy and apply them with `checkin`. Add source material to
+`raw/` and edit `canopy.toml` settings directly while preserving existing content.
+Use command validation together with content checks.
+A reading question ends with evidence and limitations; it does not automatically
+create a page or start a sync.
 
 ### Reading in a browser
 
 ```bash
-canopy serve               # localhost:8737 — this machine only, no auth
-canopy serve --addr :8737  # reachable from any device — auth required (see below)
+canopy serve --wiki "$wiki"               # localhost:8737 — 인증 없음
+canopy serve --addr :8737 --wiki "$wiki"   # 외부 접근 — 인증 필수
 ```
 
 A web UI that starts from the search box and moves to pages, backlinks, tags
 (facets), and the full graph. Going to a missing page shows search results
-instead, like Wikipedia, and a page's "✎ edit" lets you fix the body — web
-editing goes through exactly the same pipeline as CLI `update` (index, log,
-embeddings), so it's safe to use alongside the CLI and agents. Frontmatter and
-page create/move/delete are CLI-only.
+instead, like Wikipedia. A page's "✎ edit" lets you submit a revised body.
+Saving files the full body as an edit task and **leaves the current page unchanged**.
+Check the proposal in `Tasks`, then check the actual page after an agent handles it.
+canopy does not start an agent automatically or guarantee a processing time.
+Frontmatter and page create/move/delete are CLI-only.
 
-One principle: use web editing (and direct Obsidian edits) only for **small
-fixes like typos or a one-line correction.** Serious writing and restructuring
-belongs to the agent — content rules like "search before writing, update
-instead of duplicating, record contradictions side by side" live in the agent's
-skills, so a person writing directly walks right past those checkpoints.
+Web requests enter the agent's review path. The agent searches existing content
+and considers duplicates, contradictions, and sources before applying changes.
+See [agent-tasks.md](../agent-tasks.md) for queue handling and the limits of the
+done check.
 
 To view from a phone or another computer, open the second form — and then
 **authentication is required automatically**: the first time you run serve, a
@@ -199,9 +227,9 @@ A wiki that only accumulates is a warehouse. canopy has commands that **revive
 forgotten knowledge**:
 
 ```bash
-canopy resurface     # "you haven't seen this page in 59 days" — rediscover forgotten pages
-canopy bridge        # "these two pages are similar but not linked" — find hidden relations
-canopy digest --since 30d   # "what did I learn this month" — retrospective material
+canopy resurface --wiki "$wiki"         # 잊힌 페이지 재발견
+canopy bridge --wiki "$wiki"            # 유사하지만 연결 안 된 페이지
+canopy digest --since 30d --wiki "$wiki" # 회고 소재
 ```
 
 This loop works through two touchpoints:
@@ -232,17 +260,22 @@ references become plain text).
 
 **Q. I want to use a new tag but it's refused.**
 That's intended — if tags grow arbitrarily, classification becomes meaningless.
-If you genuinely need it, add it to the `tags` list in `canopy.toml` first.
+First check existing tags with `canopy tags --wiki "$wiki"`. Add a new topic to
+`topics` in `canopy.toml` when at least three pages need it, and retag existing pages.
+`forms` is a closed set; legacy `tags` is for compatibility. A new init's suggested
+list is a bootstrap, so you need not use every tag immediately. Use `tags --audit`
+to refine it as actual demand develops.
 
 **Q. Can I use it from several computers?**
-Yes, that's why it uses git. Just `canopy sync` well on each machine; since sync
-pulls first, conflicts are rare.
+Yes, that's why it uses git. Use `canopy sync` on each machine. It pulls first,
+but conflicts can still happen. On failure, preserve both versions and inspect
+and resolve the Git state before continuing.
 
 **Q. I think my wiki is broken.**
-`canopy lint` tells you what's wrong. If the search index is off,
-`rm -rf ~/.cache/canopy && canopy reindex` — the index is a cache you can
-always rebuild, so deleting it is safe. **All the real knowledge is in the
-markdown files and git.**
+`canopy lint` tells you what's wrong. If the search index is off, rebuild with
+`canopy reindex --wiki "$wiki"`. Search databases are derived caches; `logs/`
+and `_meta/` contain history and state that cannot be reconstructed and must be
+preserved. **Keep pages, raw sources, history, and state together in Git.**
 
 ## 8. What to read next
 

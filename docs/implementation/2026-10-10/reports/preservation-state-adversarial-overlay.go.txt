@@ -1,0 +1,478 @@
+package statefile_test
+
+import (
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"database/sql"
+	"encoding/json"
+	"math/rand"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/neutrospec/canopy/internal/attention"
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/reads"
+	"github.com/neutrospec/canopy/internal/resurface"
+	"github.com/neutrospec/canopy/internal/safefile"
+	"github.com/neutrospec/canopy/internal/tasks"
+	"github.com/neutrospec/canopy/internal/wiki"
+	"github.com/neutrospec/canopy/internal/wikilock"
+)
+
+func reviewWrite(t *testing.T, path, data string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(data), 0640); err != nil {
+		t.Fatal(err)
+	}
+}
+func reviewRead(t *testing.T, path string) []byte {
+	t.Helper()
+	b, e := os.ReadFile(path)
+	if e != nil {
+		t.Fatal(e)
+	}
+	return b
+}
+func reviewWiki(t *testing.T) *config.Wiki {
+	return &config.Wiki{Root: t.TempDir(), Cfg: config.Default()}
+}
+func reviewWait(t *testing.T, path string) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		if _, e := os.Stat(path); e == nil {
+			return
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatalf("barrier not reached: %s", path)
+}
+func reviewChild(t *testing.T, mode, root, key string) (*exec.Cmd, *bytes.Buffer) {
+	t.Helper()
+	exe, e := os.Executable()
+	if e != nil {
+		t.Fatal(e)
+	}
+	c := exec.Command(exe, "-test.run=^TestReviewProcessHelper$")
+	c.Env = append(os.Environ(), "REVIEW_MODE="+mode, "REVIEW_ROOT="+root, "REVIEW_KEY="+key)
+	b := &bytes.Buffer{}
+	c.Stdout = b
+	c.Stderr = b
+	if e := c.Start(); e != nil {
+		t.Fatal(e)
+	}
+	t.Cleanup(func() {
+		if c.ProcessState == nil {
+			c.Process.Kill()
+			c.Wait()
+		}
+	})
+	return c, b
+}
+
+func TestReviewProcessHelper(t *testing.T) {
+	mode := os.Getenv("REVIEW_MODE")
+	if mode == "" {
+		t.Skip("only entered by review subprocesses")
+	}
+	root := os.Getenv("REVIEW_ROOT")
+	key := os.Getenv("REVIEW_KEY")
+	w := &config.Wiki{Root: root, Cfg: config.Default()}
+	if mode == "hold" {
+		g, e := wikilock.Acquire(context.Background(), root)
+		if e != nil {
+			t.Fatal(e)
+		}
+		defer g.Unlock()
+		reviewWrite(t, filepath.Join(root, ".canopy-tmp-interrupted"), "partial scratch")
+		reviewWrite(t, filepath.Join(root, "ready"), "ready")
+		for {
+			time.Sleep(time.Hour)
+		}
+	}
+	if mode == "mark" {
+		s, e := reads.Load(w)
+		if e != nil {
+			t.Fatal(e)
+		}
+		reviewWrite(t, filepath.Join(root, "ready-"+key), "loaded")
+		reviewWait(t, filepath.Join(root, "release"))
+		s.Mark(key, "explicit", time.Date(2026, 10, 10, 12, 0, 0, 0, time.UTC))
+		if e := s.Save(w); e != nil {
+			t.Fatal(e)
+		}
+		return
+	}
+	t.Fatal("unknown helper mode")
+}
+
+func TestReviewAliasLockDeathAndScratchRecovery(t *testing.T) {
+	w := reviewWiki(t)
+	alias := filepath.Join(t.TempDir(), "alias")
+	if e := os.Symlink(w.Root, alias); e != nil {
+		t.Fatal(e)
+	}
+	reviewWrite(t, filepath.Join(w.Root, ".git/.canopy-tmp-retained"), "git internals")
+	reviewWrite(t, filepath.Join(w.Root, ".canopy-tmp-not-disposable.md"), "markdown retained")
+	c, out := reviewChild(t, "hold", w.Root, "")
+	reviewWait(t, filepath.Join(w.Root, "ready"))
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Millisecond)
+	defer cancel()
+	if g, e := wikilock.Acquire(ctx, alias); e == nil {
+		g.Unlock()
+		t.Fatal("alias acquired live exclusive lock")
+	}
+	if e := c.Process.Kill(); e != nil {
+		t.Fatal(e)
+	}
+	c.Wait()
+	ctx2, cancel2 := context.WithTimeout(context.Background(), time.Second)
+	defer cancel2()
+	g, e := wikilock.Acquire(ctx2, alias)
+	if e != nil {
+		t.Fatalf("dead process retained lock: %v %s", e, out)
+	}
+	defer g.Unlock()
+	scratch := filepath.Join(w.Root, ".canopy-tmp-interrupted")
+	before := reviewRead(t, scratch)
+	if e := safefile.CleanTemps(alias); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := os.Stat(scratch); !os.IsNotExist(e) {
+		after := reviewRead(t, scratch)
+		t.Logf("alias scratch before=%x after=%x; CleanTemps returned nil", sha256.Sum256(before), sha256.Sum256(after))
+		if e := safefile.CleanTemps(w.Root); e != nil {
+			t.Fatal(e)
+		}
+		_, control := os.Stat(scratch)
+		t.Logf("real-root cleanup control removed scratch=%v", os.IsNotExist(control))
+		t.Errorf("scratch remained through alias: %v", e)
+	}
+	if string(reviewRead(t, filepath.Join(w.Root, ".git/.canopy-tmp-retained"))) != "git internals" {
+		t.Fatal("git scratch changed")
+	}
+	if string(reviewRead(t, filepath.Join(w.Root, ".canopy-tmp-not-disposable.md"))) != "markdown retained" {
+		t.Fatal("markdown removed")
+	}
+	t.Log("live alias exclusion, SIGKILL release, and next-lease scratch cleanup passed")
+}
+
+func TestReviewAtomicCreateMoveAndReaders(t *testing.T) {
+	dir := t.TempDir()
+	p := filepath.Join(dir, "published")
+	a := bytes.Repeat([]byte("A"), 200003)
+	b := bytes.Repeat([]byte("B"), 300007)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	success := 0
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if e := safefile.CreateFile(p, a, 0640); e == nil {
+				mu.Lock()
+				success++
+				mu.Unlock()
+			}
+		}()
+	}
+	wg.Wait()
+	if success != 1 || !bytes.Equal(reviewRead(t, p), a) {
+		t.Fatalf("exclusive create winners=%d", success)
+	}
+	done := make(chan struct{})
+	errors := make(chan error, 1)
+	go func() {
+		defer close(done)
+		for i := 0; i < 30; i++ {
+			data := b
+			if i%2 == 1 {
+				data = a
+			}
+			if e := safefile.WriteFile(p, data, 0600); e != nil {
+				errors <- e
+				return
+			}
+		}
+	}()
+	for {
+		data, e := os.ReadFile(p)
+		if e != nil {
+			t.Fatal(e)
+		}
+		if !bytes.Equal(data, a) && !bytes.Equal(data, b) {
+			t.Fatalf("incomplete read: %d bytes", len(data))
+		}
+		select {
+		case <-done:
+			goto finished
+		default:
+		}
+	}
+finished:
+	select {
+	case e := <-errors:
+		t.Fatal(e)
+	default:
+	}
+	info, e := os.Stat(p)
+	if e != nil || info.Mode().Perm() != 0640 {
+		t.Fatalf("mode: %v %v", info, e)
+	}
+	dst := filepath.Join(dir, "existing")
+	reviewWrite(t, dst, "DESTINATION")
+	srcBefore := reviewRead(t, p)
+	dstBefore := reviewRead(t, dst)
+	if e := safefile.MoveNoReplace(p, dst); e == nil {
+		t.Fatal("archive overwrite succeeded")
+	}
+	if !bytes.Equal(srcBefore, reviewRead(t, p)) || !bytes.Equal(dstBefore, reviewRead(t, dst)) {
+		t.Fatal("no-clobber changed inputs")
+	}
+	alias := filepath.Join(dir, "symlink")
+	if e := os.Symlink(dst, alias); e != nil {
+		t.Fatal(e)
+	}
+	if e := safefile.WriteFile(alias, a, 0644); e == nil {
+		t.Fatal("symlink write accepted")
+	}
+	if !bytes.Equal(dstBefore, reviewRead(t, dst)) {
+		t.Fatal("symlink target changed")
+	}
+	t.Log("one complete create, alternating complete reader views, mode retention, archive no-clobber, symlink refusal passed")
+}
+
+func TestReviewCrossProcessFutureUnknownAndStaleLeaf(t *testing.T) {
+	w := reviewWiki(t)
+	raw := `{"version":91,"reads":{"legacy":{"first":"2026-01-01T00:00:00Z","last":"2026-01-01T00:00:00Z","count":1,"source":"explicit","nested":{"huge":90071992547409931234567890,"nil":null}}},"opaque":[90071992547409931234567890,null,{"unknown":true}]}`
+	reviewWrite(t, reads.Path(w), raw)
+	c1, b1 := reviewChild(t, "mark", w.Root, "alpha")
+	c2, b2 := reviewChild(t, "mark", w.Root, "beta")
+	reviewWait(t, filepath.Join(w.Root, "ready-alpha"))
+	reviewWait(t, filepath.Join(w.Root, "ready-beta"))
+	reviewWrite(t, filepath.Join(w.Root, "release"), "go")
+	if e := c1.Wait(); e != nil {
+		t.Fatalf("writer alpha %v %s", e, b1)
+	}
+	if e := c2.Wait(); e != nil {
+		t.Fatalf("writer beta %v %s", e, b2)
+	}
+	after := reviewRead(t, reads.Path(w))
+	var doc map[string]json.RawMessage
+	if e := json.Unmarshal(after, &doc); e != nil {
+		t.Fatal(e)
+	}
+	var entries map[string]json.RawMessage
+	json.Unmarshal(doc["reads"], &entries)
+	if len(entries) != 3 || !bytes.Contains(entries["legacy"], []byte("90071992547409931234567890")) || !bytes.Contains(doc["opaque"], []byte("90071992547409931234567890")) || string(doc["version"]) != "91" {
+		t.Fatalf("lost extension/union: %s", after)
+	}
+	s1, e := reads.Load(w)
+	if e != nil {
+		t.Fatal(e)
+	}
+	s2, e := reads.Load(w)
+	if e != nil {
+		t.Fatal(e)
+	}
+	now := time.Date(2026, 10, 10, 12, 0, 1, 0, time.UTC)
+	s1.Mark("alpha", "explicit", now)
+	if e := s1.Save(w); e != nil {
+		t.Fatal(e)
+	}
+	before := reviewRead(t, reads.Path(w))
+	s2.Mark("alpha", "explicit", now.Add(time.Second))
+	if e := s2.Save(w); e == nil {
+		t.Fatal("conflicting stale leaf accepted")
+	}
+	if !bytes.Equal(before, reviewRead(t, reads.Path(w))) {
+		t.Fatal("stale refusal changed file")
+	}
+	t.Logf("disjoint process union and stale-leaf refusal retained future version, null and exact large number: %s", after)
+}
+
+func TestReviewHealthyPartialReadsAndNullRefusal(t *testing.T) {
+	w := reviewWiki(t)
+	reviewWrite(t, reads.Path(w), `{"version":1,"reads":{"human":{"first":"2026-01-01T00:00:00Z","last":"2026-01-01T00:00:00Z","count":4,"source":"explicit"}}}`)
+	reviewWrite(t, reads.AgentPath(w), "null\n")
+	agent := reviewRead(t, reads.AgentPath(w))
+	s, e := reads.Load(w)
+	if e == nil || !s.HumanAvailable() || s.AgentAvailable() || s.Get("human").Count != 4 {
+		t.Fatalf("partial: %+v %v", s, e)
+	}
+	s.Mark("new", "explicit", time.Now())
+	if e := s.Save(w); e != nil {
+		t.Fatal(e)
+	}
+	if !bytes.Equal(agent, reviewRead(t, reads.AgentPath(w))) {
+		t.Fatal("corrupt agent reset")
+	}
+	reviewWrite(t, reads.Path(w), `{"version":1,"reads":{"bad":null}}`)
+	bad := reviewRead(t, reads.Path(w))
+	s, e = reads.Load(w)
+	if e == nil || s.HumanAvailable() {
+		t.Fatal("null entry considered healthy")
+	}
+	s.Mark("new", "explicit", time.Now())
+	if e := s.Save(w); e == nil {
+		t.Fatal("corrupt human saved")
+	}
+	if !bytes.Equal(bad, reviewRead(t, reads.Path(w))) || !bytes.Equal(agent, reviewRead(t, reads.AgentPath(w))) {
+		t.Fatal("refusal changed file")
+	}
+	t.Log("healthy half retained/updated independently, null-root and null-entry files preserved")
+}
+
+func TestReviewMixedOffsetEventBoundaries(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "events.db")
+	ev, e := attention.Open(path)
+	if e != nil {
+		t.Fatal(e)
+	}
+	ev.Close()
+	db, e := sql.Open("sqlite", path)
+	if e != nil {
+		t.Fatal(e)
+	}
+	rows := []struct{ ts, slug string }{{"2026-10-10T08:59:59+09:00", "before"}, {"2026-10-09T17:00:00-07:00", "at"}, {"2026-10-10T00:00:01Z", "after"}, {"not-a-time", "invalid"}}
+	for _, r := range rows {
+		if _, e := db.Exec("INSERT INTO events(ts,slug,door,kind,meta) VALUES(?,?,?,?,?)", r.ts, r.slug, "agent", "show", ""); e != nil {
+			t.Fatal(e)
+		}
+	}
+	db.Close()
+	ev, e = attention.Open(path)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer ev.Close()
+	cut := time.Date(2026, 10, 10, 0, 0, 0, 0, time.UTC)
+	got, e := ev.Query(attention.Filter{Since: cut, Limit: 2})
+	if e != nil || len(got) != 2 || got[0].Slug != "after" || got[1].Slug != "at" {
+		t.Fatalf("query: %+v %v", got, e)
+	}
+	n, e := ev.Prune(cut)
+	if e != nil || n != 1 {
+		t.Fatalf("prune: %d %v", n, e)
+	}
+	all, e := ev.Recent(10)
+	if e != nil || len(all) != 3 {
+		t.Fatalf("remaining: %+v %v", all, e)
+	}
+	if all[2].Slug != "invalid" {
+		t.Fatalf("invalid not retained: %+v", all)
+	}
+	t.Logf("cutoff query=%+v; retained=%+v", got, all)
+}
+
+func TestReviewSnoozeLegacyAndDeclaredDuration(t *testing.T) {
+	w := reviewWiki(t)
+	reviewWrite(t, resurface.StatePath(w), `{"version":9,"shown":{},"shown_pairs":{},"snoozed":{},"feedback":[],"opaque":{"n":90071992547409931234567890,"null":null}}`)
+	p := &wiki.Page{Slug: "alpha", Updated: "2020-01-01"}
+	scan := &wiki.ScanResult{Pages: []*wiki.Page{p}, BySlug: map[string]*wiki.Page{"alpha": p}}
+	count := func(st *resurface.State, now time.Time) int {
+		p, e := resurface.PickPages(scan, st, nil, "random", 1, now, rand.New(rand.NewSource(1)))
+		if e != nil {
+			t.Fatal(e)
+		}
+		return len(p)
+	}
+	for _, stamp := range []string{"2026-10-10T23:59:59+14:00", "2026-10-10T00:00:01-11:00"} {
+		for _, days := range []int{1, 7} {
+			now, e := time.Parse(time.RFC3339, stamp)
+			if e != nil {
+				t.Fatal(e)
+			}
+			st, e := resurface.LoadState(w)
+			if e != nil {
+				t.Fatal(e)
+			}
+			st.Snooze("alpha", days, now)
+			deadline, e := time.Parse(time.RFC3339Nano, st.Snoozed["alpha"])
+			if e != nil || deadline.Sub(now) != time.Duration(days)*24*time.Hour {
+				t.Fatalf("deadline %s %v", st.Snoozed["alpha"], e)
+			}
+			if count(st, now) != 0 || count(st, deadline.Add(-time.Nanosecond)) != 0 || count(st, deadline) != 1 {
+				t.Fatal("snooze boundaries")
+			}
+			if e := st.Save(w); e != nil {
+				t.Fatal(e)
+			}
+		}
+	}
+	st, e := resurface.LoadState(w)
+	if e != nil {
+		t.Fatal(e)
+	}
+	st.Snoozed["alpha"] = "2026-10-11"
+	cut := time.Date(2026, 10, 11, 0, 0, 0, 0, time.UTC)
+	if count(st, cut.Add(-time.Nanosecond)) != 0 || count(st, cut) != 1 {
+		t.Fatal("legacy UTC-midnight boundary")
+	}
+	data := reviewRead(t, resurface.StatePath(w))
+	if !bytes.Contains(data, []byte("90071992547409931234567890")) || !bytes.Contains(data, []byte(`"version": 9`)) {
+		t.Fatalf("future info lost: %s", data)
+	}
+	t.Log("1/7-day +/- offset and legacy UTC-midnight controls passed")
+}
+
+func TestReviewTaskRetentionInclusiveCutoffAndFuture(t *testing.T) {
+	w := reviewWiki(t)
+	now := time.Date(2026, 10, 10, 0, 0, 0, 0, time.UTC)
+	keep := 90 * 24 * time.Hour
+	cut := now.Add(-keep)
+	for _, r := range []struct {
+		id, status string
+		version    int
+		closed     time.Time
+	}{{"older", "done", 1, cut.Add(-time.Second)}, {"at", "done", 1, cut}, {"after", "dismissed", 1, cut.Add(time.Second)}, {"future", "done", 99, cut.Add(-time.Hour)}, {"unknown", "custom", 1, cut.Add(-time.Hour)}, {"pending", "pending", 1, cut.Add(-time.Hour)}} {
+		data, _ := json.Marshal(map[string]any{"version": r.version, "id": r.id, "type": "edit", "status": r.status, "created": "2020-01-01T00:00:00Z", "closed": r.closed.Format(time.RFC3339), "unknown": 9007199254740993})
+		reviewWrite(t, filepath.Join(tasks.Dir(w), r.id+".json"), string(data))
+	}
+	beforeAt := reviewRead(t, filepath.Join(tasks.Dir(w), "at.json"))
+	t.Logf("cutoff=%s at-file-before-sha256=%x input=%s", cut.Format(time.RFC3339), sha256.Sum256(beforeAt), beforeAt)
+	n, e := tasks.GC(w, keep, now)
+	if e != nil {
+		t.Fatal(e)
+	}
+	_, atErr := os.Stat(filepath.Join(tasks.Dir(w), "at.json"))
+	t.Logf("GC removed=%d exact-cutoff present=%v", n, atErr == nil)
+	if n != 2 || !os.IsNotExist(atErr) {
+		t.Fatalf("inclusive retention contract; removed=%d exact-cutoff stat=%v", n, atErr)
+	}
+	for _, id := range []string{"after", "future", "unknown", "pending"} {
+		if _, e := os.Stat(filepath.Join(tasks.Dir(w), id+".json")); e != nil {
+			t.Fatalf("protected %s: %v", id, e)
+		}
+	}
+}
+
+func TestReviewConfigExtensionPreserveOrRefuse(t *testing.T) {
+	w := reviewWiki(t)
+	if e := w.WriteTOML(); e != nil {
+		t.Fatal(e)
+	}
+	path := w.TOMLPath()
+	data := append(reviewRead(t, path), []byte("\n[future]\nexact = 9007199254740993\nlabel = 'keep me'\n")...)
+	reviewWrite(t, path, string(data))
+	loaded, e := config.Resolve(w.Root)
+	if e != nil {
+		t.Fatal(e)
+	}
+	loaded.Cfg.Schema.Topics = append(loaded.Cfg.Schema.Topics, "review-topic")
+	if e := loaded.WriteTOML(); e == nil {
+		t.Fatal("unsupported extension saved without explicit preservation")
+	}
+	if !bytes.Equal(data, reviewRead(t, path)) {
+		t.Fatal("unknown TOML changed")
+	}
+	t.Log("unsupported same-version TOML extension refused with byte preservation")
+}

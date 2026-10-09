@@ -1,0 +1,227 @@
+node --test internal/webui/uitest/*.test.cjs
+TAP version 13
+# Subtest: a cleared query cannot be reopened by a late response
+ok 1 - a cleared query cannot be reopened by a late response
+  ---
+  duration_ms: 3.443834
+  type: 'test'
+  ...
+# Subtest: responses from before the current debounce stay hidden
+ok 2 - responses from before the current debounce stay hidden
+  ---
+  duration_ms: 0.983875
+  type: 'test'
+  ...
+# Subtest: out-of-order search responses never replace current results
+ok 3 - out-of-order search responses never replace current results
+  ---
+  duration_ms: 2.686042
+  type: 'test'
+  ...
+# Subtest: Escape cancels pending results and keyboard selection
+ok 4 - Escape cancels pending results and keyboard selection
+  ---
+  duration_ms: 0.573042
+  type: 'test'
+  ...
+# Subtest: IME composition defers search and prevents suggestion navigation
+ok 5 - IME composition defers search and prevents suggestion navigation
+  ---
+  duration_ms: 0.615791
+  type: 'test'
+  ...
+# Subtest: keyboard selection is exposed to assistive technology and opens the selected page
+ok 6 - keyboard selection is exposed to assistive technology and opens the selected page
+  ---
+  duration_ms: 1.162375
+  type: 'test'
+  ...
+# Subtest: failed search responses leave the ordinary form available
+ok 7 - failed search responses leave the ordinary form available
+  ---
+  duration_ms: 0.505333
+  type: 'test'
+  ...
+# Subtest: mobile navigation opens, closes with Escape, and adapts to desktop
+ok 8 - mobile navigation opens, closes with Escape, and adapts to desktop
+  ---
+  duration_ms: 0.381583
+  type: 'test'
+  ...
+# Subtest: search shortcuts respect typing, while Ctrl K can focus search from an editor
+ok 9 - search shortcuts respect typing, while Ctrl K can focus search from an editor
+  ---
+  duration_ms: 0.69225
+  type: 'test'
+  ...
+# Subtest: code copy preserves literal source text and displays localized success
+ok 10 - code copy preserves literal source text and displays localized success
+  ---
+  duration_ms: 0.592584
+  type: 'test'
+  ...
+# Subtest: clipboard failure never displays a success state
+ok 11 - clipboard failure never displays a success state
+  ---
+  duration_ms: 0.31875
+  type: 'test'
+  ...
+# Subtest: the page outline uses real heading targets without including the anchor marker
+ok 12 - the page outline uses real heading targets without including the anchor marker
+  ---
+  duration_ms: 0.191583
+  type: 'test'
+  ...
+# Subtest: only an exact duplicate body title is collapsed, with its source preserved
+ok 13 - only an exact duplicate body title is collapsed, with its source preserved
+  ---
+  duration_ms: 0.466167
+  type: 'test'
+  ...
+# Subtest: auto read requires visible dwell and scroll progress
+ok 14 - auto read requires visible dwell and scroll progress
+  ---
+  duration_ms: 0.832083
+  type: 'test'
+  ...
+# Subtest: dwell without sufficient scroll does not mark a long page read
+ok 15 - dwell without sufficient scroll does not mark a long page read
+  ---
+  duration_ms: 0.222292
+  type: 'test'
+  ...
+# Subtest: HTTP failure keeps explicit read controls without showing auto success
+ok 16 - HTTP failure keeps explicit read controls without showing auto success
+  ---
+  duration_ms: 0.566208
+  type: 'test'
+  ...
+# Subtest: network failure keeps explicit read controls without showing auto success
+ok 17 - network failure keeps explicit read controls without showing auto success
+  ---
+  duration_ms: 0.25975
+  type: 'test'
+  ...
+# Subtest: read shortcut respects editable content and key repeats
+ok 18 - read shortcut respects editable content and key repeats
+  ---
+  duration_ms: 0.225916
+  type: 'test'
+  ...
+# Subtest: real Response: HTML login preserves explicit controls and state
+ok 19 - real Response: HTML login preserves explicit controls and state
+  ---
+  duration_ms: 0.370958
+  type: 'test'
+  ...
+# Subtest: real Response: read false preserves explicit controls and state
+ok 20 - real Response: read false preserves explicit controls and state
+  ---
+  duration_ms: 0.30225
+  type: 'test'
+  ...
+# Subtest: real Response: missing read preserves explicit controls and state
+ok 21 - real Response: missing read preserves explicit controls and state
+  ---
+  duration_ms: 0.260417
+  type: 'test'
+  ...
+# Subtest: real Response: string read preserves explicit controls and state
+ok 22 - real Response: string read preserves explicit controls and state
+  ---
+  duration_ms: 0.217375
+  type: 'test'
+  ...
+# Subtest: real Response: bad JSON preserves explicit controls and state
+ok 23 - real Response: bad JSON preserves explicit controls and state
+  ---
+  duration_ms: 0.321208
+  type: 'test'
+  ...
+# Subtest: real Response: wrong content type preserves explicit controls and state
+ok 24 - real Response: wrong content type preserves explicit controls and state
+  ---
+  duration_ms: 0.2235
+  type: 'test'
+  ...
+# Subtest: real Response: expired session preserves explicit controls and state
+ok 25 - real Response: expired session preserves explicit controls and state
+  ---
+  duration_ms: 0.169042
+  type: 'test'
+  ...
+# Subtest: a real followed HTTP login redirect cannot confirm a read
+ok 26 - a real followed HTTP login redirect cannot confirm a read
+  ---
+  duration_ms: 16.155291
+  type: 'test'
+  ...
+# Subtest: Mermaid load failure keeps the exact diagram source and shows an error
+ok 27 - Mermaid load failure keeps the exact diagram source and shows an error
+  ---
+  duration_ms: 0.403417
+  type: 'test'
+  ...
+# Subtest: Mermaid parse failure restores source after a renderer changed the node
+ok 28 - Mermaid parse failure restores source after a renderer changed the node
+  ---
+  duration_ms: 1.628625
+  type: 'test'
+  ...
+# Subtest: MathJax load failure leaves source visible and reports failure
+ok 29 - MathJax load failure leaves source visible and reports failure
+  ---
+  duration_ms: 0.747416
+  type: 'test'
+  ...
+# Subtest: MathJax parse failure retains exact TeX as text, including HTML-looking characters
+ok 30 - MathJax parse failure retains exact TeX as text, including HTML-looking characters
+  ---
+  duration_ms: 0.468333
+  type: 'test'
+  ...
+# Subtest: pinned local TeX corpus compiles: x^2 + \\frac{1}{2}
+ok 31 - pinned local TeX corpus compiles: x^2 + \\frac{1}{2}
+  ---
+  duration_ms: 3.933667
+  type: 'test'
+  ...
+# Subtest: pinned local TeX corpus compiles: \\begin{aligned}a&=b+c\\\\d&=e\\end{aligned}
+ok 32 - pinned local TeX corpus compiles: \\begin{aligned}a&=b+c\\\\d&=e\\end{aligned}
+  ---
+  duration_ms: 2.014292
+  type: 'test'
+  ...
+# Subtest: pinned local TeX corpus compiles: \\newcommand{\\RR}{\\mathbb{R}}\\RR
+ok 33 - pinned local TeX corpus compiles: \\newcommand{\\RR}{\\mathbb{R}}\\RR
+  ---
+  duration_ms: 0.6325
+  type: 'test'
+  ...
+# Subtest: pinned local TeX corpus compiles: \\color{red}{x} + \\textcolor{blue}{y}
+ok 34 - pinned local TeX corpus compiles: \\color{red}{x} + \\textcolor{blue}{y}
+  ---
+  duration_ms: 0.762291
+  type: 'test'
+  ...
+# Subtest: pinned local TeX corpus compiles: \\dv{f}{x}+\\pdv{g}{t}+\\qty(\\frac{x}{y})
+ok 35 - pinned local TeX corpus compiles: \\dv{f}{x}+\\pdv{g}{t}+\\qty(\\frac{x}{y})
+  ---
+  duration_ms: 1.428625
+  type: 'test'
+  ...
+# Subtest: undeclared TeX extensions fail instead of triggering an autoload
+ok 36 - undeclared TeX extensions fail instead of triggering an autoload
+  ---
+  duration_ms: 0.430542
+  type: 'test'
+  ...
+1..36
+# tests 36
+# suites 0
+# pass 36
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 87.772583

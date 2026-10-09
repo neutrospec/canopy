@@ -1,16 +1,19 @@
 {{define "content"}}
 <h1>{{t "disc_title"}}</h1>
-<p class="muted">{{t "disc_intro"}} <b>{{.ReadCount}}/{{.Total}}</b> ({{.Pct}}%)</p>
+{{if .ReadsPartial}}<p class="notice conflict">{{t "reads_partial"}}</p>{{end}}
+{{if .ReadAvailable}}<p class="muted">{{t "disc_intro"}} <b>{{.ReadCount}}/{{.Total}}</b> ({{.Pct}}%)</p>
 <div class="progress"><div class="progressbar" style="width: {{.Pct}}%"></div></div>
+{{else}}<p class="muted">{{t "read_unavailable"}}</p>{{end}}
+{{if not .SemanticAvailable}}<p class="muted">{{t "semantic_unavailable"}}</p>{{end}}
 {{if .Ranked}}
 <ul class="pagelist">
   {{range .Ranked}}
-  <li><a class="wikilink" href="/page/{{.Page.Slug}}" data-slug="{{.Page.Slug}}">{{.Page.Title}}</a>
+  <li><a class="wikilink" href="{{pageURL .Page.Slug}}" data-slug="{{.Page.Slug}}">{{.Page.Title}}</a>
       <span class="chip reason">{{.Reason}}</span>
       <span class="muted">{{printf "%.2f" .Score}} · {{.Page.Dir}}{{range .Page.Tags}} #{{.}}{{end}}</span></li>
   {{end}}
 </ul>
 {{else}}
-<p class="muted">{{t "disc_all_read"}}</p>
+<p class="muted">{{if not .ReadAvailable}}{{t "read_unavailable"}}{{else if .UnreadCount}}{{t "disc_no_recommendation"}} <a href="/browse">{{t "nav_browse"}}</a>{{else if .Total}}{{t "disc_all_read"}}{{else}}{{t "home_empty"}}{{end}}</p>
 {{end}}
 {{end}}

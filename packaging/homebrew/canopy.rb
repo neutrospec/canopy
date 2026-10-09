@@ -8,8 +8,8 @@
 #   Stable:  brew install neutrospec/tap/canopy
 #   HEAD:    brew install --HEAD neutrospec/tap/canopy   # builds main, no tag needed
 #
-# Release step: after `make release-tag V=0.1.0`, fill `url`/`sha256` below with
-#   scripts/brew-sha256.sh v0.1.0
+# The release workflow patches this template's top-level URL and digest in
+# the tap. Edit this source only; do not patch the generated tap by hand.
 class Canopy < Formula
   desc "Local knowledge manager for markdown wikis: schema, hybrid search, web UI"
   homepage "https://github.com/neutrospec/canopy"
@@ -65,6 +65,10 @@ class Canopy < Formula
       -X github.com/neutrospec/canopy/internal/buildinfo.date=homebrew
     ].join(" ")
     system "go", "build", "-tags", "ORT", "-ldflags", ldflags, "-o", bin/"canopy", "./cmd/canopy"
+    pkgshare.install "THIRD_PARTY_NOTICES.md"
+    (pkgshare/"internal/webui/static/vendor").install "internal/webui/static/vendor/assets.json"
+    (pkgshare/"internal/webui/static/vendor").install Dir["internal/webui/static/vendor/{LICENSE,NOTICE}-*.txt"]
+    (pkgshare/"internal/webui/static/vendor/fonts").install "internal/webui/static/vendor/fonts/LICENSE-fonts.txt"
   end
 
   # `brew services start canopy` runs the web UI on http://localhost:8737.
@@ -91,8 +95,10 @@ class Canopy < Formula
 
       To run the web UI as a background service (http://localhost:8737):
         brew services start canopy
-      It serves the wiki named by default_wiki — set that first if you haven't:
-        echo 'default_wiki = "/path/to/wiki"' > ~/.config/canopy/config.toml
+      It serves the wiki named by default_wiki. Adopt your wiki first:
+        canopy init --wiki /path/to/wiki
+      If a default already exists, edit default_wiki in your canopy config
+      while preserving its other settings (the default path is ~/.config/canopy/config.toml).
     EOS
   end
 

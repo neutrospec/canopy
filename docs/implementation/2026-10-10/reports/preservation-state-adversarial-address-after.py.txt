@@ -1,0 +1,21 @@
+from runner import *
+import hashlib
+ROUND=sys.argv[1] if len(sys.argv)>1 else 'after'
+w=ROOT/'fixtures'/ROUND/'resolved-link-move'; (w/'concepts').mkdir(parents=True)
+raw={
+ 'foo.md':'short page',
+ 'foo.md.md':'long page',
+ 'ref.md':'VALID [[concepts/foo.md|short]]\nAMBIGUOUS [[foo.md|which]]\nWRONG_PATH [[entities/foo.md|entity]]\nNESTED [[concepts/nested/foo.md|nested]]\nLONG [[concepts/foo.md.md|long]]\nCODE `[[concepts/foo.md]]`',
+}
+for name,body in raw.items(): (w/'concepts'/name).write_text('---\ntitle: "'+name+'"\ntype: concept\ncreated: 2026-01-01\nupdated: 2026-01-01\ntags: []\n---\n\n'+body+'\n')
+BIN=ROOT/'canopy-fixed'
+def cmd(label,*args):return run(label,[BIN,'--wiki',w,*args,'--json'])
+cmd('address-init','init')
+before=(w/'concepts/ref.md').read_bytes()
+ambiguous=cmd('address-ambiguous-show','show','foo.md')
+normal=cmd('address-short-show','show','concepts/foo.md')
+moved=cmd('address-move','mv','concepts/foo.md','--slug','bar')
+after=(w/'concepts/ref.md').read_bytes()
+result={'wiki':str(w),'before':before.decode(),'before_sha256':hashlib.sha256(before).hexdigest(),'after':after.decode(),'after_sha256':hashlib.sha256(after).hexdigest(),'ambiguous_show':ambiguous,'normal_show':normal,'move':moved,'long_page':(w/'concepts/foo.md.md').read_text()}
+(ROOT/('address-probes-'+ROUND+'.json')).write_text(json.dumps(result,indent=2)+'\n')
+print(json.dumps(result,indent=2))

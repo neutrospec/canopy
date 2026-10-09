@@ -4,75 +4,77 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"strings"
+	"unicode/utf8"
 )
 
-// Chunk is a unit of text to be embedded.
+// Chunk keeps evidence byte ranges separate from model input. Offsets address
+// the parsed page body, including its original whitespace.
 type Chunk struct {
-	Seq  int
-	Text string
-	Hash string // sha256 of Text; lets reindex skip unchanged chunks
+	Seq        int
+	Text       string // verbatim body[Start:End]
+	Input      string // title plus normalized text; only for embedding
+	Hash       string
+	Start, End int
 }
 
-// targetRunes approximates the old system's 400-token segments:
-// bge-m3 averages roughly 1.5-3 runes/token on mixed Korean/English.
 const (
-	targetRunes = 1200
-	maxRunes    = 1600
+	TargetRunes          = 1200
+	MaxRunes             = 1600
+	ChunkerVersion       = "raw-byte-ranges-v1/paragraph-runes/1200/1600"
+	NormalizationVersion = "paragraph-trim-v1/title-prefix"
 )
 
-// Split cuts a page into chunks along paragraph boundaries. The page
-// title is prepended to every chunk so retrieval keeps page context.
+// Split retains contiguous raw ranges; only the model input is normalized.
 func Split(title, body string) []Chunk {
-	paras := strings.Split(body, "\n\n")
+	if strings.TrimSpace(body) == "" {
+		return nil
+	}
 	var chunks []Chunk
-	var cur strings.Builder
-	curLen := 0
-
-	flush := func() {
-		text := strings.TrimSpace(cur.String())
-		cur.Reset()
-		curLen = 0
-		if text == "" {
+	emit := func(start, end int) {
+		raw := body[start:end]
+		if strings.TrimSpace(raw) == "" {
 			return
 		}
-		if title != "" {
-			text = title + "\n\n" + text
-		}
-		sum := sha256.Sum256([]byte(text))
-		chunks = append(chunks, Chunk{
-			Seq:  len(chunks),
-			Text: text,
-			Hash: hex.EncodeToString(sum[:8]),
-		})
-	}
-
-	for _, para := range paras {
-		p := strings.TrimSpace(para)
-		if p == "" {
-			continue
-		}
-		n := len([]rune(p))
-		// Oversized single paragraph: hard-split by runes.
-		if n > maxRunes {
-			flush()
-			runes := []rune(p)
-			for start := 0; start < len(runes); start += targetRunes {
-				end := min(start+targetRunes, len(runes))
-				cur.WriteString(string(runes[start:end]))
-				curLen = end - start
-				flush()
+		var parts []string
+		for _, p := range strings.Split(raw, "\n\n") {
+			if p = strings.TrimSpace(p); p != "" {
+				parts = append(parts, p)
 			}
-			continue
 		}
-		if curLen > 0 && curLen+n > targetRunes {
-			flush()
+		input := strings.Join(parts, "\n\n")
+		if title != "" {
+			input = title + "\n\n" + input
 		}
-		if curLen > 0 {
-			cur.WriteString("\n\n")
-		}
-		cur.WriteString(p)
-		curLen += n
+		sum := sha256.Sum256([]byte(input))
+		chunks = append(chunks, Chunk{Seq: len(chunks), Text: raw, Input: input, Hash: hex.EncodeToString(sum[:]), Start: start, End: end})
 	}
-	flush()
+	start := 0
+	for start < len(body) {
+		end, n, lastBoundary := start, 0, -1
+		for end < len(body) && n < MaxRunes {
+			_, size := utf8.DecodeRuneInString(body[end:])
+			end += size
+			n++
+			if end >= 2 && body[end-2:end] == "\n\n" {
+				lastBoundary = end
+				if n >= TargetRunes {
+					break
+				}
+			}
+			if n >= TargetRunes && lastBoundary > start {
+				end = lastBoundary
+				break
+			}
+		}
+		if end < len(body) && lastBoundary <= start {
+			end = start
+			for n = 0; end < len(body) && n < TargetRunes; n++ {
+				_, size := utf8.DecodeRuneInString(body[end:])
+				end += size
+			}
+		}
+		emit(start, end)
+		start = end
+	}
 	return chunks
 }

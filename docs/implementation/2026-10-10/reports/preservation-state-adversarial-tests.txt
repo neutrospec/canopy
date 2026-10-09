@@ -1,0 +1,79 @@
+Final isolated Go overlay command and output
+{
+  "label": "review-overlay-final",
+  "argv": [
+    "/opt/homebrew/bin/go",
+    "test",
+    "-buildvcs=false",
+    "-overlay=/private/tmp/canopy-preservation-state-review-k2k8h9ze/overlay.json",
+    "-run",
+    "^TestReview",
+    "-v",
+    "./internal/statefile"
+  ],
+  "cwd": "/Users/nobocop/play/canopy",
+  "exit": 0,
+  "stdout": "=== RUN   TestReviewProcessHelper\n    adversarial_review_test.go:84: only entered by review subprocesses\n--- SKIP: TestReviewProcessHelper (0.00s)\n=== RUN   TestReviewAliasLockDeathAndScratchRecovery\n    adversarial_review_test.go:165: live alias exclusion, SIGKILL release, and next-lease scratch cleanup passed\n--- PASS: TestReviewAliasLockDeathAndScratchRecovery (0.05s)\n=== RUN   TestReviewAtomicCreateMoveAndReaders\n    adversarial_review_test.go:250: one complete create, alternating complete reader views, mode retention, archive no-clobber, symlink refusal passed\n--- PASS: TestReviewAtomicCreateMoveAndReaders (0.30s)\n=== RUN   TestReviewCrossProcessFutureUnknownAndStaleLeaf\n    adversarial_review_test.go:299: disjoint process union and stale-leaf refusal retained future version, null and exact large number: {\n          \"opaque\": [\n            90071992547409931234567890,\n            null,\n            {\n              \"unknown\": true\n            }\n          ],\n          \"reads\": {\n            \"alpha\": {\n              \"count\": 1,\n              \"first\": \"2026-10-10T12:00:00Z\",\n              \"last\": \"2026-10-10T12:00:00Z\",\n              \"source\": \"explicit\"\n            },\n            \"beta\": {\n              \"count\": 1,\n              \"first\": \"2026-10-10T12:00:00Z\",\n              \"last\": \"2026-10-10T12:00:00Z\",\n              \"source\": \"explicit\"\n            },\n            \"legacy\": {\n              \"first\": \"2026-01-01T00:00:00Z\",\n              \"last\": \"2026-01-01T00:00:00Z\",\n              \"count\": 1,\n              \"source\": \"explicit\",\n              \"nested\": {\n                \"huge\": 90071992547409931234567890,\n                \"nil\": null\n              }\n            }\n          },\n          \"version\": 91\n        }\n--- PASS: TestReviewCrossProcessFutureUnknownAndStaleLeaf (0.04s)\n=== RUN   TestReviewHealthyPartialReadsAndNullRefusal\n    adversarial_review_test.go:331: healthy half retained/updated independently, null-root and null-entry files preserved\n--- PASS: TestReviewHealthyPartialReadsAndNullRefusal (0.01s)\n=== RUN   TestReviewMixedOffsetEventBoundaries\n    adversarial_review_test.go:373: cutoff query=[{TS:2026-10-10T00:00:01Z Slug:after Door:agent Kind:show Meta:} {TS:2026-10-09T17:00:00-07:00 Slug:at Door:agent Kind:show Meta:}]; retained=[{TS:2026-10-10T00:00:01Z Slug:after Door:agent Kind:show Meta:} {TS:2026-10-09T17:00:00-07:00 Slug:at Door:agent Kind:show Meta:} {TS:not-a-time Slug:invalid Door:agent Kind:show Meta:}]\n--- PASS: TestReviewMixedOffsetEventBoundaries (0.00s)\n=== RUN   TestReviewSnoozeLegacyAndDeclaredDuration\n    adversarial_review_test.go:424: 1/7-day +/- offset and legacy UTC-midnight controls passed\n--- PASS: TestReviewSnoozeLegacyAndDeclaredDuration (0.03s)\n=== RUN   TestReviewTaskRetentionInclusiveCutoffAndFuture\n    adversarial_review_test.go:441: cutoff=2026-07-12T00:00:00Z at-file-before-sha256=6aa7af3c79f56524334c782c4d630b76aa9e1fc6be4914b143776573dba3655e input={\"closed\":\"2026-07-12T00:00:00Z\",\"created\":\"2020-01-01T00:00:00Z\",\"id\":\"at\",\"status\":\"done\",\"type\":\"edit\",\"unknown\":9007199254740993,\"version\":1}\n    adversarial_review_test.go:447: GC removed=2 exact-cutoff present=false\n--- PASS: TestReviewTaskRetentionInclusiveCutoffAndFuture (0.00s)\n=== RUN   TestReviewConfigExtensionPreserveOrRefuse\n    adversarial_review_test.go:477: unsupported same-version TOML extension refused with byte preservation\n--- PASS: TestReviewConfigExtensionPreserveOrRefuse (0.01s)\nPASS\nok  \tgithub.com/neutrospec/canopy/internal/statefile\t0.732s\n",
+  "stderr": "",
+  "seconds": 1.0512
+}
+
+Earlier genuine cleanup/cutoff counterexample (corrected live helper)
+{
+  "label": "review-overlay-live-helper",
+  "argv": [
+    "/opt/homebrew/bin/go",
+    "test",
+    "-buildvcs=false",
+    "-overlay=/private/tmp/canopy-preservation-state-review-k2k8h9ze/overlay.json",
+    "-run",
+    "^TestReview(AliasLock|TaskRetention)",
+    "-v",
+    "./internal/statefile"
+  ],
+  "cwd": "/Users/nobocop/play/canopy",
+  "exit": 1,
+  "stdout": "=== RUN   TestReviewAliasLockDeathAndScratchRecovery\n    adversarial_review_test.go:46: scratch remains: <nil>\n--- FAIL: TestReviewAliasLockDeathAndScratchRecovery (0.06s)\n=== RUN   TestReviewTaskRetentionExactCutoffAndFuture\n    adversarial_review_test.go:93: GC removed=2 exact-cutoff present=false\n    adversarial_review_test.go:94: contract says older than cutoff; removed=2 exact-cutoff stat=stat /private/tmp/canopy-preservation-state-review-k2k8h9ze/tmp/canopy-tests-1086805112/tmp/TestReviewTaskRetentionExactCutoffAndFuture2547261113/001/_meta/tasks/at.json: no such file or directory\n--- FAIL: TestReviewTaskRetentionExactCutoffAndFuture (0.01s)\nFAIL\nFAIL\tgithub.com/neutrospec/canopy/internal/statefile\t0.439s\nFAIL\n",
+  "stderr": "",
+  "seconds": 0.7932
+}
+
+After alias fix, original strict cutoff assertion (subsequently clarified as inclusive)
+{
+  "label": "review-overlay-hashes",
+  "argv": [
+    "/opt/homebrew/bin/go",
+    "test",
+    "-buildvcs=false",
+    "-overlay=/private/tmp/canopy-preservation-state-review-k2k8h9ze/overlay.json",
+    "-run",
+    "^TestReview(AliasLock|TaskRetention)",
+    "-v",
+    "./internal/statefile"
+  ],
+  "cwd": "/Users/nobocop/play/canopy",
+  "exit": 1,
+  "stdout": "=== RUN   TestReviewAliasLockDeathAndScratchRecovery\n    adversarial_review_test.go:47: live alias exclusion, SIGKILL release, and next-lease scratch cleanup passed\n--- PASS: TestReviewAliasLockDeathAndScratchRecovery (0.06s)\n=== RUN   TestReviewTaskRetentionExactCutoffAndFuture\n    adversarial_review_test.go:92: cutoff=2026-07-12T00:00:00Z at-file-before-sha256=6aa7af3c79f56524334c782c4d630b76aa9e1fc6be4914b143776573dba3655e input={\"closed\":\"2026-07-12T00:00:00Z\",\"created\":\"2020-01-01T00:00:00Z\",\"id\":\"at\",\"status\":\"done\",\"type\":\"edit\",\"unknown\":9007199254740993,\"version\":1}\n    adversarial_review_test.go:92: GC removed=2 exact-cutoff present=false\n    adversarial_review_test.go:93: contract says older than cutoff; removed=2 exact-cutoff stat=stat /private/tmp/canopy-preservation-state-review-k2k8h9ze/tmp/canopy-tests-404746455/tmp/TestReviewTaskRetentionExactCutoffAndFuture1711232318/001/_meta/tasks/at.json: no such file or directory\n--- FAIL: TestReviewTaskRetentionExactCutoffAndFuture (0.01s)\nFAIL\nFAIL\tgithub.com/neutrospec/canopy/internal/statefile\t0.542s\nFAIL\n",
+  "stderr": "",
+  "seconds": 1.1818
+}
+
+Latest handoff overlay after shared-source deltas
+{
+  "label": "review-overlay-handoff",
+  "argv": [
+    "/opt/homebrew/bin/go",
+    "test",
+    "-buildvcs=false",
+    "-overlay=/private/tmp/canopy-preservation-state-review-k2k8h9ze/overlay.json",
+    "-run",
+    "^TestReview",
+    "-v",
+    "./internal/statefile"
+  ],
+  "cwd": "/Users/nobocop/play/canopy",
+  "exit": 0,
+  "stdout": "=== RUN   TestReviewProcessHelper\n    adversarial_review_test.go:84: only entered by review subprocesses\n--- SKIP: TestReviewProcessHelper (0.00s)\n=== RUN   TestReviewAliasLockDeathAndScratchRecovery\n    adversarial_review_test.go:165: live alias exclusion, SIGKILL release, and next-lease scratch cleanup passed\n--- PASS: TestReviewAliasLockDeathAndScratchRecovery (0.06s)\n=== RUN   TestReviewAtomicCreateMoveAndReaders\n    adversarial_review_test.go:250: one complete create, alternating complete reader views, mode retention, archive no-clobber, symlink refusal passed\n--- PASS: TestReviewAtomicCreateMoveAndReaders (0.27s)\n=== RUN   TestReviewCrossProcessFutureUnknownAndStaleLeaf\n    adversarial_review_test.go:299: disjoint process union and stale-leaf refusal retained future version, null and exact large number: {\n          \"opaque\": [\n            90071992547409931234567890,\n            null,\n            {\n              \"unknown\": true\n            }\n          ],\n          \"reads\": {\n            \"alpha\": {\n              \"count\": 1,\n              \"first\": \"2026-10-10T12:00:00Z\",\n              \"last\": \"2026-10-10T12:00:00Z\",\n              \"source\": \"explicit\"\n            },\n            \"beta\": {\n              \"count\": 1,\n              \"first\": \"2026-10-10T12:00:00Z\",\n              \"last\": \"2026-10-10T12:00:00Z\",\n              \"source\": \"explicit\"\n            },\n            \"legacy\": {\n              \"first\": \"2026-01-01T00:00:00Z\",\n              \"last\": \"2026-01-01T00:00:00Z\",\n              \"count\": 1,\n              \"source\": \"explicit\",\n              \"nested\": {\n                \"huge\": 90071992547409931234567890,\n                \"nil\": null\n              }\n            }\n          },\n          \"version\": 91\n        }\n--- PASS: TestReviewCrossProcessFutureUnknownAndStaleLeaf (0.04s)\n=== RUN   TestReviewHealthyPartialReadsAndNullRefusal\n    adversarial_review_test.go:331: healthy half retained/updated independently, null-root and null-entry files preserved\n--- PASS: TestReviewHealthyPartialReadsAndNullRefusal (0.01s)\n=== RUN   TestReviewMixedOffsetEventBoundaries\n    adversarial_review_test.go:373: cutoff query=[{TS:2026-10-10T00:00:01Z Slug:after Door:agent Kind:show Meta:} {TS:2026-10-09T17:00:00-07:00 Slug:at Door:agent Kind:show Meta:}]; retained=[{TS:2026-10-10T00:00:01Z Slug:after Door:agent Kind:show Meta:} {TS:2026-10-09T17:00:00-07:00 Slug:at Door:agent Kind:show Meta:} {TS:not-a-time Slug:invalid Door:agent Kind:show Meta:}]\n--- PASS: TestReviewMixedOffsetEventBoundaries (0.00s)\n=== RUN   TestReviewSnoozeLegacyAndDeclaredDuration\n    adversarial_review_test.go:424: 1/7-day +/- offset and legacy UTC-midnight controls passed\n--- PASS: TestReviewSnoozeLegacyAndDeclaredDuration (0.03s)\n=== RUN   TestReviewTaskRetentionInclusiveCutoffAndFuture\n    adversarial_review_test.go:441: cutoff=2026-07-12T00:00:00Z at-file-before-sha256=6aa7af3c79f56524334c782c4d630b76aa9e1fc6be4914b143776573dba3655e input={\"closed\":\"2026-07-12T00:00:00Z\",\"created\":\"2020-01-01T00:00:00Z\",\"id\":\"at\",\"status\":\"done\",\"type\":\"edit\",\"unknown\":9007199254740993,\"version\":1}\n    adversarial_review_test.go:447: GC removed=2 exact-cutoff present=false\n--- PASS: TestReviewTaskRetentionInclusiveCutoffAndFuture (0.00s)\n=== RUN   TestReviewConfigExtensionPreserveOrRefuse\n    adversarial_review_test.go:477: unsupported same-version TOML extension refused with byte preservation\n--- PASS: TestReviewConfigExtensionPreserveOrRefuse (0.01s)\nPASS\nok  \tgithub.com/neutrospec/canopy/internal/statefile\t0.865s\n",
+  "stderr": "",
+  "seconds": 1.2357
+}

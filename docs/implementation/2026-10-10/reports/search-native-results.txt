@@ -1,0 +1,66 @@
+# github.com/neutrospec/canopy/internal/embed.test
+ld: warning: ignoring duplicate libraries: '-ldl'
+# github.com/neutrospec/canopy/internal/search.test
+ld: warning: ignoring duplicate libraries: '-ldl'
+=== RUN   TestORTLoadAndInfer
+    engine_ort_test.go:41: native_load=pass native_infer=pass profile=b43a213e4e503ce2ad5ce576f5b47cf7b7121a43638b56d2cc156f8ccf1f4c84 kind=onnx-external legacy=true load=479.778333ms infer=15.728666ms texts=3 dimension=1024
+    engine_ort_test.go:42: official CLS reference parity=unverified; existing first-output/mean-if-3d/l2 retained
+--- PASS: TestORTLoadAndInfer (0.62s)
+PASS
+ok  	github.com/neutrospec/canopy/internal/embed	1.030s
+=== RUN   TestGroundedRetrievalEval
+    evaluation_test.go:48: corpus_sha256=8e0e9e907269e5cb87a5a6f9920f59c32c5fca9fb6daacc9c2bba6d11a86d5c0 pages=6 queries=10
+    evaluation_test.go:83: profile=b43a213e4e503ce2ad5ce576f5b47cf7b7121a43638b56d2cc156f8ccf1f4c84 covered=6 needs_reindex=0
+=== RUN   TestGroundedRetrievalEval/ko-literal
+    evaluation_test.go:90: {"answerable":true,"candidate_count":1,"hits":["ko-protocol"],"id":"ko-literal","language":"ko","mode":"keyword","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":null,"supporting_spans":1}
+    evaluation_test.go:118: {"answerable":true,"candidate_count":3,"hits":["ko-protocol","negative-lunch","symbol-cpp"],"id":"ko-literal","language":"ko","mode":"semantic","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":1,"supporting_spans":1}
+    evaluation_test.go:119: {"answerable":true,"candidate_count":3,"hits":["ko-protocol","negative-lunch","symbol-cpp"],"id":"ko-literal","language":"ko","mode":"hybrid","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":1,"supporting_spans":1}
+=== RUN   TestGroundedRetrievalEval/en-literal
+    evaluation_test.go:90: {"answerable":true,"candidate_count":1,"hits":["en-cache"],"id":"en-literal","language":"en","mode":"keyword","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":null,"supporting_spans":1}
+    evaluation_test.go:118: {"answerable":true,"candidate_count":3,"hits":["en-cache","code-go","mixed-queue"],"id":"en-literal","language":"en","mode":"semantic","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":1,"supporting_spans":1}
+    evaluation_test.go:119: {"answerable":true,"candidate_count":3,"hits":["en-cache","code-go","mixed-queue"],"id":"en-literal","language":"en","mode":"hybrid","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":1,"supporting_spans":1}
+=== RUN   TestGroundedRetrievalEval/mixed-literal
+    evaluation_test.go:90: {"answerable":true,"candidate_count":1,"hits":["mixed-queue"],"id":"mixed-literal","language":"ko-en","mode":"keyword","ndcg_at_3":0.82623465712856,"recall_at_3":1,"retrieved_supporting_spans":null,"supporting_spans":1}
+    evaluation_test.go:118: {"answerable":true,"candidate_count":3,"hits":["mixed-queue","code-go","symbol-cpp"],"id":"mixed-literal","language":"ko-en","mode":"semantic","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":1,"supporting_spans":1}
+    evaluation_test.go:119: {"answerable":true,"candidate_count":3,"hits":["mixed-queue","code-go","symbol-cpp"],"id":"mixed-literal","language":"ko-en","mode":"hybrid","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":1,"supporting_spans":1}
+=== RUN   TestGroundedRetrievalEval/symbol-literal
+    evaluation_test.go:90: {"answerable":true,"candidate_count":1,"hits":["symbol-cpp"],"id":"symbol-literal","language":"symbol","mode":"keyword","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":null,"supporting_spans":1}
+    evaluation_test.go:118: {"answerable":true,"candidate_count":3,"hits":["symbol-cpp","code-go","en-cache"],"id":"symbol-literal","language":"symbol","mode":"semantic","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":1,"supporting_spans":1}
+    evaluation_test.go:119: {"answerable":true,"candidate_count":3,"hits":["symbol-cpp","code-go","en-cache"],"id":"symbol-literal","language":"symbol","mode":"hybrid","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":1,"supporting_spans":1}
+=== RUN   TestGroundedRetrievalEval/code-literal
+    evaluation_test.go:90: {"answerable":true,"candidate_count":1,"hits":["code-go"],"id":"code-literal","language":"code","mode":"keyword","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":null,"supporting_spans":1}
+    evaluation_test.go:118: {"answerable":true,"candidate_count":3,"hits":["code-go","symbol-cpp","mixed-queue"],"id":"code-literal","language":"code","mode":"semantic","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":1,"supporting_spans":1}
+    evaluation_test.go:119: {"answerable":true,"candidate_count":3,"hits":["code-go","symbol-cpp","mixed-queue"],"id":"code-literal","language":"code","mode":"hybrid","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":1,"supporting_spans":1}
+=== RUN   TestGroundedRetrievalEval/ko-particle
+    evaluation_test.go:90: {"answerable":true,"candidate_count":0,"hits":[],"id":"ko-particle","language":"ko","mode":"keyword","ndcg_at_3":0,"recall_at_3":0,"retrieved_supporting_spans":null,"supporting_spans":1}
+    evaluation_test.go:118: {"answerable":true,"candidate_count":3,"hits":["ko-protocol","code-go","symbol-cpp"],"id":"ko-particle","language":"ko","mode":"semantic","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":1,"supporting_spans":1}
+    evaluation_test.go:119: {"answerable":true,"candidate_count":3,"hits":["ko-protocol","code-go","symbol-cpp"],"id":"ko-particle","language":"ko","mode":"hybrid","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":1,"supporting_spans":1}
+=== RUN   TestGroundedRetrievalEval/en-paraphrase
+    evaluation_test.go:90: {"answerable":true,"candidate_count":0,"hits":[],"id":"en-paraphrase","language":"en","mode":"keyword","ndcg_at_3":0,"recall_at_3":0,"retrieved_supporting_spans":null,"supporting_spans":1}
+    evaluation_test.go:118: {"answerable":true,"candidate_count":3,"hits":["mixed-queue","en-cache","code-go"],"id":"en-paraphrase","language":"en","mode":"semantic","ndcg_at_3":0.6309297535714574,"recall_at_3":1,"retrieved_supporting_spans":1,"supporting_spans":1}
+    evaluation_test.go:119: {"answerable":true,"candidate_count":3,"hits":["mixed-queue","en-cache","code-go"],"id":"en-paraphrase","language":"en","mode":"hybrid","ndcg_at_3":0.6309297535714574,"recall_at_3":1,"retrieved_supporting_spans":1,"supporting_spans":1}
+=== RUN   TestGroundedRetrievalEval/mixed-paraphrase
+    evaluation_test.go:90: {"answerable":true,"candidate_count":0,"hits":[],"id":"mixed-paraphrase","language":"ko-en","mode":"keyword","ndcg_at_3":0,"recall_at_3":0,"retrieved_supporting_spans":null,"supporting_spans":2}
+    evaluation_test.go:118: {"answerable":true,"candidate_count":3,"hits":["mixed-queue","code-go","en-cache"],"id":"mixed-paraphrase","language":"ko-en","mode":"semantic","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":2,"supporting_spans":2}
+    evaluation_test.go:119: {"answerable":true,"candidate_count":3,"hits":["mixed-queue","code-go","en-cache"],"id":"mixed-paraphrase","language":"ko-en","mode":"hybrid","ndcg_at_3":1,"recall_at_3":1,"retrieved_supporting_spans":2,"supporting_spans":2}
+=== RUN   TestGroundedRetrievalEval/unsupported
+    evaluation_test.go:90: {"answerable":false,"candidate_count":0,"hits":[],"id":"unsupported","language":"en","mode":"keyword","ndcg_at_3":0,"recall_at_3":0,"retrieved_supporting_spans":null,"supporting_spans":0}
+    evaluation_test.go:118: {"answerable":false,"candidate_count":3,"hits":["mixed-queue","code-go","en-cache"],"id":"unsupported","language":"en","mode":"semantic","ndcg_at_3":0,"recall_at_3":0,"retrieved_supporting_spans":0,"supporting_spans":0}
+    evaluation_test.go:119: {"answerable":false,"candidate_count":3,"hits":["mixed-queue","code-go","en-cache"],"id":"unsupported","language":"en","mode":"hybrid","ndcg_at_3":0,"recall_at_3":0,"retrieved_supporting_spans":0,"supporting_spans":0}
+=== RUN   TestGroundedRetrievalEval/punctuation
+    evaluation_test.go:90: {"answerable":false,"candidate_count":0,"hits":[],"id":"punctuation","language":"symbol","mode":"keyword","ndcg_at_3":0,"recall_at_3":0,"retrieved_supporting_spans":null,"supporting_spans":0}
+    evaluation_test.go:118: {"answerable":false,"candidate_count":3,"hits":["symbol-cpp","code-go","mixed-queue"],"id":"punctuation","language":"symbol","mode":"semantic","ndcg_at_3":0,"recall_at_3":0,"retrieved_supporting_spans":0,"supporting_spans":0}
+    evaluation_test.go:119: {"answerable":false,"candidate_count":3,"hits":["symbol-cpp","code-go","mixed-queue"],"id":"punctuation","language":"symbol","mode":"hybrid","ndcg_at_3":0,"recall_at_3":0,"retrieved_supporting_spans":0,"supporting_spans":0}
+--- PASS: TestGroundedRetrievalEval (0.75s)
+    --- PASS: TestGroundedRetrievalEval/ko-literal (0.01s)
+    --- PASS: TestGroundedRetrievalEval/en-literal (0.00s)
+    --- PASS: TestGroundedRetrievalEval/mixed-literal (0.00s)
+    --- PASS: TestGroundedRetrievalEval/symbol-literal (0.00s)
+    --- PASS: TestGroundedRetrievalEval/code-literal (0.01s)
+    --- PASS: TestGroundedRetrievalEval/ko-particle (0.01s)
+    --- PASS: TestGroundedRetrievalEval/en-paraphrase (0.01s)
+    --- PASS: TestGroundedRetrievalEval/mixed-paraphrase (0.01s)
+    --- PASS: TestGroundedRetrievalEval/unsupported (0.01s)
+    --- PASS: TestGroundedRetrievalEval/punctuation (0.00s)
+PASS
+ok  	github.com/neutrospec/canopy/internal/search	1.171s

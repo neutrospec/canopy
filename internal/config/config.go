@@ -20,6 +20,8 @@
 package config
 
 import (
+	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -27,6 +29,8 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
+	"github.com/neutrospec/canopy/internal/safefile"
+	"github.com/neutrospec/canopy/internal/wikilock"
 )
 
 func xdgDir(envKey, fallback string) string {
@@ -199,6 +203,11 @@ type globalConfig struct {
 // Reports whether it wrote.
 func AdoptAsDefaultWiki(root string) (bool, error) {
 	path := filepath.Join(ConfigHome(), "config.toml")
+	g, err := wikilock.AcquireFile(context.Background(), path)
+	if err != nil {
+		return false, err
+	}
+	defer g.Unlock()
 	gc := globalConfig{}
 	if _, err := toml.DecodeFile(path, &gc); err == nil && gc.DefaultWiki != "" {
 		return false, nil
@@ -210,8 +219,16 @@ func AdoptAsDefaultWiki(root string) (bool, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return false, err
 	}
-	body := fmt.Sprintf("default_wiki = %q\n", root)
-	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+	values := map[string]any{}
+	if _, err := toml.DecodeFile(path, &values); err != nil && !os.IsNotExist(err) {
+		return false, err
+	}
+	values["default_wiki"] = root
+	var body bytes.Buffer
+	if err := toml.NewEncoder(&body).Encode(values); err != nil {
+		return false, err
+	}
+	if err := safefile.WriteFile(path, body.Bytes(), 0o644); err != nil {
 		return false, err
 	}
 	return true, nil
@@ -277,15 +294,39 @@ func findRoot(explicit string) (string, error) {
 
 // WriteTOML writes the current config to <root>/canopy.toml.
 func (w *Wiki) WriteTOML() error {
-	f, err := os.Create(w.TOMLPath())
+	g, err := wikilock.Acquire(context.Background(), w.Root)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
-	fmt.Fprintln(f, "# canopy configuration — machine-readable schema for this wiki.")
-	fmt.Fprintln(f, "# Tag taxonomy source of truth lives here; SCHEMA.md is the human narrative.")
-	fmt.Fprintln(f, "# topics = subject facet (open set, demand-driven); forms = page-kind facet")
-	fmt.Fprintln(f, "# (closed set, frozen). Governance rules: docs/taxonomy.md in the canopy repo.")
-	fmt.Fprintln(f)
-	return toml.NewEncoder(f).Encode(w.Cfg)
+	defer g.Unlock()
+	if md, err := toml.DecodeFile(w.TOMLPath(), Default()); err == nil {
+		if unknown := md.Undecoded(); len(unknown) > 0 {
+			return fmt.Errorf("config contains unsupported fields %v; original preserved", unknown)
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	var body bytes.Buffer
+	fmt.Fprintln(&body, "# canopy configuration — machine-readable schema for this wiki.")
+	fmt.Fprintln(&body, "# Tag taxonomy source of truth lives here; SCHEMA.md is the human narrative.")
+	fmt.Fprintln(&body, "# topics = subject facet (open set, demand-driven); forms = page-kind facet")
+	fmt.Fprintln(&body, "# (closed set, frozen). Governance rules: docs/taxonomy.md in the canopy repo.")
+	fmt.Fprintln(&body)
+	if err := toml.NewEncoder(&body).Encode(w.Cfg); err != nil {
+		return err
+	}
+	return safefile.WriteFile(w.TOMLPath(), body.Bytes(), 0644)
+}
+
+// EmbeddingWarnings reports unsupported legacy knobs without pretending to
+// implement vector cropping or calling rune counts tokens.
+func (e Embedding) EmbeddingWarnings() []string {
+	var warnings []string
+	if e.Dimension != 1024 {
+		warnings = append(warnings, fmt.Sprintf("embedding.dimension=%d is unsupported; effective dimension comes from the model (default 1024)", e.Dimension))
+	}
+	if e.ChunkTokens != 400 {
+		warnings = append(warnings, fmt.Sprintf("embedding.chunk_tokens=%d is unsupported; effective chunker target_runes=1200 max_runes=1600", e.ChunkTokens))
+	}
+	return warnings
 }

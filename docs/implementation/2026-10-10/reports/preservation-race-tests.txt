@@ -1,0 +1,11 @@
+ok  	github.com/neutrospec/canopy/internal/safefile	2.157s
+ok  	github.com/neutrospec/canopy/internal/wikilock	3.822s
+ok  	github.com/neutrospec/canopy/internal/gitops	4.273s
+ok  	github.com/neutrospec/canopy/internal/wiki	1.329s
+ok  	github.com/neutrospec/canopy/internal/checkout	5.485s
+ok  	github.com/neutrospec/canopy/internal/writeops	2.035s
+ok  	github.com/neutrospec/canopy/internal/genindex	1.870s
+ok  	github.com/neutrospec/canopy/internal/logops	1.764s
+ok  	github.com/neutrospec/canopy/cmd/canopy	23.170s
+ok  	github.com/neutrospec/canopy/internal/wiki	1.156s
+ok  	github.com/neutrospec/canopy/cmd/canopy	25.238s

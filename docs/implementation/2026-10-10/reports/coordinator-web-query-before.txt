@@ -1,0 +1,26 @@
+2026/10/10 03:38:54 GET http://localhost/api/search?q=%ZZ
+2026/10/10 03:38:54 GET http://localhost/search?q=%ZZ
+2026/10/10 03:38:54 GET http://localhost/api/search?q=alpha;bad=x
+2026/10/10 03:38:54 GET http://localhost/api/search?q=alpha&k=-1
+2026/10/10 03:38:54 GET http://localhost/api/search?q=alpha&k=oops
+2026/10/10 03:38:54 GET http://localhost/api/search?q=alpha&k=51
+2026/10/10 03:38:54 GET http://localhost/api/search?q=alpha&k=0
+2026/10/10 03:38:54 GET http://localhost/api/search?k=invalid
+2026/10/10 03:38:54 GET http://localhost/api/search?q=alpha&k=
+2026/10/10 03:38:54 GET http://localhost/api/search?q=alpha
+2026/10/10 03:38:54 GET http://localhost/api/search?q=alpha&k=1
+2026/10/10 03:38:54 GET http://localhost/api/search?q=alpha&k=50
+2026/10/10 03:38:54 GET http://localhost/api/search?q=
+--- FAIL: TestMalformedQueryAndInvalidAPIBoundsRefused (0.04s)
+    boundaries_test.go:113: /api/search?q=%ZZ = 200, want 400
+    boundaries_test.go:113: /search?q=%ZZ = 302, want 400
+    boundaries_test.go:113: /api/search?q=alpha;bad=x = 200, want 400
+    boundaries_test.go:113: /api/search?q=alpha&k=-1 = 200, want 400
+    boundaries_test.go:113: /api/search?q=alpha&k=oops = 200, want 400
+    boundaries_test.go:113: /api/search?q=alpha&k=51 = 200, want 400
+    boundaries_test.go:113: /api/search?q=alpha&k=0 = 200, want 400
+    boundaries_test.go:113: /api/search?k=invalid = 200, want 400
+    boundaries_test.go:113: /api/search?q=alpha&k= = 200, want 400
+FAIL
+FAIL	github.com/neutrospec/canopy/internal/webui	0.650s
+FAIL

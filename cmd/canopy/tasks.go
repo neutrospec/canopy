@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -141,13 +142,15 @@ func cmdTasksAdd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			a, b := wiki.NormalizeLink(args[0]), wiki.NormalizeLink(args[1])
-			for _, s := range []string{a, b} {
-				if _, ok := scan.BySlug[s]; !ok {
-					return fmt.Errorf("page not found: %s", s)
-				}
+			a, err := scan.Find(args[0])
+			if err != nil {
+				return err
 			}
-			t, created, err := tasks.FileConnect(w, a, b, 0, "cli", time.Now())
+			b, err := scan.Find(args[1])
+			if err != nil {
+				return err
+			}
+			t, created, err := tasks.FileConnect(w, a.Slug, b.Slug, 0, "cli", time.Now())
 			if err != nil {
 				return err
 			}
@@ -178,9 +181,9 @@ func cmdTasksAdd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			p, ok := scan.BySlug[wiki.NormalizeLink(args[0])]
-			if !ok {
-				return fmt.Errorf("page not found: %s", args[0])
+			p, err := scan.Find(args[0])
+			if err != nil {
+				return err
 			}
 			raw, err := os.ReadFile(filepath.Join(w.Root, p.RelPath))
 			if err != nil {
@@ -246,6 +249,9 @@ func cmdTasksGC() *cobra.Command {
 		Use:   "gc",
 		Short: "Remove closed tasks older than --days (pending tasks are never touched)",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if days < 0 || int64(days) > int64(math.MaxInt64)/int64(24*time.Hour) {
+				return fmt.Errorf("days must be nonnegative and fit a time.Duration")
+			}
 			w, err := loadWiki()
 			if err != nil {
 				return err

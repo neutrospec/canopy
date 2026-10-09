@@ -1,0 +1,11 @@
+python3 scripts/test-native-download.py
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.494s
+
+OK
+native ready: darwin/arm64 /private/tmp/canopy-web-20261010-livjwz1_/tmp/canopy-native-tests-qwy3e226/lib/libtokenizers.a
+native cache verified
+python3 scripts/check-assets.py
+PASS: 4 pinned assets, 6 notices, packaging declarations, 8 positive/negative controls
+UNVERIFIED: actual release archive (supply --archive PATH)

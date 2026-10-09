@@ -1,0 +1,16 @@
+from runner import *
+import hashlib,re
+
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else None
+results={}
+for stage,binary in [('before',ROOT/'canopy'),('after',ROOT/'canopy-fixed')]:
+ base=ROOT/'fixtures'/('alias-cleanup-'+stage);w=base/'real';(w/'concepts').mkdir(parents=True);(w/'concepts/alpha.md').write_text('---\ntitle: Alpha\ntype: concept\ncreated: 2026-01-01\nupdated: 2026-01-01\ntags: []\n---\n\nCONTROL INPUT\n')
+ init=run('alias-'+stage+'-init',[binary,'--wiki',w,'init','--json']);assert init['exit']==0,init
+ alias=base/'alias';alias.symlink_to(w,target_is_directory=True);scratch=w/'.canopy-tmp-abandoned';scratch.write_bytes(b'partial scratch');before=sha(scratch)
+ r=run('alias-'+stage+'-update',[binary,'--wiki',alias,'update','alpha','--json'])
+ results[stage]={'command':r,'scratch_before_sha':before,'scratch_after_sha':sha(scratch),'page_sha':sha(w/'concepts/alpha.md'),'removed':not scratch.exists()}
+w=ROOT/'fixtures/after1/dotted';binary=ROOT/'canopy-fixed';targets=re.findall(r'\[\[([^\]|#]+)',(w/'index/concepts.md').read_text());links=[]
+for i,target in enumerate(targets):
+ r=run('final-index-link-'+str(i),[binary,'--wiki',w,'show',target,'--json']);links.append({'target':target,'command':r,'actual_rel_path':json.loads(r['stdout']).get('rel_path') if r['exit']==0 else None})
+results['generated_links']={'links':links,'all_resolve':all(x['command']['exit']==0 for x in links),'actual_rel_paths':[x['actual_rel_path'] for x in links]}
+(ROOT/'final-integration-probes.json').write_text(json.dumps(results,indent=2)+'\n');print(json.dumps(results,indent=2))

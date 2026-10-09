@@ -1,16 +1,22 @@
 {{define "content"}}
+<section class="pagehead"><div><h1>{{t "title_graph"}}</h1><p class="muted">{{t "graph_list_hint"}}</p></div></section>
+<div class="graphworkspace">
 <div class="graphwrap">
-  <div class="graphtools">
-    <input type="search" id="graphfind" aria-label="{{t "graph_find_placeholder"}}" placeholder="{{t "graph_find_placeholder"}}" autocomplete="off">
-    <span class="legend"><i class="dot d-entities"></i>entities
-      <i class="dot d-concepts"></i>concepts
-      <i class="dot d-comparisons"></i>comparisons
-      <i class="dot d-unread"></i>{{t "graph_legend_unread"}}
-      <i class="dot d-island"></i>{{t "graph_legend_island"}}</span>
-  </div>
-  <div id="graph"></div>
+  <form class="graphtools" action="/search" method="get">
+    <input type="search" name="q" id="graphfind" aria-label="{{t "graph_find_placeholder"}}" placeholder="{{t "graph_find_placeholder"}}" autocomplete="off">
+    <button class="chip" type="submit">{{t "search_label"}}</button>
+    <a class="chip" id="graph-open" hidden>{{t "graph_open_page"}}</a>
+    <span class="legend"><i class="dot d-entities"></i>entities <i class="dot d-concepts"></i>concepts <i class="dot d-comparisons"></i>comparisons <i class="dot d-unread"></i>{{t "graph_legend_unread"}} <i class="dot d-island"></i>{{t "graph_legend_island"}}</span>
+  </form>
+  <p id="graph-status" class="graphstatus" role="status">{{t "graph_loading"}}</p>
+  <div id="graph" role="img" aria-label="{{t "graph_canvas_label"}}"></div>
   <p class="graphhelp">{{t "graph_help"}}</p>
 </div>
+<details class="graphlist panel" open><summary>{{t "graph_list_title"}} ({{len .GraphPages}})</summary>
+<ul class="pagelist">{{range .GraphPages}}<li><div class="row-main"><a href="{{pageURL .Page.Slug}}">{{or .Page.Title .Page.Slug}}</a><span class="row-meta">{{.Page.Dir}} · {{.Page.Slug}}</span>
+{{if .Links}}<ul class="graphneighbors">{{range .Links}}<li><a href="{{pageURL .Slug}}">{{or .Title .Slug}}</a></li>{{end}}</ul>{{else}}<span class="muted">{{t "graph_no_links"}}</span>{{end}}</div></li>{{end}}</ul>
+</details>
+</div>
 <script src="/static/vendor/force-graph.min.js" defer></script>
-<script src="/static/graph.js" defer></script>
+<script src="{{assetURL "/static/graph.js"}}" defer></script>
 {{end}}

@@ -27,6 +27,15 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: verify the tagged source before publishing
+        run: |
+          make test test-ui test-cli test-assets i18n-check
+          go vet ./...
+          test -z "$(gofmt -l .)"
+          git diff --exit-code
       - name: GoReleaser — GitHub Release + changelog + lite archives
         uses: goreleaser/goreleaser-action@v6
         with:

@@ -7,9 +7,9 @@
 <meta name="theme-color" content="#141816" media="(prefers-color-scheme: dark)">
 <title>{{.Title}} · canopy</title>
 <link rel="preload" href="/static/vendor/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/static/style.css">
-<link rel="stylesheet" href="/static/chroma.css">
-<script src="/static/app.js" defer></script>
+<link rel="stylesheet" href="{{assetURL "/static/style.css"}}">
+<link rel="stylesheet" href="{{assetURL "/static/chroma.css"}}">
+<script src="{{assetURL "/static/app.js"}}" defer></script>
 </head>
 <body data-view="{{.View}}">
 <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>

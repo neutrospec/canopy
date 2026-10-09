@@ -1,0 +1,38 @@
+package resurface_test
+
+import (
+	"fmt"
+	"runtime"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/neutrospec/canopy/internal/resurface"
+	"github.com/neutrospec/canopy/internal/wiki"
+)
+
+func TestAdversarialBridgeCandidateMemory(t *testing.T) {
+	for _, dense:=range []bool{false,true}{
+		t.Run(map[bool]string{false:"orthogonal-control",true:"all-pairs-eligible"}[dense],func(t *testing.T){
+			scan:=&wiki.ScanResult{BySlug:map[string]*wiki.Page{}}
+			vectors:=map[string][]float32{}
+			for i:=0;i<200;i++{
+				slug:=fmt.Sprintf("p%04d",i)
+				p:=&wiki.Page{Slug:slug,Title:slug,RelPath:"concepts/"+slug+".md",Body:strings.Repeat("Current source evidence. ",20)}
+				scan.Pages=append(scan.Pages,p);scan.BySlug[slug]=p
+				v:=make([]float32,1024);axis:=i;if dense{axis=0};v[axis]=1;vectors[slug]=v
+			}
+			state:=&resurface.State{Version:1,Shown:map[string]string{},ShownPairs:map[string]string{},Snoozed:map[string]string{}}
+			runtime.GC()
+			var before,after runtime.MemStats;runtime.ReadMemStats(&before)
+			start:=time.Now()
+			got:=resurface.PickBridges(scan,vectors,state,.7,1,false,time.Unix(1791580000,0))
+			runtime.ReadMemStats(&after)
+			allocated:=after.TotalAlloc-before.TotalAlloc
+			t.Logf("pages=200 dimension=1024 k=1 pair_density=%v candidates=%d returned=%d total_alloc=%d elapsed=%v",dense,map[bool]int{false:0,true:19900}[dense],len(got),allocated,time.Since(start))
+			if dense&&len(got)!=1{t.Fatalf("unexpected dense result: %d",len(got))}
+			if !dense&&len(got)!=0{t.Fatalf("orthogonal control unexpectedly returned: %d",len(got))}
+			if allocated>4<<20{t.Error("one requested bridge eagerly materializes every pair and excerpt")}
+		})
+	}
+}

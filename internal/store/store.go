@@ -5,11 +5,14 @@
 package store
 
 import (
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	_ "modernc.org/sqlite"
 
@@ -17,7 +20,9 @@ import (
 )
 
 type Store struct {
-	db *sql.DB
+	db        *sql.DB
+	profileMu sync.RWMutex
+	profile   *string // profile chosen by this refresh; nil for direct-store callers
 }
 
 // SchemaVersion is the cache DB's layout version. Bump it when the layout
@@ -25,7 +30,22 @@ type Store struct {
 // everything and rebuild. This is intentionally NOT a migrate.Migration —
 // migrating a throwaway would be wasted work (see docs/versioning.md and
 // internal/migrate). It is exported so `canopy version` can report it.
-const SchemaVersion = "2"
+const SchemaVersion = "3"
+
+const MaxK = 1000
+
+func ValidateK(k int) error {
+	if k < 1 || k > MaxK {
+		return fmt.Errorf("k must be between 1 and %d (got %d)", MaxK, k)
+	}
+	return nil
+}
+
+// SourceRevision identifies the observed path, title and exact parsed body.
+func SourceRevision(p *wiki.Page) string {
+	sum := sha256.Sum256([]byte(p.RelPath + "\x00" + p.Title + "\x00" + p.Body))
+	return hex.EncodeToString(sum[:])
+}
 
 const schema = `
 CREATE TABLE IF NOT EXISTS pages (
@@ -35,7 +55,8 @@ CREATE TABLE IF NOT EXISTS pages (
 	type     TEXT,
 	created  TEXT,
 	updated  TEXT,
-	tags     TEXT
+	tags     TEXT,
+	revision TEXT NOT NULL
 );
 CREATE VIRTUAL TABLE IF NOT EXISTS fts USING fts5(
 	slug, title, body, tokenize='unicode61 remove_diacritics 2'
@@ -46,6 +67,10 @@ CREATE TABLE IF NOT EXISTS chunks (
 	hash     TEXT NOT NULL,
 	text     TEXT NOT NULL,
 	vector   BLOB NOT NULL,
+	revision TEXT NOT NULL,
+	profile TEXT NOT NULL,
+	start_byte INTEGER NOT NULL,
+	end_byte INTEGER NOT NULL,
 	PRIMARY KEY (slug, seq)
 );
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
@@ -101,7 +126,7 @@ func (s *Store) RebuildPages(pages []*wiki.Page) error {
 	if _, err := tx.Exec(`DELETE FROM fts`); err != nil {
 		return err
 	}
-	insPage, err := tx.Prepare(`INSERT INTO pages(slug, rel_path, title, type, created, updated, tags) VALUES(?,?,?,?,?,?,?)`)
+	insPage, err := tx.Prepare(`INSERT INTO pages(slug, rel_path, title, type, created, updated, tags, revision) VALUES(?,?,?,?,?,?,?,?)`)
 	if err != nil {
 		return err
 	}
@@ -110,12 +135,18 @@ func (s *Store) RebuildPages(pages []*wiki.Page) error {
 		return err
 	}
 	for _, p := range pages {
-		if _, err := insPage.Exec(p.Slug, p.RelPath, p.Title, p.Type, p.Created, p.Updated, strings.Join(p.Tags, ",")); err != nil {
+		if _, err := insPage.Exec(p.Slug, p.RelPath, p.Title, p.Type, p.Created, p.Updated, strings.Join(p.Tags, ","), SourceRevision(p)); err != nil {
 			return fmt.Errorf("%s: %w", p.RelPath, err)
 		}
 		if _, err := insFTS.Exec(p.Slug, p.Title, p.Body); err != nil {
 			return fmt.Errorf("%s: %w", p.RelPath, err)
 		}
+	}
+	insPage.Close()
+	insFTS.Close()
+	// Invalidate in the short metadata transaction, before model inference.
+	if _, err := tx.Exec(`DELETE FROM chunks WHERE NOT EXISTS (SELECT 1 FROM pages p WHERE p.slug=chunks.slug AND p.revision=chunks.revision)`); err != nil {
+		return err
 	}
 	return tx.Commit()
 }
@@ -132,6 +163,9 @@ type Hit struct {
 // to prefix matches so Korean particles (조사) and English suffixes still
 // match: "프로토콜" finds "프로토콜은".
 func (s *Store) SearchKeyword(query string, k int) ([]Hit, error) {
+	if err := ValidateK(k); err != nil {
+		return nil, err
+	}
 	match := buildMatch(query)
 	if match == "" {
 		return nil, nil
@@ -142,7 +176,7 @@ func (s *Store) SearchKeyword(query string, k int) ([]Hit, error) {
 		       snippet(fts, 2, '»', '«', '…', 12)
 		FROM fts f JOIN pages p ON p.slug = f.slug
 		WHERE fts MATCH ?
-		ORDER BY rank LIMIT ?`, match, k)
+		ORDER BY rank, lower(p.slug), p.slug LIMIT ?`, match, k)
 	if err != nil {
 		return nil, fmt.Errorf("fts query %q: %w", match, err)
 	}

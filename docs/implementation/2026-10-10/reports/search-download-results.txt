@@ -1,0 +1,7 @@
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.408s
+
+OK
+native ready: darwin/arm64 /private/tmp/canopy-search-20261010/tmp/canopy-native-tests-am5x7je4/lib/libtokenizers.a
+native cache verified

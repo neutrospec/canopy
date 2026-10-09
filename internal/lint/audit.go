@@ -41,7 +41,12 @@ func TagAudit(w *config.Wiki, scan *wiki.ScanResult) *TagAuditReport {
 
 	count := map[string]int{}
 	for _, p := range scan.Pages {
+		seen := map[string]bool{}
 		for _, t := range p.Tags {
+			if seen[t] {
+				continue
+			}
+			seen[t] = true
 			count[t]++
 		}
 	}
@@ -53,7 +58,12 @@ func TagAudit(w *config.Wiki, scan *wiki.ScanResult) *TagAuditReport {
 	}
 	usage := func(tags []string) []TagUsage {
 		out := make([]TagUsage, 0, len(tags))
+		seen := map[string]bool{}
 		for _, t := range tags {
+			if seen[t] {
+				continue
+			}
+			seen[t] = true
 			out = append(out, TagUsage{Tag: t, Count: count[t], Pct: pct(count[t])})
 		}
 		sort.SliceStable(out, func(i, j int) bool { return out[i].Count > out[j].Count })

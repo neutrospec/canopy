@@ -1,0 +1,10 @@
+Earlier execution: make i18n-check, exit 0
+scripts/i18n-check.sh
+✓ i18n: 4 translation(s) current
+
+Latest execution after shared docs edits: make i18n-check, exit 2
+scripts/i18n-check.sh
+STALE           README.en.md  (source README.md changed - re-translate, then set the marker sha to fb794098f3b2073103c177a10f4e45fcb1a8cef5)
+STALE           docs/en/getting-started.md  (source docs/getting-started.md changed - re-translate, then set the marker sha to 19479c3f290f239572cf188e05949aa325235bc6)
+✗ i18n: 2 problem(s) across 4 translation(s)
+make: *** [i18n-check] Error 1

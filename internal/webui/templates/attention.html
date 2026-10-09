@@ -1,4 +1,5 @@
 {{define "content"}}
+{{if not .SemanticAvailable}}<p class="muted">{{t "semantic_unavailable"}}</p>{{end}}
 <h1>{{t "attn_title"}}</h1>
 <p class="muted"><a class="wikilink" href="/special/gaps">{{t "attn_gaps_link"}}</a> {{t "attn_gaps_hint"}}</p>
 {{if .Islands}}
@@ -8,13 +9,13 @@
   {{range .Islands}}
   <div class="card">
     <p>
-      {{range $i, $p := .Pages}}{{if $i}} · {{end}}<a class="wikilink" href="/page/{{$p.Slug}}" data-slug="{{$p.Slug}}">{{$p.Slug}}</a>{{end}}
+      {{range $i, $p := .Pages}}{{if $i}} · {{end}}<a class="wikilink" href="{{pageURL $p.Slug}}" data-slug="{{$p.Slug}}">{{$p.Slug}}</a>{{end}}
     </p>
     {{if .HasSuggestion}}
     <p class="muted">🌉 {{t "attn_bridge_label" "Sim" (printf "%.2f" .Sim)}}
-      <a class="wikilink" href="/page/{{.BridgeA}}" data-slug="{{.BridgeA}}">{{.BridgeATitle}}</a>
+      <a class="wikilink" href="{{pageURL .BridgeA}}" data-slug="{{.BridgeA}}">{{.BridgeATitle}}</a>
       ↔
-      <a class="wikilink" href="/page/{{.BridgeB}}" data-slug="{{.BridgeB}}">{{.BridgeBTitle}}</a>
+      <a class="wikilink" href="{{pageURL .BridgeB}}" data-slug="{{.BridgeB}}">{{.BridgeBTitle}}</a>
       — {{t "attn_bridge_connects"}}
       <a class="wikilink" href="/edit/{{.BridgeA}}">{{t "attn_bridge_edit"}}</a>
     </p>
@@ -30,7 +31,7 @@
   <p class="muted">{{t "attn_orphans_hint"}}</p>
   <ul class="pagelist">
     {{range .Orphans}}
-    <li><a class="wikilink" href="/page/{{.Slug}}" data-slug="{{.Slug}}">{{.Title}}</a>
+    <li><a class="wikilink" href="{{pageURL .Slug}}" data-slug="{{.Slug}}">{{.Title}}</a>
         <span class="muted">{{.Dir}}</span></li>
     {{end}}
   </ul>
@@ -40,7 +41,7 @@
   <p class="muted">{{t "attn_stale_hint" "Days" .StaleDays}}</p>
   <ul class="pagelist">
     {{range .Stale}}
-    <li><a class="wikilink" href="/page/{{.Page.Slug}}" data-slug="{{.Page.Slug}}">{{.Page.Title}}</a>
+    <li><a class="wikilink" href="{{pageURL .Page.Slug}}" data-slug="{{.Page.Slug}}">{{.Page.Title}}</a>
         <span class="muted">{{t "attn_days_ago" "Days" .Days}} · {{.Page.Dir}}</span></li>
     {{end}}
   </ul>

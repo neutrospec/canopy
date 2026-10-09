@@ -1,0 +1,26 @@
+import hashlib, json, os, pathlib, subprocess, sys, time
+repo=pathlib.Path('/Users/nobocop/play/canopy')
+work=pathlib.Path('/private/tmp/canopy-improve-20261010')
+reports=repo/'docs/implementation/2026-10-10/reports'
+env=os.environ.copy()
+for key,part in [('HOME','home'),('XDG_CONFIG_HOME','config'),('XDG_DATA_HOME','data'),('XDG_CACHE_HOME','cache'),('XDG_STATE_HOME','state'),('TMPDIR','tmp'),('GOCACHE','go-build')]:
+ env[key]=str(work/part); pathlib.Path(env[key]).mkdir(exist_ok=True)
+env.update(GOMODCACHE='/Users/nobocop/go/pkg/mod',GOTELEMETRY='off',GOPROXY='off',GOTOOLCHAIN='local',GOFLAGS='-mod=readonly',CGO_ENABLED='0',PYTHONDONTWRITEBYTECODE='1')
+def manifest():
+ names=subprocess.check_output(['git','ls-files','-co','--exclude-standard'],cwd=repo,text=True).splitlines()
+ return {n:hashlib.sha256((repo/n).read_bytes()).hexdigest() for n in sorted(set(names)) if not n.startswith('docs/implementation/2026-10-10/reports/') and (repo/n).is_file()}
+result={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip(),'started_utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'environment':{k:env[k] for k in ['HOME','XDG_CONFIG_HOME','XDG_DATA_HOME','XDG_CACHE_HOME','XDG_STATE_HOME','TMPDIR','GOCACHE','GOMODCACHE','GOTELEMETRY','GOPROXY','GOTOOLCHAIN','GOFLAGS','CGO_ENABLED']},'source_before':manifest(),'commands':[]}
+commands=[('integration',['make','test','test-ui','test-cli','test-assets','i18n-check']),('race',['bash','scripts/test-go.sh','-race','-count=1','./internal/...','./cmd/canopy/']),('vet',['go','vet','./...']),('gofmt',['gofmt','-l','.']),('whitespace',['git','diff','--check']),('release-config',['goreleaser','check']),('ruby',['ruby','-c','packaging/homebrew/canopy.rb'])]
+for name,argv in commands:
+ e=env.copy()
+ if name=='race': e['CGO_ENABLED']='1'
+ start=time.monotonic(); p=subprocess.run(argv,cwd=repo,env=e,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
+ log='final-'+name+'.txt'; (reports/log).write_text(p.stdout)
+ valid=p.returncode==0 and (name!='gofmt' or not p.stdout.strip())
+ result['commands'].append({'name':name,'argv':argv,'exit':p.returncode,'passed':valid,'seconds':round(time.monotonic()-start,3),'output':log})
+ print(name, 'PASS' if valid else 'FAIL', 'exit='+str(p.returncode),flush=True)
+ if not valid: break
+result['source_after']=manifest(); result['source_unchanged']=result['source_before']==result['source_after']; result['finished_utc']=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()); result['all_commands_passed']=len(result['commands'])==len(commands) and all(c['passed'] for c in result['commands'])
+(reports/'final-checks.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+print('source_unchanged',result['source_unchanged'],flush=True)
+sys.exit(0 if result['all_commands_passed'] and result['source_unchanged'] else 1)

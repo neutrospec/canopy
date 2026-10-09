@@ -16,7 +16,7 @@
   {{if .Pages}}
   <ul class="pagelist">
     {{range .Pages}}
-    <li><div class="row-main"><a class="wikilink" href="/page/{{.Slug}}" data-slug="{{.Slug}}">{{or .Title .Slug}}</a><div class="row-meta"><span class="dirlabel d-{{.Dir}}">{{.Dir}}</span>{{range .Tags}}<a href="/tag/{{.}}">#{{.}}</a>{{end}}</div></div><time class="row-date">{{.Updated}}</time></li>
+    <li><div class="row-main"><a class="wikilink" href="{{pageURL .Slug}}" data-slug="{{.Slug}}">{{or .Title .Slug}}</a><div class="row-meta"><span class="dirlabel d-{{.Dir}}">{{.Dir}}</span>{{range .Tags}}<a href="/tag/{{.}}">#{{.}}</a>{{end}}</div></div><time class="row-date">{{.Updated}}</time></li>
     {{end}}
   </ul>
   {{else}}<p class="empty">{{t "browse_empty"}}</p>{{end}}

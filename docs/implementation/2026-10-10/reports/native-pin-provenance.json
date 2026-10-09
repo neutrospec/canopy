@@ -1,0 +1,86 @@
+{
+  "source": "https://api.github.com/repos/daulet/tokenizers/releases/tags/v1.27.0",
+  "checked_utc": "2026-10-09T18:55:25Z",
+  "method": "gh api read-only release asset metadata; no archive download or Linux execution",
+  "assets": [
+    {
+      "browser_download_url": "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.darwin-aarch64.tar.gz",
+      "digest": "sha256:fb84b8b2e349a5952767ffe80ccd862fc44084de47f3b0cc3f0b7c9d4e649cf7",
+      "name": "libtokenizers.darwin-aarch64.tar.gz",
+      "size": 13593962
+    },
+    {
+      "browser_download_url": "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.darwin-arm64.tar.gz",
+      "digest": "sha256:fb84b8b2e349a5952767ffe80ccd862fc44084de47f3b0cc3f0b7c9d4e649cf7",
+      "name": "libtokenizers.darwin-arm64.tar.gz",
+      "size": 13593962
+    },
+    {
+      "browser_download_url": "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.darwin-x86_64.tar.gz",
+      "digest": "sha256:6239efe5a81fde8089ef2df8ae710366542b4e5deab6d8ecb74d7d1862db2ddb",
+      "name": "libtokenizers.darwin-x86_64.tar.gz",
+      "size": 13579579
+    },
+    {
+      "browser_download_url": "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-aarch64.tar.gz",
+      "digest": "sha256:e96545ad05930c26f51f63d932ee6d3bbd32bbed149e102c5290d587a2293067",
+      "name": "libtokenizers.linux-aarch64.tar.gz",
+      "size": 14238993
+    },
+    {
+      "browser_download_url": "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-amd64.tar.gz",
+      "digest": "sha256:72556cdca798dd4ea7cdaba308e5f0d68a8cb93b67c96edf485b7a0edd7b07f4",
+      "name": "libtokenizers.linux-amd64.tar.gz",
+      "size": 14331593
+    },
+    {
+      "browser_download_url": "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-arm64.tar.gz",
+      "digest": "sha256:e96545ad05930c26f51f63d932ee6d3bbd32bbed149e102c5290d587a2293067",
+      "name": "libtokenizers.linux-arm64.tar.gz",
+      "size": 14238993
+    },
+    {
+      "browser_download_url": "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-musl-aarch64.tar.gz",
+      "digest": "sha256:8c64d719b7b35d824b7e2ff7fc8c2c49eca806169c11ea71a9c494e909a76399",
+      "name": "libtokenizers.linux-musl-aarch64.tar.gz",
+      "size": 14212078
+    },
+    {
+      "browser_download_url": "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-musl-amd64.tar.gz",
+      "digest": "sha256:8043d2f258b2f4d84d2bef6868e2b971a37b9979afb9000965b38bce706d52d4",
+      "name": "libtokenizers.linux-musl-amd64.tar.gz",
+      "size": 14310968
+    },
+    {
+      "browser_download_url": "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-musl-arm64.tar.gz",
+      "digest": "sha256:8c64d719b7b35d824b7e2ff7fc8c2c49eca806169c11ea71a9c494e909a76399",
+      "name": "libtokenizers.linux-musl-arm64.tar.gz",
+      "size": 14212078
+    },
+    {
+      "browser_download_url": "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-musl-x86_64.tar.gz",
+      "digest": "sha256:8043d2f258b2f4d84d2bef6868e2b971a37b9979afb9000965b38bce706d52d4",
+      "name": "libtokenizers.linux-musl-x86_64.tar.gz",
+      "size": 14310968
+    },
+    {
+      "browser_download_url": "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-ppc64le.tar.gz",
+      "digest": "sha256:085b240fddb3bbe20a8e25ebfc69902d4b85f042a9cac73e73d4dc48ebd6dc3c",
+      "name": "libtokenizers.linux-ppc64le.tar.gz",
+      "size": 13825957
+    },
+    {
+      "browser_download_url": "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-s390x.tar.gz",
+      "digest": "sha256:a973047d621c98cb93a6cae3cdc9f2e93e7e0ffac7d0714617bc5f4a57c80007",
+      "name": "libtokenizers.linux-s390x.tar.gz",
+      "size": 14868437
+    },
+    {
+      "browser_download_url": "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-x86_64.tar.gz",
+      "digest": "sha256:72556cdca798dd4ea7cdaba308e5f0d68a8cb93b67c96edf485b7a0edd7b07f4",
+      "name": "libtokenizers.linux-x86_64.tar.gz",
+      "size": 14331593
+    }
+  ],
+  "disposition": "linux-amd64 and linux-x86_64 are both official assets with identical SHA256 digest and byte size. Existing source and Homebrew URL spellings are valid aliases, so no source change is necessary. Other-platform native execution remains unverified."
+}

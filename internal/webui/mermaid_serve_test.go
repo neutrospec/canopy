@@ -14,6 +14,7 @@ func TestMermaidBundleServedFromValidator(t *testing.T) {
 	s, _ := taskTestServer(t)
 	h := s.Handler()
 	req := httptest.NewRequest("GET", "/static/vendor/mermaid.min.js", nil)
+	req.Host = "localhost"
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	if rec.Code != 200 {

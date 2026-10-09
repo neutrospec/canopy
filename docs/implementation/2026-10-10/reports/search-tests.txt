@@ -1,0 +1,9 @@
+ok  	github.com/neutrospec/canopy/internal/embed	1.163s
+ok  	github.com/neutrospec/canopy/internal/indexer	1.631s
+ok  	github.com/neutrospec/canopy/internal/store	1.474s
+ok  	github.com/neutrospec/canopy/internal/search	1.718s
+ok  	github.com/neutrospec/canopy/cmd/canopy	19.012s
+
+Additional final shared-lease and two-store profile controls:
+ok  	github.com/neutrospec/canopy/internal/indexer	1.571s
+ok  	github.com/neutrospec/canopy/internal/store	1.554s

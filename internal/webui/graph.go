@@ -1,7 +1,9 @@
 package webui
 
 import (
+	"log"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/neutrospec/canopy/internal/reads"
@@ -14,10 +16,11 @@ import (
 
 type graphAPINode struct {
 	ID      string `json:"id"`
+	URL     string `json:"url"`
 	Title   string `json:"title"`
 	Dir     string `json:"dir"`
 	Deg     int    `json:"deg"`     // total degree — drives node size
-	Read    bool   `json:"read"`    // ties into the read-history loop
+	Read    *bool  `json:"read"`    // ties into the read-history loop
 	Island  bool   `json:"island"`  // outside the largest connected component
 	Heat    int    `json:"heat"`    // attention temperature 0–3 (glow strength)
 	Touches int    `json:"touches"` // human read count + agent touch days (tooltip)
@@ -37,11 +40,10 @@ func (s *Server) handleAPIGraph(w http.ResponseWriter, r *http.Request) {
 	}
 	rs, err := reads.Load(s.w)
 	if err != nil {
-		s.fail(w, err)
-		return
+		log.Printf("graph reads: %v", err)
 	}
 	deg := map[string]int{}
-	var links []graphAPILink
+	links := []graphAPILink{}
 	seen := map[string]bool{}
 	for _, p := range scan.Pages {
 		from := strings.ToLower(p.Slug)
@@ -88,21 +90,49 @@ func (s *Server) handleAPIGraph(w http.ResponseWriter, r *http.Request) {
 		case touches >= 1:
 			heat = 1
 		}
+		var read *bool
+		if rs.HumanAvailable() {
+			value := rs.IsRead(slug)
+			read = &value
+		}
 		nodes = append(nodes, graphAPINode{
 			ID:      slug,
+			URL:     pagePath(p),
 			Title:   p.Title,
 			Dir:     p.Dir,
 			Deg:     deg[slug],
-			Read:    rs.IsRead(slug),
+			Read:    read,
 			Island:  islands[slug],
 			Heat:    heat,
 			Touches: touches,
 			Excerpt: FirstParagraph(p.Body, 160),
 		})
 	}
-	s.emit(w, map[string]any{"nodes": nodes, "links": links})
+	s.emit(w, map[string]any{"nodes": nodes, "links": links, "reads_partial": err != nil, "human_available": rs.HumanAvailable(), "agent_available": rs.AgentAvailable(), "touches_scope": "available aggregates"})
+}
+
+type graphListPage struct {
+	Page  *wiki.Page
+	Links []*wiki.Page
 }
 
 func (s *Server) handleGraphPage(w http.ResponseWriter, r *http.Request) {
-	s.render(w, r, http.StatusOK, "graph.html", map[string]any{"Title": localizeString(s.loc(r), "title_graph")})
+	scan, err := wiki.Scan(s.w)
+	if err != nil {
+		s.fail(w, err)
+		return
+	}
+	pages := append([]*wiki.Page(nil), scan.Pages...)
+	sort.Slice(pages, func(i, j int) bool { return pages[i].Slug < pages[j].Slug })
+	rows := make([]graphListPage, 0, len(pages))
+	for _, page := range pages {
+		row := graphListPage{Page: page}
+		for _, target := range page.Links {
+			if p, ok := scan.BySlug[target]; ok {
+				row.Links = append(row.Links, p)
+			}
+		}
+		rows = append(rows, row)
+	}
+	s.render(w, r, http.StatusOK, "graph.html", map[string]any{"Title": localizeString(s.loc(r), "title_graph"), "GraphPages": rows})
 }

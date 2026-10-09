@@ -9,7 +9,7 @@
   <tr>
     <td class="muted">{{.Time}}</td>
     <td><span class="chip">{{.Action}}</span></td>
-    <td>{{if .Exists}}<a class="wikilink" href="/page/{{.Slug}}" data-slug="{{.Slug}}">{{.Slug}}</a>{{else}}{{.Slug}}{{end}}</td>
+    <td>{{if .Exists}}<a class="wikilink" href="{{pageURL .Slug}}" data-slug="{{.Slug}}">{{.Slug}}</a>{{else}}{{.Slug}}{{end}}</td>
     <td class="muted">{{.Note}}</td>
   </tr>
   {{end}}

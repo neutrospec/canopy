@@ -1,0 +1,55 @@
+package indexer_test
+
+import (
+	"encoding/binary"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/embed"
+	"github.com/neutrospec/canopy/internal/indexer"
+	"github.com/neutrospec/canopy/internal/store"
+)
+
+type reviewIdentityEngine struct { profile string; axis int; calls int }
+func (e *reviewIdentityEngine) ProfileID() string { return e.profile }
+func (e *reviewIdentityEngine) Close() error { return nil }
+func (e *reviewIdentityEngine) Embed(texts []string) ([][]float32, error) {
+	e.calls++
+	vs := make([][]float32, len(texts))
+	for i := range vs { vs[i] = make([]float32, 1024); vs[i][e.axis] = 1 }
+	return vs, nil
+}
+
+func TestAdversarialAliasCacheReuse(t *testing.T) {
+	for _, alias := range []bool{false,true} {
+		t.Run(map[bool]string{false:"real-directory-control",true:"legacy-model-symlink"}[alias],func(t *testing.T) {
+			root := t.TempDir()
+			model := filepath.Join(root,"model")
+			if err := os.Mkdir(model,0755); err != nil { t.Fatal(err) }
+			// The graph fixture is used only for cheap identity/readiness.
+			for n,b := range map[string][]byte{"model.onnx":{58,0},"config.json":[]byte(`{"hidden_size":1024}`),"tokenizer.json":[]byte(`{"version":"1.0"}`),"weights.bin":binary.LittleEndian.AppendUint32(nil,1)} {
+				if err := os.WriteFile(filepath.Join(model,n),b,0644); err != nil { t.Fatal(err) }
+			}
+			if alias { path:=filepath.Join(root,"model-alias"); if err:=os.Symlink(model,path);err!=nil{t.Fatal(err)};model=path }
+			w := &config.Wiki{Root:filepath.Join(root,"wiki"),Cfg:config.Default()}
+			w.Cfg.Embedding.Model=model
+			if err:=os.MkdirAll(filepath.Join(w.Root,"concepts"),0755);err!=nil{t.Fatal(err)}
+			if err:=os.WriteFile(filepath.Join(w.Root,"concepts/a.md"),[]byte("---\ntitle: Current claim\n---\nA current claim.\n"),0644);err!=nil{t.Fatal(err)}
+			st,err:=store.Open(filepath.Join(root,"index.db"));if err!=nil{t.Fatal(err)};defer st.Close()
+			old:=&reviewIdentityEngine{profile:embed.ProfileIDFor(model),axis:0}
+			if _,err=indexer.EnsureCurrent(w,st,nil,old,nil);err!=nil{t.Fatal(err)}
+			q:=make([]float32,1024);q[0]=1
+			control,err:=st.SearchChunks(q,1,1);if err!=nil||len(control)!=1||control[0].Score!=1{t.Fatalf("initial control: %+v %v",control,err)}
+			// Simulate a same-dimension model update and a freshly loaded engine.
+			if err=os.WriteFile(filepath.Join(model,"weights.bin"),binary.LittleEndian.AppendUint32(nil,2),0644);err!=nil{t.Fatal(err)}
+			next:=&reviewIdentityEngine{profile:embed.ProfileIDFor(model),axis:1}
+			res,err:=indexer.EnsureCurrent(w,st,nil,next,nil);if err!=nil{t.Fatal(err)}
+			q[0],q[1]=0,1
+			hits,err:=st.SearchChunks(q,1,1);if err!=nil||len(hits)!=1{t.Fatalf("search: %+v %v",hits,err)}
+			t.Logf("alias=%v same_profile=%v recomputed_pages=%d calls=%d score=%g",alias,old.profile==next.profile,res.Embedded,next.calls,hits[0].Score)
+			if next.calls==0||hits[0].Score!=1{t.Error("fresh model query compared with previous model cached vectors")}
+		})
+	}
+}

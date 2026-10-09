@@ -1,0 +1,14 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/neutrospec/canopy/internal/embed
+cpu: Apple M5 Max
+BenchmarkRejectOversizedModelManifest-18    	       1	    295500 ns/op	   29360 B/op	     213 allocs/op
+PASS
+ok  	github.com/neutrospec/canopy/internal/embed	0.357s
+goos: darwin
+goarch: arm64
+pkg: github.com/neutrospec/canopy/internal/resurface
+cpu: Apple M5 Max
+BenchmarkPickBridgesDense-18    	       1	  66651042 ns/op	   14112 B/op	      18 allocs/op
+PASS
+ok  	github.com/neutrospec/canopy/internal/resurface	0.382s

@@ -1,0 +1,266 @@
+{
+  "task_id": "task_b1b965146412",
+  "dispatch_id": "ctx_961220566011",
+  "recorded_at_utc": "2026-10-09T18:26:05.940688+00:00",
+  "repo": "/Users/nobocop/play/canopy",
+  "temporary_root": "/private/tmp/canopy-web-20261010-livjwz1_",
+  "isolation": {
+    "set_before_go_starts": true,
+    "home_xdg_tmp_gocache": "temporary paths under temporary_root",
+    "module_cache": "/Users/nobocop/go/pkg/mod",
+    "module_cache_write_denial": "sandbox-exec deny file-write* subpath",
+    "GOPROXY": "off",
+    "GOTELEMETRY": "off",
+    "CGO_ENABLED": "0",
+    "GOTOOLCHAIN": "local"
+  },
+  "commands": [
+    {
+      "command": "go test -buildvcs=false -json ./internal/webui/ ./internal/wiki/",
+      "exit": 0,
+      "packages": {
+        "github.com/neutrospec/canopy/internal/webui": {
+          "top_level_passed": 41,
+          "including_subtests_passed": 63,
+          "failures": 0,
+          "package_pass": true
+        },
+        "github.com/neutrospec/canopy/internal/wiki": {
+          "top_level_passed": 15,
+          "including_subtests_passed": 20,
+          "failures": 0,
+          "package_pass": true
+        }
+      }
+    },
+    {
+      "command": "make test-ui",
+      "exit": 0,
+      "tests_passed": 36,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": "make test-assets",
+      "exit": 0,
+      "native_fixture_tests": 6,
+      "assets": 4,
+      "notices": 6,
+      "asset_controls": 8,
+      "actual_release_archive": "UNVERIFIED"
+    },
+    {
+      "command": "make i18n-check",
+      "exit": 2,
+      "earlier_exit": 0,
+      "stale": [
+        "README.en.md",
+        "docs/en/getting-started.md"
+      ],
+      "coordinator_notified": "msg_5df8d4725eb9"
+    },
+    {
+      "command": "gofmt -l (ten owned Go files)",
+      "exit": 0,
+      "output": ""
+    },
+    {
+      "command": "git diff --check",
+      "exit": 0,
+      "output": ""
+    }
+  ],
+  "archive_fixture_cli": [
+    {
+      "path": "notices-fixture.tar.gz",
+      "sha256": "f1f0d121820b804805b67090a8ec29b6fa8dbc7569e2ce74cdc38238ab141a49",
+      "exit": 0,
+      "contains_release_binary": false
+    },
+    {
+      "path": "notices-fixture.zip",
+      "sha256": "6df4ed8ee1c55a646a6797ddab6cc4424993bddf05e492e883567bb8e4eab608",
+      "exit": 0,
+      "contains_release_binary": false
+    },
+    {
+      "path": "missing-manifest.tar.gz",
+      "sha256": "2167dddb9788a9857cb57d3595ed03a5d459fadd584a1007c7400a26b585c1e8",
+      "exit": 1,
+      "contains_release_binary": false
+    }
+  ],
+  "owned_source_snapshot": {
+    "internal/webui/server.go": {
+      "bytes": 25472,
+      "sha256": "cbc9d437d1c7c3b13c953a3f7217b7d5c27453942a7dffb2fe72a9acc55c370c"
+    },
+    "internal/webui/discover.go": {
+      "bytes": 5897,
+      "sha256": "073f2816b57f9b7e79d8d8a6c12a2c9d162d370e8bf12ba86b8c9bd59225bceb"
+    },
+    "internal/webui/speak.go": {
+      "bytes": 6254,
+      "sha256": "b50298692c361f6b6984c8552c216da8139adedc9ae2f1bc4a80b24f144ccce7"
+    },
+    "internal/webui/tasks.go": {
+      "bytes": 6875,
+      "sha256": "df8e29ce37a0d23f38597c4a553a7965e4f1169168dc3021720a997871f94778"
+    },
+    "internal/webui/edit.go": {
+      "bytes": 2312,
+      "sha256": "dd990a83ac2c7a7bbbd054500a698792068639c1ddfcd4423d6c097403656400"
+    },
+    "internal/webui/graph.go": {
+      "bytes": 3792,
+      "sha256": "e6e4a199716660eecf7b69b31f77d913d5e1e0e333788d873504566332ec3ff1"
+    },
+    "internal/webui/suggest.go": {
+      "bytes": 2175,
+      "sha256": "816ea0be7f2c343a500cc6522d6d5e7500324529fdaa5bea2d747137c416c374"
+    },
+    "internal/webui/browse.go": {
+      "bytes": 9300,
+      "sha256": "4f26dfef2cdfcb918004a1aa972b54ffa058e41f569a8acf7a1a8bf026c99e60"
+    },
+    "internal/webui/tasks_test.go": {
+      "bytes": 9233,
+      "sha256": "cc525951c08d9631528c6da6557af3f02f6bfd5c8f40d5abcac62654be1ba946"
+    },
+    "internal/webui/contracts_test.go": {
+      "bytes": 19052,
+      "sha256": "82db6f652d2fdb671abdee0685c6bfd12e324c7b678086272deaa159c1221bcf"
+    },
+    "internal/webui/static/app.js": {
+      "bytes": 15475,
+      "sha256": "ced8520f3bb6d46719898dbeadc2e2faaffdcd392fe7c2b5cb30c29037e18882"
+    },
+    "internal/webui/static/graph.js": {
+      "bytes": 9013,
+      "sha256": "4918ee8f9b87b5b63b274bbad25d6c64334f1b739731402f6fc774ef0942c47e"
+    },
+    "internal/webui/static/style.css": {
+      "bytes": 29567,
+      "sha256": "983d2ed8ce8144afaf8266d5b6923138341bd20da761f7e9e4ba004576bbf276"
+    },
+    "internal/webui/static/chroma.css": {
+      "bytes": 6376,
+      "sha256": "341e2df85fd23a7060e31b37dc9491769683e23475371d929c3a7d28d4a41079"
+    },
+    "internal/webui/locales/active.en.toml": {
+      "bytes": 11635,
+      "sha256": "da6d03b84a1cfe651a7ef7f0b35f06ad48ffc4fc9fdb43dd45016a5b588b1321"
+    },
+    "internal/webui/locales/active.ko.toml": {
+      "bytes": 13072,
+      "sha256": "bbf90b42fd0daa5bd27a39a67b55d7249baf3d37f2f799622c610f8e263dde67"
+    },
+    "internal/webui/templates/attention.html": {
+      "bytes": 1914,
+      "sha256": "ae1c60c23a73d2e63249083b1458ee985ee744f765b39bc37d722051baa4a01b"
+    },
+    "internal/webui/templates/base.html": {
+      "bytes": 5751,
+      "sha256": "cd8ab410c41800498ad02b229f3550da8de00990499b84096cb49d247d1bcec6"
+    },
+    "internal/webui/templates/browse.html": {
+      "bytes": 1673,
+      "sha256": "406679d75a9139be09a5390a97443d2645a3290e2a79de4695b2968d7b6c1b9a"
+    },
+    "internal/webui/templates/discover.html": {
+      "bytes": 1071,
+      "sha256": "03a747495a7630e4ba370e1b988d8e2643c8fa8b83306e7488753e7dfbd22902"
+    },
+    "internal/webui/templates/edit.html": {
+      "bytes": 792,
+      "sha256": "0b3f9370f30a2af0a820aaa03e604385fa83818c496ef85e53e24d5e18274dd9"
+    },
+    "internal/webui/templates/graph.html": {
+      "bytes": 1707,
+      "sha256": "429b501d2ebc1712a16e3de5916facfd31e120e76310e6a138e90045c902c017"
+    },
+    "internal/webui/templates/history.html": {
+      "bytes": 846,
+      "sha256": "3132685742c7fb69bc475852d63097f24e5690794369c06f21fa95ad643da69f"
+    },
+    "internal/webui/templates/home.html": {
+      "bytes": 5242,
+      "sha256": "e01a4aeaec140839a07f7bdd5063c1c9dac44cafb17c7ff1eb9b5ea5cc8780d2"
+    },
+    "internal/webui/templates/page.html": {
+      "bytes": 6965,
+      "sha256": "0bcc3b89ba0f6cf8de7a659bbf1bbcc5e760c7b2423fb21c1d85aa0003e93cef"
+    },
+    "internal/webui/templates/recent.html": {
+      "bytes": 684,
+      "sha256": "9150ce77b04f802eab0fa457d7b96c46430eaad064ba84296669f80cdf9b2d9e"
+    },
+    "internal/webui/templates/search.html": {
+      "bytes": 781,
+      "sha256": "033feadb82e0d791484bae8c24d09561c800f49f93456887a7f9ad75fc79c3d4"
+    },
+    "internal/webui/templates/tasks.html": {
+      "bytes": 1680,
+      "sha256": "a8c5c3ac9afd9bb072ea28cce28e69b77e6a45a4727135f44a6509e9a33f6d22"
+    },
+    "internal/webui/uitest/app.test.cjs": {
+      "bytes": 18952,
+      "sha256": "b2d6a7ecf3333c919d7a79cb35dacf251d3dd6dcbec6cdfbcd2ed5a03dee6215"
+    },
+    "internal/webui/uitest/math.test.cjs": {
+      "bytes": 2063,
+      "sha256": "6245e00da989f2a0844bf0a7586fc8c9b9fa05e7e19e83be73928f3a4f8c170a"
+    },
+    "internal/webui/static/vendor/LICENSE-force-graph.txt": {
+      "bytes": 1072,
+      "sha256": "5b6dc9ce44c7b73620b191c567339212bd00537af46fdedaf98304c34214cc9c"
+    },
+    "internal/webui/static/vendor/NOTICE-force-graph.txt": {
+      "bytes": 403,
+      "sha256": "b3b032c8c948d2b2baa9911cd1a625fb351e01cfb85bed18583a37227ab566a0"
+    },
+    "internal/webui/static/vendor/LICENSE-mathjax.txt": {
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "internal/webui/static/vendor/NOTICE-mathjax.txt": {
+      "bytes": 667,
+      "sha256": "43a360b0822d5781b8abf7b21382dfcbb961960925f6a171e95a2d184684e1e9"
+    },
+    "internal/webui/static/vendor/mathjax-color.js": {
+      "bytes": 8627,
+      "sha256": "7fdc8f7cda1630f35ccd579379ba04add9dec50c66cebbc05a4b129027b32435"
+    },
+    "internal/webui/static/vendor/mathjax-physics.js": {
+      "bytes": 24029,
+      "sha256": "83d5ad43ea478baf855e0ef9456d63d2d735d10c78ab7544019e0cb0b8083a83"
+    },
+    "internal/webui/static/vendor/assets.json": {
+      "bytes": 4312,
+      "sha256": "41c6328fa914c97b6ec4148445cd8a1365e9f4c6595c07f2b163ed47e472e14f"
+    },
+    "docs/web-contract.md": {
+      "bytes": 5156,
+      "sha256": "00d1bdcf5c5fe71f03b46d1d5da42a9a49619a57917e9f79c8eceaa764f36f6c"
+    },
+    "THIRD_PARTY_NOTICES.md": {
+      "bytes": 2227,
+      "sha256": "396c1fc1aea2877139a57be3a24bebb1c40982561ed469685d2b51a8f84019a7"
+    },
+    "scripts/check-assets.py": {
+      "bytes": 6574,
+      "sha256": "141214e545ad51354f9f891071347c528734909453cfef3f9cbbbe048e6f8f94"
+    }
+  },
+  "unverified": [
+    "actual browser 360/1280 light/dark",
+    "paint/focus/IME/accessibility",
+    "JS-off browser flows",
+    "Mermaid/MathJax/canvas browser execution",
+    "malicious-browser exploit",
+    "real ORT inference/interruption",
+    "actual release archive",
+    "Homebrew install",
+    "deployed-server refresh"
+  ]
+}

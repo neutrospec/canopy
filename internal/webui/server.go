@@ -2,11 +2,14 @@ package webui
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"encoding/json"
 	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -21,6 +24,7 @@ import (
 	"github.com/neutrospec/canopy/internal/indexer"
 	"github.com/neutrospec/canopy/internal/mermaid"
 	"github.com/neutrospec/canopy/internal/reads"
+	"github.com/neutrospec/canopy/internal/resurface"
 	"github.com/neutrospec/canopy/internal/search"
 	"github.com/neutrospec/canopy/internal/store"
 	"github.com/neutrospec/canopy/internal/tasks"
@@ -35,7 +39,7 @@ var assets embed.FS
 type Server struct {
 	w   *config.Wiki
 	eng cembed.Engine
-	mu  sync.Mutex // serializes engine + store access
+	mu  sync.Mutex // serializes this server's explicit/automatic read updates
 	// tmpl is keyed by locale then template name: each locale gets its own
 	// parsed set with `t` bound to that locale's localizer (html/template
 	// binds funcs at parse time). See docs/web-ui-i18n.md.
@@ -44,6 +48,10 @@ type Server struct {
 
 	auth         *authStore
 	authRequired bool
+	hosts        *hostPolicy
+	searchSlots  chan struct{}
+	indexSlot    chan struct{}
+	staticTags   map[string]string
 
 	dailyMu sync.Mutex
 	daily   daily
@@ -56,10 +64,28 @@ func NewServer(w *config.Wiki, eng cembed.Engine) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	s := &Server{w: w, eng: eng, i18n: ib, tmpl: map[string]map[string]*template.Template{}}
+	s := &Server{w: w, eng: eng, i18n: ib, tmpl: map[string]map[string]*template.Template{}, searchSlots: make(chan struct{}, 8), indexSlot: make(chan struct{}, 1)}
+	s.staticTags = map[string]string{}
+	if err := fs.WalkDir(assets, "static", func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		data, err := assets.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		s.staticTags["/"+path] = `"` + contentHash(data) + `"`
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	s.staticTags["/static/vendor/mermaid.min.js"] = `"` + contentHash(mermaid.Bundle) + `"`
 	for _, lang := range ib.langs {
 		loc := ib.localizer(lang)
-		funcs := template.FuncMap{"short": short}
+		funcs := template.FuncMap{"short": short, "pathref": url.PathEscape, "assetURL": assetURL, "pageURL": func(ref string) string { return "/page/" + url.PathEscape(ref) }}
 		for k, v := range i18nFuncMap(loc) {
 			funcs[k] = v
 		}
@@ -85,12 +111,21 @@ func (s *Server) loc(r *http.Request) *i18n.Localizer {
 
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("GET /static/", http.FileServerFS(assets))
+	staticFiles := http.FileServerFS(assets)
+	mux.Handle("GET /static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache")
+		if tag := s.staticTags[r.URL.Path]; tag != "" {
+			w.Header().Set("ETag", tag)
+		}
+		staticFiles.ServeHTTP(w, r)
+	}))
 	// The mermaid bundle lives in internal/mermaid (which validates wiki
 	// diagrams with it); serving that same copy keeps parser and renderer
 	// in lockstep (invariant P3). More specific pattern wins over /static/.
 	mux.HandleFunc("GET /static/vendor/mermaid.min.js", func(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+		rw.Header().Set("Cache-Control", "no-cache")
+		rw.Header().Set("ETag", s.staticTags["/static/vendor/mermaid.min.js"])
 		http.ServeContent(rw, r, "mermaid.min.js", time.Time{}, bytes.NewReader(mermaid.Bundle))
 	})
 	mux.HandleFunc("GET /page/{slug}", s.handlePage)
@@ -123,7 +158,17 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /logout", s.handleLogout)
 	mux.HandleFunc("GET /setlang", s.handleSetLang)
 	mux.HandleFunc("GET /{$}", s.handleHome)
-	return logRequests(s.guard(mux))
+	return logRequests(s.hostGuard(s.guard(s.requestLimits(mux))))
+}
+
+// assetURL changes with the exact embedded bytes, so a same-origin upgrade
+// cannot reuse stale application CSS/JS under an unchanged URL.
+func assetURL(path string) string {
+	data, err := assets.ReadFile(strings.TrimPrefix(path, "/"))
+	if err != nil {
+		return path
+	}
+	return path + "?v=" + contentHash(data)[:12]
 }
 
 func logRequests(next http.Handler) http.Handler {
@@ -159,8 +204,29 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name
 		set = s.tmpl[defaultLang]
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache")
 	w.WriteHeader(status)
-	if err := set[name].ExecuteTemplate(w, "base.html", data); err != nil {
+	// Template-only links can disambiguate lawful slugs ending in .md by
+	// using the governed path. Load the map lazily, only for such names.
+	tmpl, err := set[name].Clone()
+	if err != nil {
+		log.Printf("template clone: %v", err)
+		return
+	}
+	var refs *wiki.ScanResult
+	var refsOnce sync.Once
+	tmpl = tmpl.Funcs(template.FuncMap{"pageURL": func(ref string) string {
+		if strings.HasSuffix(strings.ToLower(ref), ".md") {
+			refsOnce.Do(func() { refs, _ = wiki.Scan(s.w) })
+			if refs != nil {
+				if p := refs.BySlug[strings.ToLower(ref)]; p != nil {
+					return pagePath(p)
+				}
+			}
+		}
+		return "/page/" + url.PathEscape(ref)
+	}})
+	if err := tmpl.ExecuteTemplate(w, "base.html", data); err != nil {
 		log.Printf("template %s: %v", name, err)
 	}
 }
@@ -169,7 +235,8 @@ var clientMessageIDs = []string{
 	"copy_button", "copy_done", "copy_failed", "heading_link", "page_toc_title",
 	"page_read_label", "page_auto", "page_reread", "page_reread_title",
 	"page_cancel", "page_unread_title", "graph_links", "graph_touches",
-	"graph_legend_unread", "graph_legend_island", "graph_load_failed",
+	"graph_legend_unread", "graph_legend_island", "graph_load_failed", "graph_status_unknown", "graph_available_touches", "reads_partial",
+	"page_read_failed", "page_read_auth", "diagram_failed", "math_failed", "math_source",
 }
 
 func activeNav(name string) string {
@@ -218,10 +285,13 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	rs, err := reads.Load(s.w)
-	if err != nil {
-		s.fail(w, err)
-		return
+	vectors, current, indexErr := s.currentVectors(r.Context(), scan)
+	if indexErr != nil {
+		log.Printf("home index: %v", indexErr)
+	}
+	rs, readErr := reads.Load(s.w)
+	if readErr != nil {
+		log.Printf("home reads: %v", readErr)
 	}
 	now := time.Now()
 	byDir := map[string]int{}
@@ -275,11 +345,15 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	// Locale-dependent display strings are built here, where the data is,
 	// and passed in finished (docs/web-ui-i18n.md); static labels use {{t}}.
 	lc := s.loc(r)
-	discover := s.discoverRanked(scan, rs, now, lc)
+	discover := s.discoverRanked(scan, rs, vectors, now, lc)
 	if len(discover) > 4 {
 		discover = discover[:4]
 	}
-	pick, bridge := s.todaysCard()
+	var pick *resurface.Pick
+	var bridge *resurface.Bridge
+	if r.Method != http.MethodHead && readErr == nil {
+		pick, bridge = s.todaysCard(scan, rs, vectors)
+	}
 	pendingCount, tasksErr := tasks.PendingCount(s.w)
 	if tasksErr != nil {
 		log.Printf("home task summary: %v", tasksErr)
@@ -300,20 +374,23 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.render(w, r, http.StatusOK, "home.html", map[string]any{
-		"Title":          localizeString(lc, "nav_home"),
-		"Date":           date,
-		"Total":          len(scan.Pages),
-		"ReadTotal":      readTotal,
-		"UnreadTotal":    len(scan.Pages) - readTotal,
-		"PendingCount":   pendingCount,
-		"TasksAvailable": tasksErr == nil,
-		"Dirs":           dirs,
-		"ReadProgress":   readProgress,
-		"TodayLine":      todayLine,
-		"Recent":         recent,
-		"Discover":       discover,
-		"Pick":           pick,
-		"Bridge":         bridge,
+		"Title":             localizeString(lc, "nav_home"),
+		"Date":              date,
+		"Total":             len(scan.Pages),
+		"ReadTotal":         readTotal,
+		"UnreadTotal":       len(scan.Pages) - readTotal,
+		"ReadAvailable":     rs.HumanAvailable(),
+		"ReadsPartial":      readErr != nil,
+		"SemanticAvailable": indexErr == nil && current != nil && current.SemanticReady,
+		"PendingCount":      pendingCount,
+		"TasksAvailable":    tasksErr == nil,
+		"Dirs":              dirs,
+		"ReadProgress":      readProgress,
+		"TodayLine":         todayLine,
+		"Recent":            recent,
+		"Discover":          discover,
+		"Pick":              pick,
+		"Bridge":            bridge,
 	})
 }
 
@@ -325,24 +402,37 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	slug := wiki.NormalizeLink(r.PathValue("slug"))
-	p, ok := scan.BySlug[slug]
-	if !ok {
+	vectors, current, indexErr := s.currentVectors(r.Context(), scan)
+	if indexErr != nil {
+		log.Printf("page suggestions: %v", indexErr)
+	}
+	p, err := scan.Find(r.PathValue("slug"))
+	if err != nil {
 		// Wikipedia pattern: a missing page is a search, not a dead end.
 		s.searchFallback(w, r, r.PathValue("slug"))
 		return
 	}
-	body, err := RenderPage(p.Body, func(t string) bool { _, ok := scan.BySlug[t]; return ok })
+	body, err := RenderPageWithResolver(p.Body, func(target string) (string, string, bool) {
+		linked, err := scan.Find(target)
+		if err != nil {
+			return wiki.NormalizeLink(target), target, false
+		}
+		reference := linked.Slug
+		if strings.HasSuffix(strings.ToLower(reference), ".md") {
+			reference = linked.RelPath
+		}
+		return strings.ToLower(linked.Slug), reference, true
+	})
 	if err != nil {
 		s.fail(w, err)
 		return
 	}
+	slug := strings.ToLower(p.Slug)
 	backlinks := scan.Backlinks()[slug]
 	nodes, edges := localGraph(scan, p, backlinks)
-	rs, err := reads.Load(s.w)
-	if err != nil {
-		s.fail(w, err)
-		return
+	rs, readErr := reads.Load(s.w)
+	if readErr != nil {
+		log.Printf("page reads: %v", readErr)
 	}
 	// A page open is exposure-plus, not a read (원칙 12): it goes to the
 	// machine-local event log only, never into the read aggregates.
@@ -370,27 +460,46 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 	// Delegated-task wiring (docs/agent-tasks.md): pending tasks show as
 	// the page's todo list, and suggestions with a filed connect task
 	// swap their button for a "requested" marker.
-	pageTasks, filed := s.pageTasks(slug, lc)
-	suggested := s.suggestLinks(scan, p, backlinks)
+	pageTasks, filed, tasksErr := s.pageTasks(slug, lc)
+	if tasksErr != nil {
+		log.Printf("page task summary: %v", tasksErr)
+	}
+	suggested := s.suggestLinks(scan, p, backlinks, vectors)
 	for i := range suggested {
 		suggested[i].Requested = filed[strings.ToLower(suggested[i].Slug)]
 	}
+	var receipt *tasks.Task
+	if id := r.URL.Query().Get("tasked"); id != "" {
+		if task, err := tasks.Get(s.w, id); err == nil && task.Involves(slug) {
+			receipt = task
+		}
+	}
+	receiptStatus := ""
+	if receipt != nil {
+		receiptStatus = taskStatusLabel(lc, receipt.Status)
+	}
 	s.render(w, r, http.StatusOK, "page.html", map[string]any{
-		"Title":      p.Title,
-		"Page":       p,
-		"Body":       body,
-		"Backlinks":  backlinks,
-		"GraphNodes": nodes,
-		"GraphEdges": edges,
-		"Read":       rs.Get(slug),
-		"ReadAgo":    readAgo(rs.Get(slug), time.Now(), lc),
-		"AgentDays":  agentDays,
-		"AttnRecent": attnRecent,
-		"Spark":      spark,
-		"ReadSecs":   readThresholdSecs(p),
-		"Suggested":  suggested,
-		"Tasks":      pageTasks,
-		"Tasked":     r.URL.Query().Get("tasked") == "1",
+		"Title":             p.Title,
+		"Page":              p,
+		"Body":              body,
+		"Backlinks":         backlinks,
+		"GraphNodes":        nodes,
+		"GraphEdges":        edges,
+		"Read":              rs.Get(slug),
+		"ReadAvailable":     rs.HumanAvailable(),
+		"AgentAvailable":    rs.AgentAvailable(),
+		"ReadsPartial":      readErr != nil,
+		"SemanticAvailable": indexErr == nil && current != nil && current.SemanticReady,
+		"ReadAgo":           readAgo(rs.Get(slug), time.Now(), lc),
+		"AgentDays":         agentDays,
+		"AttnRecent":        attnRecent,
+		"Spark":             spark,
+		"ReadSecs":          readThresholdSecs(p),
+		"Suggested":         suggested,
+		"Tasks":             pageTasks,
+		"TasksAvailable":    tasksErr == nil,
+		"TaskReceipt":       receipt,
+		"TaskReceiptStatus": receiptStatus,
 	})
 }
 
@@ -444,68 +553,112 @@ type result struct {
 	Title   string
 	Score   float64
 	Snippet string
+	URL     string
 }
 
-// runSearch mirrors cmdSearch: hybrid unless the engine is missing
-// (keyword-only fallback). refresh controls whether the index is
-// rebuilt first — full page loads do, per-keystroke API calls skip it.
-func (s *Server) runSearch(query string, k int, refresh bool) ([]result, string, bool, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	scan, err := wiki.Scan(s.w)
-	if err != nil {
-		return nil, "", false, err
+// withCurrentIndex serializes access without making canceled requests wait on
+// a mutex and then start inference. The queue has a separate bounded budget;
+// native work already running can outlive cancellation until its next boundary.
+func (s *Server) withCurrentIndex(ctx context.Context, scan *wiki.ScanResult, use func(context.Context, *store.Store, *indexer.Result) error) error {
+	queued, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	select {
+	case s.indexSlot <- struct{}{}:
+	case <-queued.Done():
+		return queued.Err()
 	}
+	defer func() { <-s.indexSlot }()
+	if err := queued.Err(); err != nil {
+		return err
+	}
+	work, stop := context.WithTimeout(ctx, 30*time.Second)
+	defer stop()
 	st, err := store.Open(s.w.DBPath())
 	if err != nil {
-		return nil, "", false, err
+		return err
 	}
 	defer st.Close()
-	if refresh {
-		if _, err := indexer.Reindex(s.w, st, scan, s.eng, nil); err != nil {
-			return nil, "", false, err
-		}
-	}
-	kw, err := st.SearchKeyword(query, k)
+	current, err := indexer.EnsureCurrentContext(work, s.w, st, scan, s.eng, nil)
 	if err != nil {
-		return nil, "", false, err
+		return err
 	}
-	mode := "keyword"
-	hits := kw
-	// Best matching chunk per page: shows WHICH paragraph matched,
-	// not just that the page did.
-	chunkText := map[string]string{}
-	if s.eng != nil {
-		qv, err := s.eng.Embed([]string{query})
-		if err != nil {
-			return nil, "", false, err
+	if err := work.Err(); err != nil {
+		return err
+	}
+	return use(work, st, current)
+}
+
+// currentVectors is the shared evidence boundary for discovery, bridges, and
+// suggestions. An incomplete/profile-stale corpus must not masquerade as a
+// complete semantic ranking; non-vector discovery signals still work.
+func (s *Server) currentVectors(ctx context.Context, scan *wiki.ScanResult) (map[string][]float32, *indexer.Result, error) {
+	var vectors map[string][]float32
+	var current *indexer.Result
+	err := s.withCurrentIndex(ctx, scan, func(_ context.Context, st *store.Store, res *indexer.Result) error {
+		current = res
+		if !res.SemanticReady {
+			return nil
 		}
-		sem, err := st.SearchSemantic(qv[0], k)
+		var err error
+		vectors, err = st.PageVectors()
+		return err
+	})
+	return vectors, current, err
+}
+
+type searchOutcome struct {
+	Results      []result
+	Mode         string
+	KeywordEmpty bool
+	Index        *indexer.Result
+}
+
+func (s *Server) runSearch(ctx context.Context, query string, k int) (searchOutcome, error) {
+	out := searchOutcome{Results: []result{}, Mode: "keyword"}
+	scan := &wiki.ScanResult{}
+	err := s.withCurrentIndex(ctx, scan, func(work context.Context, st *store.Store, current *indexer.Result) error {
+		out.Index = current
+		kw, err := st.SearchKeyword(query, k)
 		if err != nil {
-			return nil, "", false, err
+			return err
 		}
-		if chunks, err := st.SearchChunks(qv[0], k*2, 1); err == nil {
+		out.KeywordEmpty = len(kw) == 0
+		hits := kw
+		chunkText := map[string]string{}
+		if s.eng != nil && current.SemanticReady {
+			qv, err := cembed.EmbedContext(work, s.eng, []string{query})
+			if err != nil {
+				return err
+			}
+			sem, err := st.SearchSemantic(qv[0], k)
+			if err != nil {
+				return err
+			}
+			chunks, err := st.SearchChunks(qv[0], k*2, 1)
+			if err != nil {
+				return err
+			}
 			for _, c := range chunks {
 				if _, seen := chunkText[c.Slug]; !seen {
 					chunkText[c.Slug] = c.Text
 				}
 			}
+			hits = search.Fuse(k, kw, sem)
+			out.Mode = "hybrid"
 		}
-		hits = search.Fuse(k, kw, sem)
-		mode = "hybrid"
-	}
-	res := make([]result, 0, len(hits))
-	for _, h := range hits {
-		snippet := strings.Join(strings.Fields(h.Snippet), " ")
-		if t, ok := chunkText[h.Slug]; ok {
-			snippet = excerptText(t, 200)
+		for _, h := range hits {
+			snippet := strings.Join(strings.Fields(h.Snippet), " ")
+			if text, ok := chunkText[h.Slug]; ok {
+				snippet = excerptText(text, 200)
+			}
+			if p, ok := scan.BySlug[strings.ToLower(h.Slug)]; ok && snippet == "" {
+				snippet = FirstParagraph(p.Body, 160)
+			}
+			out.Results = append(out.Results, result{Slug: h.Slug, Title: h.Title, Score: h.Score, Snippet: snippet, URL: pagePath(scan.BySlug[strings.ToLower(h.Slug)])})
 		}
-		if p, ok := scan.BySlug[wiki.NormalizeLink(h.Slug)]; ok && snippet == "" {
-			snippet = FirstParagraph(p.Body, 160)
-		}
-		res = append(res, result{h.Slug, h.Title, h.Score, snippet})
-	}
-	return res, mode, len(kw) == 0, nil
+		return work.Err()
+	})
+	return out, err
 }
 
 // excerptText flattens whitespace and truncates to maxRunes.
@@ -523,27 +676,29 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
-	// Wikipedia "Go" behavior: an exact title jumps straight to the page.
-	if scan, err := wiki.Scan(s.w); err == nil {
-		if p, ok := scan.BySlug[wiki.NormalizeLink(query)]; ok {
-			http.Redirect(w, r, "/page/"+p.Slug, http.StatusFound)
-			return
-		}
-	}
-	res, mode, kwEmpty, err := s.runSearch(query, 20, true)
+	out, err := s.runSearch(r.Context(), query, 20)
 	if err != nil {
 		s.fail(w, err)
 		return
 	}
+	// An exact slug is still a search entry point: refresh before redirecting
+	// so a cold visit cannot leave cached consumers empty or stale.
+	if scan, err := wiki.Scan(s.w); err == nil {
+		if p, err := scan.Find(query); err == nil {
+			http.Redirect(w, r, pagePath(p), http.StatusFound)
+			return
+		}
+	}
 	// The query itself is an event (search→read trail on /history);
 	// the exposed hits are never marked (H5).
 	s.logEvent("", attention.KindSearch, query)
-	s.logSearchGap(query, res, kwEmpty)
+	s.logSearchGap(query, out.Results, out.KeywordEmpty)
 	s.render(w, r, http.StatusOK, "search.html", map[string]any{
 		"Title":   localizeString(s.loc(r), "search_results_title", "Query", query),
 		"Query":   query,
-		"Mode":    mode,
-		"Results": res,
+		"Mode":    out.Mode,
+		"Results": out.Results,
+		"Index":   out.Index,
 	})
 }
 
@@ -557,21 +712,31 @@ func (s *Server) emit(w http.ResponseWriter, v any) {
 }
 
 func (s *Server) handleAPISearch(w http.ResponseWriter, r *http.Request) {
-	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	params := r.URL.Query()
+	k := 8
+	if values, present := params["k"]; present {
+		if len(values) != 1 {
+			http.Error(w, "k must be one integer from 1 to 50", http.StatusBadRequest)
+			return
+		}
+		n, err := strconv.Atoi(values[0])
+		if err != nil || n < 1 || n > 50 {
+			http.Error(w, "k must be one integer from 1 to 50", http.StatusBadRequest)
+			return
+		}
+		k = n
+	}
+	query := strings.TrimSpace(params.Get("q"))
 	if query == "" {
 		s.emit(w, map[string]any{"results": []result{}})
 		return
 	}
-	k := 8
-	if n, err := strconv.Atoi(r.URL.Query().Get("k")); err == nil && n > 0 && n <= 50 {
-		k = n
-	}
-	res, mode, _, err := s.runSearch(query, k, false)
+	out, err := s.runSearch(r.Context(), query, k)
 	if err != nil {
 		s.fail(w, err)
 		return
 	}
-	s.emit(w, map[string]any{"query": query, "mode": mode, "results": res})
+	s.emit(w, map[string]any{"query": query, "mode": out.Mode, "results": out.Results, "index": out.Index})
 }
 
 func (s *Server) handleAPIPreview(w http.ResponseWriter, r *http.Request) {
@@ -580,9 +745,9 @@ func (s *Server) handleAPIPreview(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	slug := wiki.NormalizeLink(r.PathValue("slug"))
-	p, ok := scan.BySlug[slug]
-	if !ok {
+	p, err := scan.Find(r.PathValue("slug"))
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusNotFound)
 		s.emit(w, map[string]any{"exists": false})
 		return
@@ -599,7 +764,7 @@ func (s *Server) handleAPIPreview(w http.ResponseWriter, r *http.Request) {
 // searchFallback renders search results for a slug that has no page.
 func (s *Server) searchFallback(w http.ResponseWriter, r *http.Request, raw string) {
 	query := strings.ReplaceAll(wiki.NormalizeLink(raw), "-", " ")
-	res, mode, _, err := s.runSearch(query, 20, true)
+	out, err := s.runSearch(r.Context(), query, 20)
 	if err != nil {
 		s.fail(w, err)
 		return
@@ -607,8 +772,22 @@ func (s *Server) searchFallback(w http.ResponseWriter, r *http.Request, raw stri
 	s.render(w, r, http.StatusNotFound, "search.html", map[string]any{
 		"Title":   localizeString(s.loc(r), "search_results_title", "Query", query),
 		"Query":   query,
-		"Mode":    mode,
-		"Results": res,
+		"Mode":    out.Mode,
+		"Results": out.Results,
+		"Index":   out.Index,
 		"Missing": raw,
 	})
+}
+
+// pagePath keeps ordinary slug URLs compact and uses an encoded governed path
+// when a .md suffix would otherwise be ambiguous with a filename spelling.
+func pagePath(p *wiki.Page) string {
+	if p == nil {
+		return "/browse"
+	}
+	ref := p.Slug
+	if strings.HasSuffix(strings.ToLower(ref), ".md") {
+		ref = p.RelPath
+	}
+	return "/page/" + url.PathEscape(ref)
 }

@@ -20,7 +20,10 @@ Also [[other]].
 `
 
 func TestSetFrontmatterField(t *testing.T) {
-	out := SetFrontmatterField(sample, "updated", "2026-07-04")
+	out, err := SetFrontmatterField(sample, "updated", "2026-07-04")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !strings.Contains(out, "updated: 2026-07-04") {
 		t.Error("updated not bumped")
 	}
@@ -28,7 +31,10 @@ func TestSetFrontmatterField(t *testing.T) {
 		t.Error("other content damaged")
 	}
 	// Insert a field that doesn't exist yet.
-	out = SetFrontmatterField(sample, "sources", "[]")
+	out, err = SetFrontmatterField(sample, "sources", "[]")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !strings.Contains(out, "sources: []") {
 		t.Error("missing field not inserted")
 	}

@@ -1,0 +1,146 @@
+package embed
+
+import (
+	"encoding/binary"
+	"os"
+	"path/filepath"
+	"runtime"
+	"syscall"
+	"testing"
+	"time"
+)
+
+// Review-only fixtures. These exercise readiness/identity, not ORT inference.
+func reviewField(n uint64, value []byte) []byte {
+	b := binary.AppendUvarint(nil, n<<3|2)
+	b = binary.AppendUvarint(b, uint64(len(value)))
+	return append(b, value...)
+}
+
+func reviewExternalGraph(location string) []byte {
+	entry := append(reviewField(1, []byte("location")), reviewField(2, []byte(location))...)
+	tensor := append(reviewField(13, entry), 14<<3, 1)
+	return reviewField(7, reviewField(5, tensor))
+}
+
+func reviewModel(t *testing.T, dir, location string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, location)), 0755); err != nil { t.Fatal(err) }
+	for name, b := range map[string][]byte{
+		"model.onnx": reviewExternalGraph(location),
+		"config.json": []byte(`{"hidden_size":1024}`),
+		"tokenizer.json": []byte(`{"version":"1.0"}`),
+		location: []byte("old weights"),
+	} {
+		if err := os.WriteFile(filepath.Join(dir, name), b, 0644); err != nil { t.Fatal(err) }
+	}
+}
+
+func TestAdversarialLegacyAliasIdentity(t *testing.T) {
+	for _, kind := range []string{"real-directory-control", "root-symlink", "sidecar-directory-symlink"} {
+		t.Run(kind, func(t *testing.T) {
+			root := t.TempDir()
+			dir := filepath.Join(root, "model")
+			location := "weights.bin"
+			if kind == "sidecar-directory-symlink" { location = "sidecar/weights.bin" }
+			reviewModel(t, dir, location)
+			if kind == "root-symlink" {
+				alias := filepath.Join(root, "alias")
+				if err := os.Symlink(dir, alias); err != nil { t.Fatal(err) }
+				dir = alias
+			}
+			if kind == "sidecar-directory-symlink" {
+				if err := os.Rename(filepath.Join(dir, "sidecar"), filepath.Join(root, "external")); err != nil { t.Fatal(err) }
+				if err := os.Symlink(filepath.Join(root, "external"), filepath.Join(dir, "sidecar")); err != nil { t.Fatal(err) }
+			}
+			before, err := CheckModel(dir)
+			if err != nil || !before.Ready || !before.Legacy { t.Fatalf("healthy bundle: %+v %v", before, err) }
+			// Overwrite an existing file: no forged metadata, timestamp restore,
+			// atomic replacement, or parent directory mutation.
+			if err := os.WriteFile(filepath.Join(dir, location), []byte("new weights"), 0644); err != nil { t.Fatal(err) }
+			after := profileAt(dir)
+			t.Logf("kind=%s before=%s after=%s changed=%v", kind, before.Profile, after, before.Profile != after)
+			if before.Profile == after { t.Error("model contents changed but reusable embedding profile did not") }
+			if err := os.Truncate(filepath.Join(dir, location), 0); err != nil { t.Fatal(err) }
+			ready, err := CheckModel(dir)
+			t.Logf("after sidecar truncate: status=%+v error=%v", ready, err)
+			if err == nil { t.Error("zero-byte required sidecar remains cached as ready") }
+		})
+	}
+}
+
+func TestAdversarialAdoptRepair(t *testing.T) {
+	for _, broken := range []bool{false, true} {
+		t.Run(map[bool]string{false:"healthy-legacy-control",true:"invalid-manifest"}[broken], func(t *testing.T) {
+			dir := filepath.Join(t.TempDir(), "model")
+			reviewModel(t, dir, "weights.bin")
+			if broken {
+				// The diagnostic explicitly prescribes verify --adopt.
+				if err := os.WriteFile(filepath.Join(dir, ManifestName), []byte(`{"version":1,"revision":"local-previous","kind":"onnx-external","pooling":"previous-pooling","dimension":1024,"files":{}}`), 0644); err != nil { t.Fatal(err) }
+			}
+			_, err := VerifyModel(dir, true)
+			t.Logf("adopt broken=%v err=%v", broken, err)
+			if err != nil { t.Error("explicit adoption cannot repair a structurally valid local bundle with a stale manifest") }
+		})
+	}
+}
+
+func TestAdversarialQuantizerPublication(t *testing.T) {
+	for _, key := range []string{"CANOPY_REVIEW_CONVERTED_GOOD", "CANOPY_REVIEW_CONVERTED_BAD"} {
+		t.Run(key,func(t *testing.T) {
+			dir:=os.Getenv(key)
+			if dir==""{t.Skip("quantizer fixture was not prepared")}
+			s,err:=CheckModel(dir)
+			t.Logf("quantizer returned success; status=%+v err=%v",s,err)
+			if err!=nil{t.Error("successful converter publication replaced a ready active bundle with an incomplete bundle")}
+		})
+	}
+}
+
+func TestAdversarialReadinessRegularBeforeParse(t *testing.T) {
+	for _, fifo := range []bool{false,true} {
+		t.Run(map[bool]string{false:"regular-control",true:"fifo-model"}[fifo],func(t *testing.T) {
+			dir:=filepath.Join(t.TempDir(),"model")
+			reviewModel(t,dir,"weights.bin")
+			if fifo {
+				if err:=os.Remove(filepath.Join(dir,"model.onnx"));err!=nil{t.Fatal(err)}
+				if err:=syscall.Mkfifo(filepath.Join(dir,"model.onnx"),0600);err!=nil{t.Fatal(err)}
+			}
+			done:=make(chan error,1)
+			go func(){_,err:=CheckModel(dir);done<-err}()
+			select {
+			case err:=<-done:
+				t.Logf("fifo=%v readiness returned err=%v",fifo,err)
+				if fifo&&err==nil{t.Error("FIFO should be rejected")}
+				if !fifo&&err!=nil{t.Fatal(err)}
+			case <-time.After(300*time.Millisecond):
+				t.Error("CheckModel blocked opening FIFO before regular-file validation")
+				// Unblock our own fixture; never leave a hung child or goroutine.
+				writer,err:=os.OpenFile(filepath.Join(dir,"model.onnx"),os.O_WRONLY,0600)
+				if err!=nil{t.Fatal(err)}
+				writer.Close()
+				select{case err:=<-done:t.Logf("after releasing own FIFO: %v",err);case <-time.After(time.Second):t.Fatal("probe cleanup timed out")}
+			}
+		})
+	}
+}
+
+func TestAdversarialManifestReadBound(t *testing.T) {
+	for _, large:=range []bool{false,true}{
+		t.Run(map[bool]string{false:"small-manifest-control",true:"8MiB-manifest"}[large],func(t *testing.T){
+			dir:=filepath.Join(t.TempDir(),"model");reviewModel(t,dir,"weights.bin")
+			if _,err:=VerifyModel(dir,true);err!=nil{t.Fatal(err)}
+			if large{
+				if err:=os.Truncate(filepath.Join(dir,ManifestName),8<<20);err!=nil{t.Fatal(err)}
+			}
+			var before,after runtime.MemStats
+			runtime.ReadMemStats(&before)
+			_,err:=CheckModel(dir)
+			runtime.ReadMemStats(&after)
+			allocated:=after.TotalAlloc-before.TotalAlloc
+			t.Logf("large=%v total_alloc_delta=%d err=%v",large,allocated,err)
+			if !large&&err!=nil{t.Fatal(err)}
+			if allocated>4<<20{t.Error("oversized manifest rejected after unbounded full-file reads")}
+		})
+	}
+}

@@ -1,6 +1,7 @@
 {{define "content"}}
-<article data-slug="{{.Page.Slug}}" {{if not .Read}}data-read-secs="{{.ReadSecs}}"{{end}}>
-  {{if .Tasked}}<p class="notice">✓ {{t "task_filed_notice"}}</p>{{end}}
+<article data-slug="{{.Page.Slug}}" data-read-ref="{{.Page.RelPath}}" {{if and .ReadAvailable (not .Read)}}data-read-secs="{{.ReadSecs}}"{{end}}>
+  {{if .TaskReceipt}}<p class="notice">{{t "task_filed_notice"}} <a href="/special/tasks#task-{{.TaskReceipt.ID}}">{{t "nav_tasks"}} · {{.TaskReceiptStatus}}</a></p>{{end}}
+  {{if .ReadsPartial}}<p class="notice conflict">{{t "reads_partial"}}</p>{{end}}
   <div class="pagehead"><h1>{{.Page.Title}}</h1></div>
   <div class="metacard">
     <a class="chip" href="/browse?type={{.Page.Type}}">{{.Page.Type}}</a>
@@ -8,9 +9,9 @@
     <span class="muted">{{t "page_updated"}} {{.Page.Updated}} · {{.Page.RelPath}}</span>
   </div>
   <div class="pageactions">
-    <a class="chip action-primary" href="/edit/{{.Page.Slug}}">{{t "page_edit"}}</a>
-    <form method="post" action="/read/{{.Page.Slug}}" class="readform" id="readform">
-      {{if .Read}}
+    <a class="chip action-primary" href="/edit/{{pathref .Page.RelPath}}">{{t "page_edit"}}</a>
+    <form method="post" action="/read/{{pathref .Page.RelPath}}" class="readform" id="readform">
+      {{if not .ReadAvailable}}<span class="muted">{{t "read_unavailable"}}</span>{{else if .Read}}
       <span class="chip readmark" title="{{t "page_read_first" "First" .Read.First}}">✓ {{if gt .Read.Count 1}}{{t "page_read_times" "Count" .Read.Count}} {{end}}{{t "page_read_label"}}{{if .ReadAgo}} · {{.ReadAgo}}{{end}}{{if eq .Read.Source "auto"}} <small>{{t "page_auto"}}</small>{{end}}</span>
       <button class="chip" name="action" value="read" title="{{t "page_reread_title"}}">{{t "page_reread"}}</button>
       <button class="chip" name="action" value="unread" title="{{t "page_unread_title"}}">{{t "page_cancel"}}</button>
@@ -18,9 +19,67 @@
       <button class="chip" name="action" value="read" title="{{t "page_read_shortcut"}}">✓ {{t "page_read_button"}}</button>
       {{end}}
     </form>
+    <span id="read-status" class="readstatus" role="status" hidden></span>
     {{if .AgentDays}}<span class="muted" title="{{t "page_agent_days_title"}}">🤖 {{t "page_agent_days" "Days" .AgentDays}}</span>{{end}}
   </div>
   <div class="readinglayout">
+  <aside class="pagecontext" aria-label="{{t "page_context_label"}}">
+    <details class="contextpanel pageoutline" id="pageoutline" data-desktop-open hidden><summary id="toc-title">{{t "page_toc_title"}}</summary><nav aria-labelledby="toc-title"><ol id="page-toc"></ol></nav></details>
+  {{if .Suggested}}
+  <details class="contextpanel suggested" data-desktop-open>
+    <summary>{{t "page_suggested_title"}} <small class="muted">{{t "page_suggested_hint"}}</small></summary>
+    <div class="suggestrow">
+      {{range .Suggested}}
+      <span class="suggestitem">
+        <a class="chip suggest" href="{{pageURL .Slug}}" data-slug="{{.Slug}}"
+           title="{{t "page_similarity" "Sim" (printf "%.2f" .Sim)}}{{if .Tags}} · {{t "page_tags_shared" "Count" .Tags}}{{end}}">{{.Title}}
+          <small>{{printf "%.2f" .Sim}}</small></a>
+        {{if .Requested}}<span class="chip reason" title="{{t "task_requested_title"}}">⏳ {{t "task_requested"}}</span>
+        {{else}}<form method="post" action="/task/connect" class="inlineform">
+          <input type="hidden" name="a" value="{{$.Page.RelPath}}">
+          <input type="hidden" name="b" value="{{.Ref}}">
+          <input type="hidden" name="sim" value="{{printf "%.2f" .Sim}}">
+          <button class="chip" title="{{t "task_connect_title"}}">🔗 {{t "task_connect_button"}}</button>
+        </form>{{end}}
+      </span>
+      {{end}}
+    </div>
+  </details>
+  {{end}}
+  <details class="contextpanel tasks" data-desktop-open>
+    <summary>{{t "task_section_title"}}{{if .Tasks}} ({{len .Tasks}}){{end}}</summary>
+    {{if not .TasksAvailable}}<p class="muted">{{t "home_tasks_unavailable"}}</p>{{end}}
+    <p class="muted">{{t "task_section_hint"}} · <a href="/special/tasks">{{t "nav_tasks"}}</a></p>
+    {{if .Tasks}}
+    <ul class="tasklist">
+      {{range .Tasks}}
+      <li><span class="chip histkind">{{.TypeLabel}}</span>
+        {{if .Other}}<a class="wikilink" href="{{pageURL .Other}}">{{.Other}}</a>{{end}}
+        {{if .Request}}{{.Request}}{{end}}
+        <span class="chip reason">{{.StatusLabel}}</span>
+        <p class="taskmeta muted"><time datetime="{{.Created}}">{{.Created}}</time> · <a href="/special/tasks#task-{{.ID}}">{{t "tasks_receipt_details"}}</a></p>
+        {{if .Body}}<details class="proposal"><summary>{{t "tasks_proposal_view"}}</summary><pre>{{.Body}}</pre></details>{{end}}</li>
+      {{end}}
+    </ul>
+    {{end}}
+    <details class="taskform">
+      <summary class="muted">🤖 {{t "task_edit_summary"}}</summary>
+      <form method="post" action="/task/edit/{{pathref .Page.RelPath}}">
+        <textarea name="request" rows="3" required aria-label="{{t "task_edit_summary"}}" placeholder="{{t "task_edit_placeholder"}}"></textarea>
+        <p><button class="chip">{{t "task_edit_submit"}}</button></p>
+      </form>
+    </details>
+  </details>
+  <details class="contextpanel backlinks" data-desktop-open>
+    <summary>{{t "page_backlinks_title"}} ({{len .Backlinks}})</summary>
+    {{if .Backlinks}}
+    <ul>
+      {{range .Backlinks}}<li><a class="wikilink" href="{{pageURL .}}">{{.}}</a></li>{{end}}
+    </ul>
+    {{else}}<p class="muted">{{t "page_none"}}</p>{{end}}
+  </details>
+    {{if not .SemanticAvailable}}<p class="contextnotice muted">{{t "semantic_unavailable"}}</p>{{end}}
+  </aside>
   <div class="readingbody">
   <div class="prose">{{.Body}}</div>
   {{if .GraphNodes}}
@@ -29,7 +88,7 @@
     <svg viewBox="0 0 640 260" role="img" aria-label="{{t "page_graph_label"}}">
       {{range .GraphEdges}}<line x1="{{.X1}}" y1="{{.Y1}}" x2="{{.X2}}" y2="{{.Y2}}"/>{{end}}
       {{range $i, $n := .GraphNodes}}
-      <a href="/page/{{$n.Slug}}"><g>
+      <a href="{{pageURL $n.Slug}}"><g>
         <circle cx="{{$n.X}}" cy="{{$n.Y}}" r="{{if eq $i 0}}7{{else}}4{{end}}"
                 class="{{if eq $i 0}}center{{else if $n.Missing}}missing{{end}}"/>
         <text x="{{$n.X}}" y="{{$n.Y}}" dy="-9" text-anchor="middle">{{short $n.Slug}}</text>
@@ -38,60 +97,11 @@
     </svg>
   </details>
   {{end}}
-  {{if .Suggested}}
-  <section class="suggested">
-    <h2>{{t "page_suggested_title"}} <span class="muted">— {{t "page_suggested_hint"}}</span></h2>
-    <div class="suggestrow">
-      {{range .Suggested}}
-      <span class="suggestitem">
-        <a class="chip suggest" href="/page/{{.Slug}}" data-slug="{{.Slug}}"
-           title="{{t "page_similarity" "Sim" (printf "%.2f" .Sim)}}{{if .Tags}} · {{t "page_tags_shared" "Count" .Tags}}{{end}}">{{.Title}}
-          <small>{{printf "%.2f" .Sim}}</small></a>
-        {{if .Requested}}<span class="chip reason" title="{{t "task_requested_title"}}">⏳ {{t "task_requested"}}</span>
-        {{else}}<form method="post" action="/task/connect" class="inlineform">
-          <input type="hidden" name="a" value="{{$.Page.Slug}}">
-          <input type="hidden" name="b" value="{{.Slug}}">
-          <input type="hidden" name="sim" value="{{printf "%.2f" .Sim}}">
-          <button class="chip" title="{{t "task_connect_title"}}">🔗 {{t "task_connect_button"}}</button>
-        </form>{{end}}
-      </span>
-      {{end}}
-    </div>
-  </section>
-  {{end}}
-  <section class="tasks">
-    <h2>{{t "task_section_title"}}{{if .Tasks}} ({{len .Tasks}}){{end}} <span class="muted">— {{t "task_section_hint"}}</span></h2>
-    {{if .Tasks}}
-    <ul class="tasklist">
-      {{range .Tasks}}
-      <li><span class="chip histkind">{{.TypeLabel}}</span>
-        {{if .Other}}<a class="wikilink" href="/page/{{.Other}}">{{.Other}}</a>{{end}}
-        {{if .Request}}{{.Request}}{{end}}
-        <span class="muted">· {{.Created}}</span></li>
-      {{end}}
-    </ul>
-    {{end}}
-    <details class="taskform">
-      <summary class="muted">🤖 {{t "task_edit_summary"}}</summary>
-      <form method="post" action="/task/edit/{{.Page.Slug}}">
-        <textarea name="request" rows="3" required aria-label="{{t "task_edit_summary"}}" placeholder="{{t "task_edit_placeholder"}}"></textarea>
-        <p><button class="chip">{{t "task_edit_submit"}}</button></p>
-      </form>
-    </details>
-  </section>
-  <footer class="backlinks">
-    <h2>{{t "page_backlinks_title"}} ({{len .Backlinks}})</h2>
-    {{if .Backlinks}}
-    <ul>
-      {{range .Backlinks}}<li><a class="wikilink" href="/page/{{.}}">{{.}}</a></li>{{end}}
-    </ul>
-    {{else}}<p class="muted">{{t "page_none"}}</p>{{end}}
-  </footer>
   {{if .AttnRecent}}
   <details class="attn">
     <summary class="muted">{{t "page_access_log"}}{{if .Spark}} <span class="sparkwrap">{{.Spark}}</span>{{end}}</summary>
     <p class="muted attnsum">
-      {{if .Read}}{{t "page_read_times_full" "Count" .Read.Count}}{{if .ReadAgo}} ({{t "page_last" "Ago" .ReadAgo}}){{end}}{{else}}{{t "page_not_read"}}{{end}}{{if .AgentDays}} · 🤖 {{t "page_agent_days_full" "Days" .AgentDays}}{{end}}
+      {{if .Read}}{{t "page_read_times_full" "Count" .Read.Count}}{{if .ReadAgo}} ({{t "page_last" "Ago" .ReadAgo}}){{end}}{{else if .ReadAvailable}}{{t "page_not_read"}}{{else}}{{t "read_unavailable"}}{{end}}{{if .AgentDays}} · 🤖 {{t "page_agent_days_full" "Days" .AgentDays}}{{end}}
       · <a href="/history">{{t "page_full_log"}}</a>
     </p>
     <ul class="hist">
@@ -102,9 +112,6 @@
   </details>
   {{end}}
   </div>
-  <aside class="pageoutline" id="pageoutline" hidden>
-    <nav aria-labelledby="toc-title"><h2 id="toc-title">{{t "page_toc_title"}}</h2><ol id="page-toc"></ol></nav>
-  </aside>
   </div>
 </article>
 {{end}}

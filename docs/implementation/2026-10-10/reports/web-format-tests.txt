@@ -1,0 +1,5 @@
+gofmt -l internal/webui/server.go internal/webui/discover.go internal/webui/speak.go internal/webui/tasks.go internal/webui/edit.go internal/webui/graph.go internal/webui/suggest.go internal/webui/browse.go internal/webui/tasks_test.go internal/webui/contracts_test.go
+exit 0; empty output
+
+git diff --check
+exit 0; empty output

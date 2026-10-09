@@ -1,0 +1,5 @@
+--- FAIL: TestCollectDiagnosesInvalidDatesWithoutLosingPages (0.00s)
+    dates_test.go:24: invalid date counted or valid page lost: &{Since:2026-10-10 CreatedPages:[{Slug:quoted-valid RelPath:concepts/quoted-valid.md Title:quoted-valid Type:concept Created:2026-10-10 Updated:2026-10-10} {Slug:future RelPath:concepts/future.md Title:future Type:concept Created:2026-10-11 Updated:2026-10-11} {Slug:bad RelPath:concepts/bad.md Title:bad Type:concept Created:z-not-a-date Updated:2026-02-30}] UpdatedPages:[{Slug:updated RelPath:concepts/updated.md Title:updated Type:concept Created:2026-01-01 Updated:2026-10-10}] TagCounts:map[] Decisions:[] Stats:{Created:3 Updated:1 Total:6} TopConsumed:[]}
+FAIL
+FAIL	github.com/neutrospec/canopy/internal/digest	0.331s
+FAIL

@@ -1,0 +1,223 @@
+#!/usr/bin/env python3
+"""Inert, opt-in focused replay of the independently observed web defects.
+
+Run with Python and --run-private-fixtures. Requires macOS sandbox-exec, local
+Go/module cache and Node; downloads are disabled. This rebuilds CURRENT source,
+not the earlier dirty source snapshot. Exact historical scripts/outputs are in
+web-adversarial-before.json and web-adversarial-evidence.json. This program was
+syntax checked; the recorded historical probes, not a later replay execution,
+are the evidence for the report. No browser claim is made.
+"""
+import argparse
+import hashlib
+import http.client
+import json
+import os
+import pathlib
+import re
+import shutil
+import socket
+import subprocess
+import tempfile
+import time
+import urllib.parse
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--run-private-fixtures', action='store_true')
+    parser.add_argument('--repo', type=pathlib.Path,
+                        default=pathlib.Path(__file__).resolve().parents[4])
+    args = parser.parse_args()
+    if not args.run_private_fixtures:
+        parser.error('inert by default; explicitly pass --run-private-fixtures')
+    repo = args.repo.resolve()
+    root = pathlib.Path(tempfile.mkdtemp(prefix='canopy-web-adversarial-replay-',
+                                         dir='/private/tmp'))
+    server = None
+    out_file = root / 'server.stdout'
+    err_file = root / 'server.stderr'
+    env = {k: os.environ[k] for k in ('PATH', 'LANG', 'LC_ALL') if k in os.environ}
+    for key, name in [('HOME', 'home'), ('XDG_CONFIG_HOME', 'config'),
+                      ('XDG_DATA_HOME', 'data'), ('XDG_STATE_HOME', 'state'),
+                      ('XDG_CACHE_HOME', 'cache'), ('TMPDIR', 'tmp')]:
+        (root / name).mkdir()
+        env[key] = str(root / name)
+    env.update(GOTELEMETRY='off', GOPROXY='off', GOSUMDB='off',
+               GOTOOLCHAIN='local', GOFLAGS='-mod=readonly', CGO_ENABLED='0',
+               GOMODCACHE='/Users/nobocop/go/pkg/mod',
+               GOCACHE='/private/tmp/canopy-improve-20261010/go-build',
+               PYTHONDONTWRITEBYTECODE='1', GIT_CONFIG_NOSYSTEM='1',
+               GIT_CONFIG_GLOBAL=str(root / 'home/.gitconfig'),
+               GIT_ALLOW_PROTOCOL='file')
+
+    def emit(kind, **data):
+        print(json.dumps(dict(kind=kind, **data), ensure_ascii=False), flush=True)
+
+    def command(argv):
+        argv = [str(v) for v in argv]
+        result = subprocess.run(argv, cwd=repo, env=env,
+                                capture_output=True, text=True)
+        emit('command', argv=argv, cwd=str(repo), stdout=result.stdout,
+             stderr=result.stderr, exit_code=result.returncode)
+        if result.returncode:
+            raise RuntimeError('command failed: ' + repr(argv))
+        return result
+
+    def digest(data):
+        return hashlib.sha256(data).hexdigest()
+
+    def tree_hashes(path):
+        return {str(p.relative_to(path)): digest(p.read_bytes())
+                for p in sorted(path.rglob('*')) if p.is_file()}
+
+    try:
+        emit('environment', root=str(root), environment=env,
+             scope='Loopback HTTP and shipped-script Node adapters; no browser')
+        binary = root / 'canopy-lite'
+        profile = ('(version 1) (allow default) '
+                   '(deny file-write* (subpath "/Users/nobocop/go/pkg/mod"))')
+        command(['/usr/bin/sandbox-exec', '-p', profile, 'go', 'build',
+                 '-o', binary, './cmd/canopy'])
+        emit('binary', sha256=digest(binary.read_bytes()))
+        wiki = root / 'Web wiki fixture'
+        wiki.mkdir()
+        command([binary, 'init', '--wiki', wiki])
+        for name, body in [
+                ('anchor.md', 'replay-current-evidence [[sibling]]'),
+                ('sibling.md', 'A normal sibling.'),
+                ('exact.md', 'Plain exact reference.'),
+                ('exact.md.md', 'Extension-like exact reference.'),
+                ('markup.md', 'Math source: $\\unknownmacro{x}$')]:
+            text = ('---\ntitle: ' + name + '\ncreated: 2026-01-01\n'
+                    'updated: 2026-01-01\ntype: concept\ntags: []\n---\n\n'
+                    + body + '\n')
+            (wiki / 'concepts' / name).write_text(text)
+        command([binary, 'reindex', '--wiki', wiki])
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', 0))
+            port = sock.getsockname()[1]
+        argv = [str(binary), 'serve', '--addr', '127.0.0.1:' + str(port),
+                '--wiki', str(wiki)]
+        with out_file.open('wb') as out, err_file.open('wb') as err:
+            server = subprocess.Popen(argv, cwd=repo, env=env,
+                                      stdout=out, stderr=err)
+        emit('server_start', argv=argv, pid=server.pid)
+        for _ in range(100):
+            if server.poll() is not None:
+                raise RuntimeError(err_file.read_text())
+            if '✓ serving ' in out_file.read_text():
+                break
+            time.sleep(.05)
+        else:
+            raise RuntimeError('own fixture server did not confirm listener')
+
+        def http(path, status, method='GET', body=None, headers=None, chunked=False):
+            raw = body.encode() if isinstance(body, str) else body
+            hs = dict(headers or {})
+            conn = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
+            try:
+                if chunked:
+                    conn.request(method, path, body=iter([raw]), headers=hs,
+                                 encode_chunked=True)
+                else:
+                    conn.request(method, path, body=raw, headers=hs)
+                response = conn.getresponse()
+                payload = response.read()
+                actual = response.status
+                result = dict(status=actual, body=payload.decode(),
+                              headers=response.getheaders())
+                emit('http', port=port, method=method, path=path,
+                     request_headers=hs,
+                     request_body=raw.decode() if raw is not None else None,
+                     chunked=chunked, expected_status=status,
+                     response_sha256=digest(payload), **result)
+                assert actual == status, (path, actual, status)
+                return result
+            finally:
+                conn.close()
+
+        for path in ['/api/search?q=%ZZ', '/search?q=%ZZ',
+                     '/api/search?q=anchor;bad=x', '/api/search?q=anchor&k=-1',
+                     '/api/search?q=anchor&k=oops', '/api/search?q=anchor&k=51',
+                     '/api/search?q=&k=0', '/api/search?k=1&k=2']:
+            http(path, 400)
+        http('/api/search?q=replay-current-evidence&k=1', 200)
+        before = tree_hashes(wiki / '_meta/webui')
+        for chunked in [False, True]:
+            http('/api/read/anchor', 413, 'POST', 'x' * (17 << 10),
+                 {'Content-Type': 'application/json'}, chunked)
+        assert tree_hashes(wiki / '_meta/webui') == before
+        emit('read_state_unchanged', unchanged=True)
+        http('/api/read/anchor', 200, 'POST', '',
+             {'Content-Type': 'application/json'})
+
+        boundary = 'FixtureBoundary'
+        body = 'Fields only proposal.\nSecond line.'
+        note = 'Request retained.'
+        fields = ('--' + boundary + '\r\nContent-Disposition: form-data; '
+                  'name="body"\r\n\r\n' + body + '\r\n--' + boundary +
+                  '\r\nContent-Disposition: form-data; name="note"\r\n\r\n' + note)
+        filepart = (fields + '\r\n--' + boundary +
+                    '\r\nContent-Disposition: form-data; name="attachment"; '
+                    'filename="large.txt"\r\nContent-Type: text/plain\r\n\r\n'
+                    + 'z' * (100 << 10) + '\r\n--' + boundary + '--\r\n')
+        header = {'Content-Type': 'multipart/form-data; boundary=' + boundary}
+        tasks_before = tree_hashes(wiki / '_meta/tasks')
+        page_before = (wiki / 'concepts/anchor.md').read_bytes()
+        http('/edit/anchor', 400, 'POST', filepart, header)
+        assert tree_hashes(wiki / '_meta/tasks') == tasks_before
+        assert not list((root / 'tmp').iterdir())
+        result = http('/edit/anchor', 303, 'POST',
+                      fields + '\r\n--' + boundary + '--\r\n', header)
+        location = next(v for k, v in result['headers'] if k.lower() == 'location')
+        tid = urllib.parse.parse_qs(urllib.parse.urlsplit(location).query)['tasked'][0]
+        task = json.loads((wiki / '_meta/tasks' / (tid + '.json')).read_text())
+        assert task['body'] == body and task['request'] == note
+        assert task['base'] == digest(page_before)
+        assert (wiki / 'concepts/anchor.md').read_bytes() == page_before
+        assert not list((root / 'tmp').iterdir())
+        emit('multipart_controls', file_rejected_without_task=True,
+             fields_preserved=True, page_unchanged=True, tmp_clean=True)
+
+        http('/api/preview/exact.md', 404)
+        http('/api/preview/concepts%2Fexact.md.md', 200)
+        page = http('/page/markup', 200)['body']
+        messages = re.search(r'<script type="application/json" id="ui-messages">'
+                             r'(.*?)</script>', page, re.S).group(1)
+        home = http('/', 200)['body']
+        url = re.search(r'src="(/static/app.js\?v=[^"]+)"', home).group(1)
+        app = http(url, 200)['body']
+        (root / 'app.js').write_text(app)
+        (root / 'messages.json').write_text(messages)
+        evidence_path = pathlib.Path(__file__).with_name('web-adversarial-evidence.json')
+        adapter = json.loads(evidence_path.read_text())['script_sources']['ui-probes.cjs']
+        (root / 'ui-probes.cjs').write_text(adapter)
+        for mode in ['preview', 'math-label']:
+            result = command(['node', root / 'ui-probes.cjs', root / 'app.js',
+                              root / 'messages.json', mode])
+            observed = json.loads(result.stdout)
+            if mode == 'preview':
+                assert observed['requests'][0]['url'] == '/api/preview/concepts%2Fexact.md.md'
+            else:
+                assert observed['messageKeyPresent'] and observed['summary'] != 'math_source'
+                assert observed['preservedSource']
+        emit('focused_replay_pass', browser='UNVERIFIED',
+             actual_release_and_homebrew='UNVERIFIED')
+    finally:
+        if server is not None:
+            if server.poll() is None:
+                server.terminate()
+                try:
+                    server.wait(5)
+                except subprocess.TimeoutExpired:
+                    server.kill()
+                    server.wait(5)
+            emit('server_stop', exit_code=server.returncode,
+                 stdout=out_file.read_text(), stderr=err_file.read_text())
+        shutil.rmtree(root)
+        emit('cleanup', root=str(root), exists=root.exists())
+
+
+if __name__ == '__main__':
+    main()

@@ -7,12 +7,17 @@
 >
 > | 종류 | 누가 하나 | 어디 |
 > |---|---|---|
-> | **데이터 스키마 이행** | canopy가 자동 (새 버전 첫 실행이 `migrate.Ensure()`로 밟아 올라감) | 설계 [versioning.md](versioning.md), 점검 [invariants.md](invariants.md) J |
+> | **머신-로컬 데이터 스키마 이행** | canopy가 자동 (새 버전 첫 실행이 `migrate.Ensure()`로 밟아 올라감) | 설계 [versioning.md](versioning.md), 점검 [invariants.md](invariants.md) J |
 > | **설치·운영 이행** | 사람이 수동 (설치 방식·실행 방식 변경) | **이 문서** |
 > | 릴리스 변경 로그 | GoReleaser가 자동 생성 | GitHub Releases (커밋 규약 → 자동) |
 >
 > 각 항목은 실행 가능한 점검 명령을 포함한다([philosophy.md](philosophy.md) 원칙 8).
 > 항목은 최신 순으로 쌓는다.
+
+사다리는 이 머신의 전역 설정·XDG 레이아웃처럼 재현 불가 상태를 다룬다. Git으로
+여행하는 `_meta/*`는 각 파일 안의 version으로 읽고 진화하며, 머신 이행 완료가
+나중에 가져온 옛 위키를 새 형식으로 만들지는 않는다. 검색 DB는 파생 캐시이므로
+캐시 버전 불일치 시 버리고 재구축한다. `logs/`와 위키 상태는 캐시가 아니므로 보존한다.
 
 ## 먼저: 지금 나는 어떻게 깔려 있나
 
@@ -27,7 +32,9 @@ canopy version                  # 앱·데이터 스키마·캐시 스키마 버
 
 > **핵심 사실 — 바이너리 위치와 XDG 데이터는 별개다.** canopy의 설정·모델·캐시·상태는
 > `$XDG_*_HOME`(또는 HOME 기반 기본값)로 정해지므로 바이너리가 어디 있든 같은 곳을 쓴다.
-> 그래서 바이너리를 옮기거나 지워도 데이터는 그대로다 — 아래 이행의 점검이 이를 증명한다.
+> 같은 HOME/XDG에서 바이너리 위치만 바꾸면 기존 데이터 경로를 재사용한다.
+> 아래 점검은 경로·개수·서비스 기동 확인이며, 전체 데이터 보존의 증명은 아니다.
+> 내용 보존까지 확인하려면 별도 백업과 실제 파일 내용을 비교하고 의도된 이행을 구별한다.
 
 ---
 
@@ -72,7 +79,7 @@ brew services start canopy       # localhost:8737, 로그인 시 자동 시작�
 which -a canopy | sort -u                 # brew 경로 하나만
 test ! -e ~/.local/bin/canopy && echo ok  # 옛 사본 없음
 
-# 데이터 손실 없음 (제거 전후 동일해야 한다 — 바이너리 위치 ≠ XDG)
+# 데이터 경로·페이지 수 확인 (전체 내용 보존을 증명하지 않음)
 canopy model status --json | jq .model_path
 canopy status --json | jq .pages          # 페이지 수 그대로
 
@@ -83,7 +90,8 @@ curl -s -o /dev/null -w '%{http_code}\n' localhost:8737/   # 200
 
 ### 되돌리기
 
-데이터·설정은 XDG에 그대로 있으므로 어느 쪽으로 가든 무손실이다.
+같은 HOME/XDG를 사용하면 기존 데이터·설정 경로를 재사용한다. 구버전으로 돌아갈
+때는 파일·스키마 호환성을 별도로 확인하고, 필요한 경우 해당 버전의 백업을 복원한다.
 
 ```bash
 brew services stop canopy         # 서비스 내리기 (필요 시)
@@ -116,6 +124,10 @@ brew services restart canopy      # 서비스로 웹 UI를 돌리는 경우 (에
                                   # 내장되므로 재시작해야 새 UI가 반영된다)
 ```
 
-데이터 스키마 이행이 필요한 릴리스라면 업그레이드 후 **첫 `canopy` 실행이 자동으로**
+머신-로컬 데이터 스키마 이행이 필요한 릴리스라면 업그레이드 후 **첫 `canopy` 실행이 자동으로**
 밟아 올라간다(`canopy migrate status`로 확인). 사용자가 손으로 할 일은 없다 —
 그것이 자동 이행과 이 문서(수동 이행)의 경계다.
+
+업그레이드 후 `canopy skills install`로 내장 지침도 갱신한다. 임의 경로에 설치한
+스킬은 같은 `--dir <path>`를 지정한다. 서비스와 에이전트가 같은 HOME/XDG와
+위키를 쓰는지도 `canopy status --json`의 root로 확인한다.

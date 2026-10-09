@@ -1,0 +1,153 @@
+{
+  "source_before": {
+    "internal/embed/model.go": "48e08aaac2c8a971dacc3286d8f0298c71f5ba9cb5d7720c6506693c4a4d7627",
+    "internal/embed/profile.go": "b3ac44dfff674a8bd3c6ea82b70742b4c5ee6bfb3550a9de44db07dd431274f8",
+    "internal/embed/onnx.go": "db2ad8a9ffbd61f4778d05cd5ad5c98d3e2b655aee3dc29adf1294d9b06fb5fb",
+    "internal/embed/validation.go": "219e1c8518a625f9d3142d22c9c01508e014d50c336dec682c50e76ed31e9673",
+    "internal/embed/chunk.go": "3e02683ae12cf9f4e36fb4bb0b966717e7c44b9d173df39ad97ea119a7b61ba3",
+    "internal/embed/engine.go": "a0106ce36610eb4990438a87ec007efd44653e3e8706fd71888bf93cd18c0405",
+    "internal/embed/engine_ort.go": "9e707cba61384df16c09979a49731a85bd837881bff50b762848ff5156a3ee92",
+    "internal/indexer/indexer.go": "890dd9e4ccffb6031db82141e5717f9e833554c49c6c66794f2566f8ab9b507d",
+    "internal/store/store.go": "4c05d2f17885e1d4e5d2e55c49e9f4fa9a67e063099d36dcea2bc7889a39cb7b",
+    "internal/store/vectors.go": "e3fb859e54e6f0e5fe10b47df2c2f61ef456d831023e17e837e099e91b0839f4",
+    "internal/search/search.go": "7aa9817c1807726a1ccc07499f7e15faa10c318da6461fa9db6c3c474358cab3",
+    "internal/search/evaluation_test.go": "3374d8282a55afcf04433809540c7249f69ea1ed554d63b75abf67e3fc975aad",
+    "internal/search/testdata/evaluation/corpus.json": "8e0e9e907269e5cb87a5a6f9920f59c32c5fca9fb6daacc9c2bba6d11a86d5c0",
+    "scripts/prepare-native.py": "3d14f6fc3123df86f05dfcbd8e34d8c0b7f8f4b0d3c44614639b3358fc4ac7ef",
+    "scripts/quantize-model.py": "72ca4330c143eead191c946f0df6753a01b0b0ba1e0ee1237d7db09fd0454393",
+    "cmd/canopy/main.go": "0c0188e086de0f14d76853396eba6ae44ebaf280fddf13b28999aaac1a0cfd9f",
+    "cmd/canopy/recall.go": "8bbcb4b418f2907c94a3d41bec9787a73292ec7e75c44cd4c42420eaa2584d15",
+    "cmd/canopy/write.go": "a9d5aa67ccb5cb0a01f629d601168ead603816e26841726fd8de9ee7903eb6cf",
+    "cmd/canopy/resurface.go": "fa67a9e262663e88053bd72b0f5eeeca98ca222f4f2fe8fcdf3ac3fce9db49ea",
+    "cmd/canopy/reconcile.go": "36cabfd704ce3356af39fb43f9bf51efcdafe40ed4594bb6f151b758598ef25b",
+    "internal/webui/server.go": "36b128c4dfb0f7ff231228b9d27f6f28a4f68cf275ef7da5f6beddd9617043e6",
+    "internal/resurface/pick.go": "99d4afe8d045a98dc5768db65508b3fb8d615c3218a985738e017eae152158d3",
+    "scripts/test-go.sh": "34a98eb649e95e5ec51c96dad5344c22772dae0109a4613488cf4f4673cac721"
+  },
+  "commands": [
+    {
+      "argv": [
+        "bash",
+        "scripts/test-go.sh",
+        "-overlay",
+        "/private/tmp/canopy-search-adversarial-wawif3c3/overlay.json",
+        "-list",
+        "^TestAdversarial",
+        "./internal/embed",
+        "./internal/indexer",
+        "./internal/store",
+        "./internal/search",
+        "./cmd/canopy"
+      ],
+      "exit": 0,
+      "stdout": "TestAdversarialLegacyAliasIdentity\nTestAdversarialAdoptRepair\nok  \tgithub.com/neutrospec/canopy/internal/embed\t0.329s\nTestAdversarialAliasCacheReuse\nok  \tgithub.com/neutrospec/canopy/internal/indexer\t0.332s\nok  \tgithub.com/neutrospec/canopy/internal/store\t0.328s\nok  \tgithub.com/neutrospec/canopy/internal/search\t0.331s\nok  \tgithub.com/neutrospec/canopy/cmd/canopy\t0.434s\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "bash",
+        "scripts/test-go.sh",
+        "-overlay",
+        "/private/tmp/canopy-search-adversarial-wawif3c3/overlay.json",
+        "-count=1",
+        "-run",
+        "^TestAdversarial",
+        "-v",
+        "./internal/embed",
+        "./internal/indexer",
+        "./internal/store",
+        "./internal/search",
+        "./cmd/canopy"
+      ],
+      "exit": 1,
+      "stdout": "=== RUN   TestAdversarialLegacyAliasIdentity\n=== RUN   TestAdversarialLegacyAliasIdentity/real-directory-control\n    search_adversarial_review_test.go:59: kind=real-directory-control before=f8cd254c8c614271cc73fd94eab80b7899ef8bd5579bbc83f0c3eb2e279b4ec4 after=03b06b254fddf646f9b5404dc3f06d7020fa62d91f673af02ec3a46cbe1fa997 changed=true\n    search_adversarial_review_test.go:63: after sidecar truncate: status=<nil> error=model incomplete: weights.bin must be a nonempty regular file (symlink to a file is allowed); repair with model pull --repair\n=== RUN   TestAdversarialLegacyAliasIdentity/root-symlink\n    search_adversarial_review_test.go:59: kind=root-symlink before=ad1f2cb0c4b11cf8f2ce8a02fae9c7acba008a3cd29367f4ab2ce69fae572876 after=ad1f2cb0c4b11cf8f2ce8a02fae9c7acba008a3cd29367f4ab2ce69fae572876 changed=false\n    search_adversarial_review_test.go:60: model contents changed but reusable embedding profile did not\n    search_adversarial_review_test.go:63: after sidecar truncate: status=&{Ready:true Path:/private/tmp/canopy-search-adversarial-wawif3c3/tmp/canopy-go.wGHubq/tmp/canopy-tests-1010323033/tmp/TestAdversarialLegacyAliasIdentityroot-symlink331786378/001/alias Kind:onnx-external Legacy:true Profile:ad1f2cb0c4b11cf8f2ce8a02fae9c7acba008a3cd29367f4ab2ce69fae572876 Manifest:<nil> Repair:canopy model pull --repair; custom/legacy bundle: canopy model verify --adopt} error=<nil>\n    search_adversarial_review_test.go:64: zero-byte required sidecar remains cached as ready\n=== RUN   TestAdversarialLegacyAliasIdentity/sidecar-directory-symlink\n    search_adversarial_review_test.go:59: kind=sidecar-directory-symlink before=e10d30276126e52f9693067f236e0453b8b117f1c9e5a81d3b8e44c1df6bd4a6 after=e10d30276126e52f9693067f236e0453b8b117f1c9e5a81d3b8e44c1df6bd4a6 changed=false\n    search_adversarial_review_test.go:60: model contents changed but reusable embedding profile did not\n    search_adversarial_review_test.go:63: after sidecar truncate: status=&{Ready:true Path:/private/tmp/canopy-search-adversarial-wawif3c3/tmp/canopy-go.wGHubq/tmp/canopy-tests-1010323033/tmp/TestAdversarialLegacyAliasIdentitysidecar-directory-symlink121957217/001/model Kind:onnx-external Legacy:true Profile:e10d30276126e52f9693067f236e0453b8b117f1c9e5a81d3b8e44c1df6bd4a6 Manifest:<nil> Repair:canopy model pull --repair; custom/legacy bundle: canopy model verify --adopt} error=<nil>\n    search_adversarial_review_test.go:64: zero-byte required sidecar remains cached as ready\n--- FAIL: TestAdversarialLegacyAliasIdentity (0.01s)\n    --- PASS: TestAdversarialLegacyAliasIdentity/real-directory-control (0.00s)\n    --- FAIL: TestAdversarialLegacyAliasIdentity/root-symlink (0.00s)\n    --- FAIL: TestAdversarialLegacyAliasIdentity/sidecar-directory-symlink (0.00s)\n=== RUN   TestAdversarialAdoptRepair\n=== RUN   TestAdversarialAdoptRepair/healthy-legacy-control\n    search_adversarial_review_test.go:79: adopt broken=false err=<nil>\n=== RUN   TestAdversarialAdoptRepair/invalid-manifest\n    search_adversarial_review_test.go:79: adopt broken=true err=unsupported model manifest profile; run model verify --adopt for a local compatible bundle\n    search_adversarial_review_test.go:80: explicit adoption cannot repair a structurally valid local bundle with a stale manifest\n--- FAIL: TestAdversarialAdoptRepair (0.00s)\n    --- PASS: TestAdversarialAdoptRepair/healthy-legacy-control (0.00s)\n    --- FAIL: TestAdversarialAdoptRepair/invalid-manifest (0.00s)\nFAIL\nFAIL\tgithub.com/neutrospec/canopy/internal/embed\t0.177s\n=== RUN   TestAdversarialAliasCacheReuse\n=== RUN   TestAdversarialAliasCacheReuse/real-directory-control\n    search_adversarial_review_test.go:51: alias=false same_profile=false recomputed_pages=1 calls=1 score=1\n=== RUN   TestAdversarialAliasCacheReuse/legacy-model-symlink\n    search_adversarial_review_test.go:51: alias=true same_profile=true recomputed_pages=0 calls=0 score=0\n    search_adversarial_review_test.go:52: fresh model query compared with previous model cached vectors\n--- FAIL: TestAdversarialAliasCacheReuse (0.01s)\n    --- PASS: TestAdversarialAliasCacheReuse/real-directory-control (0.01s)\n    --- FAIL: TestAdversarialAliasCacheReuse/legacy-model-symlink (0.01s)\nFAIL\nFAIL\tgithub.com/neutrospec/canopy/internal/indexer\t0.169s\ntesting: warning: no tests to run\nPASS\nok  \tgithub.com/neutrospec/canopy/internal/store\t0.153s [no tests to run]\ntesting: warning: no tests to run\nPASS\nok  \tgithub.com/neutrospec/canopy/internal/search\t0.156s [no tests to run]\ntesting: warning: no tests to run\nPASS\nok  \tgithub.com/neutrospec/canopy/cmd/canopy\t0.255s [no tests to run]\nFAIL\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "bash",
+        "scripts/test-go.sh",
+        "-count=1",
+        "./internal/embed",
+        "./internal/indexer",
+        "./internal/store",
+        "./internal/search",
+        "./cmd/canopy"
+      ],
+      "exit": 0,
+      "stdout": "ok  \tgithub.com/neutrospec/canopy/internal/embed\t0.327s\nok  \tgithub.com/neutrospec/canopy/internal/indexer\t0.408s\nok  \tgithub.com/neutrospec/canopy/internal/store\t0.191s\nok  \tgithub.com/neutrospec/canopy/internal/search\t0.176s\nok  \tgithub.com/neutrospec/canopy/cmd/canopy\t21.140s\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "scripts/test-native-download.py"
+      ],
+      "exit": 0,
+      "stdout": "native ready: darwin/arm64 /private/tmp/canopy-search-adversarial-wawif3c3/tmp/canopy-native-tests-1rhzb99_/lib/libtokenizers.a\nnative cache verified\n",
+      "stderr": ".....\n----------------------------------------------------------------------\nRan 5 tests in 0.434s\n\nOK\n"
+    }
+  ],
+  "python_probes": [
+    {
+      "probe": "native-marker-retry",
+      "label": "object-control",
+      "error": null,
+      "download_calls": 1,
+      "final_bytes": "new verified library fixture"
+    },
+    {
+      "probe": "native-marker-retry",
+      "label": "null-marker",
+      "error": "TypeError: 'NoneType' object is not subscriptable",
+      "download_calls": 0,
+      "final_bytes": "old normal library fixture"
+    },
+    {
+      "probe": "native-marker-retry",
+      "label": "array-marker",
+      "error": "TypeError: list indices must be integers or slices, not str",
+      "download_calls": 0,
+      "final_bytes": "old normal library fixture"
+    }
+  ],
+  "environment": {
+    "HOME": "/private/tmp/canopy-search-adversarial-wawif3c3/home",
+    "XDG_CONFIG_HOME": "/private/tmp/canopy-search-adversarial-wawif3c3/config",
+    "XDG_CACHE_HOME": "/private/tmp/canopy-search-adversarial-wawif3c3/cache",
+    "XDG_STATE_HOME": "/private/tmp/canopy-search-adversarial-wawif3c3/state",
+    "XDG_DATA_HOME": "/private/tmp/canopy-search-adversarial-wawif3c3/data",
+    "TMPDIR": "/private/tmp/canopy-search-adversarial-wawif3c3/tmp",
+    "GOMODCACHE": "/Users/nobocop/go/pkg/mod",
+    "GOCACHE": "/private/tmp/canopy-improve-20261010/go-build",
+    "GOTELEMETRY": "off",
+    "GOPROXY": "off",
+    "GOTOOLCHAIN": "local",
+    "GOFLAGS": "-mod=readonly"
+  },
+  "source_after": {
+    "internal/embed/model.go": "48e08aaac2c8a971dacc3286d8f0298c71f5ba9cb5d7720c6506693c4a4d7627",
+    "internal/embed/profile.go": "b3ac44dfff674a8bd3c6ea82b70742b4c5ee6bfb3550a9de44db07dd431274f8",
+    "internal/embed/onnx.go": "db2ad8a9ffbd61f4778d05cd5ad5c98d3e2b655aee3dc29adf1294d9b06fb5fb",
+    "internal/embed/validation.go": "219e1c8518a625f9d3142d22c9c01508e014d50c336dec682c50e76ed31e9673",
+    "internal/embed/chunk.go": "3e02683ae12cf9f4e36fb4bb0b966717e7c44b9d173df39ad97ea119a7b61ba3",
+    "internal/embed/engine.go": "a0106ce36610eb4990438a87ec007efd44653e3e8706fd71888bf93cd18c0405",
+    "internal/embed/engine_ort.go": "9e707cba61384df16c09979a49731a85bd837881bff50b762848ff5156a3ee92",
+    "internal/indexer/indexer.go": "890dd9e4ccffb6031db82141e5717f9e833554c49c6c66794f2566f8ab9b507d",
+    "internal/store/store.go": "4c05d2f17885e1d4e5d2e55c49e9f4fa9a67e063099d36dcea2bc7889a39cb7b",
+    "internal/store/vectors.go": "e3fb859e54e6f0e5fe10b47df2c2f61ef456d831023e17e837e099e91b0839f4",
+    "internal/search/search.go": "7aa9817c1807726a1ccc07499f7e15faa10c318da6461fa9db6c3c474358cab3",
+    "internal/search/evaluation_test.go": "3374d8282a55afcf04433809540c7249f69ea1ed554d63b75abf67e3fc975aad",
+    "internal/search/testdata/evaluation/corpus.json": "8e0e9e907269e5cb87a5a6f9920f59c32c5fca9fb6daacc9c2bba6d11a86d5c0",
+    "scripts/prepare-native.py": "3d14f6fc3123df86f05dfcbd8e34d8c0b7f8f4b0d3c44614639b3358fc4ac7ef",
+    "scripts/quantize-model.py": "72ca4330c143eead191c946f0df6753a01b0b0ba1e0ee1237d7db09fd0454393",
+    "cmd/canopy/main.go": "0c0188e086de0f14d76853396eba6ae44ebaf280fddf13b28999aaac1a0cfd9f",
+    "cmd/canopy/recall.go": "8bbcb4b418f2907c94a3d41bec9787a73292ec7e75c44cd4c42420eaa2584d15",
+    "cmd/canopy/write.go": "a9d5aa67ccb5cb0a01f629d601168ead603816e26841726fd8de9ee7903eb6cf",
+    "cmd/canopy/resurface.go": "fa67a9e262663e88053bd72b0f5eeeca98ca222f4f2fe8fcdf3ac3fce9db49ea",
+    "cmd/canopy/reconcile.go": "36cabfd704ce3356af39fb43f9bf51efcdafe40ed4594bb6f151b758598ef25b",
+    "internal/webui/server.go": "36b128c4dfb0f7ff231228b9d27f6f28a4f68cf275ef7da5f6beddd9617043e6",
+    "internal/resurface/pick.go": "99d4afe8d045a98dc5768db65508b3fb8d615c3218a985738e017eae152158d3",
+    "scripts/test-go.sh": "34a98eb649e95e5ec51c96dad5344c22772dae0109a4613488cf4f4673cac721"
+  }
+}

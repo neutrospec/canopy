@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"strings"
 	"time"
@@ -24,6 +25,9 @@ func cmdEvents() *cobra.Command {
 		Use:   "events",
 		Short: "Query the machine-local event log (attention + task/sync/reconcile lifecycle)",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if limit < 1 || limit > 10000 {
+				return fmt.Errorf("limit must be between 1 and 10000")
+			}
 			w, err := loadWiki()
 			if err != nil {
 				return err
@@ -80,6 +84,9 @@ func cmdEventsGC() *cobra.Command {
 		Use:   "gc",
 		Short: "Prune events older than --days (machine-local only; the wiki is never touched)",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if days < 0 || int64(days) > int64(math.MaxInt64)/int64(24*time.Hour) {
+				return fmt.Errorf("days must be nonnegative and fit a time.Duration")
+			}
 			w, err := loadWiki()
 			if err != nil {
 				return err

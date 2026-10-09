@@ -20,6 +20,7 @@ const (
 
 type suggestion struct {
 	Slug  string
+	Ref   string
 	Title string
 	Sim   float64
 	Tags  int // shared-tag count (ranking boost, shown as context)
@@ -29,16 +30,7 @@ type suggestion struct {
 	Requested bool
 }
 
-func (s *Server) suggestLinks(scan *wiki.ScanResult, p *wiki.Page, backlinks []string) []suggestion {
-	st, err := store.Open(s.w.DBPath())
-	if err != nil {
-		return nil
-	}
-	vectors, err := st.PageVectors()
-	st.Close()
-	if err != nil {
-		return nil
-	}
+func (s *Server) suggestLinks(scan *wiki.ScanResult, p *wiki.Page, backlinks []string, vectors map[string][]float32) []suggestion {
 	self, ok := vectors[strings.ToLower(p.Slug)]
 	if !ok {
 		return nil
@@ -74,7 +66,7 @@ func (s *Server) suggestLinks(scan *wiki.ScanResult, p *wiki.Page, backlinks []s
 				shared++
 			}
 		}
-		out = append(out, suggestion{Slug: other.Slug, Title: other.Title, Sim: sim, Tags: shared})
+		out = append(out, suggestion{Slug: other.Slug, Ref: other.RelPath, Title: other.Title, Sim: sim, Tags: shared})
 	}
 	// Cosine leads; shared tags break near-ties (same ranking idea as
 	// rankRelated in `canopy new`).

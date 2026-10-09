@@ -1,0 +1,8 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/neutrospec/canopy/internal/store
+cpu: Apple M5 Max
+BenchmarkRetrievalScale/pages200_chunks1000_k8_cap2-18         	       3	   4157931 ns/op	   4428667 first-query-ns	 8571362 B/op	   15254 allocs/op
+BenchmarkRetrievalScale/pages1000_chunks5000_k8_cap2-18        	       3	  30090181 ns/op	  30515083 first-query-ns	42781109 B/op	   75256 allocs/op
+PASS
+ok  	github.com/neutrospec/canopy/internal/store	0.933s

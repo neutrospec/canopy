@@ -1,0 +1,6 @@
+2026/10/10 03:51:28 POST http://localhost/api/read/alpha
+--- FAIL: TestUnusedMultipartFileRefusedBeforeMutation (0.03s)
+    boundaries_test.go:62: file=true status=200 read=true err=<nil>
+FAIL
+FAIL	github.com/neutrospec/canopy/internal/webui	0.627s
+FAIL

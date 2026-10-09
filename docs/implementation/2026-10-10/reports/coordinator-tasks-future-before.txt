@@ -1,0 +1,6 @@
+--- FAIL: TestFutureKnownTaskDoneRefusedAndDismissPreservesUnknown (0.03s)
+    --- FAIL: TestFutureKnownTaskDoneRefusedAndDismissPreservesUnknown/2 (0.01s)
+        version_test.go:30: future known-type task was declared done by an older verifier
+FAIL
+FAIL	github.com/neutrospec/canopy/internal/tasks	0.396s
+FAIL

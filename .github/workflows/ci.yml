@@ -1,9 +1,9 @@
 name: ci
 
 # Fast checks on every push and PR: format, vet, tests, and the CGO-free lite
-# build. The full ORT build (semantic search) needs onnxruntime + a native
-# tokenizer lib, so it is validated at release time (Homebrew source build),
-# not here — this keeps CI quick and green.
+# build. Full ORT builds need native libraries and are distributed through
+# Homebrew source builds. This job verifies lite behavior and preparation
+# failure fixtures; it does not certify native runtime or Homebrew installation.
 on:
   push:
     branches: [main]
@@ -32,7 +32,7 @@ jobs:
       - name: go vet
         run: go vet ./...
       - name: tests (invariant F1)
-        run: go test ./internal/...
+        run: make test
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -40,7 +40,13 @@ jobs:
         run: make test-ui
       - name: lite build (CGO-free path, invariant F2)
         run: make build-lite
+      - name: actual lite CLI and failure preservation (invariants F2, V8, V15)
+        run: python3 scripts/test-cli.py --binary ./canopy
+      - name: native failure fixtures and embedded assets (invariants V11, V14)
+        run: make test-assets
       - name: translations current (invariant L)
         run: make i18n-check
       - name: release tags on origin/main (invariant J7)
         run: make release-lineage-check
+      - name: checked source remains unchanged
+        run: git diff --exit-code

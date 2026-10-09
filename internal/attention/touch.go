@@ -50,7 +50,10 @@ func Touch(w *config.Wiki, slugs []string, kind, meta string) error {
 		if firstErr == nil {
 			firstErr = err
 		}
-		return firstErr
+		// A broken human aggregate must not hide healthy agent history.
+		if rs == nil {
+			return firstErr
+		}
 	}
 	changed := false
 	for _, s := range slugs {

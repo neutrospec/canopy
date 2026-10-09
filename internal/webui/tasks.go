@@ -2,6 +2,7 @@ package webui
 
 import (
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -21,11 +22,14 @@ import (
 
 // taskView is the page-attached todo-list entry.
 type taskView struct {
-	ID        string
-	TypeLabel string // localized chip text
-	Other     string // connect: the other page's slug (linkified)
-	Request   string // edit: the user's request
-	Created   string // date only
+	ID          string
+	TypeLabel   string // localized chip text
+	Other       string // connect: the other page's slug (linkified)
+	Request     string // edit: the user's request
+	Created     string // exact reception timestamp
+	Body        string
+	Base        string
+	StatusLabel string
 }
 
 // handleTaskConnect files a connect task for a suggestion the user
@@ -37,20 +41,20 @@ func (s *Server) handleTaskConnect(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	a := wiki.NormalizeLink(r.FormValue("a"))
-	b := wiki.NormalizeLink(r.FormValue("b"))
-	pa, okA := scan.BySlug[a]
-	_, okB := scan.BySlug[b]
-	if !okA || !okB || a == b {
-		http.Error(w, "bad pair", http.StatusBadRequest)
+	pa, errA := scan.Find(r.FormValue("a"))
+	pb, errB := scan.Find(r.FormValue("b"))
+	if errA != nil || errB != nil || pa.Slug == pb.Slug {
+		http.Error(w, "bad or ambiguous pair", http.StatusBadRequest)
 		return
 	}
+	a, b := pa.Slug, pb.Slug
 	sim, _ := strconv.ParseFloat(r.FormValue("sim"), 64)
-	if _, _, err := tasks.FileConnect(s.w, a, b, sim, "web", time.Now()); err != nil {
+	task, _, err := tasks.FileConnect(s.w, a, b, sim, "web", time.Now())
+	if err != nil {
 		s.fail(w, err)
 		return
 	}
-	http.Redirect(w, r, "/page/"+pa.Slug+"?tasked=1", http.StatusSeeOther)
+	http.Redirect(w, r, pagePath(pa)+"?tasked="+url.QueryEscape(task.ID), http.StatusSeeOther)
 }
 
 // handleTaskEdit files an edit request against a page, capturing the
@@ -61,14 +65,14 @@ func (s *Server) handleTaskEdit(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	p, ok := scan.BySlug[wiki.NormalizeLink(r.PathValue("slug"))]
-	if !ok {
+	p, err := scan.Find(r.PathValue("slug"))
+	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 	request := strings.TrimSpace(r.FormValue("request"))
 	if request == "" {
-		http.Redirect(w, r, "/page/"+p.Slug, http.StatusSeeOther)
+		http.Error(w, "provide an edit request", http.StatusBadRequest)
 		return
 	}
 	raw, err := os.ReadFile(filepath.Join(s.w.Root, p.RelPath))
@@ -76,11 +80,12 @@ func (s *Server) handleTaskEdit(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	if _, err := tasks.FileEdit(s.w, p.Slug, request, "", contentHash(raw), "web", time.Now()); err != nil {
+	task, err := tasks.FileEdit(s.w, p.Slug, request, "", contentHash(raw), "web", time.Now())
+	if err != nil {
 		s.fail(w, err)
 		return
 	}
-	http.Redirect(w, r, "/page/"+p.Slug+"?tasked=1", http.StatusSeeOther)
+	http.Redirect(w, r, pagePath(p)+"?tasked="+url.QueryEscape(task.ID), http.StatusSeeOther)
 }
 
 // taskRow is one entry on the /special/tasks screen.
@@ -91,10 +96,11 @@ type taskRow struct {
 	Pages       []string
 	Request     string
 	Body        string // edit proposal text (web editor submissions)
+	Base        string
 	Note        string
 	Door        string
-	Created     string // date only
-	Closed      string // date only
+	Created     string // RFC3339
+	Closed      string // RFC3339
 	// CanCancel: the requester may withdraw a pending edit request from
 	// the web. Connect tasks are not cancellable here — a web dismiss
 	// would permanently suppress the pair's button (T4), which is the
@@ -102,11 +108,13 @@ type taskRow struct {
 	CanCancel bool
 }
 
-func dateOnly(ts string) string {
-	if i := strings.Index(ts, "T"); i > 0 {
-		return ts[:i]
+func taskStatusLabel(lc *i18n.Localizer, status string) string {
+	switch status {
+	case tasks.StatusPending, tasks.StatusDone, tasks.StatusDismissed:
+		return localizeString(lc, "tasks_status_"+status)
+	default:
+		return status
 	}
-	return ts
 }
 
 func (s *Server) typeLabel(lc *i18n.Localizer, typ string) string {
@@ -133,15 +141,16 @@ func (s *Server) handleTasksPage(w http.ResponseWriter, r *http.Request) {
 	for _, t := range list {
 		row := taskRow{
 			ID: t.ID, TypeLabel: s.typeLabel(lc, t.Type), Pages: t.Pages,
-			Request: t.Request, Body: t.Body, Note: t.Note, Door: t.Door,
-			Created: dateOnly(t.Created), Closed: dateOnly(t.Closed),
+			Request: t.Request, Body: t.Body, Base: t.Base, Note: t.Note, Door: t.Door,
+			StatusLabel: taskStatusLabel(lc, t.Status),
+			Created:     t.Created, Closed: t.Closed,
 		}
 		if t.Status == tasks.StatusPending {
 			row.CanCancel = t.Type == tasks.TypeEdit
 			pending = append(pending, row)
 			continue
 		}
-		row.StatusLabel = localizeString(lc, "tasks_status_"+t.Status)
+		row.StatusLabel = taskStatusLabel(lc, t.Status)
 		closed = append(closed, row)
 	}
 	// closed: newest first, capped — this is a pulse, not an archive
@@ -180,11 +189,11 @@ func (s *Server) handleTaskCancel(w http.ResponseWriter, r *http.Request) {
 // with an already-filed connect task (any status — dismissed pairs must
 // not re-offer the button). Best-effort: a broken queue never breaks
 // page serving.
-func (s *Server) pageTasks(slug string, lc *i18n.Localizer) (views []taskView, filed map[string]bool) {
+func (s *Server) pageTasks(slug string, lc *i18n.Localizer) (views []taskView, filed map[string]bool, err error) {
 	filed = map[string]bool{}
 	list, err := tasks.Load(s.w)
 	if err != nil {
-		return nil, filed
+		return nil, filed, err
 	}
 	slug = strings.ToLower(slug)
 	for _, t := range list {
@@ -201,7 +210,7 @@ func (s *Server) pageTasks(slug string, lc *i18n.Localizer) (views []taskView, f
 		if t.Status != tasks.StatusPending {
 			continue
 		}
-		v := taskView{ID: t.ID, TypeLabel: s.typeLabel(lc, t.Type), Created: dateOnly(t.Created)}
+		v := taskView{ID: t.ID, TypeLabel: s.typeLabel(lc, t.Type), Created: t.Created, Body: t.Body, Base: t.Base, StatusLabel: taskStatusLabel(lc, t.Status)}
 		switch t.Type {
 		case tasks.TypeConnect:
 			for _, p := range t.Pages {
@@ -217,5 +226,5 @@ func (s *Server) pageTasks(slug string, lc *i18n.Localizer) (views []taskView, f
 		}
 		views = append(views, v)
 	}
-	return views, filed
+	return views, filed, nil
 }

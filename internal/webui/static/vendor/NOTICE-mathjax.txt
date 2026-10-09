@@ -1,0 +1,12 @@
+MathJax 3.2.2
+Copyright (c) 2017-2022 The MathJax Consortium
+https://github.com/mathjax/MathJax/tree/3.2.2
+https://github.com/mathjax/MathJax-src/tree/3.2.2
+
+Canopy redistributes the unmodified es5/tex-svg.js and the color and physics
+TeX components from the MathJax 3.2.2 distribution. Component files were
+renamed to mathjax-color.js and mathjax-physics.js without changing bytes.
+The full Apache License 2.0 is in LICENSE-mathjax.txt. The copyright above
+is retained from the corresponding MathJax-src 3.2.2 source headers.
+Upstream MathJax 3.2.2 has no top-level NOTICE file. This redistribution note
+was added by canopy; it does not change the upstream license.

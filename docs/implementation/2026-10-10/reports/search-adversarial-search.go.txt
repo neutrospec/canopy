@@ -1,0 +1,41 @@
+package search_test
+
+import (
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"reflect"
+	"testing"
+
+	productsearch "github.com/neutrospec/canopy/internal/search"
+	"github.com/neutrospec/canopy/internal/store"
+	"github.com/neutrospec/canopy/internal/wiki"
+)
+
+func TestAdversarialEvaluationBoundaries(t *testing.T) {
+	b,err:=os.ReadFile("testdata/evaluation/corpus.json");if err!=nil{t.Fatal(err)}
+	var corpus evalCorpus;if err=json.Unmarshal(b,&corpus);err!=nil{t.Fatal(err)}
+	st,err:=store.Open(filepath.Join(t.TempDir(),"index.db"));if err!=nil{t.Fatal(err)};defer st.Close()
+	pages:=[]*wiki.Page{}
+	for _,p:=range corpus.Pages{pages=append(pages,&wiki.Page{Slug:p.Slug,RelPath:"concepts/"+p.Slug+".md",Title:p.Title,Body:p.Body})}
+	// Holdout corpus has no C-only distractor. Add it solely in this review,
+	// and compare the tokenizer's actual C and C++ result sets.
+	pages=append(pages,&wiki.Page{Slug:"review-c-only",RelPath:"concepts/review-c-only.md",Title:"C API",Body:"C API is a plain C interface without classes."})
+	if err=st.RebuildPages(pages);err!=nil{t.Fatal(err)}
+	cpp,err:=st.SearchKeyword("C++ API",10);if err!=nil{t.Fatal(err)}
+	c,err:=st.SearchKeyword("C API",10);if err!=nil{t.Fatal(err)}
+	cppSlugs,cSlugs:=[]string{},[]string{}
+	for _,h:=range cpp{cppSlugs=append(cppSlugs,h.Slug)};for _,h:=range c{cSlugs=append(cSlugs,h.Slug)}
+	t.Logf("symbol distinction probe: C++ API=%v C API=%v identical=%v",cppSlugs,cSlugs,reflect.DeepEqual(cppSlugs,cSlugs))
+	if len(cpp)==0||len(c)==0{t.Fatal("healthy literal control failed")}
+	for _,q:=range []string{"++","+++"}{hits,err:=st.SearchKeyword(q,10);if err!=nil{t.Fatal(err)};t.Logf("punctuation query=%q hits=%d despite ++ occurring in symbol-cpp",q,len(hits))}
+	// Current hybrid span scorer receives semantic top-3 chunks only, even
+	// when RRF admits another keyword page. Keep this a descriptive probe.
+	kw:=[]store.Hit{{Slug:"d"}}
+	sem:=[]store.Hit{{Slug:"a"},{Slug:"b"},{Slug:"c"}}
+	hybrid:=productsearch.Fuse(3,kw,sem)
+	q:=evalQuery{ID:"review-hybrid-extra-page",Answerable:true,ExpectedPages:[]string{"d"},SupportingSpans:[]string{"expected evidence"},Relevance:map[string]int{"d":2}}
+	scoreEval(t,q,"hybrid",hybrid,[]store.ChunkHit{{Slug:"a",Text:"other"},{Slug:"b",Text:"other"},{Slug:"c",Text:"other"}})
+	t.Log("hybrid admitted expected page d; coverage reflects the separate semantic chunk list, not independent hybrid evidence retrieval")
+	if !anyExpected(hybrid,q.ExpectedPages){t.Fatal("hybrid control did not admit keyword-only page")}
+}

@@ -1,0 +1,184 @@
+{
+  "source_before": {
+    "internal/embed/model.go": "48e08aaac2c8a971dacc3286d8f0298c71f5ba9cb5d7720c6506693c4a4d7627",
+    "internal/embed/profile.go": "79bd92b6b5294a1f6a535b837dee692628a0693d749a0d823f4e652200da7236",
+    "internal/embed/onnx.go": "db2ad8a9ffbd61f4778d05cd5ad5c98d3e2b655aee3dc29adf1294d9b06fb5fb",
+    "internal/embed/validation.go": "219e1c8518a625f9d3142d22c9c01508e014d50c336dec682c50e76ed31e9673",
+    "internal/embed/chunk.go": "3e02683ae12cf9f4e36fb4bb0b966717e7c44b9d173df39ad97ea119a7b61ba3",
+    "internal/embed/engine.go": "a0106ce36610eb4990438a87ec007efd44653e3e8706fd71888bf93cd18c0405",
+    "internal/embed/engine_ort.go": "9e707cba61384df16c09979a49731a85bd837881bff50b762848ff5156a3ee92",
+    "internal/indexer/indexer.go": "890dd9e4ccffb6031db82141e5717f9e833554c49c6c66794f2566f8ab9b507d",
+    "internal/store/store.go": "4c05d2f17885e1d4e5d2e55c49e9f4fa9a67e063099d36dcea2bc7889a39cb7b",
+    "internal/store/vectors.go": "e3fb859e54e6f0e5fe10b47df2c2f61ef456d831023e17e837e099e91b0839f4",
+    "internal/search/search.go": "7aa9817c1807726a1ccc07499f7e15faa10c318da6461fa9db6c3c474358cab3",
+    "internal/search/evaluation_test.go": "3374d8282a55afcf04433809540c7249f69ea1ed554d63b75abf67e3fc975aad",
+    "internal/search/testdata/evaluation/corpus.json": "8e0e9e907269e5cb87a5a6f9920f59c32c5fca9fb6daacc9c2bba6d11a86d5c0",
+    "scripts/prepare-native.py": "3d14f6fc3123df86f05dfcbd8e34d8c0b7f8f4b0d3c44614639b3358fc4ac7ef",
+    "scripts/quantize-model.py": "72ca4330c143eead191c946f0df6753a01b0b0ba1e0ee1237d7db09fd0454393",
+    "cmd/canopy/main.go": "0c0188e086de0f14d76853396eba6ae44ebaf280fddf13b28999aaac1a0cfd9f",
+    "cmd/canopy/recall.go": "8bbcb4b418f2907c94a3d41bec9787a73292ec7e75c44cd4c42420eaa2584d15",
+    "cmd/canopy/write.go": "7d8ecb4e8cb90a45481de1106d9a515313eb5c8a4d582bfc101eb347af5d7945",
+    "cmd/canopy/resurface.go": "fa67a9e262663e88053bd72b0f5eeeca98ca222f4f2fe8fcdf3ac3fce9db49ea",
+    "cmd/canopy/reconcile.go": "ae43b1010f665ec5c8b88cb99a56bfc974623feab6a83adcdd1ac8d4646f3fc3",
+    "internal/webui/server.go": "e06f7a973a50783f41f68a5654f3b4034b1a93f28ba932c057a9ea59df20f6ab",
+    "internal/resurface/pick.go": "99d4afe8d045a98dc5768db65508b3fb8d615c3218a985738e017eae152158d3",
+    "scripts/test-go.sh": "34a98eb649e95e5ec51c96dad5344c22772dae0109a4613488cf4f4673cac721"
+  },
+  "commands": [
+    {
+      "argv": [
+        "bash",
+        "scripts/test-go.sh",
+        "-overlay",
+        "/private/tmp/canopy-search-adversarial-4v95awg8/overlay.json",
+        "-list",
+        "^TestAdversarial",
+        "./internal/embed",
+        "./internal/indexer",
+        "./internal/store",
+        "./internal/search",
+        "./internal/resurface",
+        "./cmd/canopy"
+      ],
+      "exit": 0,
+      "stdout": "TestAdversarialLegacyAliasIdentity\nTestAdversarialAdoptRepair\nTestAdversarialQuantizerPublication\nTestAdversarialReadinessRegularBeforeParse\nTestAdversarialManifestReadBound\nok  \tgithub.com/neutrospec/canopy/internal/embed\t0.307s\nTestAdversarialAliasCacheReuse\nok  \tgithub.com/neutrospec/canopy/internal/indexer\t0.306s\nok  \tgithub.com/neutrospec/canopy/internal/store\t0.304s\nTestAdversarialEvaluationBoundaries\nok  \tgithub.com/neutrospec/canopy/internal/search\t0.310s\nTestAdversarialBridgeCandidateMemory\nok  \tgithub.com/neutrospec/canopy/internal/resurface\t0.309s\nok  \tgithub.com/neutrospec/canopy/cmd/canopy\t0.444s\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "bash",
+        "scripts/test-go.sh",
+        "-overlay",
+        "/private/tmp/canopy-search-adversarial-4v95awg8/overlay.json",
+        "-count=1",
+        "-run",
+        "^TestAdversarial",
+        "-v",
+        "./internal/embed",
+        "./internal/indexer",
+        "./internal/store",
+        "./internal/search",
+        "./internal/resurface",
+        "./cmd/canopy"
+      ],
+      "exit": 1,
+      "stdout": "=== RUN   TestAdversarialLegacyAliasIdentity\n=== RUN   TestAdversarialLegacyAliasIdentity/real-directory-control\n    search_adversarial_review_test.go:62: kind=real-directory-control before=bda21ae17cb1e351bc8db85e529534e388d99ba36f1991eaa0698b415450a5b3 after=f95e7b62db3d5ea217d7f8b4dfd2cf435cf28dfe78454ce41545c13d547fee92 changed=true\n    search_adversarial_review_test.go:66: after sidecar truncate: status=<nil> error=model incomplete: weights.bin must be a nonempty regular file (symlink to a file is allowed); repair with model pull --repair\n=== RUN   TestAdversarialLegacyAliasIdentity/root-symlink\n    search_adversarial_review_test.go:62: kind=root-symlink before=b03ce0904aa6a8b39b5dfb70ae91df71cff7b96b920ff2c50e777b5892de19bc after=41cf136dfb820cf291ac17458325099cb59672ac94795a239c31fad774305250 changed=true\n    search_adversarial_review_test.go:66: after sidecar truncate: status=<nil> error=model incomplete: weights.bin must be a nonempty regular file (symlink to a file is allowed); repair with model pull --repair\n=== RUN   TestAdversarialLegacyAliasIdentity/sidecar-directory-symlink\n    search_adversarial_review_test.go:62: kind=sidecar-directory-symlink before=011a0c1bebcac8b3f9de726ed9df6969655d8130931d2f9fb17bfd4f1bea2b7a after=1daed2f78234617b6f1100a0d9cb791fcc03f0a3eac27206cb2c2b04c7ca6e43 changed=true\n    search_adversarial_review_test.go:66: after sidecar truncate: status=<nil> error=model incomplete: sidecar/weights.bin must be a nonempty regular file (symlink to a file is allowed); repair with model pull --repair\n--- PASS: TestAdversarialLegacyAliasIdentity (0.01s)\n    --- PASS: TestAdversarialLegacyAliasIdentity/real-directory-control (0.00s)\n    --- PASS: TestAdversarialLegacyAliasIdentity/root-symlink (0.00s)\n    --- PASS: TestAdversarialLegacyAliasIdentity/sidecar-directory-symlink (0.00s)\n=== RUN   TestAdversarialAdoptRepair\n=== RUN   TestAdversarialAdoptRepair/healthy-legacy-control\n    search_adversarial_review_test.go:82: adopt broken=false err=<nil>\n=== RUN   TestAdversarialAdoptRepair/invalid-manifest\n    search_adversarial_review_test.go:82: adopt broken=true err=unsupported model manifest profile; run model verify --adopt for a local compatible bundle\n    search_adversarial_review_test.go:83: explicit adoption cannot repair a structurally valid local bundle with a stale manifest\n--- FAIL: TestAdversarialAdoptRepair (0.00s)\n    --- PASS: TestAdversarialAdoptRepair/healthy-legacy-control (0.00s)\n    --- FAIL: TestAdversarialAdoptRepair/invalid-manifest (0.00s)\n=== RUN   TestAdversarialQuantizerPublication\n=== RUN   TestAdversarialQuantizerPublication/CANOPY_REVIEW_CONVERTED_GOOD\n    search_adversarial_review_test.go:94: quantizer returned success; status=&{Ready:true Path:/private/tmp/canopy-search-adversarial-4v95awg8/converted-inline-control Kind:onnx-inline Legacy:false Profile:811972d48efe6bc1bdb7c16734b2ce8cc393b8052ccc99bcc6c9dc44c3abc6b5 Manifest:0xecdba7b2d20 Repair:canopy model pull --repair; custom/legacy bundle: canopy model verify --adopt} err=<nil>\n=== RUN   TestAdversarialQuantizerPublication/CANOPY_REVIEW_CONVERTED_BAD\n    search_adversarial_review_test.go:94: quantizer returned success; status=<nil> err=model incomplete: stat /private/tmp/canopy-search-adversarial-4v95awg8/converted-missing-sidecar/weights.bin: no such file or directory; repair with model pull --repair\n    search_adversarial_review_test.go:95: successful converter publication replaced a ready active bundle with an incomplete bundle\n--- FAIL: TestAdversarialQuantizerPublication (0.00s)\n    --- PASS: TestAdversarialQuantizerPublication/CANOPY_REVIEW_CONVERTED_GOOD (0.00s)\n    --- FAIL: TestAdversarialQuantizerPublication/CANOPY_REVIEW_CONVERTED_BAD (0.00s)\n=== RUN   TestAdversarialReadinessRegularBeforeParse\n=== RUN   TestAdversarialReadinessRegularBeforeParse/regular-control\n    search_adversarial_review_test.go:113: fifo=false readiness returned err=<nil>\n=== RUN   TestAdversarialReadinessRegularBeforeParse/fifo-model\n    search_adversarial_review_test.go:117: CheckModel blocked opening FIFO before regular-file validation\n    search_adversarial_review_test.go:122: probe cleanup timed out\n--- FAIL: TestAdversarialReadinessRegularBeforeParse (1.30s)\n    --- PASS: TestAdversarialReadinessRegularBeforeParse/regular-control (0.00s)\n    --- FAIL: TestAdversarialReadinessRegularBeforeParse/fifo-model (1.30s)\n=== RUN   TestAdversarialManifestReadBound\n=== RUN   TestAdversarialManifestReadBound/small-manifest-control\n    search_adversarial_review_test.go:141: large=false total_alloc_delta=72080 err=<nil>\n=== RUN   TestAdversarialManifestReadBound/8MiB-manifest\n    search_adversarial_review_test.go:141: large=true total_alloc_delta=16909864 err=invalid model manifest size/kind\n    search_adversarial_review_test.go:143: oversized manifest rejected after unbounded full-file reads\n--- FAIL: TestAdversarialManifestReadBound (0.02s)\n    --- PASS: TestAdversarialManifestReadBound/small-manifest-control (0.00s)\n    --- FAIL: TestAdversarialManifestReadBound/8MiB-manifest (0.01s)\nFAIL\nFAIL\tgithub.com/neutrospec/canopy/internal/embed\t1.474s\n=== RUN   TestAdversarialAliasCacheReuse\n=== RUN   TestAdversarialAliasCacheReuse/real-directory-control\n    search_adversarial_review_test.go:51: alias=false same_profile=false recomputed_pages=1 calls=1 score=1\n=== RUN   TestAdversarialAliasCacheReuse/legacy-model-symlink\n    search_adversarial_review_test.go:51: alias=true same_profile=false recomputed_pages=1 calls=1 score=1\n--- PASS: TestAdversarialAliasCacheReuse (0.01s)\n    --- PASS: TestAdversarialAliasCacheReuse/real-directory-control (0.01s)\n    --- PASS: TestAdversarialAliasCacheReuse/legacy-model-symlink (0.01s)\nPASS\nok  \tgithub.com/neutrospec/canopy/internal/indexer\t0.156s\ntesting: warning: no tests to run\nPASS\nok  \tgithub.com/neutrospec/canopy/internal/store\t0.140s [no tests to run]\n=== RUN   TestAdversarialEvaluationBoundaries\n    search_adversarial_review_test.go:29: symbol distinction probe: C++ API=[review-c-only symbol-cpp] C API=[review-c-only symbol-cpp] identical=true\n    search_adversarial_review_test.go:31: punctuation query=\"++\" hits=0 despite ++ occurring in symbol-cpp\n    search_adversarial_review_test.go:31: punctuation query=\"+++\" hits=0 despite ++ occurring in symbol-cpp\n    search_adversarial_review_test.go:38: {\"answerable\":true,\"candidate_count\":3,\"hits\":[\"a\",\"d\",\"b\"],\"id\":\"review-hybrid-extra-page\",\"language\":\"\",\"mode\":\"hybrid\",\"ndcg_at_3\":0.6309297535714574,\"recall_at_3\":1,\"retrieved_supporting_spans\":0,\"supporting_spans\":1}\n    search_adversarial_review_test.go:39: hybrid admitted expected page d; coverage reflects the separate semantic chunk list, not independent hybrid evidence retrieval\n--- PASS: TestAdversarialEvaluationBoundaries (0.01s)\nPASS\nok  \tgithub.com/neutrospec/canopy/internal/search\t0.147s\n=== RUN   TestAdversarialBridgeCandidateMemory\n=== RUN   TestAdversarialBridgeCandidateMemory/orthogonal-control\n    search_adversarial_review_test.go:32: pages=200 dimension=1024 k=1 pair_density=false candidates=0 returned=0 total_alloc=9320 elapsed=49.399708ms\n=== RUN   TestAdversarialBridgeCandidateMemory/all-pairs-eligible\n    search_adversarial_review_test.go:32: pages=200 dimension=1024 k=1 pair_density=true candidates=19900 returned=1 total_alloc=103710480 elapsed=87.236208ms\n    search_adversarial_review_test.go:35: one requested bridge eagerly materializes every pair and excerpt\n--- FAIL: TestAdversarialBridgeCandidateMemory (0.14s)\n    --- PASS: TestAdversarialBridgeCandidateMemory/orthogonal-control (0.05s)\n    --- FAIL: TestAdversarialBridgeCandidateMemory/all-pairs-eligible (0.09s)\nFAIL\nFAIL\tgithub.com/neutrospec/canopy/internal/resurface\t0.278s\ntesting: warning: no tests to run\nPASS\nok  \tgithub.com/neutrospec/canopy/cmd/canopy\t0.236s [no tests to run]\nFAIL\n",
+      "stderr": ""
+    }
+  ],
+  "python_probes": [
+    {
+      "probe": "quantizer-publication",
+      "label": "inline-control",
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/Users/nobocop/play/canopy/scripts/quantize-model.py",
+        "--source",
+        "/private/tmp/canopy-search-adversarial-4v95awg8/quantizer-source",
+        "--destination",
+        "/private/tmp/canopy-search-adversarial-4v95awg8/converted-inline-control",
+        "--converter",
+        "/private/tmp/canopy-search-adversarial-4v95awg8/converter-inline-control"
+      ],
+      "exit": 0,
+      "stdout": "previous bundle retained: /private/tmp/canopy-search-adversarial-4v95awg8/.converted-inline-control.previous-o0zcxko4\ndone: /private/tmp/canopy-search-adversarial-4v95awg8/converted-inline-control (6 bytes)\n",
+      "stderr": "",
+      "active_files": [
+        "canopy-model.json",
+        "config.json",
+        "model.onnx",
+        "tokenizer.json"
+      ],
+      "backup_dirs": [
+        "/private/tmp/canopy-search-adversarial-4v95awg8/.converted-inline-control.previous-o0zcxko4"
+      ]
+    },
+    {
+      "probe": "quantizer-publication",
+      "label": "missing-sidecar",
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/Users/nobocop/play/canopy/scripts/quantize-model.py",
+        "--source",
+        "/private/tmp/canopy-search-adversarial-4v95awg8/quantizer-source",
+        "--destination",
+        "/private/tmp/canopy-search-adversarial-4v95awg8/converted-missing-sidecar",
+        "--converter",
+        "/private/tmp/canopy-search-adversarial-4v95awg8/converter-missing-sidecar"
+      ],
+      "exit": 0,
+      "stdout": "previous bundle retained: /private/tmp/canopy-search-adversarial-4v95awg8/.converted-missing-sidecar.previous-x65ufpr7\ndone: /private/tmp/canopy-search-adversarial-4v95awg8/converted-missing-sidecar (42 bytes)\n",
+      "stderr": "",
+      "active_files": [
+        "canopy-model.json",
+        "config.json",
+        "model.onnx",
+        "partial.bin",
+        "tokenizer.json"
+      ],
+      "backup_dirs": [
+        "/private/tmp/canopy-search-adversarial-4v95awg8/.converted-missing-sidecar.previous-x65ufpr7"
+      ]
+    },
+    {
+      "probe": "native-marker-retry",
+      "label": "object-control",
+      "error": null,
+      "download_calls": 1,
+      "final_bytes": "new verified library fixture"
+    },
+    {
+      "probe": "native-marker-retry",
+      "label": "null-marker",
+      "error": "TypeError: 'NoneType' object is not subscriptable",
+      "download_calls": 0,
+      "final_bytes": "old normal library fixture"
+    },
+    {
+      "probe": "native-marker-retry",
+      "label": "array-marker",
+      "error": "TypeError: list indices must be integers or slices, not str",
+      "download_calls": 0,
+      "final_bytes": "old normal library fixture"
+    }
+  ],
+  "environment": {
+    "HOME": "/private/tmp/canopy-search-adversarial-4v95awg8/home",
+    "XDG_CONFIG_HOME": "/private/tmp/canopy-search-adversarial-4v95awg8/config",
+    "XDG_CACHE_HOME": "/private/tmp/canopy-search-adversarial-4v95awg8/cache",
+    "XDG_STATE_HOME": "/private/tmp/canopy-search-adversarial-4v95awg8/state",
+    "XDG_DATA_HOME": "/private/tmp/canopy-search-adversarial-4v95awg8/data",
+    "TMPDIR": "/private/tmp/canopy-search-adversarial-4v95awg8/tmp",
+    "GOMODCACHE": "/Users/nobocop/go/pkg/mod",
+    "GOCACHE": "/private/tmp/canopy-improve-20261010/go-build",
+    "GOTELEMETRY": "off",
+    "GOPROXY": "off",
+    "GOTOOLCHAIN": "local",
+    "GOFLAGS": "-mod=readonly"
+  },
+  "source_after": {
+    "internal/embed/model.go": "48e08aaac2c8a971dacc3286d8f0298c71f5ba9cb5d7720c6506693c4a4d7627",
+    "internal/embed/profile.go": "79bd92b6b5294a1f6a535b837dee692628a0693d749a0d823f4e652200da7236",
+    "internal/embed/onnx.go": "db2ad8a9ffbd61f4778d05cd5ad5c98d3e2b655aee3dc29adf1294d9b06fb5fb",
+    "internal/embed/validation.go": "219e1c8518a625f9d3142d22c9c01508e014d50c336dec682c50e76ed31e9673",
+    "internal/embed/chunk.go": "3e02683ae12cf9f4e36fb4bb0b966717e7c44b9d173df39ad97ea119a7b61ba3",
+    "internal/embed/engine.go": "a0106ce36610eb4990438a87ec007efd44653e3e8706fd71888bf93cd18c0405",
+    "internal/embed/engine_ort.go": "9e707cba61384df16c09979a49731a85bd837881bff50b762848ff5156a3ee92",
+    "internal/indexer/indexer.go": "890dd9e4ccffb6031db82141e5717f9e833554c49c6c66794f2566f8ab9b507d",
+    "internal/store/store.go": "4c05d2f17885e1d4e5d2e55c49e9f4fa9a67e063099d36dcea2bc7889a39cb7b",
+    "internal/store/vectors.go": "e3fb859e54e6f0e5fe10b47df2c2f61ef456d831023e17e837e099e91b0839f4",
+    "internal/search/search.go": "7aa9817c1807726a1ccc07499f7e15faa10c318da6461fa9db6c3c474358cab3",
+    "internal/search/evaluation_test.go": "3374d8282a55afcf04433809540c7249f69ea1ed554d63b75abf67e3fc975aad",
+    "internal/search/testdata/evaluation/corpus.json": "8e0e9e907269e5cb87a5a6f9920f59c32c5fca9fb6daacc9c2bba6d11a86d5c0",
+    "scripts/prepare-native.py": "3d14f6fc3123df86f05dfcbd8e34d8c0b7f8f4b0d3c44614639b3358fc4ac7ef",
+    "scripts/quantize-model.py": "72ca4330c143eead191c946f0df6753a01b0b0ba1e0ee1237d7db09fd0454393",
+    "cmd/canopy/main.go": "0c0188e086de0f14d76853396eba6ae44ebaf280fddf13b28999aaac1a0cfd9f",
+    "cmd/canopy/recall.go": "8bbcb4b418f2907c94a3d41bec9787a73292ec7e75c44cd4c42420eaa2584d15",
+    "cmd/canopy/write.go": "7d8ecb4e8cb90a45481de1106d9a515313eb5c8a4d582bfc101eb347af5d7945",
+    "cmd/canopy/resurface.go": "fa67a9e262663e88053bd72b0f5eeeca98ca222f4f2fe8fcdf3ac3fce9db49ea",
+    "cmd/canopy/reconcile.go": "ae43b1010f665ec5c8b88cb99a56bfc974623feab6a83adcdd1ac8d4646f3fc3",
+    "internal/webui/server.go": "e06f7a973a50783f41f68a5654f3b4034b1a93f28ba932c057a9ea59df20f6ab",
+    "internal/resurface/pick.go": "99d4afe8d045a98dc5768db65508b3fb8d615c3218a985738e017eae152158d3",
+    "scripts/test-go.sh": "34a98eb649e95e5ec51c96dad5344c22772dae0109a4613488cf4f4673cac721"
+  }
+}

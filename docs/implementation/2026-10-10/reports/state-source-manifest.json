@@ -1,0 +1,19 @@
+{
+  "internal/statefile/statefile.go": "a76f44afc62e0f449499d71dc16b7a1d6e08ca9383e1d0db3e9e266b0d256580",
+  "internal/reads/reads.go": "e584719debfeb7fb1b3a716ec206598a108e22308fef8a6b83d72638a58b0d65",
+  "internal/tasks/tasks.go": "f02bcf2a544044ebd4a48bd822f8dc8dd36b2381b30711d542133975e26684fc",
+  "internal/resurface/state.go": "f6331e9c8a4ce7884ac2f510a8b7ebd9ed900d27e75e8ec3b819d35b90cb8c45",
+  "internal/reconcile/reconcile.go": "3de9e84d4c860b5f2f38a488c92096bba20b1f07067eee77d183f2c0e929f4c4",
+  "internal/attention/events.go": "5efb1639842a221034350c0bdc7a33c8355974d777360f04a1c2e65620e10d3c",
+  "internal/attention/touch.go": "fb14c74e7fcaf4bf7e5415b1d22cff33c50ed5bfe3a50d459ed8a3faf3d97fc0",
+  "internal/config/config.go": "9bf008a554c187e3ffb830329c90fc88f7cb04314247a0bf04f6a0df7df87d32",
+  "internal/lint/lint.go": "2423d57328f946e304b6a3548ececf156b3667750045b5d8414f91a4f2a80762",
+  "internal/lint/audit.go": "55a1c5e0231fb5e57531b5d42abdcef0ed7da995ffcd83f6dcfc5bd9e0aba452",
+  "cmd/canopy/resurface.go": "fa67a9e262663e88053bd72b0f5eeeca98ca222f4f2fe8fcdf3ac3fce9db49ea",
+  "cmd/canopy/events.go": "8a87e8332ed65a3305460dff2c555cab47db4bbed0d8792e5ff21332553509bb",
+  "cmd/canopy/tasks.go": "fdca41cef023c866944efa53e0ceb4f5a5aea8292587336a894fbdfa183554f6",
+  "cmd/canopy/main.go": "0c0188e086de0f14d76853396eba6ae44ebaf280fddf13b28999aaac1a0cfd9f",
+  "cmd/canopy/state_status_test.go": "cf17387a2c22981df4d12a2c4fccac3aeb54ee2d8a33d7da9d4b055a0cbc7fb3",
+  "internal/wiki/page.go": "57a79a6ca333a5e21f614f2deb95542a8dab957133f7ff5bdd030b3136d24ff4",
+  "internal/wiki/address_graph_test.go": "9df285d1eb2c3d77f37012312ca3607147e9e1e872ad97ad7b129f34c3399d13"
+}

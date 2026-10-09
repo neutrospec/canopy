@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"log"
 	"math"
 	"math/rand"
 	"net/http"
@@ -165,7 +166,11 @@ func (s *Server) handleRecent(w http.ResponseWriter, r *http.Request) {
 	rows := make([]row, 0, len(entries))
 	for _, e := range entries {
 		slug := wiki.NormalizeLink(e.File)
-		_, exists := scan.BySlug[slug]
+		p, findErr := scan.Find(e.File)
+		exists := findErr == nil
+		if exists {
+			slug = p.Slug
+		}
 		if e.File == "" {
 			slug, exists = "", false
 		}
@@ -187,6 +192,10 @@ func (s *Server) handleAttention(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.fail(w, err)
 		return
+	}
+	vectors, current, indexErr := s.currentVectors(r.Context(), scan)
+	if indexErr != nil {
+		log.Printf("island suggestions: %v", indexErr)
 	}
 	in := scan.Backlinks()
 	var orphans []*wiki.Page
@@ -216,11 +225,12 @@ func (s *Server) handleAttention(w http.ResponseWriter, r *http.Request) {
 	sort.Slice(stale, func(i, j int) bool { return stale[i].Days > stale[j].Days })
 
 	s.render(w, r, http.StatusOK, "attention.html", map[string]any{
-		"Title":     localizeString(s.loc(r), "title_checks"),
-		"Orphans":   orphans,
-		"Stale":     stale,
-		"StaleDays": staleDays,
-		"Islands":   s.islandReport(scan),
+		"Title":             localizeString(s.loc(r), "title_checks"),
+		"Orphans":           orphans,
+		"Stale":             stale,
+		"StaleDays":         staleDays,
+		"Islands":           s.islandReport(scan, vectors),
+		"SemanticAvailable": indexErr == nil && current != nil && current.SemanticReady,
 	})
 }
 
@@ -238,15 +248,10 @@ type islandInfo struct {
 	HasSuggestion bool
 }
 
-func (s *Server) islandReport(scan *wiki.ScanResult) []islandInfo {
+func (s *Server) islandReport(scan *wiki.ScanResult, vectors map[string][]float32) []islandInfo {
 	comps := scan.Components()
 	if len(comps) <= 1 {
 		return nil
-	}
-	var vectors map[string][]float32
-	if st, err := store.Open(s.w.DBPath()); err == nil {
-		vectors, _ = st.PageVectors()
-		st.Close()
 	}
 	mainland := comps[0]
 	var out []islandInfo

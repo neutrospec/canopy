@@ -1,0 +1,7 @@
+from runner import *
+import hashlib
+w=ROOT/'fixtures/task-time'
+def hashes():return {p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (w/'_meta/tasks').glob('*.json')}
+pre=hashes();before=run('time-same-input-before',[ROOT/'canopy','--wiki',w,'tasks','list','--json']);middle=hashes();after=run('time-same-input-after',[ROOT/'canopy-fixed','--wiki',w,'tasks','list','--json']);post=hashes()
+result={'hashes_before':pre,'hashes_between':middle,'hashes_after':post,'old_command':before,'new_command':after,'old_order':[t['id'] for t in json.loads(before['stdout'])['tasks']],'new_order':[t['id'] for t in json.loads(after['stdout'])['tasks']],'all_task_bytes_preserved':pre==middle==post}
+(ROOT/'time-order-retest.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))

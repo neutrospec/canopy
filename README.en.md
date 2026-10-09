@@ -1,4 +1,4 @@
-<!-- i18n-source: README.md sha:4098d744e0e2d0a49f86470e220571e717b2f02b -->
+<!-- i18n-source: README.md sha:771c7fe77683c10cdb895c8e33a103084d4cc9e1 -->
 # 🌳 canopy
 
 > [한국어](README.md) · **English**
@@ -8,28 +8,31 @@ web UI, and a rediscovery loop in a single Go binary. Designed so people and LLM
 agents can tend the same wiki together, on the principle "judgment to the LLM,
 invariants to code."
 
-A wiki is a plain markdown + git repository. canopy sits beside it and enforces
-schema validation, index regeneration, an activity log, embedding sync, and git
-sync — in code — while coexisting with existing tools like Obsidian.
+A wiki is a plain markdown + git repository. canopy handles command-specific
+validation, index regeneration, an activity log, embedding sync, and git sync
+while coexisting with existing tools like Obsidian.
 
 ## Features
 
-- **Schema-enforced writes** — every change via `new/update/mv/rm/archive` goes
-  through type/tag taxonomy validation, and the index, log, and embeddings
-  follow automatically. On a move, inbound wikilinks are rewritten for you.
+- **Validated writes with follow-up processing** — `new` checks type, tags,
+  slug, and `--links`; `checkin` checks the edited copy's schema and base.
+  `update` preserves existing frontmatter. Writes refresh the index, log, and
+  embeddings; moves rewrite inbound links. Use `lint` to check body links and
+  structural problems in external edits.
 - **Hybrid search** — fuses BM25 keyword search with semantic vectors (bge-m3,
   fully local ONNX inference). Works on mixed Korean/English documents, with no
   external API calls.
 - **Web UI** (`canopy serve`) — search-first wiki browsing: instant search,
   backlinks, hover previews, dir×type×tag facet exploration, a local link graph,
-  and body editing.
+  and body-edit proposals.
 - **Second-brain loop** — rediscover forgotten pages (`resurface`), find
   similar-but-unlinked pages (`bridge`), recall evidence chunks (`recall`), and
   review a time window (`digest`).
-- **Agent integration** — every command supports `--json`, and the agent skill
-  docs are embedded in the binary, installable with one command.
-- **A light footprint** — a single binary, XDG Base Directory compliant. Inside
-  the wiki repo it leaves nothing but the schema file (`canopy.toml`).
+- **Agent integration** — `--json` for machine output, with agent skill
+  docs embedded in the binary and installable with one command.
+- **A light footprint** — a single binary, XDG Base Directory compliant. The wiki
+  holds its schema, generated markdown indexes, activity history, and shared
+  state; search databases and models live outside it.
 
 ## Install
 
@@ -37,7 +40,7 @@ sync — in code — while coexisting with existing tools like Obsidian.
 
 ```bash
 brew install neutrospec/tap/canopy
-canopy model pull          # semantic-search model, bge-m3 ONNX ~2.3GB (once)
+canopy model pull          # 시맨틱 검색 모델 bge-m3 ONNX ~2.3GB (1회)
 ```
 
 Before a tag exists, build main with `brew install --HEAD neutrospec/tap/canopy`.
@@ -45,9 +48,9 @@ Before a tag exists, build main with `brew install --HEAD neutrospec/tap/canopy`
 **From source** (development):
 
 ```bash
-brew install onnxruntime   # for semantic search (libonnxruntime)
-make build                 # -tags ORT; stamps the version + auto-downloads libtokenizers.a once
-make install               # ~/.local/bin (or /opt/homebrew/bin if absent)
+brew install onnxruntime   # 시맨틱 검색용 (libonnxruntime)
+make build                 # -tags ORT; 버전 각인 + 최초 1회 libtokenizers.a 자동 다운로드
+make install               # ~/.local/bin (없으면 /opt/homebrew/bin)
 ```
 
 To use it without embeddings: `make build-lite` — no cgo needed, keyword search
@@ -56,22 +59,20 @@ only (the `*_lite` archives on GitHub Releases are the same keyword-only binary)
 ## Quick start
 
 ```bash
-# 1. Point at a wiki (so canopy finds it from any directory)
-mkdir -p ~/.config/canopy
-echo 'default_wiki = "/path/to/wiki"' > ~/.config/canopy/config.toml
-
-# 2. Adopt the wiki — create the schema (canopy.toml) + index
-canopy init
-
-# 3. (optional) Prepare semantic search — download the model, then full index (once)
-canopy model pull          # bge-m3 ONNX ~2.3GB
-canopy reindex
-
-# 4. Start using it
-canopy new "First page" --type concept --tags tool
-canopy search "anything"
-canopy serve               # → http://localhost:8737
+# 새 폴더를 지정한다. 모델·Git·서비스 없이 첫 페이지와 검색을 확인할 수 있다.
+wiki="$HOME/canopy-demo"
+mkdir -p "$wiki"
+canopy init --wiki "$wiki"
+canopy status --wiki "$wiki" --json   # root가 지정한 위키인지 확인
+canopy new "첫 페이지" --slug first-page --type concept --tags tool --wiki "$wiki"
+canopy search "첫 페이지" --mode keyword --wiki "$wiki"
+canopy show first-page --wiki "$wiki"
 ```
+
+`init` fills an empty `default_wiki` and preserves existing global settings.
+Semantic search is optional: with an ORT build, run `canopy model pull`, then
+`canopy reindex --wiki "$wiki"`. Open the web UI with `canopy serve --wiki "$wiki"`.
+Git history and a remote are separate steps in the getting-started guide.
 
 New here? The 15-minute tutorial in [docs/en/getting-started.md](docs/en/getting-started.md) is recommended.
 
@@ -80,7 +81,7 @@ New here? The 15-minute tutorial in [docs/en/getting-started.md](docs/en/getting
 `canopy serve` brings the wiki up as a search-first website.
 
 - **Search is the entrance** — typing in the home search box gives instant
-  results (↑↓/Enter keyboard navigation), and an exact title match jumps
+  results (↑↓/Enter keyboard navigation), and an exact slug match jumps
   straight to that page. Results show the **actual matching paragraph**, not
   just the page title.
 - **A modern markdown viewer** — code-block syntax highlighting (server-side,
@@ -109,13 +110,12 @@ New here? The 15-minute tutorial in [docs/en/getting-started.md](docs/en/getting
   shows still-unlinked similar pages as **suggested links**. Searches that found
   no answer accumulate as a gap log, becoming page-creation candidates
   (Checks → search gaps).
-- **Body editing** — a page's `✎ edit` lets you fix the body. Web editing goes
-  through exactly the same pipeline as CLI `update` (validation, index, log,
-  embeddings), and edit conflicts are caught by optimistic locking. Frontmatter
-  and page create/move/delete are CLI-only. But web editing is meant for
-  **small fixes like typos or a one-line correction** — serious writing and
-  restructuring should go through the agent (the only path where content
-  judgment rules also hold, [philosophy principle 9](docs/philosophy.md)).
+- **Body-edit proposals** — saving in a page's `✎ edit` files the full body as an
+  edit task. **Acceptance into the queue does not apply the edit to the page.**
+  Check its state in `Tasks`, then check the current page after an agent reviews
+  and applies it. canopy does not start the agent automatically. Frontmatter and
+  page create/move/delete are handled through the CLI
+  ([task contract](docs/agent-tasks.md)).
 - **Safe defaults** — it binds to localhost only by default. Opening it on an
   externally reachable address makes authentication mandatory, with an account
   (id/pw) created from a setup code printed once to the terminal. Dark mode and
@@ -123,8 +123,8 @@ New here? The 15-minute tutorial in [docs/en/getting-started.md](docs/en/getting
   explicit `canopy sync`.
 
 ```bash
-canopy serve                # default localhost:8737 (no auth)
-canopy serve --addr :8737   # all interfaces — auth required (setup code on first run)
+canopy serve                # 기본 localhost:8737 (무인증)
+canopy serve --addr :8737   # 모든 인터페이스 — 인증 필수 (최초 실행 시 설정 코드 안내)
 ```
 
 ## Command reference
@@ -139,6 +139,7 @@ canopy serve --addr :8737   # all interfaces — auth required (setup code on fi
 | `canopy list [--type T] [--tag t]` | List all pages (slug·type·title) |
 | `canopy tags` | View the valid type/tag taxonomy (same source as `new` validation) |
 | `canopy show <page>` (alias `view`) | Print a page (path header on stderr, body on stdout) |
+| `canopy grep "패턴" [page]` | Regular-expression search with line numbers |
 | `canopy status` · `canopy lint` | Wiki state · schema/link/freshness checks |
 
 **Write** — index/log/embeddings refresh automatically afterward
@@ -147,15 +148,16 @@ canopy serve --addr :8737   # all interfaces — auth required (setup code on fi
 |------|------|
 | `canopy new <title> --type T --tags a,b [--slug s] [--body-file f\|-] [--links p1,p2]` | Validated creation + related-page suggestions |
 | `canopy update <page> [--body-file f]` | Bump updated (+replace body) |
+| `canopy checkout <page>` / `canopy checkin <page>` | Edit an external working copy → validate, apply, reclaim the copy |
 | `canopy mv <page> [--type T] [--slug s]` | Move/rename — inbound links rewritten automatically |
 | `canopy rm <page> [--force]` / `canopy archive <page>` | Delete (refused with backlinks) / archive |
-| `canopy sync [-m msg]` | pull --rebase → commit → push → index refresh |
+| `canopy sync [-m msg]` | pull --rebase → regenerate Markdown indexes → commit → push → refresh search cache |
 
-**Second brain** — candidates from canopy (deterministic), judgment/delivery by an agent or a person ([details](docs/second-brain.md))
+**Second brain** — canopy filters and scores candidates; an agent or a person judges and delivers them. `resurface auto/random` samples eligible candidates. ([details](docs/second-brain.md))
 
 | Command | Description |
 |------|------|
-| `canopy recall "question" [-k N] [--per-page N]` | Chunk-level evidence + source slugs (for injecting into agent context) |
+| `canopy recall "question" [-k N] [--per-page N]` | Raw evidence chunks + source slugs. Requires embeddings; otherwise use keyword search + show |
 | `canopy resurface [-n N] [--strategy auto\|random\|hub]` | Forgotten pages / stale-hub rediscovery candidates |
 | `canopy resurface feedback <page> --up\|--down\|--snooze N` | Record a reaction → factored into later candidate selection |
 | `canopy bridge [-n N] [--min-sim 0.7] [--include-linked]` | Find similar-but-unlinked page pairs |
@@ -163,7 +165,16 @@ canopy serve --addr :8737   # all interfaces — auth required (setup code on fi
 
 **Management**: `canopy reindex [--no-embed]` · `canopy model pull/status` · `canopy skills install` · `canopy version` · `canopy migrate [status]` · `canopy reconcile`
 
-Every command supports `--json`. `--peek` (resurface/bridge) previews without recording state.
+Start with `canopy tasks list --json` for the queue, `canopy reconcile --json`
+for external edits, and `canopy events --json` for machine activity.
+Automation should check each command's `--json` output, stderr, and exit status
+together. Argument parsing or initialization can fail without JSON output.
+JSON mode and `show` have no status banner; use `canopy status --json` to check
+the target, dirty files, open copies, and pending tasks.
+See [mutation-results.md](docs/mutation-results.md) for the six page mutation
+commands' responses, partial application, and recovery. Exit 0 means the requested
+steps completed; it does not verify content accuracy.
+`--peek` (resurface/bridge) previews without recording exposure state.
 
 ## Agent integration
 
@@ -172,20 +183,25 @@ and content-judgment rules, `canopy-ingest`: an external-content ingestion
 workflow) are embedded in the binary:
 
 ```bash
-canopy skills install              # install/refresh into every detected agent (this one command after an upgrade)
-canopy skills install --dir <path> # a specific directory only (created if absent — for a new agent's first registration)
+canopy skills install              # 감지된 모든 에이전트에 설치/갱신 (업그레이드 후 이 한 명령)
+canopy skills install --dir <path> # 지정한 스킬 디렉토리만 설치/갱신 (없으면 생성)
 ```
 
-- Auto-detected targets: **every existing** directory among `~/.hermes/skills`
-  (hermes) and `~/.claude/skills` (Claude Code). A general agent gets a
+- Auto-detected targets: existing `~/.hermes/skills` (hermes), `~/.claude/skills`
+  (Claude Code), and pi's agent home (`PI_CODING_AGENT_DIR`, default `~/.pi/agent`).
+  pi's `skills/` is created if its home exists. A general agent gets a
   `<skill>/SKILL.md` flat layout; hermes gets a category layout
-  (`note-taking/…`). For a new agent, install once with `--dir` and it joins
-  auto-detection afterward.
+  (`note-taking/…`). `--dir` does not register an arbitrary path for automatic
+  detection; specify that path again when updating. Installation and activation
+  are separate: check the agent's skill discovery and loading rules.
 - The source of truth for the installed copy is the binary — don't hand-edit an
   installed SKILL.md (the next install reverts it). Re-run after a canopy
   upgrade to pick up new commands.
-- The core rule: **keep the agent from editing wiki files directly — always go
-  through canopy commands.** Schema violations are blocked at the source.
+- Create, update, move, and delete pages **through canopy commands**. Make partial
+  edits in a `checkout` copy and apply them with `checkin`. Add source material to
+  `raw/` and edit `canopy.toml` settings directly while preserving existing content.
+  Use command-specific validation and follow-up processing, then check the content
+  and relevant lint findings.
 - Recipes for scheduled runs (weekly journal, lint, etc.) are in [docs/second-brain.md](docs/second-brain.md).
 
 ## Data layout (XDG Base Directory compliant)
@@ -193,6 +209,9 @@ canopy skills install --dir <path> # a specific directory only (created if absen
 | Location | Nature |
 |------|------|
 | `<wiki>/canopy.toml` | The wiki's schema (type/tag taxonomy) — committed to the wiki since rules travel with the data |
+| `<wiki>/index.md`, `<wiki>/index/` | Fully regenerated markdown indexes — do not edit manually |
+| `<wiki>/logs/*.jsonl` | Append-only activity history — preserve it; current pages cannot reconstruct it |
+| `<wiki>/_meta/tasks/`, `<wiki>/_meta/reconcile/` | Delegated queue and review baseline — committed with the wiki |
 | `<wiki>/_meta/resurface/` | Non-reproducible state (rediscovery surfacing history, feedback) — committed to the wiki |
 | `<wiki>/_meta/webui/` | Non-reproducible state (read history, search gaps) — committed to the wiki, synced across devices |
 | `<wiki>/_meta/attention/` | Non-reproducible state (agent access aggregate, day-quantized) — committed to the wiki |
@@ -203,21 +222,25 @@ canopy skills install --dir <path> # a specific directory only (created if absen
 | `~/.config/canopy/webauth.json` | Web UI account (bcrypt hash) — a secret, so outside the wiki, machine-local |
 | `~/.local/share/canopy/models/` | ONNX model, static build libraries |
 
-It respects `XDG_CONFIG_HOME`/`XDG_CACHE_HOME`/`XDG_DATA_HOME`. Inside the wiki
-repo canopy leaves only the schema and `_meta/` state above, all of which have
-a reason to "travel with the wiki." Secrets are never put in the wiki.
+It respects `XDG_CONFIG_HOME`/`XDG_CACHE_HOME`/`XDG_DATA_HOME`/`XDG_STATE_HOME`.
+Deleting caches does not restore activity history or `_meta/` state. Machine-local
+non-reproducible state evolves through the migration ladder, traveling `_meta/*`
+through each file's version, and derived search databases through a cache version
+and rebuild. Secrets are never put in the wiki.
 
 ## Performance
 
-On Apple Silicon with the int8-quantized model:
+Earlier measurements on Apple Silicon with the int8-quantized model follow. They do not certify this release's overall performance or quality.
 
 - Embedding ~11ms/chunk, model load ~0.5s (warm) — 2.4× faster than fp32 while
   keeping embedding quality at cosine similarity ≥0.988
 - No-change `reindex` ≈ 1s, keyword search <100ms (no model load), web UI
   instant search ~40ms/query
-- int8 quantization is optional: after `canopy model pull` (fp32), run
-  `scripts/quantize-model.py` once (Python needed only for the conversion, not
-  at runtime)
+- int8 quantization is optional. After `canopy model pull` (fp32), check conversion
+  dependencies and paths with `scripts/quantize-model.py --help` in the repository,
+  then run it. The default output is a separate `bge-m3-int8` directory. In the target
+  wiki's `canopy.toml`, set `model` under `[embedding]` to `bge-m3-int8`, check
+  `canopy model status` with the same `--wiki`, then run `canopy reindex`.
 
 ## Documentation
 
@@ -238,6 +261,7 @@ implementation without reading code.
 | [docs/en/getting-started.md](docs/en/getting-started.md) | For newcomers — concepts, vocabulary, a 15-minute tutorial, daily use |
 | [docs/en/upgrading.md](docs/en/upgrading.md) | Install/operation migration guide (source/make install → Homebrew + brew services, routine upgrades) |
 | [docs/en/troubleshooting.md](docs/en/troubleshooting.md) | Common problems (PATH, semantic search, web UI auth) |
+| [docs/mutation-results.md](docs/mutation-results.md) | Mutation JSON, partial application, checkout recovery, and cooperative writes |
 
 **Design record** — what decisions each feature was born from
 
@@ -250,7 +274,7 @@ implementation without reading code.
 | [docs/web-ui-plan-2.md](docs/web-ui-plan-2.md) | Round 2 (M5–M8): security, read history · discovery, suggested links, speaking home |
 | [docs/web-ui-plan-3.md](docs/web-ui-plan-3.md) | Round 3 (M9–M10+): modern viewer, knowledge graph, island detection |
 | [docs/web-ui-plan-4.md](docs/web-ui-plan-4.md) | Round 4 (M11–M13): two-tier attention storage, access tracking, instruments · visual refresh |
-| [docs/web-ui-write-design.md](docs/web-ui-write-design.md) | Web write concurrency/conflict design (single write pipeline) |
+| [docs/web-ui-write-design.md](docs/web-ui-write-design.md) | Historical direct-save design and explicit sync decision — see agent-tasks for the current proposal contract |
 | [docs/web-ui-i18n.md](docs/web-ui-i18n.md) | Web UI localization — go-i18n, locale negotiation, language selector (invariants M) |
 | [docs/reconcile-design.md](docs/reconcile-design.md) | Canonicalization gate design — edit anywhere, canonicalize through one door (the main road re-judges every door's changes) |
 | [docs/agent-tasks.md](docs/agent-tasks.md) | Agent task queue — web delegations (link/edit requests) as a file queue, closed only by per-type code verification (invariants T) |
@@ -261,7 +285,7 @@ implementation without reading code.
 
 | Doc | Contents |
 |------|------|
-| [docs/invariants.md](docs/invariants.md) | The list of checkable invariants (A–L) + audit procedure |
+| [docs/invariants.md](docs/invariants.md) | Checkable invariants, execution prerequisites, and audit procedure |
 
 One contribution rule: **a claim without a check command is not a principle.** A
 new feature records its invariant and check method in invariants.md first, then

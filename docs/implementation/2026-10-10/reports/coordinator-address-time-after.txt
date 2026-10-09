@@ -1,0 +1,4 @@
+ok  	github.com/neutrospec/canopy/internal/checkout	1.604s
+ok  	github.com/neutrospec/canopy/internal/genindex	0.722s
+ok  	github.com/neutrospec/canopy/internal/tasks	1.132s
+ok  	github.com/neutrospec/canopy/cmd/canopy	21.209s

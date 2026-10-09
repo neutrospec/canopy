@@ -1,0 +1,22 @@
+{
+  "internal/embed/chunk.go": "3e02683ae12cf9f4e36fb4bb0b966717e7c44b9d173df39ad97ea119a7b61ba3",
+  "internal/embed/engine.go": "a0106ce36610eb4990438a87ec007efd44653e3e8706fd71888bf93cd18c0405",
+  "internal/embed/engine_ort.go": "9e707cba61384df16c09979a49731a85bd837881bff50b762848ff5156a3ee92",
+  "internal/embed/model.go": "48e08aaac2c8a971dacc3286d8f0298c71f5ba9cb5d7720c6506693c4a4d7627",
+  "internal/embed/model_pins.go": "d79a59becafc6edf83661b71df04dcaec89674bb587f774fc94c8aea071d6037",
+  "internal/embed/onnx.go": "db2ad8a9ffbd61f4778d05cd5ad5c98d3e2b655aee3dc29adf1294d9b06fb5fb",
+  "internal/embed/profile.go": "b3ac44dfff674a8bd3c6ea82b70742b4c5ee6bfb3550a9de44db07dd431274f8",
+  "internal/embed/validation.go": "219e1c8518a625f9d3142d22c9c01508e014d50c336dec682c50e76ed31e9673",
+  "internal/indexer/indexer.go": "890dd9e4ccffb6031db82141e5717f9e833554c49c6c66794f2566f8ab9b507d",
+  "internal/store/store.go": "4c05d2f17885e1d4e5d2e55c49e9f4fa9a67e063099d36dcea2bc7889a39cb7b",
+  "internal/store/vectors.go": "e3fb859e54e6f0e5fe10b47df2c2f61ef456d831023e17e837e099e91b0839f4",
+  "internal/search/search.go": "7aa9817c1807726a1ccc07499f7e15faa10c318da6461fa9db6c3c474358cab3",
+  "cmd/canopy/read.go": "705d04f30bc3f47a93b873cd5ab4a938f974904f8c5dcf49042ade40bfa0c77d",
+  "cmd/canopy/recall.go": "1f1963cf36cbad695fe38eb189c7995a46acd443c2eb422daf3fec3b638e2dfa",
+  "cmd/canopy/reconcile.go": "36cabfd704ce3356af39fb43f9bf51efcdafe40ed4594bb6f151b758598ef25b",
+  "scripts/prepare-native.py": "3d14f6fc3123df86f05dfcbd8e34d8c0b7f8f4b0d3c44614639b3358fc4ac7ef",
+  "scripts/quantize-model.py": "72ca4330c143eead191c946f0df6753a01b0b0ba1e0ee1237d7db09fd0454393",
+  "scripts/test-native-download.py": "d60346e55e13710f34c740d38a82aa66d07806344af221810eae89da93888a9a",
+  "docs/search-profile.md": "95d1350936421bc60e7a124607731aeef2ccdce684faa662b59cd184b1f4ebca",
+  "docs/search-evaluation.md": "155b078528dd4c14d41cb3e80668da2ea6b441be9e82443aa1ef786a30ac51fc"
+}

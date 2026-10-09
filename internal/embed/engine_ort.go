@@ -20,8 +20,11 @@ func Available() bool {
 }
 
 type ortEngine struct {
-	session *hugot.Session
-	pipe    *pipelines.FeatureExtractionPipeline
+	session   *hugot.Session
+	pipe      *pipelines.FeatureExtractionPipeline
+	gate      Gate
+	profile   string
+	modelPath string
 }
 
 // onnxRuntimeDirs are the fixed fallback locations searched for
@@ -56,8 +59,10 @@ func findOnnxRuntime() string {
 }
 
 func New() (Engine, error) {
-	if !ModelAvailable() {
-		return nil, fmt.Errorf("embedding model not found at %s — run `canopy model pull`", DefaultModelPath())
+	modelPath := DefaultModelPath()
+	status, err := CheckModel(modelPath)
+	if err != nil {
+		return nil, fmt.Errorf("embedding model unavailable at %s: %w", modelPath, err)
 	}
 	dir := findOnnxRuntime()
 	if dir == "" {
@@ -69,7 +74,7 @@ func New() (Engine, error) {
 		return nil, err
 	}
 	pipe, err := hugot.NewPipeline(session, hugot.FeatureExtractionConfig{
-		ModelPath: DefaultModelPath(),
+		ModelPath: modelPath,
 		Name:      "canopy-embed",
 		Options:   []hugot.FeatureExtractionOption{pipelines.WithNormalization()},
 	})
@@ -77,15 +82,51 @@ func New() (Engine, error) {
 		session.Destroy()
 		return nil, err
 	}
-	return &ortEngine{session: session, pipe: pipe}, nil
+	if profileAt(modelPath) != status.Profile {
+		session.Destroy()
+		return nil, fmt.Errorf("model changed during load; retry after installation completes")
+	}
+	return &ortEngine{session: session, pipe: pipe, gate: NewGate(), profile: status.Profile, modelPath: modelPath}, nil
 }
 
 func (e *ortEngine) Embed(texts []string) ([][]float32, error) {
-	out, err := e.pipe.RunPipeline(context.Background(), texts)
-	if err != nil {
-		return nil, err
-	}
-	return out.Embeddings, nil
+	return e.EmbedContext(context.Background(), texts)
+}
+
+func (e *ortEngine) ProfileID() string    { return e.profile }
+func (e *ortEngine) ProfileCurrent() bool { return profileAt(e.modelPath) == e.profile }
+
+func (e *ortEngine) EmbedContext(ctx context.Context, texts []string) ([][]float32, error) {
+	return e.gate.Run(ctx, func() ([][]float32, error) {
+		if !e.ProfileCurrent() {
+			return nil, fmt.Errorf("model files changed; reload embedding engine")
+		}
+		if len(texts) > MaxBatchTexts {
+			return nil, fmt.Errorf("embedding batch exceeds %d texts; use embed.EmbedContext", MaxBatchTexts)
+		}
+		total := 0
+		for _, text := range texts {
+			n := len([]rune(text))
+			if n > MaxTextRunes {
+				return nil, fmt.Errorf("embedding text exceeds %d runes", MaxTextRunes)
+			}
+			total += n
+		}
+		if total > MaxBatchRunes {
+			return nil, fmt.Errorf("embedding batch exceeds %d runes", MaxBatchRunes)
+		}
+		out, err := e.pipe.RunPipeline(ctx, texts)
+		if err != nil {
+			return nil, err
+		}
+		if err = ValidateVectors(out.Embeddings, len(texts), Dimension); err != nil {
+			return nil, err
+		}
+		if !e.ProfileCurrent() {
+			return nil, fmt.Errorf("model files changed during inference; reload embedding engine")
+		}
+		return out.Embeddings, nil
+	})
 }
 
 func (e *ortEngine) Close() error { return e.session.Destroy() }

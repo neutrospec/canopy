@@ -1,12 +1,13 @@
 // Package resurface generates "re-encounter" candidates: forgotten
 // pages, stale hubs, and similar-but-unlinked page pairs. canopy only
-// selects candidates deterministically; judging whether a candidate is
+// filters, scores, or samples candidates; judging whether a candidate is
 // interesting, phrasing it, and delivering it (e.g. Telegram) is the
 // agent's job. See docs/second-brain.md.
 package resurface
 
 import (
-	"encoding/json"
+	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -14,6 +15,8 @@ import (
 	"time"
 
 	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/statefile"
+	"github.com/neutrospec/canopy/internal/wikilock"
 )
 
 // State is the pick history and user feedback. It is NOT a derived
@@ -23,8 +26,9 @@ type State struct {
 	Version    int               `json:"version"`
 	Shown      map[string]string `json:"shown"`       // slug -> RFC3339 last shown
 	ShownPairs map[string]string `json:"shown_pairs"` // "a|b" (sorted) -> RFC3339
-	Snoozed    map[string]string `json:"snoozed"`     // slug -> YYYY-MM-DD until
+	Snoozed    map[string]string `json:"snoozed"`     // RFC3339 deadline; legacy YYYY-MM-DD is UTC midnight
 	Feedback   []Feedback        `json:"feedback"`
+	base       []byte
 }
 
 type Feedback struct {
@@ -53,7 +57,7 @@ func LoadState(w *config.Wiki) (*State, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := json.Unmarshal(data, s); err != nil {
+	if err := statefile.Decode(data, s); err != nil {
 		return nil, err
 	}
 	if s.Shown == nil {
@@ -65,19 +69,28 @@ func LoadState(w *config.Wiki) (*State, error) {
 	if s.Snoozed == nil {
 		s.Snoozed = map[string]string{}
 	}
+	s.base = statefile.Snapshot(s)
 	return s, nil
 }
 
 func (s *State) Save(w *config.Wiki) error {
-	path := StatePath(w)
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	data, err := json.MarshalIndent(s, "", "  ")
+	g, err := wikilock.AcquireShared(context.Background(), w.Root)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, append(data, '\n'), 0o644)
+	defer g.Unlock()
+	return s.SaveLocked(w)
+}
+
+func (s *State) SaveLocked(w *config.Wiki) error {
+	if s == nil {
+		return fmt.Errorf("resurface state unavailable")
+	}
+	err := statefile.Patch(StatePath(w), s.base, s, func(b []byte) error { return statefile.Decode(b, &State{}) })
+	if err == nil {
+		s.base = statefile.Snapshot(s)
+	}
+	return err
 }
 
 func pairKey(a, b string) string {
@@ -90,7 +103,11 @@ func pairKey(a, b string) string {
 // eligible reports whether a page may be picked now.
 func (s *State) eligible(slug string, now time.Time) bool {
 	if until, ok := s.Snoozed[slug]; ok {
-		if t, err := time.Parse("2006-01-02", until); err == nil && now.Before(t) {
+		t, err := time.Parse(time.RFC3339, until)
+		if err != nil {
+			t, err = time.Parse("2006-01-02", until)
+		}
+		if err == nil && now.Before(t) {
 			return false
 		}
 	}
@@ -137,11 +154,24 @@ func (s *State) DismissPair(a, b string) {
 
 func (s *State) AddFeedback(slug, vote string, now time.Time) {
 	s.Feedback = append(s.Feedback, Feedback{Slug: slug, Vote: vote, Time: now.Format(time.RFC3339)})
-	sort.SliceStable(s.Feedback, func(i, j int) bool { return s.Feedback[i].Time < s.Feedback[j].Time })
+	sort.SliceStable(s.Feedback, func(i, j int) bool {
+		a, ea := time.Parse(time.RFC3339, s.Feedback[i].Time)
+		b, eb := time.Parse(time.RFC3339, s.Feedback[j].Time)
+		if (ea == nil) != (eb == nil) {
+			return ea == nil
+		}
+		if ea == nil && eb == nil {
+			return a.Before(b)
+		}
+		return s.Feedback[i].Time < s.Feedback[j].Time
+	})
 }
 
 func (s *State) Snooze(slug string, days int, now time.Time) {
-	s.Snoozed[slug] = now.Add(time.Duration(days) * 24 * time.Hour).Format("2006-01-02")
+	if s.Version < 2 {
+		s.Version = 2
+	}
+	s.Snoozed[slug] = now.Add(time.Duration(days) * 24 * time.Hour).Format(time.RFC3339Nano)
 }
 
 // normalizeSlug matches state keys case-insensitively like wikilinks.

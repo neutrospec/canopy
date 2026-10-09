@@ -1,0 +1,308 @@
+"""Inert source for the final consolidation's read-only consistency checks.
+
+Explicit execution reads repository/evidence files and writes only this review's
+final-challenge-evidence.json. It runs no product, reproduction, test, HTTP,
+browser, download, release, or installation command.
+"""
+import hashlib
+import json
+import subprocess
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path('/Users/nobocop/play/canopy')
+REPORTS = ROOT / 'docs/implementation/2026-10-10/reports'
+
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def read_json(path):
+    return json.loads(path.read_text())
+
+
+def git(*args):
+    return subprocess.check_output(['git', '-C', str(ROOT), *args]).decode()
+
+
+# Each note was individually adjudicated in this consolidation. Evidence links
+# below identify the actual class of evidence; they are not 95 new proofs.
+NOTES = {
+    'DATA-01': 'Unmerged/in-progress guards and autostash preservation are independently exercised by PSA git-probes; no literal-marker ban or external-Git CAS claim.',
+    'DATA-02': 'Exclusive canonical lease, final snapshot check and no-clobber cover cooperating writers; historical direct-editor timing result is not reclassified as an internal-only probe.',
+    'DATA-03': 'Completed same-directory publication and typed postpublication errors are present; PSA complete-reader/mode/symlink controls are bounded process/filesystem evidence, not physical power-loss proof.',
+    'DATA-04': 'Six-verb author matrix and PSA retained-checkin resumption distinguish applied/partial/unknown, stage and repair; independent review is not the full matrix.',
+    'DATA-05': 'Archive destination no-clobber is present and independently controlled; no suffix-based archive redesign selected.',
+    'DATA-06': 'Resolved target and CommonMark code boundaries are shared; PSA-04 catches and independently retests unresolved-reference rewrites.',
+    'DATA-07': 'Orphans are exposed and draft bytes retained; PSA null-meta and author missing/corrupt/cleanup fixtures support the bounded recovery contract.',
+    'DATA-08': 'Command-specific gates versus lint are documented; no universal five-key/tag hard gate is claimed.',
+    'DATA-09': 'Generated scalar quoting and unrelated YAML bytes are preserved; unsupported targeted block/anchored/complex scalar edits reject before publication as explicitly selected.',
+    'DATA-10': 'Per-file RMW and exclusive completed task publication are separate mechanisms; PSA disjoint-key and eight-process payload checks are actual independent evidence.',
+    'DATA-11': 'Agent-only rename is supported; populated agent destination refuses prepublication; historical task/cooldown references intentionally remain historical.',
+    'DATA-12': 'Sync regenerates Markdown indexes before commit; actual independent normal sync verifies pulled page/index and unrelated dirty file; cache consumers refresh independently.',
+    'DATA-13': 'Duplicate slugs refuse and destination no-clobber holds; flat lookup and dotted ambiguity are explicit, with PSA addressing counterexamples retained.',
+    'DATA-14': 'Raw patch preserves top/nested unknown and exact numbers or refuses stale/unsupported writes; version-only protection is not claimed.',
+    'DATA-15': 'History scope is described; no rollback/event-sourcing architecture was selected. A bounded checkin operation ID was added for repair deduplication only.',
+    'STATE-01': 'Raw patch plus wiki/file locks cover local RMW; direct TestMain isolation does not certify pre-Go toolchain behavior or every migration-startup race.',
+    'STATE-02': 'Payload pair lookup and collision hash preserve legacy dismissed requests; PSA distinct delimiter pairs and reverse refiling pass.',
+    'STATE-03': 'Nonce and exclusive completed publication are combined; independent eight-process requests survive. This does not certify every cross-device Git merge.',
+    'STATE-04': 'Filename/ID checks and known-closed GC are present; mismatch refuses before deletion and pending/future/unknown survive in independent controls.',
+    'STATE-05': 'Current and future raw unknown/exact integers are supported by PSA; TOML values and formatting are distinct and unsupported wiki rewrites refuse.',
+    'STATE-06': 'Null/nonobject errors and availability are explicit; healthy read half remains usable. Queue corruption is an error, not a healthy zero.',
+    'STATE-07': 'Orphan and cleanup_pending are distinct; exact matching retained checkin resumes without republishing and refuses changed input.',
+    'STATE-08': 'Human extrema/count merge and agent-only migration are independently checked; irreconstructible destination day union refuses.',
+    'STATE-09': 'Event query/prune uses parsed instants, retaining invalid and exact-cutoff data; no new machine-local storage shape/rung is introduced.',
+    'STATE-10': 'New snooze is days times 24 hours using version >=2 timestamp; legacy date remains UTC-midnight. Older date-only recommenders require upgrade.',
+    'STATE-11': 'Whole-file base/hash mechanical floor and separate content judgment are documented; after challenge, future known-type done explicitly refuses before verification while dismiss preserves unknown exact values. Source reviewed; coordinator regression, not an independent execution.',
+    'STATE-12': 'Dismissed suppression is finite while its task file exists; inclusive 90-day GC policy is clarified, rather than claiming permanent tombstones.',
+    'STATE-13': 'Recent read access sorts actual instant then slug; random/auto variability remains intentional. Fixed-input ranking is distinguished from sampled results.',
+    'STATE-14': 'Selected remedy missing at initial review: digest Collect lexically counted invalid created/updated dates. Coordinator added per-field parse/exclude/diagnose, stable invalid_dates and retained total pages/future-valid/all-time-decision policy; source reviewed, coordinator-only regression.',
+    'STATE-15': 'Safe sync/manual Git conflict boundary is documented; unconditional clean-merge implementation comments were challenged and corrected by the coordinator, inspected here.',
+    'STATE-16': 'Path-keyed checkout/state namespace is retained and disclosed; canonical locking is not a namespace migration or global UUID design.',
+    'STATE-17': 'Central downgrade guard remains; individual event DB guard and new migration-state validation were not promoted to mandatory architecture. Best-effort events remain separate.',
+    'STATE-18': 'Docs author full-wiki snapshots allow only first-day agent aggregate and enforce repeat no-op; cache/index and non-target wiki hashes are separate checks.',
+    'DEF-A-01': 'One-day immediate expiry is repaired with a future deadline and boundary controls; historical seven-day positive control and timezone-conditioned scope are preserved.',
+    'SEARCH-01': 'Empty/blank/deleted current source invalidates previous chunks; author and current indexer revision logic support zero-chunk semantics, not title-only embedding.',
+    'SEARCH-02': 'EnsureCurrentContext is integrated with CLI/web/reconcile/recommendation consumers; cold keyword and semantic coverage are separate from complete model inference.',
+    'SEARCH-03': 'Effective profile/config warning is present; SA-01 independent alias post-fix pass exists, while later readiness/adoption fixes are root regressions.',
+    'SEARCH-04': 'Mean-if-3d/first-output/L2 is retained and disclosed; official CLS parity is unverified and not established by native smoke or retrieval labels.',
+    'SEARCH-05': 'Chunk text is raw source body range with revision/profile. G2 legacy title-prefix exception was removed; after the separate named-check challenge, its Unicode multi-chunk test enforces nonempty exact offsets/current page/revision/profile. Source inspected; coordinator reports focused pass, not independent execution.',
+    'SEARCH-06': 'Vector count/dimension/finite/nonzero/unit-tolerance validation exists; keyword fallback is separate, and tolerance is not exact norm-one enforcement.',
+    'SEARCH-07': 'Local K/per-page contracts reject invalid values before model/index; API has its smaller explicit 1..50 contract, without remote-panic overstatement.',
+    'SEARCH-08': 'Initialization hybrid fallback reports keyword; running inference, scan, SQL and cancellation remain errors, not successful empty/fallback results.',
+    'SEARCH-09': 'Gate checks pre/post acquisition and bounded batches; fake-engine and HTTP queue observations are not proof of native preemption or hard response deadline.',
+    'SEARCH-10': 'Six-page/ten-query fixed labeled corpus and prerequisites are explicit; C++/C token equivalence and unsupported semantic candidates limit quality interpretation.',
+    'SEARCH-11': 'Exact score total order is explicit in RRF and chunk/page retrieval; no epsilon score grouping or inference from SQL order alone.',
+    'SEARCH-12': 'Late excerpts and bounded candidates are implemented; SA-07 caught pair materialization, fixed by root heap. Pair CPU remains quadratic and B/op is cumulative allocation.',
+    'SEARCH-13': 'Hardware/toolchain/corpus/profile/first-query/repetition conditions are disclosed; tiny local smoke and benchmark do not establish speedup, RSS, SLO or statistical quality.',
+    'OPS-01': 'CI verifies actual lite binary; release workflow verifies tagged source before GoReleaser. Current dirty-source checks are not evidence of a future release/archive/Homebrew install.',
+    'OPS-02': 'Readiness permits valid legacy/custom/inline/external/symlink bundles; SA-02/03/05/06 late corrections need root test provenance, not retrospective independent acceptance.',
+    'OPS-03': 'Parser-aligned fence/span/container preservation and Mermaid source equality have author/HTTP checks; browser paint remains unverified.',
+    'OPS-04': 'Lint five-key presence includes null/scalar/empty tags compatibility and bad YAML; absence diagnosis is not a universal mutation gate.',
+    'OPS-05': 'Taxonomy audit deduplicates tags by page; it does not rewrite originals or abolish bootstrap/legacy governance.',
+    'OPS-06': 'TestMain isolates test processes and shell wrapper isolates before Go; initial blind-run module cache lacked OS write denial and is explicitly limited.',
+    'OPS-07': 'Declared TeX packages compile in real Node processor and local routes exist; browser loader, fonts, SVG and offline network behavior remain unverified.',
+    'OPS-08': 'Pinned four-tuple source preparation/fail-fast implemented. Different linux-amd64/linux-x86_64 spellings challenged; coordinator official release metadata confirms equal size/digest aliases. No defect or Linux execution inferred; other tuple runtime remains unverified.',
+    'OPS-09': 'Versioned vendor licenses/notices, manifest, checker and packaging declarations exist; synthetic archives are not actual GoReleaser output or a legal/SBOM audit.',
+    'OPS-10': 'Quantizer uses runtime XDG/explicit paths and stages complete bundle; missing-sidecar success was independently caught then root-fixed. Full quantization remains unverified.',
+    'OPS-11': 'Bounds are evaluated before wiki/model/index work, with allowed startup migration effects separated; source and actual CLI controls exist.',
+    'RED-B-01': 'Native preparation checks download exit, digest and extraction separately, preserving previous library; malformed marker retry root fix is not an independent rerun.',
+    'WEB-01': 'Actual listener and explicit Host/port checks ignore forwarded authority; additional Host does not enable authentication/TLS for a loopback proxy.',
+    'WEB-02': 'Raw HTML is disabled and legitimate generated wikilinks/table/Mermaid/math remain; dangerous URLs and escaping have HTTP/HTML evidence, not browser-exploit proof.',
+    'WEB-03': 'Web task acceptance uses queue locks, nonce and exclusive complete files; independent payload preservation is not inferred from a mutex alone.',
+    'WEB-04': 'Read RMW uses wiki/file locking and raw patch; healthy partial aggregate semantics are independently observed.',
+    'WEB-05': 'API auth is JSON 401 and shipped auto-read code requires boolean read true; Node fetch/adapter failures are distinct from real session/paint/focus tests.',
+    'WEB-06': 'Independent first HEAD leaves recommendation history absent while GET consumes it; no universal HEAD analytics guarantee.',
+    'WEB-07': 'New missing targets refuse 4xx; historical undo remains; deleted historical keys are not silently purged.',
+    'WEB-08': 'Body/query/header/idle/queue policies exist; WA-01/02 independently caught and retested malformed/query and unread-body gaps. Selected unused multipart rejection was absent initially; coordinator added prehandler 400 with cleanup. Final independent HTTP W358-362 verifies file refusal/no mutation/no spool residue and fields-only exact payload control.',
+    'WEB-09': 'Consumers refresh current source/profile and cold APIs; preview canonical address WA-03 is separate. Exact indexing/scan cost remains explicitly bounded in claim, not eliminated.',
+    'WEB-10': 'Unread totals, recommendation absence and queued work are independent; no mandatory unread filter or score threshold selected.',
+    'WEB-11': 'POST-time base is disclosed; viewed origin snapshot and retention are explicitly deferred, not presented as implemented provenance.',
+    'WEB-12': 'Dense layout/fallbacks and Node logic exist; actual paint/focus/IME/U5/offline browser and usability comparison remain unverified.',
+    'WEB-13': 'Nil-auth logout skips session store but clears cookie; actual loopback HTTP control supports this, not crash/auth-bypass generalization.',
+    'DOC-01': 'Current Korean/English guides distinguish accepted proposal from applied page and no automatic processing deadline; mirrors are checked separately from accuracy.',
+    'DOC-02': 'Common write postprocessing is distinguished from per-command validation, lint and no-op; no blanket gate escalation selected.',
+    'DOC-03': 'Six mutations emit one outer object with known failures and bootstrap exception; old two pretty objects are not rebranded as JSONL.',
+    'DOC-04': 'Lite first-use has explicit slug/wiki, preserved global config and model fallback; independent named-B exercise preserves default A.',
+    'DOC-05': 'Skill installation versus activation and explicit arbitrary-directory refresh are documented; no unselected registry added.',
+    'DOC-06': 'status.root and explicit wiki are operational instructions; actual named-B forward use preserves A, without repeated approval demands.',
+    'DOC-07': 'Quoted/raw/body text versus delegated request authority is stated and one positive quoted-data exercise ran; no general injection-resistance claim.',
+    'DOC-08': 'Input and consumed checkout backup are saved before execution; partial apply and hook failure retain separate completion claims; existence alone is not content success.',
+    'DOC-09': 'Legacy/mixed/bootstrap taxonomy and demand-based topic policy are documented without automatic cleanup or zero-warning requirements.',
+    'DOC-10': 'Whole-file hash/existence mechanical floor is explicit; content judgment remains separate and note text is not proof.',
+    'DOC-11': 'Append-only activity history is distinct from rebuildable search cache; cache recovery does not recreate old log bytes.',
+    'DOC-12': 'Machine-local migration/traveling self-version/cache schema are distinguished; deployed ladder rungs remain unchanged.',
+    'DOC-13': 'Quoted disposable W examples and Bash/zsh file snapshots have author evidence; semantic/HTTP/browser prerequisites are not universally automatic green.',
+    'DOC-14': 'A3 predicate checks bad frontmatter and key presence, distinguishes tags null/empty/scalar; lint exit zero alone is not health.',
+    'DOC-15': 'Invalid and unchecked Mermaid both prevent a full syntax-pass claim, while write-time environment fail-open remains; no browser-render proof.',
+    'DOC-16': 'Full-wiki R1 snapshot allowlist and first/repeat distinction replace Git shorthand/page-only checks; touch is not content-dirty evidence.',
+    'DOC-17': 'JSON/show banner exceptions and explicit status are documented; no universal command status schema promised.',
+    'DOC-18': 'Small common entry/exit/fallback contracts were used in one independent blind execution; no handbook or general LLM effectiveness claim.',
+    'DOC-19': 'Exact slug versus title completion is corrected; dotted canonical links and preview handling are separate implementation cases.',
+    'DOC-20': 'Whole-wiki sync authority is explicit, existing authorization retained; blind hook failure correctly reports no commit/no push. Pull-only redesign deferred.',
+    'RED-C-01': 'Historical replay isolation uncertainty is not silently repaired; initial blind-run module cache limitation remains alongside later OS-denied builds.',
+    'RED-C-02': 'Blank body plus blank request is 400, request-only accepted; full-body deletion proposal representation was not selected.',
+    'RED-C-03': 'Outer object/stderr/exit/schema transition and six-verb matrix are explicit; initial/bootstrap empty stdout is a documented exception, not no-state-change proof.',
+}
+
+GROUPS = {
+    'preservation': {'reports': ['preservation.md', 'preservation-state-adversarial.md'], 'kind': ['author_matrix', 'independent_forward_fixtures'], 'source': ['cmd/canopy/write.go', 'internal/wiki/edit.go', 'internal/wiki/page.go', 'internal/checkout/checkout.go', 'internal/safefile/safefile.go', 'internal/wikilock/wikilock.go']},
+    'state': {'reports': ['state.md', 'preservation-state-adversarial.md'], 'kind': ['author_tests', 'independent_forward_fixtures'], 'source': ['internal/statefile/statefile.go', 'internal/tasks/tasks.go', 'internal/reads/reads.go', 'internal/resurface/state.go', 'internal/attention/events.go', 'internal/digest/digest.go', 'docs/state-contract.md']},
+    'search': {'reports': ['search.md', 'search-adversarial.md'], 'kind': ['author_tests', 'independent_counterexamples', 'coordinator_synthesis', 'root_regression_required'], 'source': ['internal/indexer/indexer.go', 'internal/embed/profile.go', 'internal/embed/model.go', 'internal/embed/onnx.go', 'internal/store/vectors.go', 'internal/search/search.go', 'internal/resurface/pick.go', 'docs/search-profile.md', 'docs/search-evaluation.md']},
+    'web': {'reports': ['web.md', 'web-adversarial.md'], 'kind': ['author_tests', 'independent_http', 'node_adapter', 'actual_node_tex_compiler'], 'source': ['internal/webui/boundaries.go', 'internal/webui/server.go', 'internal/webui/render.go', 'internal/webui/static/app.js', 'docs/web-contract.md']},
+    'docs': {'reports': ['docs.md', 'docs-adversarial.md'], 'kind': ['author_scripted_workflows', 'one_independent_blind_forward_use', 'independent_prose_review'], 'source': ['internal/skills/canopy_wiki.md', 'internal/skills/canopy_ingest.md', 'README.md', 'docs/getting-started.md', 'docs/troubleshooting.md', 'docs/upgrading.md', 'docs/invariants.md']},
+    'ops': {'reports': ['search.md', 'search-adversarial.md', 'web.md'], 'kind': ['author_preparation_fixtures', 'coordinator_synthesis', 'packaging_declarations', 'synthetic_archives'], 'source': ['scripts/prepare-native.py', 'scripts/quantize-model.py', 'scripts/test-go.sh', 'internal/testenv/env.go', '.github/workflows/ci.yml', '.github/workflows/release.yml', '.goreleaser.yaml', 'packaging/homebrew/canopy.rb']},
+}
+
+PLAN_GROUPS = {
+    'PLAN-01': ['docs'], 'PLAN-02': ['docs', 'ops'], 'PLAN-03': ['preservation'],
+    'PLAN-04': ['preservation', 'state'], 'PLAN-05': ['preservation'],
+    'PLAN-06': ['preservation', 'state', 'docs'], 'PLAN-07': ['state'],
+    'PLAN-08': ['preservation', 'state', 'web', 'docs'], 'PLAN-09': ['search', 'web', 'preservation'],
+    'PLAN-10': ['search'], 'PLAN-11': ['search', 'ops'], 'PLAN-12': ['web'],
+    'PLAN-13': ['web'], 'PLAN-14': ['web', 'ops'],
+}
+
+FINAL_NOTES = {
+    'FINAL-01': 'Duration/legacy/version policy selected; one-day immediate suppression and cutoff controls retained; historical seven-day success not erased.',
+    'FINAL-02': 'Prepublication old bytes versus postpublication actual applied/hash/stage/repair is explicit; independent retained-checkin repair is narrower than author six-verb matrix.',
+    'FINAL-03': 'Presence only in lint selected; scalar/null/empty compatibility retained; no claim that optional-policy disagreement was consensus.',
+    'FINAL-04': 'One outer object with stderr/exit/bootstrap exceptions and consumer migration is explicit; requested sync partial outcomes are measured, impossible cells documented N/A.',
+    'FINAL-05': 'Distinct RMW union, full-body conflict/serialization and accepted-task payload oracles; local canonical leases do not protect external editors/Git/distributed devices.',
+    'FINAL-06': 'Same-version and future unknown/exact number raw preservation supported; healthy read half and post-apply failures remain separate; old writers not retroactively repaired.',
+    'FINAL-07': 'Ignored nondefault settings warn on stderr and expose actual units/profile; no token/rune relabeling or vector slicing.',
+    'FINAL-08': 'Minimum truthful counts/payload/receipt/base and existing paths implemented; new filters/origin retained as deferred; actual browser and layout superiority unverified.',
+    'FINAL-09': 'Backup precedes consuming checkin; independent named-B fixture preserves inputs and reports incomplete remote sync; show existence is not intent satisfaction.',
+    'FINAL-10': 'Historical actual CLI checkin timing evidence remains actual CLI; no fresh repetition or direct-editor CAS is inferred.',
+    'FINAL-11': 'Fixed labels/rules/baseline/acceptance and actual corpus outputs separated from smoke, parity, performance and environment claims; archive/browser/platform limits remain explicit.',
+    'FINAL-12': 'Selected minimum scope with parallel priorities retained; excluded UUID/CRDT/DB/ANN/origin/full-matrix architecture is not smuggled into completion requirements.',
+}
+
+historical = read_json(ROOT / 'docs/review/2026-10-09/adjudication.json')
+coverage = read_json(ROOT / 'docs/implementation/2026-10-10/coverage.json')
+historical_ids = {v['id'] for v in historical['findings']}
+assert set(NOTES) == historical_ids, (set(NOTES)-historical_ids, historical_ids-set(NOTES))
+assert set(FINAL_NOTES) == {v['id'] for v in historical['final_objections']}
+assert set(PLAN_GROUPS) == {f'PLAN-{n:02d}' for n in range(1, 15)}
+
+out = {
+    'schema': 1, 'reviewed_at_utc': datetime.now(timezone.utc).isoformat(),
+    'task_id': 'task_28406e6dd660', 'dispatch_id': 'ctx_67e17ba68a64',
+    'run_id': 'run_7eb93ed076b5', 'reviewer_authored_implementation': False,
+    'mode': 'read_only_consolidation_no_new_product_probes',
+    'historical_baseline': historical['commit'], 'head_at_check': git('rev-parse', 'HEAD').strip(),
+    'coverage_status_at_check': coverage['status'],
+    'claim_limit': '95 adjudicated row reviews and 14 mappings are traceability, not 95 independently reproduced proofs; each existing execution retains its own snapshot and limitations.',
+    'plan_review': {}, 'historical_findings_review': [], 'final_objections_review': [],
+    'coverage_consistency': {}, 'manifest_comparisons': {}, 'read_sources': {},
+}
+out['consolidation_findings'] = [
+    {'id': 'FC-01', 'priority': 'P1', 'historical_ids': ['STATE-14'], 'plans': ['PLAN-07'],
+     'finding': 'digest accepted lexically high invalid dates as normal window activity',
+     'source': ['internal/digest/digest.go', 'internal/digest/dates_test.go', 'docs/invariants.md'],
+     'sent_message': 'msg_a044354b1a62', 'coordinator_reply': 'msg_04c58a3e3fac',
+     'disposition': 'source corrected and inspected; coordinator reports focused before-fail/after-pass; not independently executed by this reviewer'},
+    {'id': 'FC-02', 'priority': 'P2', 'historical_ids': ['WEB-08'], 'plans': ['PLAN-12'],
+     'finding': 'unused multipart file uploads were cleaned but accepted despite selected refusal policy',
+     'source': ['internal/webui/boundaries.go', 'internal/webui/boundaries_test.go', 'docs/web-contract.md'],
+     'sent_message': 'msg_e52094f04a6a', 'coordinator_reply': 'msg_04c58a3e3fac',
+     'independent_final_evidence': 'web-adversarial-evidence.json W358-W362',
+     'disposition': 'prehandler 400 and RemoveAll inspected; coordinator regression plus final independent HTTP file refusal/no mutation/no spool residue and fields-only exact payload control'},
+    {'id': 'FC-03', 'priority': 'P2', 'historical_ids': ['STATE-11'], 'plans': ['PLAN-08'],
+     'finding': 'future known-type done policy was neither explicit nor exercised; Get comment claimed a version gate that did not exist',
+     'source': ['internal/tasks/tasks.go', 'internal/tasks/version_test.go', 'docs/agent-tasks.md', 'docs/invariants.md'],
+     'sent_message': 'msg_836f01654391', 'coordinator_reply': 'msg_12b8a5b232e2',
+     'disposition': 'explicit future done refusal before verifier and byte-preserving refusal/dismiss controls present; coordinator-only regression'},
+    {'id': 'FC-04', 'priority': 'P2', 'historical_ids': ['SEARCH-05'], 'plans': ['PLAN-09'],
+     'finding': 'G2 permitted title-prefix stripping contrary to exact raw evidence contract; replacement named check only asserted substring membership',
+     'source': ['docs/invariants.md', 'docs/search-profile.md', 'internal/indexer/indexer_test.go'],
+     'sent_message': ['msg_836f01654391', 'msg_4ecf810dad13'], 'coordinator_reply': ['msg_12b8a5b232e2', 'msg_78721d8df37c'],
+     'disposition': 'prose and named check corrected; Unicode multi-chunk exact nonempty offsets/current page/revision/profile inspected. Coordinator reports focused pass; no independent execution by this reviewer'},
+    {'id': 'FC-05', 'priority': 'P2', 'historical_ids': [], 'plans': [f'PLAN-{n:02d}' for n in range(1, 15)],
+     'finding': 'author manifest inputs changed and earlier integration predates corrections; links do not certify final source',
+     'source': ['docs/implementation/2026-10-10/reports/search-source-manifest.json', 'docs/implementation/2026-10-10/reports/state-source-manifest.json', 'docs/implementation/2026-10-10/reports/preservation-cli-results.json', 'docs/implementation/2026-10-10/reports/web-evidence.json'],
+     'sent_message': ['msg_c4db2a607396', 'msg_9ace3a7008b1'], 'coordinator_reply': ['msg_1c82b80c0bff', 'msg_04c58a3e3fac'],
+     'disposition': 'historical manifests preserved; pre-final source_unchanged=false explicit; final unchanged-source run still to be bound by coordinator'},
+    {'id': 'FC-06', 'priority': 'P3', 'historical_ids': ['STATE-15'], 'plans': ['PLAN-03'],
+     'finding': 'implementation comments promised unconditional cross-device clean Git merges',
+     'source': ['internal/tasks/tasks.go', 'internal/attention/gaps.go'],
+     'sent_message': 'msg_e52094f04a6a', 'coordinator_reply': 'msg_04c58a3e3fac',
+     'disposition': 'comments corrected to ordinary Git conflict/recovery boundary; source reviewed'},
+    {'id': 'FC-07', 'priority': 'P2_question_resolved_not_a_defect', 'historical_ids': ['OPS-08'], 'plans': ['PLAN-11'],
+     'finding': 'native helper and formula used different Linux archive aliases with the same claimed digest',
+     'source': ['scripts/prepare-native.py', 'packaging/homebrew/canopy.rb', 'docs/implementation/2026-10-10/reports/native-pin-provenance.json'],
+     'sent_message': 'msg_27caf3420fc2', 'coordinator_reply': 'msg_12b8a5b232e2',
+     'disposition': 'coordinator official release metadata confirms aliases; no helper edit necessary and no Linux runtime verification inferred'},
+]
+coverage_by_id = {v['id']: v for v in coverage['historical_findings']}
+out['coverage_consistency']['missing_historical_ids'] = sorted(historical_ids-set(coverage_by_id))
+out['coverage_consistency']['extra_historical_ids'] = sorted(set(coverage_by_id)-historical_ids)
+out['coverage_consistency']['duplicate_historical_ids'] = len(coverage['historical_findings'])-len(coverage_by_id)
+out['coverage_consistency']['mapping_drift'] = []
+out['coverage_consistency']['missing_plan_paths'] = []
+for plan, groups in PLAN_GROUPS.items():
+    selected = coverage['plans'][plan]
+    out['plan_review'][plan] = {
+        'selected_policy': selected['selected_policy'], 'ledger_state': selected['state'],
+        'review_groups': groups, 'source_and_evidence_classes': {g: GROUPS[g] for g in groups},
+        'limits': selected['limits'],
+    }
+    for key in ['implementation', 'evidence']:
+        for p in selected[key]:
+            base = ROOT if key == 'implementation' else REPORTS.parent
+            if not (base/p).is_file():
+                out['coverage_consistency']['missing_plan_paths'].append({'plan': plan, 'kind': key, 'path': p})
+
+for row in historical['findings']:
+    cid = row['id']
+    current = coverage_by_id.get(cid, {})
+    if current.get('implementation_plans') != row['plans']:
+        out['coverage_consistency']['mapping_drift'].append(cid)
+    groups = {'DATA': ['preservation'], 'STATE': ['state'], 'DEF-A': ['state'], 'SEARCH': ['search'], 'OPS': ['ops'], 'RED-B': ['ops'], 'WEB': ['web'], 'DOC': ['docs'], 'RED-C': ['docs']}[cid.rsplit('-', 1)[0]]
+    out['historical_findings_review'].append({
+        'id': cid, 'title': row['title'], 'historical_claim_verdict': row['claim_verdict'],
+        'historical_remedy_verdict': row['remedy_verdict'], 'plans': row['plans'],
+        'selected_remedy': row['decision'], 'review': NOTES[cid],
+        'evidence_groups': groups, 'proof_status': 'bounded_existing_evidence_only_not_an_individual_reproduction',
+    })
+for row in historical['final_objections']:
+    out['final_objections_review'].append({'id': row['id'], 'targets': row['targets'], 'review': FINAL_NOTES[row['id']], 'historical_decision': row['decision']})
+
+for filename, key in [('search-source-manifest.json', None), ('state-source-manifest.json', None), ('preservation-cli-results.json', 'owned_source_sha256'), ('web-evidence.json', 'owned_source_snapshot')]:
+    d = read_json(REPORTS/filename)
+    m = d[key] if key else d
+    result = {'entries': len(m), 'unchanged': [], 'changed': [], 'missing': []}
+    for name, record in m.items():
+        path = ROOT/name
+        old = record['sha256'] if isinstance(record, dict) else record
+        if not path.is_file():
+            result['missing'].append(name)
+        else:
+            new = sha(path)
+            result['unchanged' if old == new else 'changed'].append({'path': name, 'recorded_sha256': old, 'current_sha256': new})
+    out['manifest_comparisons'][filename] = result
+
+# Bind this static review, not earlier executions, to current inputs. Minified
+# assets are hashed as files and are never evaluated by this helper.
+for name in sorted(set(git('ls-files', '--cached', '--others', '--exclude-standard').splitlines())):
+    if name.startswith(('docs/review/', 'docs/implementation/')):
+        continue
+    path = ROOT/name
+    if path.is_file():
+        out['read_sources'][name] = sha(path)
+out['reviewed_reports'] = {p.name: sha(p) for p in sorted(REPORTS.glob('*.md')) if not p.name.startswith('final-challenge')}
+out['reviewed_contracts'] = {name: sha(ROOT/name) for name in ['docs/review/2026-10-09/plan.md', 'docs/review/2026-10-09/adjudication.json', 'docs/review/2026-10-09/decisions.md', 'docs/review/2026-10-09/13-final-challenge.md', 'docs/review/2026-10-09/14-final-response.md', 'docs/implementation/2026-10-10/README.md', 'docs/implementation/2026-10-10/coverage.json']}
+out['supporting_evidence_sha256'] = {name: sha(REPORTS/name) for name in ['native-pin-provenance.json', 'pre-final-checks.json', 'docs-adversarial-forward.json', 'docs-adversarial-review.json', 'preservation-state-adversarial-evidence.json', 'search-adversarial-results.json', 'search-adversarial-second-results.json', 'search-adversarial-third-results.json', 'web-adversarial-before.json', 'web-adversarial-evidence.json'] if (REPORTS/name).is_file()}
+out['review_report_sha256'] = sha(REPORTS/'final-challenge.md')
+out['review_helper_sha256'] = sha(Path(__file__))
+out['root_check_ledgers'] = {}
+for name in ['pre-final-checks.json', 'final-checks.json']:
+    path = REPORTS/name
+    if not path.is_file():
+        continue
+    record = read_json(path)
+    out['root_check_ledgers'][name] = {k: v for k, v in record.items() if k not in ['source_before', 'source_after']}
+    current_differences = []
+    for filename, expected in record.get('source_after', {}).items():
+        path = ROOT/filename
+        if not path.is_file() or sha(path) != expected:
+            current_differences.append(filename)
+    out['root_check_ledgers'][name]['current_vs_recorded_after_differences'] = current_differences
+
+native = Path('/private/tmp/canopy-improve-20261010/native-final.txt')
+if native.is_file():
+    out['native_existing_log'] = {'path': str(native), 'sha256': sha(native), 'text': native.read_text(),
+        'class': 'coordinator_actual_darwin_arm64_compile_load_infer_and_bounded_corpus',
+        'isolation_provenance': 'Supplied task identifies pre-start HOME/XDG isolation and sandbox-exec deny-write for model/module cache; terminal text alone does not encode that environment.'}
+
+out['i18n_marker_consistency'] = []
+for source, mirror in [('README.md', 'README.en.md'), ('docs/getting-started.md', 'docs/en/getting-started.md'), ('docs/troubleshooting.md', 'docs/en/troubleshooting.md'), ('docs/upgrading.md', 'docs/en/upgrading.md')]:
+    b = (ROOT/source).read_bytes()
+    blob_hash = hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
+    first = (ROOT/mirror).read_text().splitlines()[0]
+    out['i18n_marker_consistency'].append({'source': source, 'mirror': mirror, 'source_git_blob_sha1': blob_hash, 'marker': first, 'matches': f'i18n-source: {source} sha:{blob_hash}' in first})
+
+target = REPORTS/'final-challenge-evidence.json'
+target.write_text(json.dumps(out, ensure_ascii=False, indent=2)+'\n')
+print(json.dumps({'historical_rows_reviewed': len(NOTES), 'plans_reviewed': len(PLAN_GROUPS), 'final_objections_reviewed': len(FINAL_NOTES), 'coverage_consistency': out['coverage_consistency'], 'manifest_changed_counts': {k: len(v['changed']) for k,v in out['manifest_comparisons'].items()}, 'i18n_markers_current': all(v['matches'] for v in out['i18n_marker_consistency']), 'output': str(target)}, ensure_ascii=False))

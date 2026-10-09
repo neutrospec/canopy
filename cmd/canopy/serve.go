@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,6 +18,7 @@ import (
 
 func cmdServe() *cobra.Command {
 	var addr string
+	var allowHosts []string
 	c := &cobra.Command{
 		Use:   "serve",
 		Short: "Serve the wiki as a website (search, browsing, and edit proposals)",
@@ -63,7 +65,15 @@ review and apply through the CLI; it never writes wiki pages directly.`,
 				}
 				fmt.Fprintln(os.Stderr, "  note: 전송 암호화(TLS)는 tailscale 또는 리버스 프록시 사용을 권장합니다")
 			}
-			hs := &http.Server{Addr: addr, Handler: srv.Handler()}
+			listener, err := net.Listen("tcp", addr)
+			if err != nil {
+				return err
+			}
+			defer listener.Close()
+			if err := srv.ConfigureListener(listener.Addr().String(), allowHosts); err != nil {
+				return err
+			}
+			hs := &http.Server{Addr: addr, Handler: srv.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 32 << 10}
 			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt)
 			defer stop()
 			go func() {
@@ -73,12 +83,13 @@ review and apply through the CLI; it never writes wiki pages directly.`,
 				_ = hs.Shutdown(sctx)
 			}()
 			fmt.Printf("✓ serving %s on http://%s\n", w.Root, addr)
-			if err := hs.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			if err := hs.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
 				return err
 			}
 			return nil
 		},
 	}
 	c.Flags().StringVar(&addr, "addr", "localhost:8737", "listen address (non-loopback binds require authentication)")
+	c.Flags().StringSliceVar(&allowHosts, "allow-host", nil, "additional trusted Host authorities for a domain/proxy, e.g. wiki.example:443; forwarded headers are ignored")
 	return c
 }

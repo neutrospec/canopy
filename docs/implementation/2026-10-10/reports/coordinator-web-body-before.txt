@@ -1,0 +1,10 @@
+2026/10/10 03:44:00 POST http://localhost/api/read/alpha
+2026/10/10 03:44:00 GET http://localhost/api/preview/alpha
+2026/10/10 03:44:00 POST http://localhost/api/read/alpha
+2026/10/10 03:44:00 GET http://localhost/api/preview/alpha
+--- FAIL: TestUnparsedBodiesRespectBudgetBeforeMutation (0.05s)
+    boundaries_test.go:136: knownLength=false oversized unparsed body = 200
+    boundaries_test.go:136: knownLength=true oversized unparsed body = 200
+FAIL
+FAIL	github.com/neutrospec/canopy/internal/webui	0.574s
+FAIL

@@ -14,6 +14,20 @@ func TestFuseEmpty(t *testing.T) {
 	}
 }
 
+func TestDeterministicRankingTies(t *testing.T) {
+	for range 200 {
+		hits := Fuse(1, []store.Hit{{Slug: "b"}}, []store.Hit{{Slug: "a"}})
+		if len(hits) != 1 || hits[0].Slug != "a" {
+			t.Fatalf("unstable tied winner: %+v", hits)
+		}
+	}
+	for _, k := range []int{-1, 0, 1001} {
+		if hits := Fuse(k, []store.Hit{{Slug: "a"}}); len(hits) != 0 {
+			t.Fatalf("invalid k=%d returned hits", k)
+		}
+	}
+}
+
 func TestFuseSingleList(t *testing.T) {
 	list := []store.Hit{
 		{Slug: "a", Title: "A", Score: 5.0},
