@@ -1,0 +1,15 @@
+{"probe": "race-create", "first": 0, "second": 0, "second_lost": true, "log_count": 2}
+{"probe": "race-update", "first": 0, "second": 0, "newer_title_lost": true, "second_body_lost": true}
+{"probe": "short-write", "code": 1, "old_bytes": 2164, "new_bytes": 256, "old_tail_present": false, "stderr": "error: write /private/tmp/canopy-audit-20261009/data/final-verify/case-short-write/concepts/alpha.md: file too large"}
+{"probe": "pipeline-failure", "code": 1, "changed": true, "foreign": [], "write_logs_added": 0, "stderr": "error: open /private/tmp/canopy-audit-20261009/data/final-verify/case-pipeline-failure/index/entities.md: is a directory"}
+{"probe": "checkin-pipeline-failure", "code": 1, "copy_exists": false, "changed": true, "write_logs_added": 0, "retry_code": 1, "retry_stderr": "error: not checked out: alpha (run `canopy checkout alpha` first)"}
+{"probe": "rename-links", "source": "Bare [[beta|A]]. Path [[concepts/alpha]]. Ext [[alpha.md]]. Space [[ alpha ]].\nCode `[[beta]]`.\n```text\n[[beta]]\n```", "renamed": "Self [[alpha#self]].", "lint_code": 0, "counts": {"broken-link": 2, "orphan": 1, "stale": 1}}
+{"probe": "archive-links", "links_survived": "[[concepts/alpha]] [[alpha.md]] [[ alpha ]]", "counts": {"broken-link": 1, "orphan": 1, "stale": 1}}
+{"probe": "archive-collision", "code": 0, "first_preserved": false, "archived_files": 1, "prior_hash": "646bcce33fb2d0b83cc917ea11b1ddbb3c787f8d770d7f3b1767659c1d8c0ee6"}
+{"probe": "yaml-block", "code": 0, "counts": {"orphan": 1}, "fragment": "2026-01-01\nupdated: 2026-10-09\n  2026-01-01"}
+{"probe": "schema-blessing", "code": 0, "foreign": [], "counts": {"invalid-tag": 1, "invalid-type": 1, "orphan": 1}}
+{"probe": "checkin-tags", "code": 0, "counts": {"orphan": 1}}
+{"probe": "checkout-corrupt-meta", "code": 0, "edit_preserved": false}
+{"probe": "rename-agent-history", "agent_keys": ["alpha"]}
+{"probe": "sync-conflict", "code": 0, "stdout": "{\n  \"committed\": true,\n  \"message\": \"canopy: alpha\",\n  \"pushed\": true\n}", "stderr": "", "status": "", "commit_changed": true, "conflict_markers_local": true, "conflict_markers_remote": true, "stash": "stash@{0}: autostash"}
+{"probe": "sync-index", "code": 0, "pages": 2, "dashboard": ["> **Last updated**: 2026-10-09 | **Total pages**: 1"], "category_has_second": false, "status": ""}

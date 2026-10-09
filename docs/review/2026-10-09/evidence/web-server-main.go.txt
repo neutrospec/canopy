@@ -1,0 +1,43 @@
+package main
+
+import (
+	"flag"
+	"fmt"
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/webui"
+	"net"
+	"net/http"
+	"os"
+	"path/filepath"
+)
+
+func main() {
+	root := flag.String("root", "", "disposable fixture root")
+	out := flag.String("out", "", "address file")
+	auth := flag.Bool("auth", false, "enable auth")
+	flag.Parse()
+	s, err := webui.NewServer(&config.Wiki{Root: *root, Cfg: config.Default()}, nil)
+	if err != nil {
+		panic(err)
+	}
+	if *auth {
+		code, err := s.EnableAuth()
+		if err != nil {
+			panic(err)
+		}
+		os.WriteFile(filepath.Join(filepath.Dir(*out), "setup-code.txt"), []byte(code), 0600)
+	}
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		panic(err)
+	}
+	u := "http://" + ln.Addr().String()
+	if err := os.WriteFile(*out, []byte(u), 0600); err != nil {
+		panic(err)
+	}
+	fmt.Println(u)
+	srv := &http.Server{Handler: s.Handler()}
+	if err := srv.Serve(ln); err != nil {
+		panic(err)
+	}
+}

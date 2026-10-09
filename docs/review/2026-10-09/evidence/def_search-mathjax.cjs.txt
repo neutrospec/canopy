@@ -1,0 +1,23 @@
+// Inspect shipped loader/configuration only; no DOM, browser, or typesetting.
+const fs = require('node:fs');
+const vm = require('node:vm');
+const bundle = fs.readFileSync('internal/webui/static/vendor/tex-svg.js', 'utf8');
+const marker = 'var __webpack_exports__={};';
+if (bundle.split(marker).length !== 2) throw Error('unexpected bundle boundary');
+const source = bundle.replace(marker,
+  'globalThis.defenseModule=__webpack_require__;globalThis.defenseModules=__webpack_modules__;return;' + marker);
+const fixture = {document: {currentScript: {src: 'http://defense.invalid/static/vendor/tex-svg.js'}},
+  MathJax: {tex: {inlineMath: [['$', '$']]}, svg: {fontCache: 'global'}}, console};
+vm.runInNewContext(source, fixture);
+const loader = fixture.defenseModule(235);
+console.log(JSON.stringify({version: fixture.defenseModule(3282).VERSION}));
+for (const extension of ['color', 'physics']) {
+  console.log(JSON.stringify({extension,
+    path: loader.Package.resolvePath('[mathjax]/input/tex/extensions/' + extension)}));
+}
+for (const [id, factory] of Object.entries(fixture.defenseModules)) {
+  if (!factory.toString().includes('AutoloadConfiguration')) continue;
+  const mod = fixture.defenseModule(Number(id));
+  const cfg = mod.AutoloadConfiguration;
+  if (cfg) console.log(JSON.stringify({module: id, configuration: cfg.name, options: cfg.options}));
+}

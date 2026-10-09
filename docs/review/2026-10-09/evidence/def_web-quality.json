@@ -1,0 +1,602 @@
+{
+  "phase": "before_cleanup",
+  "report": "docs/review/2026-10-09/12-defense-web-docs.md",
+  "report_sha256": "dc7da804728dcfe4b1934e70a73936c06ff07ecc890b661fb2bc05574233dccf",
+  "primary_ids": [
+    "DOC-01",
+    "DOC-02",
+    "DOC-03",
+    "DOC-04",
+    "DOC-05",
+    "DOC-06",
+    "DOC-07",
+    "DOC-08",
+    "DOC-09",
+    "DOC-10",
+    "DOC-11",
+    "DOC-12",
+    "DOC-13",
+    "DOC-14",
+    "DOC-15",
+    "DOC-16",
+    "DOC-17",
+    "DOC-18",
+    "DOC-19",
+    "DOC-20",
+    "RED-C-01",
+    "RED-C-02",
+    "RED-C-03",
+    "WEB-01",
+    "WEB-02",
+    "WEB-03",
+    "WEB-04",
+    "WEB-05",
+    "WEB-06",
+    "WEB-07",
+    "WEB-08",
+    "WEB-09",
+    "WEB-10",
+    "WEB-11",
+    "WEB-12",
+    "WEB-13"
+  ],
+  "primary_count": 36,
+  "row_checks": {
+    "WEB-01": {
+      "line": 51,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2",
+        "P1"
+      ],
+      "direct_question_answer_present": true
+    },
+    "WEB-02": {
+      "line": 52,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2",
+        "P1"
+      ],
+      "direct_question_answer_present": true
+    },
+    "WEB-03": {
+      "line": 53,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P1"
+      ],
+      "direct_question_answer_present": true
+    },
+    "WEB-04": {
+      "line": 54,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "WEB-05": {
+      "line": 55,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "WEB-06": {
+      "line": 56,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P3"
+      ],
+      "direct_question_answer_present": true
+    },
+    "WEB-07": {
+      "line": 57,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P3"
+      ],
+      "direct_question_answer_present": true
+    },
+    "WEB-08": {
+      "line": 58,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "WEB-09": {
+      "line": 59,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2",
+        "P3"
+      ],
+      "direct_question_answer_present": true
+    },
+    "WEB-10": {
+      "line": 60,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P3"
+      ],
+      "direct_question_answer_present": true
+    },
+    "WEB-11": {
+      "line": 61,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P3"
+      ],
+      "direct_question_answer_present": true
+    },
+    "WEB-12": {
+      "line": 62,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P3"
+      ],
+      "direct_question_answer_present": true
+    },
+    "WEB-13": {
+      "line": 63,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P3"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-01": {
+      "line": 69,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-02": {
+      "line": 70,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-03": {
+      "line": 71,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-04": {
+      "line": 72,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2",
+        "P3"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-05": {
+      "line": 73,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P3"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-06": {
+      "line": 74,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-07": {
+      "line": 75,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P3"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-08": {
+      "line": 76,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P1"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-09": {
+      "line": 77,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2",
+        "P3"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-10": {
+      "line": 78,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-11": {
+      "line": 79,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-12": {
+      "line": 80,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-13": {
+      "line": 81,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-14": {
+      "line": 82,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-15": {
+      "line": 83,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-16": {
+      "line": 84,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P3"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-17": {
+      "line": 85,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-18": {
+      "line": 86,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P3"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-19": {
+      "line": 87,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P3"
+      ],
+      "direct_question_answer_present": true
+    },
+    "DOC-20": {
+      "line": 88,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "RED-C-01": {
+      "line": 131,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    },
+    "RED-C-02": {
+      "line": 132,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P3"
+      ],
+      "direct_question_answer_present": true
+    },
+    "RED-C-03": {
+      "line": 133,
+      "separate_claim_and_remedy": true,
+      "severity": [
+        "P2"
+      ],
+      "direct_question_answer_present": true
+    }
+  },
+  "table_widths": [
+    {
+      "start_line": 31,
+      "columns": 3
+    },
+    {
+      "start_line": 49,
+      "columns": 6
+    },
+    {
+      "start_line": 67,
+      "columns": 6
+    },
+    {
+      "start_line": 94,
+      "columns": 3
+    },
+    {
+      "start_line": 129,
+      "columns": 5
+    }
+  ],
+  "links": [
+    {
+      "label": "웹 원 보고서",
+      "target": "03-web.md",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "문서 원 보고서",
+      "target": "05-docs.md",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "RED 보고서",
+      "target": "09-red-web-docs.md",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "입력 아티팩트 검사",
+      "target": "evidence/def_web-input-artifacts.json",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "환경·빌드",
+      "target": "evidence/def_web-build.json",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "새 Go 관측",
+      "target": "evidence/def_web-http.json",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "race 관측",
+      "target": "evidence/def_web-race.json",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "CLI argv/exit/원 stdout/stderr",
+      "target": "evidence/def_web-cli.json",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "보충 CLI·empty 상태",
+      "target": "evidence/def_web-supplement.json",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "독립 JS",
+      "target": "evidence/def_web-js.json",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "실제 CLI serve",
+      "target": "evidence/def_web-serve.json",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "기존 시험",
+      "target": "evidence/def_web-existing.json",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "행 번호를 붙인 원 소스 발췌",
+      "target": "evidence/def_web-source-slices.txt",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "46파일 해시·범위",
+      "target": "evidence/def_web-source-manifest.json",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "runner",
+      "target": "evidence/def_web-runner.py.txt",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "Go probe",
+      "target": "evidence/def_web-probe_test.go.txt",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "JS Response probe",
+      "target": "evidence/def_web-response.cjs.txt",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "정적 수집기",
+      "target": "evidence/def_web-collect.py.txt",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "품질 검사 소스",
+      "target": "evidence/def_web-quality.py.txt",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "정리 전 검사",
+      "target": "evidence/def_web-quality.json",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "시작 기준선",
+      "target": "evidence/def_web-baseline.json",
+      "exists": true,
+      "planned_output_pending": false
+    },
+    {
+      "label": "최종 검증",
+      "target": "evidence/def_web-final-check.json",
+      "exists": false,
+      "planned_output_pending": true
+    }
+  ],
+  "python_sources": {
+    "runner.py": "parse ok; no product execution",
+    "collect.py": "parse ok; no product execution",
+    "quality.py": "parse ok; no product execution"
+  },
+  "head": "ede67e302a8487aecbb4d59587a8686292018cf6",
+  "index_sha256": "511e2031f26b1522974ee30466faad7e89979058c5e6f53faaec0bb6d029c51a",
+  "tracked_files": 161,
+  "changed_tracked_files": [],
+  "changed_review_inputs": [],
+  "tracked_status": "",
+  "tracked_path_set_unchanged": true,
+  "specified_color_contrast": [
+    {
+      "theme": "light",
+      "foreground": "#999988",
+      "background": "#edf1ed",
+      "ratio": 2.532992210386045,
+      "limitation": "specified source colors only; no browser computed style"
+    },
+    {
+      "theme": "dark",
+      "foreground": "#007f7f",
+      "background": "#242d27",
+      "ratio": 2.9345904704450865,
+      "limitation": "specified source colors only; no browser computed style"
+    }
+  ],
+  "cleanup": {
+    "own_scratch_absent": false,
+    "own_fixture_absent": false,
+    "fixture": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "scratch": "/Users/nobocop/play/canopy/review_probes/def_web",
+    "shared_go_cache_removed": false,
+    "real_HOME_or_other_worker_cleanup": false
+  },
+  "own_evidence_manifest_excluding_quality_outputs": {
+    "docs/review/2026-10-09/evidence/def_web-baseline.json": {
+      "sha256": "c1bcded73cc4a8f34ca89ee99e2dff817779f20af3f4382a5891221f219530fd",
+      "bytes": 18959
+    },
+    "docs/review/2026-10-09/evidence/def_web-build.json": {
+      "sha256": "bb12ebb5f547238e07aacd318452f4e7d3211945a12938942d22a462ee37960a",
+      "bytes": 1505
+    },
+    "docs/review/2026-10-09/evidence/def_web-cli.json": {
+      "sha256": "255f92f0a78838107c8d35fce45863fc87fd97fd27a0e8967afcb0d0cf62460f",
+      "bytes": 69634
+    },
+    "docs/review/2026-10-09/evidence/def_web-collect.py.txt": {
+      "sha256": "db0ea346d6be04038752d9d61088a992f8fbd7dc8bd26ee93abf9f1e76ef9e40",
+      "bytes": 3838
+    },
+    "docs/review/2026-10-09/evidence/def_web-existing.json": {
+      "sha256": "b1d9f1f9e68b1a309f6ad08729836fea1102a96d906e5c469d8229ec4d30dbee",
+      "bytes": 5164
+    },
+    "docs/review/2026-10-09/evidence/def_web-http.json": {
+      "sha256": "c49f5ee4a6eefcfd095aed3602959828a314bdff928f587474e23f68bd579876",
+      "bytes": 6325
+    },
+    "docs/review/2026-10-09/evidence/def_web-input-artifacts.json": {
+      "sha256": "1bdfa25adc1ca57ffaeec14287c65493bd8d9c3fd26cacc84794b9ecbae59a17",
+      "bytes": 6561
+    },
+    "docs/review/2026-10-09/evidence/def_web-js.json": {
+      "sha256": "91446a81b88edabf9b209a0eba9e9603b19f920a81b2c7c165f2145fd0bad510",
+      "bytes": 1054
+    },
+    "docs/review/2026-10-09/evidence/def_web-probe_test.go.txt": {
+      "sha256": "d087eafa1f354a808ce6f373a3f4142b17291bfb1af5870eeb801137e440ad49",
+      "bytes": 23844
+    },
+    "docs/review/2026-10-09/evidence/def_web-quality.py.txt": {
+      "sha256": "2be111d53f92fcbbb0f8599dbda85d62d11ed2ab5b597351059d22cab8dff7e1",
+      "bytes": 6959
+    },
+    "docs/review/2026-10-09/evidence/def_web-race.json": {
+      "sha256": "c6100a67c4a3c21ddf9748b2905bdce271d33ba7219574e8f9ef80cb2fbb22d1",
+      "bytes": 1503
+    },
+    "docs/review/2026-10-09/evidence/def_web-response.cjs.txt": {
+      "sha256": "3b091cebd47c869782f814c90fc0207c5e45a6016ce13c33d0088da6d48a4cae",
+      "bytes": 2469
+    },
+    "docs/review/2026-10-09/evidence/def_web-runner.py.txt": {
+      "sha256": "e02c9916a45d964144b73ceeb8af40600adca860e3aebeffde5ae2943d7eb870",
+      "bytes": 19491
+    },
+    "docs/review/2026-10-09/evidence/def_web-serve.json": {
+      "sha256": "3c1d81d487defa6c06e59c28e20da556a2c4333d618433a128cab212478df920",
+      "bytes": 1875
+    },
+    "docs/review/2026-10-09/evidence/def_web-source-manifest.json": {
+      "sha256": "9a02dc4f5b0ae6a6ada04a722681ecf0388c65ecf42e8f5f961f4a27ba377802",
+      "bytes": 11866
+    },
+    "docs/review/2026-10-09/evidence/def_web-source-slices.txt": {
+      "sha256": "5cd603a3769750de27f3e58e179f57b75772f7a7cd792dce90981ed19f6b7016",
+      "bytes": 145736
+    },
+    "docs/review/2026-10-09/evidence/def_web-supplement.json": {
+      "sha256": "46b8583ebed7692300bbbef6d702534599556c9d15b4b585aad7e41be66808e6",
+      "bytes": 15031
+    }
+  },
+  "limit": "No filesystem-wide write tracing; no claim of zero HOME writes by all tools. No other defense report read."
+}

@@ -1,0 +1,6 @@
+=== RUN   TestLoopbackLogoutWithOldCookie
+2026/10/09 13:19:40 POST /setup
+    probe_test.go:436: oldCookiePresent=true loopbackLogoutPanicked=true panic=runtime error: invalid memory address or nil pointer dereference
+--- PASS: TestLoopbackLogoutWithOldCookie (0.06s)
+PASS
+ok  	github.com/neutrospec/canopy/review_probes/web	0.575s

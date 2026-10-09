@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+"""Verify only this defense's deliverables and unchanged source/index/originals."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import tempfile
+
+repo=Path(__file__).resolve().parents[4]
+directory=repo/'docs/review/2026-10-09'
+evidence=directory/'evidence'
+root=Path(tempfile.mkdtemp(prefix='canopy-def-search-verify-',dir='/private/tmp'))
+env=os.environ.copy()
+for key,tail in [('HOME','home'),('XDG_CONFIG_HOME','config'),('XDG_CACHE_HOME','cache'),('XDG_DATA_HOME','data'),('XDG_STATE_HOME','state'),('TMPDIR','tmp')]:
+    p=root/tail;p.mkdir();env[key]=str(p)
+env.update(GOTELEMETRY='off',GOCACHE='/private/tmp/canopy-review/go-cache',GOPROXY='off',GOMODCACHE='/Users/nobocop/go/pkg/mod',GOTOOLCHAIN='local')
+def git(*args):return subprocess.check_output(['git',*args],cwd=repo,env=env,text=True).strip()
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+result={}
+try:
+    baseline=json.loads((evidence/'def_search-run.jsonl.txt').read_text().splitlines()[0])['snapshot']
+    report=directory/'11-defense-search.md';text=report.read_text()
+    ids=re.findall(r'^\| ((?:SEARCH-\d\d|OPS-\d\d|RED-B-01)) \|',text,re.M)
+    expected=[f'SEARCH-{i:02d}' for i in range(1,14)]+[f'OPS-{i:02d}' for i in range(1,12)]+['RED-B-01']
+    answers=re.findall(r'^\*\*((?:SEARCH-\d\d|OPS-\d\d|RED-B-01))\.\*\*',text,re.M)
+    missing=[]
+    for link in re.findall(r'\]\(([^)]+)\)',text):
+        if link.startswith('https://'):continue
+        p=directory/link.split('#')[0]
+        if p.name=='def_search-final-check.json.txt':continue
+        if not p.exists():missing.append(link)
+    originals={name:sha(repo/name) for name in baseline['originals']}
+    fixtures=[]
+    for filename in ['def_search-initial-attempt.jsonl.txt','def_search-run.jsonl.txt']:
+        rows=[json.loads(l) for l in (evidence/filename).read_text().splitlines()]
+        fixture=next(r['fixture'] for r in rows if r['label']=='baseline')
+        fixtures.append(dict(path=fixture,removed=not Path(fixture).exists()))
+    followups=[json.loads(l) for l in (evidence/'def_search-followups.jsonl.txt').read_text().splitlines()]
+    follow_fixture=Path(next(r['env']['HOME'] for r in followups if 'env' in r)).parent
+    fixtures.append(dict(path=str(follow_fixture),removed=not follow_fixture.exists()))
+    files=[report]+sorted(p for p in evidence.glob('def_search-*') if p.name!='def_search-final-check.json.txt')
+    result=dict(head=git('rev-parse','HEAD'),index_sha256=sha(repo/'.git/index'),
+      tracked_diff=git('diff','--name-only','HEAD'),status=git('status','--short'),
+      head_matches_baseline=git('rev-parse','HEAD')==baseline['head'],
+      index_matches_baseline=sha(repo/'.git/index')==baseline['index_sha256'],
+      originals_sha256=originals,originals_unchanged=originals==baseline['originals'],
+      matrix_ids=ids,matrix_exact=ids==expected,question_answer_ids=answers,answers_exact=answers==expected,
+      missing_local_links=missing,scratch_removed=not (repo/'review_probes/def_search').exists(),
+      recorded_fixtures=fixtures,
+      owned_files=[dict(path=str(p.relative_to(repo)),bytes=p.stat().st_size,sha256=sha(p)) for p in files])
+    result['all_checks_pass']=all([result['head_matches_baseline'],result['index_matches_baseline'],
+      result['originals_unchanged'],not result['tracked_diff'],result['matrix_exact'],result['answers_exact'],
+      not missing,result['scratch_removed'],all(f['removed'] for f in fixtures)])
+finally:
+    shutil.rmtree(root)
+    result['verification_fixture_removed']=not root.exists()
+    (evidence/'def_search-final-check.json.txt').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({k:result.get(k) for k in ['head','all_checks_pass','matrix_exact','answers_exact','scratch_removed','originals_unchanged','index_matches_baseline','missing_local_links','verification_fixture_removed']},ensure_ascii=False))
+if not result.get('all_checks_pass'):raise SystemExit(1)

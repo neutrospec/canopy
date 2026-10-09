@@ -1,0 +1,90 @@
+package redweb
+
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/neutrospec/canopy/internal/tasks"
+)
+
+func TestSupplementUnauthSpooling(t *testing.T) {
+	w, s := fixture(t, 1, "No account wiki")
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	if _, err := s.EnableAuth(); err != nil {
+		t.Fatal(err)
+	}
+	tmp := t.TempDir()
+	t.Setenv("TMPDIR", tmp)
+	var spooled int64
+	var diskBacked bool
+	var uploadedPath string
+	underlying := s.Handler()
+	ts := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		underlying.ServeHTTP(rw, r)
+		if r.MultipartForm != nil {
+			for _, f := range r.MultipartForm.File["ignored-upload"] {
+				spooled += f.Size
+				opened, err := f.Open()
+				if err == nil {
+					if diskFile, ok := opened.(*os.File); ok {
+						diskBacked = true
+						uploadedPath = diskFile.Name()
+					}
+					opened.Close()
+				}
+			}
+		}
+	}))
+	defer ts.Close()
+	var buf bytes.Buffer
+	mp := multipart.NewWriter(&buf)
+	file, err := mp.CreateFormFile("ignored-upload", "probe.dat")
+	if err != nil {
+		t.Fatal(err)
+	}
+	const size = 33 << 20
+	if _, err := file.Write(bytes.Repeat([]byte{'Q'}, size)); err != nil {
+		t.Fatal(err)
+	}
+	mp.Close()
+	req, _ := http.NewRequest("POST", ts.URL+"/setup", &buf)
+	req.Header.Set("Content-Type", mp.FormDataContentType())
+	response, err := client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	io.Copy(io.Discard, response.Body)
+	response.Body.Close()
+	ts.Close()
+	_, statErr := os.Stat(uploadedPath)
+	list, loadErr := tasks.Load(w)
+	logJSON(t, "unauth-spool-real-net-http", map[string]any{"response_status": response.StatusCode, "supplied_bytes": size, "parsed_file_bytes": spooled, "disk_backed_during_handler": diskBacked, "temp_removed_by_net_http": os.IsNotExist(statErr), "tasks": len(list), "task_load_error": fmt.Sprint(loadErr)})
+}
+
+func TestSupplementEmptyProposal(t *testing.T) {
+	w, s := fixture(t, 1, "Nonempty original body")
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	c := client()
+	before := hash(rawPage(w))
+	empty := request(c, ts.URL, "POST", "/edit/maple-0", "", "", url.Values{"body": {""}}.Encode(), nil)
+	withNote := request(c, ts.URL, "POST", "/edit/maple-0", "", "", url.Values{"body": {""}, "note": {"Please clear the body"}}.Encode(), nil)
+	list, err := tasks.Load(w)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hasBodyKey := false
+	if len(list) > 0 {
+		content, _ := os.ReadFile(filepath.Join(w.Root, "_meta/tasks", list[0].ID+".json"))
+		hasBodyKey = bytes.Contains(content, []byte(`"body":`))
+	}
+	logJSON(t, "empty-body-proposal-not-yet-defended", map[string]any{"empty_without_note_status": empty.code, "empty_without_note_error": empty.body, "empty_with_note_status": withNote.code, "task_count": len(list), "serialized_body_key": hasBodyKey, "page_unchanged": hash(rawPage(w)) == before})
+}

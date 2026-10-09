@@ -1,0 +1,34 @@
+from pathlib import Path
+import os,json,subprocess,datetime,hashlib
+ROOT=Path(os.environ['DEF_DATA_ROOT']);BIN=os.environ['DEF_DATA_BIN']
+EVID=Path(os.environ.get('DEF_DATA_EVIDENCE_DIR','/Users/nobocop/play/canopy/docs/review/2026-10-09/evidence'))
+log=[]
+def cli(w,*a,env=None):
+    argv=[BIN,'--wiki',str(w),*a,'--json'];p=subprocess.run(argv,env=env,text=True,capture_output=True,timeout=20)
+    log.append({'argv':argv,'exit':p.returncode,'stdout':p.stdout,'stderr':p.stderr,'TZ':env.get('TZ') if env else os.environ['TZ']})
+    assert p.returncode==0,(argv,p.stderr)
+    return json.loads(p.stdout) if p.stdout else None
+def put(p,s):p.parent.mkdir(parents=True,exist_ok=True);p.write_text(s)
+def fresh(s):
+    w=ROOT/'fixtures'/s;w.mkdir();cli(w,'init');put(w/'concepts/alpha.md','---\ntitle: Alpha\ncreated: 2026-02-01\nupdated: 2026-02-01\ntype: concept\ntags: [tool]\n---\n\nOriginal\n');return w
+def emit(c,**d):print(json.dumps({'case':c,**d},ensure_ascii=False),flush=True)
+w=fresh('C27-snooze-immediate');env=dict(os.environ);env['TZ']='America/Los_Angeles';now=datetime.datetime.now(datetime.timezone.utc)
+before=cli(w,'resurface','--peek','--strategy','random','-n','10',env=env)
+filed=cli(w,'resurface','feedback','alpha','--snooze','1',env=env)
+state=json.loads((w/'_meta/resurface/state.json').read_text());after=cli(w,'resurface','--peek','--strategy','random','-n','10',env=env)
+emit('C27-immediate-snooze',utc=now.isoformat(),TZ=env['TZ'],before_picks=before['picks'],response=filed,stored_state=state,after_picks=after['picks'])
+w=fresh('C28-rename-destination-history')
+old='2026-09-01T00:00:00Z';new='2026-09-05T00:00:00Z'
+put(w/'_meta/webui/reads.json',json.dumps({'version':1,'reads':{'alpha':{'first':new,'last':new,'count':1,'source':'explicit'}}}))
+put(w/'_meta/attention/agent-reads.json',json.dumps({'version':1,'agent':{'alpha':{'first':new,'last':new,'days':1},'beta':{'first':old,'last':old,'days':4}}}))
+cli(w,'mv','alpha','--slug','beta');emit('C28-rename-destination-history',new=json.loads((w/'_meta/attention/agent-reads.json').read_text()),destination_page_preexisted=False)
+w=fresh('C29-unknown-task-status')
+put(w/'_meta/tasks/future.json',json.dumps({'version':8,'id':'future','type':'future','status':'leased','created':old,'closed':old}))
+gc=cli(w,'tasks','gc','--days','0');emit('C29-unknown-status-GC',gc=gc,record_preserved=(w/'_meta/tasks/future.json').exists())
+w=fresh('C30-R1-full-snapshot');put(w/'raw/sentinel.txt','RAW-SENTINEL')
+for a in [['init','-b','main'],['config','user.name','Disposable Defense'],['config','user.email','def-data@example.invalid'],['add','-A'],['commit','-m','fixture baseline']]:
+    p=subprocess.run(['git','-C',str(w),*a],capture_output=True,text=True);assert p.returncode==0,p.stderr
+def tree(w):return {str(p.relative_to(w)):hashlib.sha256(p.read_bytes()).hexdigest() for p in w.rglob('*') if p.is_file() and '.git' not in p.parts}
+before=tree(w);cli(w,'checkout','alpha');first=tree(w);cli(w,'checkout','alpha');second=tree(w)
+emit('C30-R1-full-snapshot',first_changed_paths=sorted(k for k in set(before)|set(first) if before.get(k)!=first.get(k)),second_all_file_hashes_same=first==second,original_page_schema_raw_unchanged=all(first.get(k)==v for k,v in before.items()))
+(EVID/'def_data-extra-transcript.jsonl').write_text(''.join(json.dumps(x,ensure_ascii=False)+'\n' for x in log))

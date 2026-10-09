@@ -1,0 +1,28 @@
+=== RUN   TestStaleStateSnapshots
+    probe_test.go:61: human both saves=nil alpha=false beta=true
+    probe_test.go:75: agent both saves=nil alpha=false beta=true
+    probe_test.go:86: resurface feedback=0 snoozed_beta="2026-10-16"
+    probe_test.go:107: ledger stale saves foreign=[{concepts/alpha.md edited}]
+--- PASS: TestStaleStateSnapshots (0.01s)
+=== RUN   TestTaskFilingRace
+    probe_test.go:150: submitted=32 unique_returned_ids=10 files=10 readable=10
+--- PASS: TestTaskFilingRace (0.20s)
+=== RUN   TestCheckinHashWriteWindow
+    probe_test.go:181: checkin_error=<nil> elapsed=496.6925ms concurrent_edit_preserved=false
+--- PASS: TestCheckinHashWriteWindow (0.50s)
+=== RUN   TestFrontmatterPreservation
+    probe_test.go:195: before FMerr="" updated="2026-01-01" body="    code sample\n"
+    probe_test.go:196: after FMerr="" updated="2026-10-09 2026-01-01" body="    code sample\n"
+    probe_test.go:197: output keeps indented first body line=true
+    probe_test.go:200: requested title="C:\\new\\tool" parsed title="C:\new\tool" error=""
+--- PASS: TestFrontmatterPreservation (0.00s)
+=== RUN   TestFutureStateFields
+    probe_test.go:216: agent version=1 future_preserved=false
+    probe_test.go:225: ledger version=9 future_preserved=false
+--- PASS: TestFutureStateFields (0.00s)
+=== RUN   TestScanDomainAndDuplicateSlug
+    probe_test.go:246: scan=2 by_slug=1 selected_alpha=concepts/alpha.md lint_counts=map[orphan:2 stale:2]
+    probe_test.go:247: blessed_files=3 foreign=0 nested_in_scan=false
+--- PASS: TestScanDomainAndDuplicateSlug (0.00s)
+PASS
+ok  	github.com/neutrospec/canopy/review_probes/data	1.095s

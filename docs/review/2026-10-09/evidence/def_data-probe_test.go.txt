@@ -1,0 +1,594 @@
+package def_data
+
+import (
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"math/rand"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"os/exec"
+	"os/signal"
+	"path/filepath"
+	"reflect"
+	"sort"
+	"strings"
+	"sync"
+	"syscall"
+	"testing"
+	"time"
+
+	"github.com/neutrospec/canopy/internal/attention"
+	"github.com/neutrospec/canopy/internal/checkout"
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/mermaid"
+	"github.com/neutrospec/canopy/internal/migrate"
+	"github.com/neutrospec/canopy/internal/reads"
+	"github.com/neutrospec/canopy/internal/reconcile"
+	"github.com/neutrospec/canopy/internal/resurface"
+	"github.com/neutrospec/canopy/internal/tasks"
+	"github.com/neutrospec/canopy/internal/webui"
+	"github.com/neutrospec/canopy/internal/wiki"
+)
+
+var fixed = time.Date(2026, 10, 9, 12, 0, 0, 0, time.UTC)
+
+func must(t *testing.T, e error) {
+	t.Helper()
+	if e != nil {
+		t.Fatal(e)
+	}
+}
+func write(t *testing.T, p, s string) {
+	t.Helper()
+	must(t, os.MkdirAll(filepath.Dir(p), 0755))
+	must(t, os.WriteFile(p, []byte(s), 0644))
+}
+func read(t *testing.T, p string) []byte { t.Helper(); b, e := os.ReadFile(p); must(t, e); return b }
+func newWiki(t *testing.T) *config.Wiki {
+	t.Helper()
+	p, e := os.MkdirTemp(filepath.Join(os.Getenv("DEF_DATA_ROOT"), "fixtures"), "go-")
+	must(t, e)
+	return &config.Wiki{Root: p, Cfg: config.Default()}
+}
+func pg(t *testing.T, w *config.Wiki, slug, body string) {
+	t.Helper()
+	write(t, filepath.Join(w.Root, "concepts", slug+".md"), wiki.NewPageContent(slug, "concept", "2026-02-01", []string{"tool"}, nil, body))
+}
+func scan(t *testing.T, w *config.Wiki) *wiki.ScanResult {
+	t.Helper()
+	s, e := wiki.Scan(w)
+	must(t, e)
+	return s
+}
+func rd(t *testing.T, w *config.Wiki) *reads.State {
+	t.Helper()
+	s, e := reads.Load(w)
+	must(t, e)
+	return s
+}
+func surf(t *testing.T, w *config.Wiki) *resurface.State {
+	t.Helper()
+	s, e := resurface.LoadState(w)
+	must(t, e)
+	return s
+}
+func post(h http.Handler, path string, v url.Values) int {
+	r := httptest.NewRequest("POST", path, strings.NewReader(v.Encode()))
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, r)
+	return rec.Code
+}
+
+func TestG01HTTPProposals(t *testing.T) {
+	log.SetOutput(io.Discard)
+	w := newWiki(t)
+	pg(t, w, "alpha", "original body")
+	before := reconcile.HashBytes(read(t, filepath.Join(w.Root, "concepts/alpha.md")))
+	s, e := webui.NewServer(w, nil)
+	must(t, e)
+	h := s.Handler()
+	for i := 0; i < 5; i++ {
+		if post(h, "/edit/alpha", url.Values{"body": {fmt.Sprintf("sequential-%02d", i)}}) != 303 {
+			t.Fatal("control")
+		}
+	}
+	list, e := tasks.Load(w)
+	must(t, e)
+	t.Logf("G01 sequential=%d", len(list))
+	const n = 64
+	start := make(chan struct{})
+	codes := make(chan int, n)
+	var wg sync.WaitGroup
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			<-start
+			codes <- post(h, "/edit/alpha", url.Values{"body": {fmt.Sprintf("different-body-%03d", i)}})
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+	close(codes)
+	success := 0
+	for c := range codes {
+		if c == 303 {
+			success++
+		}
+	}
+	files, e := os.ReadDir(tasks.Dir(w))
+	must(t, e)
+	bodies := map[string]bool{}
+	bad := 0
+	for _, f := range files {
+		var x tasks.Task
+		if json.Unmarshal(read(t, filepath.Join(tasks.Dir(w), f.Name())), &x) != nil {
+			bad++
+			continue
+		}
+		if strings.HasPrefix(x.Body, "different-body-") {
+			bodies[x.Body] = true
+		}
+	}
+	t.Logf("G01 requests=%d HTTP303=%d retained_distinct_bodies=%d corrupt=%d page_unchanged=%v", n, success, len(bodies), bad, before == reconcile.HashBytes(read(t, filepath.Join(w.Root, "concepts/alpha.md"))))
+	a, b := newWiki(t), newWiki(t)
+	x, e := tasks.FileEdit(a, "alpha", "", "A", "base", "web", fixed)
+	must(t, e)
+	y, e := tasks.FileEdit(b, "alpha", "", "B", "base", "web", fixed)
+	must(t, e)
+	t.Logf("G01 independent_same_time_equal_ID=%v (API only; no clone merge)", x.ID == y.ID)
+}
+
+func TestG02HTTPStateAndMutexControls(t *testing.T) {
+	for _, door := range []string{"read-one-server", "read-two-servers", "feedback"} {
+		w := newWiki(t)
+		const n = 28
+		for i := 0; i < n; i++ {
+			pg(t, w, fmt.Sprintf("p-%02d", i), "body")
+		}
+		must(t, surf(t, w).Save(w))
+		s, e := webui.NewServer(w, nil)
+		must(t, e)
+		h := s.Handler()
+		s2, e := webui.NewServer(w, nil)
+		must(t, e)
+		h2 := s2.Handler()
+		start := make(chan struct{})
+		var wg sync.WaitGroup
+		success := make(chan string, n)
+		codes := make(chan int, n)
+		for i := 0; i < n; i++ {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				<-start
+				slug := fmt.Sprintf("p-%02d", i)
+				handler := h
+				path := "/read/" + slug
+				v := url.Values{}
+				if door == "read-two-servers" && i%2 == 1 {
+					handler = h2
+				}
+				if door == "feedback" {
+					path = "/resurface/feedback"
+					v = url.Values{"slug": {slug}, "action": {"up"}}
+				}
+				c := post(handler, path, v)
+				codes <- c
+				if c == 303 {
+					success <- slug
+				}
+			}(i)
+		}
+		close(start)
+		wg.Wait()
+		close(success)
+		close(codes)
+		successSet := map[string]bool{}
+		status := map[int]int{}
+		for c := range codes {
+			status[c]++
+		}
+		for k := range success {
+			successSet[k] = true
+		}
+		retained := map[string]bool{}
+		var loadErr error
+		if door == "feedback" {
+			st, e := resurface.LoadState(w)
+			loadErr = e
+			if e == nil {
+				for _, f := range st.Feedback {
+					retained[f.Slug] = true
+				}
+			}
+		} else {
+			st, e := reads.Load(w)
+			loadErr = e
+			if e == nil {
+				for k := range st.Reads {
+					retained[k] = true
+				}
+			}
+		}
+		lost := 0
+		for k := range successSet {
+			if !retained[k] {
+				lost++
+			}
+		}
+		t.Logf("G02 %s statuses=%v successful_distinct=%d retained=%d successful_missing=%d Load_error=%v", door, status, len(successSet), len(retained), lost, loadErr)
+	}
+}
+
+func TestG03SnapshotAndCrossDoor(t *testing.T) {
+	for _, door := range []string{"human", "agent"} {
+		w := newWiki(t)
+		a, b := rd(t, w), rd(t, w)
+		if door == "human" {
+			a.Mark("alpha", "explicit", fixed)
+			b.Mark("beta", "explicit", fixed)
+		} else {
+			a.MarkAgent("alpha", fixed)
+			b.MarkAgent("beta", fixed)
+		}
+		must(t, a.Save(w))
+		must(t, b.Save(w))
+		got := rd(t, w)
+		t.Logf("G03 %s after_successful_saves human=%v agent=%v", door, got.Reads, got.Agent)
+	}
+	w := newWiki(t)
+	a, b := rd(t, w), rd(t, w)
+	a.Mark("alpha", "explicit", fixed)
+	b.MarkAgent("beta", fixed)
+	must(t, a.Save(w))
+	must(t, b.Save(w))
+	got := rd(t, w)
+	t.Logf("G03 cross_file_control human_alpha=%v agent_beta=%v", got.IsRead("alpha"), got.Agent["beta"] != nil)
+	aS, bS := surf(t, w), surf(t, w)
+	aS.AddFeedback("alpha", "up", fixed)
+	bS.Snooze("beta", 7, fixed)
+	must(t, aS.Save(w))
+	must(t, bS.Save(w))
+	gotS := surf(t, w)
+	t.Logf("G03 resurface feedback=%d snooze_beta=%s", len(gotS.Feedback), gotS.Snoozed["beta"])
+	pg(t, w, "alpha", "A")
+	pg(t, w, "beta", "B")
+	_, e := reconcile.BlessAll(w)
+	must(t, e)
+	aL, _, e := reconcile.Load(w)
+	must(t, e)
+	bL, _, e := reconcile.Load(w)
+	must(t, e)
+	delete(aL.Blessed, "concepts/alpha.md")
+	delete(bL.Blessed, "concepts/beta.md")
+	must(t, aL.Save(w))
+	must(t, bL.Save(w))
+	g, _, e := reconcile.Load(w)
+	must(t, e)
+	_, alpha := g.Blessed["concepts/alpha.md"]
+	_, beta := g.Blessed["concepts/beta.md"]
+	t.Logf("G03 ledger expected_both_removed actual_alpha=%v beta=%v (forced snapshot API order)", alpha, beta)
+}
+
+func TestG04AtomicChild(t *testing.T) {
+	root := os.Getenv("DEF_DATA_ATOMIC_CHILD")
+	if root == "" {
+		t.Skip("child only")
+	}
+	w := &config.Wiki{Root: root, Cfg: config.Default()}
+	s := rd(t, w)
+	s.Mark("beta", "explicit", fixed)
+	signal.Ignore(syscall.SIGXFSZ)
+	must(t, syscall.Setrlimit(syscall.RLIMIT_FSIZE, &syscall.Rlimit{Cur: 96, Max: 96}))
+	e := s.Save(w)
+	t.Logf("G04 child Save_error=%v", e)
+}
+func TestG04AtomicState(t *testing.T) {
+	w := newWiki(t)
+	s := rd(t, w)
+	s.Mark("alpha", "explicit", fixed)
+	must(t, s.Save(w))
+	before := string(read(t, reads.Path(w)))
+	exe, e := os.Executable()
+	must(t, e)
+	cmd := exec.Command(exe, "-test.run=^TestG04AtomicChild$", "-test.v")
+	cmd.Env = append(os.Environ(), "DEF_DATA_ATOMIC_CHILD="+w.Root)
+	out, e := cmd.CombinedOutput()
+	must(t, e)
+	after := read(t, reads.Path(w))
+	_, le := reads.Load(w)
+	t.Logf("G04 old_bytes=%d after_bytes=%d unchanged=%v next_Load=%v child=%s", len(before), len(after), before == string(after), le, out)
+}
+
+func TestG05MigrationShapeAndConcurrency(t *testing.T) {
+	for _, input := range []string{"missing", "null", `{"schema_version":-3}`, `{"schema_version":88}`, "{"} {
+		w := newWiki(t)
+		ctx := &migrate.Context{ConfigHome: filepath.Join(w.Root, "config"), DataHome: filepath.Join(w.Root, "data"), CacheHome: filepath.Join(w.Root, "cache")}
+		path := filepath.Join(ctx.ConfigHome, "state.json")
+		if input != "missing" {
+			write(t, path, input)
+		}
+		r, e := migrate.Ensure(ctx, "def-audit")
+		changed := false
+		if b, re := os.ReadFile(path); re == nil {
+			changed = string(b) != input
+		}
+		r2, e2 := migrate.Ensure(ctx, "def-audit")
+		t.Logf("G05 shape=%s result=%+v err=%v changed=%v second=%+v second_err=%v", input, r, e, changed, r2, e2)
+	}
+	w := newWiki(t)
+	ctx := &migrate.Context{ConfigHome: filepath.Join(w.Root, "config"), DataHome: filepath.Join(w.Root, "data"), CacheHome: filepath.Join(w.Root, "cache")}
+	write(t, filepath.Join(ctx.ConfigHome, "state.json"), `{"schema_version":0}`)
+	const n = 32
+	start := make(chan struct{})
+	errs := make(chan error, n)
+	var wg sync.WaitGroup
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func() { defer wg.Done(); <-start; _, e := migrate.Ensure(ctx, "def-audit"); errs <- e }()
+	}
+	close(start)
+	wg.Wait()
+	close(errs)
+	failed := 0
+	sample := ""
+	for e := range errs {
+		if e != nil {
+			failed++
+			sample = e.Error()
+		}
+	}
+	t.Logf("G05 goroutine_Ensure calls=%d failed=%d sample=%s", n, failed, sample)
+}
+
+func TestG06CompatibilityNoopAndNested(t *testing.T) {
+	for _, version := range []int{1, 8} {
+		w := newWiki(t)
+		path := reads.Path(w)
+		write(t, path, fmt.Sprintf(`{"version":%d,"reads":{"alpha":{"first":"2026-10-01T00:00:00Z","last":"2026-10-01T00:00:00Z","count":1,"source":"explicit","addon":{"precise":9007199254740993}}},"addon":"keep"}`, version))
+		before := string(read(t, path))
+		s := rd(t, w)
+		must(t, s.Save(w))
+		noop := before == string(read(t, path))
+		s.Mark("alpha", "explicit", fixed)
+		must(t, s.Save(w))
+		t.Logf("G06 human version=%d noop_bytes_same=%v changed_has_addon=%v", version, noop, strings.Contains(string(read(t, path)), "addon"))
+	}
+	w := newWiki(t)
+	write(t, reads.AgentPath(w), `{"version":8,"agent":{"alpha":{"first":"2026-10-01T00:00:00Z","last":"2026-10-01T00:00:00Z","days":1,"addon":"keep"}},"addon":"keep"}`)
+	s := rd(t, w)
+	s.MarkAgent("beta", fixed)
+	must(t, s.Save(w))
+	t.Logf("G06 agent_after=%s", read(t, reads.AgentPath(w)))
+	write(t, resurface.StatePath(w), `{"version":8,"shown":{},"addon":"keep"}`)
+	st := surf(t, w)
+	st.Snooze("alpha", 2, fixed)
+	must(t, st.Save(w))
+	t.Logf("G06 resurface_addon_retained=%v", strings.Contains(string(read(t, resurface.StatePath(w))), "addon"))
+	pg(t, w, "alpha", "body")
+	write(t, reconcile.Path(w), `{"version":8,"blessed":{},"addon":"keep"}`)
+	must(t, reconcile.BlessPaths(w, []string{"concepts/alpha.md"}))
+	t.Logf("G06 ledger_addon_retained=%v", strings.Contains(string(read(t, reconcile.Path(w))), "addon"))
+}
+
+func TestG07SnoozeSeedAndRecentTie(t *testing.T) {
+	w := newWiki(t)
+	s := rd(t, w)
+	for i := 0; i < 16; i++ {
+		slug := fmt.Sprintf("page-%02d", i)
+		s.MarkAgent(slug, fixed)
+		pg(t, w, slug, "body")
+	}
+	sets := map[string]bool{}
+	for i := 0; i < 50; i++ {
+		x := s.RecentAccessSlugs(5)
+		sort.Strings(x)
+		sets[strings.Join(x, ",")] = true
+	}
+	sc := scan(t, w)
+	st := surf(t, w)
+	a, e := resurface.PickPages(sc, st, nil, "auto", 5, fixed, rand.New(rand.NewSource(29)))
+	must(t, e)
+	b, e := resurface.PickPages(sc, st, nil, "auto", 5, fixed, rand.New(rand.NewSource(29)))
+	must(t, e)
+	t.Logf("G07 distinct_top5_sets=%d fixed_seed_equal=%v", len(sets), reflect.DeepEqual(a, b))
+	actualSets := map[string]bool{}
+	for i := 0; i < 50; i++ {
+		x := s.RecentAccessSlugs(10)
+		sort.Strings(x)
+		actualSets[strings.Join(x, ",")] = true
+	}
+	t.Logf("G07 actual_discover_K=10 distinct_sets=%d", len(actualSets))
+	for _, offset := range []int{9 * 3600, 0, -4 * 3600} {
+		now := time.Date(2026, 10, 9, 23, 0, 0, 0, time.FixedZone("fixture", offset))
+		st = surf(t, w)
+		st.Snooze("page-00", 1, now)
+		single := &wiki.ScanResult{Pages: []*wiki.Page{sc.BySlug["page-00"]}, BySlug: map[string]*wiki.Page{"page-00": sc.BySlug["page-00"]}}
+		for _, d := range []time.Duration{0, 9 * time.Hour, 10 * time.Hour, 24 * time.Hour} {
+			p, e := resurface.PickPages(single, st, nil, "random", 1, now.Add(d), rand.New(rand.NewSource(1)))
+			must(t, e)
+			t.Logf("G07 snooze offset=%d until=%s after=%s eligible=%v", offset, st.Snoozed["page-00"], d, len(p) > 0)
+		}
+	}
+}
+
+func TestG08YAMLAndDomain(t *testing.T) {
+	for _, title := range []string{`C:\new\tool`, `C:\Users\note`, "Line one\nLine two", `A "quote"`} {
+		raw := wiki.NewPageContent(title, "concept", "2026-02-01", nil, nil, "body")
+		p := wiki.Parse("concepts/alpha.md", []byte(raw))
+		t.Logf("G08 title_requested=%q parsed=%q error=%q equal=%v", title, p.Title, p.FMErr, title == p.Title)
+	}
+	raw := "---\ntitle: alpha\ncreated: 2026-02-01\nupdated: |-\n  2026-02-01\ntype: concept\ntags: []\naddon: keep\n---\n\n  indented body\n"
+	before := wiki.Parse("concepts/alpha.md", []byte(raw))
+	changed := wiki.SetFrontmatterField(raw, "updated", "2026-10-09")
+	after := wiki.Parse("concepts/alpha.md", []byte(changed))
+	t.Logf("G08 block_before=%q after=%q addon_bytes=%v body_bytes_same=%v", before.Updated, after.Updated, strings.Contains(changed, "addon: keep"), before.Body == after.Body)
+	w := newWiki(t)
+	pg(t, w, "alpha", "flat")
+	write(t, filepath.Join(w.Root, "concepts/nested/hidden.md"), wiki.NewPageContent("hidden", "concept", "2026-02-01", nil, nil, "hidden"))
+	sc := scan(t, w)
+	n, e := reconcile.BlessAll(w)
+	must(t, e)
+	f, _, e := reconcile.Foreign(w)
+	must(t, e)
+	t.Logf("G08 flat_scan=%d recursive_bless=%d foreign=%d", len(sc.Pages), n, len(f))
+}
+
+func TestG09DoneOriginAndVersion(t *testing.T) {
+	w := newWiki(t)
+	pg(t, w, "alpha", "original body")
+	path := filepath.Join(w.Root, "concepts/alpha.md")
+	base := reconcile.HashBytes(read(t, path))
+	x, e := tasks.FileEdit(w, "alpha", "revise argument", "proposal", base, "cli", fixed)
+	must(t, e)
+	_, unchanged := tasks.Close(w, scan(t, w), x.ID, tasks.StatusDone, "", "cli", fixed)
+	write(t, path, wiki.SetFrontmatterField(string(read(t, path)), "updated", "2026-10-09"))
+	_, fm := tasks.Close(w, scan(t, w), x.ID, tasks.StatusDone, "", "cli", fixed)
+	t.Logf("G09 unchanged_rejected=%v frontmatter_only_done_error=%v", unchanged != nil, fm)
+	s, e := webui.NewServer(w, nil)
+	must(t, e)
+	h := s.Handler()
+	get := httptest.NewRecorder()
+	h.ServeHTTP(get, httptest.NewRequest("GET", "/edit/alpha", nil))
+	origin := reconcile.HashBytes(read(t, path))
+	pg(t, w, "alpha", "changed after GET")
+	submission := reconcile.HashBytes(read(t, path))
+	code := post(h, "/edit/alpha", url.Values{"body": {"stale form proposal"}})
+	list, e := tasks.Load(w)
+	must(t, e)
+	for _, x := range list {
+		if x.Body == "stale form proposal" {
+			t.Logf("G09 GET=%d POST=%d base_is_GET=%v base_is_POST=%v", get.Code, code, x.Base == origin, x.Base == submission)
+		}
+	}
+	pg(t, w, "alpha", "[[beta]]")
+	pg(t, w, "beta", "[[alpha]]")
+	x, _, e = tasks.FileConnect(w, "alpha", "beta", 0, "cli", fixed)
+	must(t, e)
+	p := filepath.Join(tasks.Dir(w), x.ID+".json")
+	var raw map[string]json.RawMessage
+	must(t, json.Unmarshal(read(t, p), &raw))
+	raw["version"] = json.RawMessage("88")
+	b, e := json.Marshal(raw)
+	must(t, e)
+	write(t, p, string(b))
+	_, e = tasks.Close(w, scan(t, w), x.ID, tasks.StatusDone, "", "cli", fixed)
+	t.Logf("G09 known_type_future_version_actual_links_done=%v", e)
+}
+
+func TestG10OffsetsAndRenameRemedy(t *testing.T) {
+	w := newWiki(t)
+	old := time.Date(2026, 10, 9, 9, 0, 0, 0, time.FixedZone("fixture", 9*3600))
+	recent := time.Date(2026, 10, 9, 5, 0, 0, 0, time.UTC)
+	since := time.Date(2026, 10, 9, 4, 0, 0, 0, time.UTC)
+	ev, e := attention.Open(filepath.Join(w.Root, "events.db"))
+	must(t, e)
+	must(t, ev.Log(old, "older", "agent", "show", ""))
+	must(t, ev.Log(recent, "newer", "agent", "show", ""))
+	query, e := ev.Query(attention.Filter{Since: since})
+	must(t, e)
+	top, e := ev.TopConsumed(since, 9)
+	must(t, e)
+	weekly, e := ev.WeeklyCounts("newer", 1, old.Add(time.Hour).Add(7*24*time.Hour))
+	must(t, e)
+	removed, e := ev.Prune(old.Add(time.Hour))
+	must(t, e)
+	remain, e := ev.Recent(10)
+	must(t, e)
+	must(t, ev.Close())
+	t.Logf("G10 query=%v top=%v newer_weekly=%v removed=%d remain=%d", query, top, weekly, removed, len(remain))
+	s := rd(t, w)
+	s.Mark("alpha", "explicit", old)
+	s.MarkAgent("alpha", recent)
+	s.MarkAgent("beta", recent.Add(time.Hour))
+	last, ok := s.LastAccess("alpha")
+	t.Logf("G10 LastAccess_correct=%v recent=%v expected=[beta alpha]", ok && last.Equal(recent), s.RecentAccessSlugs(2))
+	for i := 0; i < 4; i++ {
+		s.MarkAgent("unused-name", fixed.AddDate(0, 0, i))
+	}
+	s.MarkAgent("original", fixed.AddDate(0, 0, 7))
+	before := s.Agent["unused-name"].Days
+	s.Rename("original", "unused-name")
+	t.Logf("G10 unconditional_Rename_destination_days=%d->%d (API counterexample to remedy)", before, s.Agent["unused-name"].Days)
+}
+
+func TestG11AliasAndFutureDB(t *testing.T) {
+	w := newWiki(t)
+	pg(t, w, "alpha", "body")
+	alias := w.Root + "-alias"
+	must(t, os.Symlink(w.Root, alias))
+	other, e := config.Resolve(alias)
+	must(t, e)
+	info, e := checkout.Checkout(w, scan(t, w), "alpha")
+	must(t, e)
+	opens, e := checkout.Open(other)
+	must(t, e)
+	_, ce := os.Stat(info.Path)
+	t.Logf("G11 alias_event_key_same=%v checkout_key_same=%v alias_open=%d original_copy_survives=%v", w.AttentionDBPath() == other.AttentionDBPath(), w.CheckoutDir() == other.CheckoutDir(), len(opens), ce == nil)
+	path := filepath.Join(w.Root, "future.db")
+	ev, e := attention.Open(path)
+	must(t, e)
+	must(t, ev.Log(fixed, "alpha", "agent", "show", "prior"))
+	must(t, ev.Close())
+	raw, e := sql.Open("sqlite", path)
+	must(t, e)
+	_, e = raw.Exec("PRAGMA user_version = 8")
+	must(t, e)
+	must(t, raw.Close())
+	ev, e = attention.Open(path)
+	must(t, e)
+	le := ev.Log(fixed, "beta", "agent", "show", "later")
+	rows, e := ev.Recent(9)
+	must(t, e)
+	must(t, ev.Close())
+	t.Logf("G11 higher_version_same_real_schema Log=%v rows=%d (no actual future schema)", le, len(rows))
+}
+
+func TestG12CLIHashWriteWindow(t *testing.T) {
+	for _, concurrent := range []bool{false, true} {
+		w := newWiki(t)
+		pg(t, w, "alpha", "baseline")
+		path := filepath.Join(w.Root, "concepts/alpha.md")
+		co := exec.Command(os.Getenv("DEF_DATA_BIN"), "--wiki", w.Root, "checkout", "alpha", "--json")
+		out, e := co.CombinedOutput()
+		must(t, e)
+		var info checkout.Info
+		must(t, json.Unmarshal(out, &info))
+		put := string(read(t, info.Path)) + strings.Repeat("\n```mermaid\nflowchart LR\n    AA[\"source\"] --> BB[\"target\"]\n```\n", 24)
+		if len(mermaid.Blocks(put)) != 24 {
+			t.Fatal("slow validation fixture has wrong block count")
+		}
+		write(t, info.Path, put)
+		sentinel := "\nDIRECT-WRITER-SENTINEL\n"
+		if !concurrent {
+			write(t, path, string(read(t, path))+sentinel)
+		}
+		cmd := exec.Command(os.Getenv("DEF_DATA_BIN"), "--wiki", w.Root, "checkin", "alpha", "--json")
+		start := time.Now()
+		done := make(chan struct {
+			out []byte
+			e   error
+		}, 1)
+		go func() {
+			o, e := cmd.CombinedOutput()
+			done <- struct {
+				out []byte
+				e   error
+			}{o, e}
+		}()
+		if concurrent {
+			time.Sleep(150 * time.Millisecond)
+			write(t, path, string(read(t, path))+sentinel)
+		}
+		r := <-done
+		_, copyErr := os.Stat(info.Path)
+		t.Logf("G12 actual_CLI concurrent=%v elapsed=%v err=%v direct_writer_preserved=%v copy_present=%v output=%s", concurrent, time.Since(start), r.e, strings.Contains(string(read(t, path)), "DIRECT-WRITER-SENTINEL"), copyErr == nil, r.out)
+	}
+}

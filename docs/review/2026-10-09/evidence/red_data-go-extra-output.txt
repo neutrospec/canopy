@@ -1,0 +1,15 @@
+$ ['go', 'test', '-mod=readonly', '-count=1', '-v', '-run', '^TestQ1[12]', './review_probes/red_data']
+=== RUN   TestQ11OffsetAndRenameRemedyControls
+    probe_test.go:465: mixed offset: since=2026-03-04T08:00:00Z query=[{2026-03-04T15:00:00+09:00 older agent show } {2026-03-04T09:00:00Z newer agent show }] TopConsumed=[{newer 1 0 1} {older 1 0 1}] prune_removed=2 remaining=0
+    probe_test.go:471: aggregate control: LastAccess_true_instant=true recent_order=[cedar birch] want=[birch cedar]
+    probe_test.go:480: proposed unconditional Rename with stale destination history: destination_days_before=2 after=1 (no destination page required)
+    probe_test.go:494: known type future version with actual mutual links: done_error=<nil>
+--- PASS: TestQ11OffsetAndRenameRemedyControls (0.01s)
+=== RUN   TestQ12HTTPStateMutationsAndMutexControl
+    probe_test.go:544: same-server read mutex control: requests=36 success=36 failed=0 retained=36
+    probe_test.go:551: actual feedback handler: requests=36 success=32 failed=4 retained=1 Load_error=<nil>
+--- PASS: TestQ12HTTPStateMutationsAndMutexControl (0.05s)
+PASS
+ok  	github.com/neutrospec/canopy/review_probes/red_data	0.563s
+
+EXIT 0

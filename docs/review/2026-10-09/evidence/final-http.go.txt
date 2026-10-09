@@ -1,0 +1,93 @@
+package main
+
+import (
+	"crypto/sha256"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/tasks"
+	"github.com/neutrospec/canopy/internal/webui"
+)
+
+func httpProbe(root string) any {
+	log.SetOutput(io.Discard)
+	w := &config.Wiki{Root: root, Cfg: config.Default(), HasTOML: true}
+	must(os.MkdirAll(filepath.Join(root, "concepts"), 0700))
+	must(w.WriteTOML())
+	page := filepath.Join(root, "concepts/alpha.md")
+	original := []byte("---\ntitle: Alpha\ncreated: 2020-01-01\nupdated: 2020-01-01\ntype: concept\ntags: []\n---\n\nOriginal HTTP fixture.\n")
+	must(os.WriteFile(page, original, 0600))
+	s, err := webui.NewServer(w, nil)
+	must(err)
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	client := &http.Client{Timeout: 10 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	var mu sync.Mutex
+	success := map[string]bool{}
+	codes := map[int]int{}
+	failures := []string{}
+	for round := 0; round < 16; round++ {
+		start := make(chan struct{})
+		var wg sync.WaitGroup
+		for n := 0; n < 2; n++ {
+			wg.Add(1)
+			go func(round, n int) {
+				defer wg.Done()
+				<-start
+				body := fmt.Sprintf("final-two-tabs-%02d-%d", round, n)
+				r, e := client.PostForm(ts.URL+"/edit/alpha", url.Values{"body": {body}})
+				if e != nil {
+					mu.Lock()
+					failures = append(failures, e.Error())
+					mu.Unlock()
+					return
+				}
+				io.Copy(io.Discard, r.Body)
+				r.Body.Close()
+				mu.Lock()
+				codes[r.StatusCode]++
+				if r.StatusCode == 303 {
+					success[body] = true
+				}
+				mu.Unlock()
+			}(round, n)
+		}
+		close(start)
+		wg.Wait()
+	}
+	list, err := tasks.Load(w)
+	must(err)
+	preserved := map[string]bool{}
+	for _, t := range list {
+		preserved[t.Body] = true
+	}
+	missing := []string{}
+	for b := range success {
+		if !preserved[b] {
+			missing = append(missing, b)
+		}
+	}
+	sort.Strings(missing)
+	after, err := os.ReadFile(page)
+	must(err)
+	req, err := http.NewRequest("GET", ts.URL+"/api/preview/alpha", nil)
+	must(err)
+	req.Host = "foreign.final.test:8737"
+	r, err := client.Do(req)
+	must(err)
+	raw, err := io.ReadAll(r.Body)
+	must(err)
+	r.Body.Close()
+	return map[string]any{"rounds": 16, "parallel_per_round": 2, "success_count": len(success), "stored_task_count": len(list), "preserved_success_body_count": len(success) - len(missing), "missing_success_bodies": missing, "status_counts": codes, "transport_failures": failures, "page_unchanged": sha256.Sum256(original) == sha256.Sum256(after), "foreign_host_preview_status": r.StatusCode, "foreign_host_contains_fixture": strings.Contains(string(raw), "Original HTTP fixture."), "limit": "actual local HTTP requests; no actual browser exploit, browser DOM, or two-clone merge claim"}
+}

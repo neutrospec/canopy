@@ -1,0 +1,6 @@
+$ ['python3', '/Users/nobocop/play/canopy/review_probes/def_data/extra.py']
+{"case": "C27-immediate-snooze", "utc": "2026-10-09T05:53:19.342250+00:00", "TZ": "America/Los_Angeles", "before_picks": [{"slug": "alpha", "rel_path": "concepts/alpha.md", "title": "Alpha", "strategy": "random-forgotten", "days_stale": 250, "excerpt": "Original", "explanation": "250일간 열람·갱신이 없던 페이지"}], "response": {"recorded": true, "slug": "alpha"}, "stored_state": {"version": 1, "shown": {}, "shown_pairs": {}, "snoozed": {"alpha": "2026-10-09"}, "feedback": null}, "after_picks": [{"slug": "alpha", "rel_path": "concepts/alpha.md", "title": "Alpha", "strategy": "random-forgotten", "days_stale": 250, "excerpt": "Original", "explanation": "250일간 열람·갱신이 없던 페이지"}]}
+{"case": "C28-rename-destination-history", "new": {"version": 1, "agent": {"beta": {"first": "2026-09-05T00:00:00Z", "last": "2026-09-05T00:00:00Z", "days": 1}}}, "destination_page_preexisted": false}
+{"case": "C29-unknown-status-GC", "gc": {"removed": 1}, "record_preserved": false}
+
+EXIT 0

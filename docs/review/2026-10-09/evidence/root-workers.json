@@ -1,0 +1,120 @@
+{
+  "ok": true,
+  "counts": {
+    "retained": 7,
+    "released": 6
+  },
+  "page": {
+    "limit": 100,
+    "total": 13,
+    "hasMore": false,
+    "nextCursor": null
+  },
+  "workers": [
+    {
+      "task": "task_36fdc1aa1eb8",
+      "dispatch": "ctx_ad8e19044250",
+      "outcome": "succeeded",
+      "ownership": "released",
+      "release": "released",
+      "retained_reason": null
+    },
+    {
+      "task": "task_7888810d8672",
+      "dispatch": "ctx_58462b323031",
+      "outcome": "succeeded",
+      "ownership": "user_owned",
+      "release": "retained",
+      "retained_reason": "user_takeover"
+    },
+    {
+      "task": "task_fd3c5c8064c9",
+      "dispatch": "ctx_4a96b365dd18",
+      "outcome": "succeeded",
+      "ownership": "released",
+      "release": "released",
+      "retained_reason": null
+    },
+    {
+      "task": "task_018d22367edc",
+      "dispatch": "ctx_8ca36998107e",
+      "outcome": "succeeded",
+      "ownership": "released",
+      "release": "released",
+      "retained_reason": null
+    },
+    {
+      "task": "task_c52abd44a94b",
+      "dispatch": "ctx_04eeb6248c18",
+      "outcome": "succeeded",
+      "ownership": "released",
+      "release": "released",
+      "retained_reason": null
+    },
+    {
+      "task": "task_e91a48a3f04c",
+      "dispatch": "ctx_206f7ebab86a",
+      "outcome": "succeeded",
+      "ownership": "user_owned",
+      "release": "retained",
+      "retained_reason": "user_takeover"
+    },
+    {
+      "task": "task_0ae4050981ab",
+      "dispatch": "ctx_b6354bd36c2e",
+      "outcome": "succeeded",
+      "ownership": "released",
+      "release": "released",
+      "retained_reason": null
+    },
+    {
+      "task": "task_1fd4dd1a282f",
+      "dispatch": "ctx_a9c260511dc2",
+      "outcome": "succeeded",
+      "ownership": "user_owned",
+      "release": "retained",
+      "retained_reason": "user_takeover"
+    },
+    {
+      "task": "task_5bdf6c799c0e",
+      "dispatch": "ctx_56bf5e38891e",
+      "outcome": "succeeded",
+      "ownership": "user_owned",
+      "release": "retained",
+      "retained_reason": "user_takeover"
+    },
+    {
+      "task": "task_86e2922627f0",
+      "dispatch": "ctx_3c4d3dfd4d9e",
+      "outcome": "succeeded",
+      "ownership": "user_owned",
+      "release": "retained",
+      "retained_reason": "user_takeover"
+    },
+    {
+      "task": "task_4b8a17794888",
+      "dispatch": "ctx_a44e2a61c8b1",
+      "outcome": "succeeded",
+      "ownership": "user_owned",
+      "release": "retained",
+      "retained_reason": "user_takeover"
+    },
+    {
+      "task": "task_19b34e2628dd",
+      "dispatch": "ctx_cee0838e31c8",
+      "outcome": "succeeded",
+      "ownership": "user_owned",
+      "release": "retained",
+      "retained_reason": "user_takeover"
+    },
+    {
+      "task": "task_d6b3fdd6e1a2",
+      "dispatch": "ctx_6a5d33a41095",
+      "outcome": "succeeded",
+      "ownership": "released",
+      "release": "released",
+      "retained_reason": null
+    }
+  ],
+  "limit": "Task settlement is distinct from user-protected terminal cleanup; retained user_takeover resources are not closed."
+}

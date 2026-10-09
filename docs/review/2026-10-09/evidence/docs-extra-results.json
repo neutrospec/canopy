@@ -1,0 +1,336 @@
+{
+  "run": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+  "records": [
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "init",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/cache/canopy/index/a32e906dfd52.db\",\n  \"default_wiki_set\": true,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "tags",
+        "--audit",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "{\n  \"total_pages\": 0,\n  \"legacy\": false,\n  \"topics\": [\n    {\n      \"tag\": \"person\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"company\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"community\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"ai-ml\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"science\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"philosophy\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"history\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"language\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"math\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"politics\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"health\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"psychology\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"fitness\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"nutrition\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"sleep\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"business\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"finance\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"career\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"productivity\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"startup\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"book\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"movie\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"music\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"travel\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"cooking\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"hobby\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"programming\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"tool\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"hardware\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"infrastructure\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"hacking\",\n      \"count\": 0,\n      \"pct\": 0\n    }\n  ],\n  \"forms\": [\n    {\n      \"tag\": \"comparison\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"timeline\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"controversy\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"prediction\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"method\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"definition\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"decision\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"review\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"debugging\",\n      \"count\": 0,\n      \"pct\": 0\n    }\n  ],\n  \"unused_topics\": [\n    \"ai-ml\",\n    \"book\",\n    \"business\",\n    \"career\",\n    \"community\",\n    \"company\",\n    \"cooking\",\n    \"finance\",\n    \"fitness\",\n    \"hacking\",\n    \"hardware\",\n    \"health\",\n    \"history\",\n    \"hobby\",\n    \"infrastructure\",\n    \"language\",\n    \"math\",\n    \"movie\",\n    \"music\",\n    \"nutrition\",\n    \"person\",\n    \"philosophy\",\n    \"politics\",\n    \"productivity\",\n    \"programming\",\n    \"psychology\",\n    \"science\",\n    \"sleep\",\n    \"startup\",\n    \"tool\",\n    \"travel\"\n  ],\n  \"overbroad_topics\": null,\n  \"broad_topic_pct\": 25,\n  \"unknown_tags\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "init",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-b",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/cache/canopy/index/e61ab3919d7d.db\",\n  \"default_wiki_set\": false,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-b\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "init",
+        "-b",
+        "main",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-b"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "Initialized empty Git repository in /private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-b/.git/\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "status",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "{\n  \"checkouts_open\": 0,\n  \"git\": {\n    \"is_repo\": false,\n    \"branch\": \"\",\n    \"dirty\": 0,\n    \"ahead\": 0,\n    \"behind\": 0\n  },\n  \"initialized\": true,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a\",\n  \"stray_root\": null,\n  \"tasks_pending\": 0\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "status",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-b",
+      "exit": 0,
+      "stdout": "{\n  \"checkouts_open\": 0,\n  \"git\": {\n    \"is_repo\": true,\n    \"branch\": \"\",\n    \"dirty\": 1,\n    \"ahead\": 0,\n    \"behind\": 0,\n    \"changed\": [\n      \"canopy.toml\"\n    ]\n  },\n  \"initialized\": true,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-b\",\n  \"stray_root\": null,\n  \"tasks_pending\": 0\n}\n",
+      "stderr": ""
+    },
+    {
+      "probe": "wiki_resolution",
+      "default_root": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+      "from_other_wiki_root": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-b"
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "new",
+        "Alpha",
+        "--slug",
+        "alpha",
+        "--type",
+        "concept",
+        "--tags",
+        "tool",
+        "--body-file",
+        "-",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "{\n  \"created\": \"concepts/alpha.md\",\n  \"related\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "update",
+        "alpha",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "probe": "logs_not_regenerated",
+      "first_note": "audit-edited-history",
+      "generated_marker_present": false
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "show",
+        "alpha",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "---\ntitle: \"Alpha\"\ncreated: 2026-10-09\nupdated: 2026-10-09\ntype: concept\ntags: [tool]\nsources: []\n---\n# Alpha\n\nAlpha body.\n",
+      "stderr": "— concepts/alpha.md —\n"
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "new",
+        "Beta",
+        "--slug",
+        "beta",
+        "--type",
+        "concept",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "{\n  \"created\": \"concepts/beta.md\",\n  \"related\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "checkout",
+        "beta",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "{\n  \"slug\": \"beta\",\n  \"rel_path\": \"concepts/beta.md\",\n  \"path\": \"/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/state/canopy/checkout/a32e906dfd52/beta.md\",\n  \"base\": \"ebea7d734908eba27e0507569217615189feacba87706dac6af22c07f9951309\",\n  \"opened_at\": \"2026-10-09T13:35:09+09:00\",\n  \"modified\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "list",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "{\n  \"count\": 2,\n  \"pages\": [\n    {\n      \"slug\": \"alpha\",\n      \"type\": \"concept\",\n      \"title\": \"Alpha\",\n      \"tags\": [\n        \"tool\"\n      ],\n      \"updated\": \"2026-10-09\",\n      \"rel_path\": \"concepts/alpha.md\"\n    },\n    {\n      \"slug\": \"beta\",\n      \"type\": \"concept\",\n      \"title\": \"Beta\",\n      \"tags\": [],\n      \"updated\": \"2026-10-09\",\n      \"rel_path\": \"concepts/beta.md\"\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "show",
+        "alpha",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+        "--no-mark"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "---\ntitle: \"Alpha\"\ncreated: 2026-10-09\nupdated: 2026-10-09\ntype: concept\ntags: [tool]\nsources: []\n---\n# Alpha\n\nAlpha body.\n",
+      "stderr": "— concepts/alpha.md —\n"
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "checkin",
+        "beta",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+        "--discard",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "{\n  \"discarded\": \"beta\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "zsh",
+        "-c",
+        "audit_w='--wiki /private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a'\n/private/tmp/canopy-audit-20261009/docs/canopy lint $audit_w --json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: unknown flag: --wiki /private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a\n"
+    },
+    {
+      "argv": [
+        "bash",
+        "-c",
+        "audit_w='--wiki /private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-b'\ngit -C $audit_w status --short"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 128,
+      "stdout": "",
+      "stderr": "fatal: cannot change to '--wiki': No such file or directory\n"
+    },
+    {
+      "argv": [
+        "zsh",
+        "-c",
+        "body_file=/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/example-body.md\n/private/tmp/canopy-audit-20261009/docs/canopy new '새 개념' --type concept --slug new-concept --body-file \"$body_file\" --wiki /private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a\n/private/tmp/canopy-audit-20261009/docs/canopy show new-concept --wiki /private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a\nrm \"$body_file\""
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "error: mermaid block at line 12 fails the renderer's parser — fix the diagram and retry (syntax rules: canopy-wiki skill):\nParse error on line 4:\n...LRA[missing --> B\n--------------------^\nExpecting 'SQE', 'DOUBLECIRCLEEND', 'PE', '-)', 'STADIUMEND', 'SUBROUTINEEND', 'PIPE', 'CYLINDEREND', 'DIAMOND_STOP', 'TAGEND', 'TRAPEND', 'INVTRAPEND', 'UNICODE_TEXT', 'TEXT', 'TAGSTART', got '1'\nerror: page not found: new-concept\n"
+    },
+    {
+      "probe": "skill_example_failure",
+      "shell_exit": 0,
+      "body_exists": false,
+      "page_exists": false
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "init",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-partial",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/cache/canopy/index/8e4e5a271286.db\",\n  \"default_wiki_set\": false,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-partial\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "new",
+        "Partial",
+        "--slug",
+        "partial",
+        "--type",
+        "concept",
+        "--body-file",
+        "-",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-partial",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: mkdir /private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-partial/logs: not a directory\n"
+    },
+    {
+      "probe": "partial_failure",
+      "exit": 1,
+      "page_exists": true,
+      "index_exists": true
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "new",
+        "Partial",
+        "--slug",
+        "partial",
+        "--type",
+        "concept",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-partial",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: page already exists: concepts/partial.md — update it instead of duplicating\n"
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "tags",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "{\n  \"forms\": [\n    \"comparison\",\n    \"timeline\",\n    \"controversy\",\n    \"prediction\",\n    \"method\",\n    \"definition\",\n    \"decision\",\n    \"review\",\n    \"debugging\"\n  ],\n  \"tags\": [\n    \"person\",\n    \"company\",\n    \"community\",\n    \"ai-ml\",\n    \"science\",\n    \"philosophy\",\n    \"history\",\n    \"language\",\n    \"math\",\n    \"politics\",\n    \"health\",\n    \"psychology\",\n    \"fitness\",\n    \"nutrition\",\n    \"sleep\",\n    \"business\",\n    \"finance\",\n    \"career\",\n    \"productivity\",\n    \"startup\",\n    \"book\",\n    \"movie\",\n    \"music\",\n    \"travel\",\n    \"cooking\",\n    \"hobby\",\n    \"programming\",\n    \"tool\",\n    \"hardware\",\n    \"infrastructure\",\n    \"hacking\",\n    \"comparison\",\n    \"timeline\",\n    \"controversy\",\n    \"prediction\",\n    \"method\",\n    \"definition\",\n    \"decision\",\n    \"review\",\n    \"debugging\",\n    \"audit-topic\"\n  ],\n  \"topics\": [\n    \"person\",\n    \"company\",\n    \"community\",\n    \"ai-ml\",\n    \"science\",\n    \"philosophy\",\n    \"history\",\n    \"language\",\n    \"math\",\n    \"politics\",\n    \"health\",\n    \"psychology\",\n    \"fitness\",\n    \"nutrition\",\n    \"sleep\",\n    \"business\",\n    \"finance\",\n    \"career\",\n    \"productivity\",\n    \"startup\",\n    \"book\",\n    \"movie\",\n    \"music\",\n    \"travel\",\n    \"cooking\",\n    \"hobby\",\n    \"programming\",\n    \"tool\",\n    \"hardware\",\n    \"infrastructure\",\n    \"hacking\"\n  ],\n  \"types\": [\n    \"entity\",\n    \"concept\",\n    \"comparison\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "tags",
+        "--audit",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d",
+      "exit": 0,
+      "stdout": "{\n  \"total_pages\": 2,\n  \"legacy\": false,\n  \"topics\": [\n    {\n      \"tag\": \"tool\",\n      \"count\": 1,\n      \"pct\": 50\n    },\n    {\n      \"tag\": \"person\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"company\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"community\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"ai-ml\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"science\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"philosophy\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"history\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"language\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"math\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"politics\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"health\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"psychology\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"fitness\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"nutrition\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"sleep\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"business\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"finance\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"career\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"productivity\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"startup\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"book\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"movie\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"music\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"travel\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"cooking\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"hobby\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"programming\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"hardware\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"infrastructure\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"hacking\",\n      \"count\": 0,\n      \"pct\": 0\n    }\n  ],\n  \"forms\": [\n    {\n      \"tag\": \"comparison\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"timeline\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"controversy\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"prediction\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"method\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"definition\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"decision\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"review\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"debugging\",\n      \"count\": 0,\n      \"pct\": 0\n    }\n  ],\n  \"unused_topics\": [\n    \"ai-ml\",\n    \"book\",\n    \"business\",\n    \"career\",\n    \"community\",\n    \"company\",\n    \"cooking\",\n    \"finance\",\n    \"fitness\",\n    \"hacking\",\n    \"hardware\",\n    \"health\",\n    \"history\",\n    \"hobby\",\n    \"infrastructure\",\n    \"language\",\n    \"math\",\n    \"movie\",\n    \"music\",\n    \"nutrition\",\n    \"person\",\n    \"philosophy\",\n    \"politics\",\n    \"productivity\",\n    \"programming\",\n    \"psychology\",\n    \"science\",\n    \"sleep\",\n    \"startup\",\n    \"travel\"\n  ],\n  \"overbroad_topics\": [\n    {\n      \"tag\": \"tool\",\n      \"count\": 1,\n      \"pct\": 50\n    }\n  ],\n  \"broad_topic_pct\": 25,\n  \"unknown_tags\": []\n}\n",
+      "stderr": ""
+    }
+  ]
+}

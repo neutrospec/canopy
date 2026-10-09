@@ -1,0 +1,55 @@
+[
+  {
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-lite",
+      "new",
+      "Mermaid test",
+      "--type",
+      "concept",
+      "--slug",
+      "diagram-test",
+      "--body-file",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/valid-tilde-body.md",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/mermaid-wiki",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\n  \"created\": \"concepts/diagram-test.md\",\n  \"related\": []\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-lite",
+      "lint",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/mermaid-wiki",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\n  \"total_pages\": 2,\n  \"findings\": [\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/diagram-test.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"orphan\": 1\n  }\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-lite",
+      "new",
+      "Broken diagram",
+      "--type",
+      "concept",
+      "--slug",
+      "broken-diagram",
+      "--body-file",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/broken-diagram-body.md",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/mermaid-wiki",
+      "--json"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "error: mermaid block at line 12 fails the renderer's parser — fix the diagram and retry (syntax rules: canopy-wiki skill):\nParse error on line 2:\nflowchart LR A --> end\n-------------------^\nExpecting 'AMP', 'COLON', 'PIPE', 'TESTSTR', 'DOWN', 'DEFAULT', 'NUM', 'COMMA', 'NODE_STRING', 'BRKT', 'MINUS', 'MULT', 'UNICODE_TEXT', got 'end'\n"
+  },
+  {
+    "broken_page_written": false
+  }
+]

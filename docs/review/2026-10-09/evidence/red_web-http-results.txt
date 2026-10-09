@@ -1,0 +1,36 @@
+=== RUN   TestNetworkBoundaryAndRender
+    probe_test.go:97: OBS host-render {"canary":true,"different_origin":403,"escaped_alias":true,"event":true,"host_status":200,"javascript":true,"matched_origin":303,"script":true,"tasks":1}
+--- PASS: TestNetworkBoundaryAndRender (0.02s)
+=== RUN   TestTwoTabAndBurst
+    probe_test.go:97: OBS concurrent-proposals {"accepted":48,"codes":{"303":48},"files":34,"load_error":"\u003cnil\u003e","lost_bodies":14,"page_unchanged":true,"per_round":2,"rounds":24,"rounds_with_loss":14,"unique_bodies":34}
+    probe_test.go:97: OBS concurrent-proposals {"accepted":72,"codes":{"303":72},"files":42,"load_error":"\u003cnil\u003e","lost_bodies":30,"page_unchanged":true,"per_round":24,"rounds":3,"rounds_with_loss":3,"unique_bodies":42}
+--- PASS: TestTwoTabAndBurst (0.76s)
+=== RUN   TestStateConcurrency
+    probe_test.go:97: OBS feedback-concurrency {"accepted":25,"accepted_but_absent":17,"codes":{"303":25,"500":15},"load_error":"\u003cnil\u003e","persisted":8}
+    probe_test.go:97: OBS read-graph-concurrency {"failed_get":3,"failed_post":0,"final_count":121,"get_requests":360,"load_error":"\u003cnil\u003e","post_requests":120}
+--- PASS: TestStateConcurrency (0.21s)
+=== RUN   TestAuthResponseAndLogout
+    probe_test.go:97: OBS auth-response {"content_type":"text/html; charset=utf-8","read_before_session":false,"with_session_body":"{\"read\":true}\n","with_session_status":200,"without_session_final_status":200,"without_session_path":"/login"}
+    probe_test.go:97: OBS logout-local {"no_cookie_set_cookie":"canopy_session=; Path=/; Max-Age=0","no_cookie_status":303,"old_cookie_network_error":"Post \"http://127.0.0.1:50980/logout\": EOF","old_cookie_status":0,"subsequent_preview_status":200}
+--- PASS: TestAuthResponseAndLogout (0.05s)
+=== RUN   TestHomeHEADUnknownAndStale
+    probe_test.go:97: OBS head-discover {"discover_all_read":true,"get_same_day_unchanged":true,"head_body_bytes":0,"head_changed_state":true,"head_status":200,"home_all_read":true,"home_unread_one":true}
+    probe_test.go:97: OBS unknown-page {"automatic_status":404,"explicit_status":303,"feedback_rows":1,"feedback_status":303,"recorded":true}
+    probe_test.go:97: OBS stale-proposal {"base_is_post_current":true,"form_has_old":true,"original_page_unchanged":true,"post_status":303,"tasks":1}
+    probe_test.go:97: OBS edit-done-metadata {"body_has_new_knowledge":true,"metadata_only_error":"\u003cnil\u003e","metadata_only_status":"done","no_change_rejected":true}
+--- PASS: TestHomeHEADUnknownAndStale (0.02s)
+=== RUN   TestSearchColdWarmAndScale
+    probe_test.go:97: OBS cold-warm-search {"after_slug_redirect":"{\"mode\":\"keyword\",\"query\":\"uncommonmaplemarker\",\"results\":[]}\n","cold":"{\"mode\":\"keyword\",\"query\":\"uncommonmaplemarker\",\"results\":[]}\n","db_path":"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/cache/canopy/index/3c0fb947e85d.db","full_status":200,"slug_location":"/page/maple-0","slug_status":302,"title_location":"","title_status":200,"warm":"{\"mode\":\"keyword\",\"query\":\"uncommonmaplemarker\",\"results\":[{\"Slug\":\"maple-0\",\"Title\":\"단풍 지식 0\",\"Score\":0.000001,\"Snippet\":\"»uncommonmaplemarker« in body\"}]}\n"}
+    probe_test.go:97: OBS preview-scale {"body_bytes_per_page":720,"elapsed_ms":1.335,"pages":50,"response_bytes":332,"status":200,"total_alloc_bytes":1062048}
+    probe_test.go:97: OBS preview-scale {"body_bytes_per_page":720,"elapsed_ms":13.155,"pages":500,"response_bytes":332,"status":200,"total_alloc_bytes":10316400}
+--- PASS: TestSearchColdWarmAndScale (0.08s)
+=== RUN   TestBodyBudgetAndLinterScope
+    probe_test.go:97: OBS body-budget {"field_bytes":10485761,"load_error":"\u003cnil\u003e","multipart_status":303,"task_count":1,"urlencoded_error":"edit task needs a request or a proposed body\n","urlencoded_status":500}
+    probe_test.go:97: OBS A3 {"counts":{"bad-frontmatter":1,"orphan":1},"documented_pass":true,"kind":"bad-yaml"}
+    probe_test.go:97: OBS A3 {"counts":{"orphan":1},"documented_pass":true,"kind":"missing-tags"}
+    probe_test.go:97: OBS A3 {"counts":{"orphan":1},"documented_pass":true,"kind":"empty-tags"}
+    probe_test.go:97: OBS A3 {"counts":{"no-frontmatter":1,"orphan":1},"documented_pass":false,"kind":"no-fm"}
+    probe_test.go:97: OBS P1-internal-only {"documented_pass":true,"injected_counts":{"mermaid-unchecked":1,"orphan":1},"normal_counts":{"orphan":1},"synthetic_process_only":true}
+--- PASS: TestBodyBudgetAndLinterScope (0.33s)
+PASS
+ok  	github.com/neutrospec/canopy/review_probes/red_web	1.992s

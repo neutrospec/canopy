@@ -1,0 +1,46 @@
+[
+  {
+    "argv": [
+      "go",
+      "test",
+      "-mod=readonly",
+      "-count=1",
+      "./internal/webui",
+      "./internal/tasks",
+      "./internal/reads",
+      "./internal/checkout",
+      "./internal/config",
+      "./internal/lint",
+      "./internal/mermaid",
+      "./internal/skills"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "seconds": 2.957,
+    "stdout": "ok  \tgithub.com/neutrospec/canopy/internal/webui\t1.749s\nok  \tgithub.com/neutrospec/canopy/internal/tasks\t0.386s\nok  \tgithub.com/neutrospec/canopy/internal/reads\t0.327s\nok  \tgithub.com/neutrospec/canopy/internal/checkout\t0.738s\nok  \tgithub.com/neutrospec/canopy/internal/config\t0.322s\nok  \tgithub.com/neutrospec/canopy/internal/lint\t0.819s\nok  \tgithub.com/neutrospec/canopy/internal/mermaid\t2.533s\nok  \tgithub.com/neutrospec/canopy/internal/skills\t0.327s\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "node",
+      "--test",
+      "internal/webui/uitest/app.test.cjs"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "seconds": 0.076,
+    "stdout": "TAP version 13\n# Subtest: a cleared query cannot be reopened by a late response\nok 1 - a cleared query cannot be reopened by a late response\n  ---\n  duration_ms: 3.636\n  type: 'test'\n  ...\n# Subtest: responses from before the current debounce stay hidden\nok 2 - responses from before the current debounce stay hidden\n  ---\n  duration_ms: 0.6115\n  type: 'test'\n  ...\n# Subtest: out-of-order search responses never replace current results\nok 3 - out-of-order search responses never replace current results\n  ---\n  duration_ms: 0.444416\n  type: 'test'\n  ...\n# Subtest: Escape cancels pending results and keyboard selection\nok 4 - Escape cancels pending results and keyboard selection\n  ---\n  duration_ms: 0.37275\n  type: 'test'\n  ...\n# Subtest: IME composition defers search and prevents suggestion navigation\nok 5 - IME composition defers search and prevents suggestion navigation\n  ---\n  duration_ms: 0.551292\n  type: 'test'\n  ...\n# Subtest: keyboard selection is exposed to assistive technology and opens the selected page\nok 6 - keyboard selection is exposed to assistive technology and opens the selected page\n  ---\n  duration_ms: 2.637625\n  type: 'test'\n  ...\n# Subtest: failed search responses leave the ordinary form available\nok 7 - failed search responses leave the ordinary form available\n  ---\n  duration_ms: 1.304208\n  type: 'test'\n  ...\n# Subtest: mobile navigation opens, closes with Escape, and adapts to desktop\nok 8 - mobile navigation opens, closes with Escape, and adapts to desktop\n  ---\n  duration_ms: 0.412375\n  type: 'test'\n  ...\n# Subtest: search shortcuts respect typing, while Ctrl K can focus search from an editor\nok 9 - search shortcuts respect typing, while Ctrl K can focus search from an editor\n  ---\n  duration_ms: 0.6725\n  type: 'test'\n  ...\n# Subtest: code copy preserves literal source text and displays localized success\nok 10 - code copy preserves literal source text and displays localized success\n  ---\n  duration_ms: 0.548333\n  type: 'test'\n  ...\n# Subtest: clipboard failure never displays a success state\nok 11 - clipboard failure never displays a success state\n  ---\n  duration_ms: 0.274666\n  type: 'test'\n  ...\n# Subtest: the page outline uses real heading targets without including the anchor marker\nok 12 - the page outline uses real heading targets without including the anchor marker\n  ---\n  duration_ms: 0.18425\n  type: 'test'\n  ...\n# Subtest: only an exact duplicate body title is collapsed, with its source preserved\nok 13 - only an exact duplicate body title is collapsed, with its source preserved\n  ---\n  duration_ms: 0.423916\n  type: 'test'\n  ...\n# Subtest: auto read requires visible dwell and scroll progress\nok 14 - auto read requires visible dwell and scroll progress\n  ---\n  duration_ms: 0.327167\n  type: 'test'\n  ...\n# Subtest: dwell without sufficient scroll does not mark a long page read\nok 15 - dwell without sufficient scroll does not mark a long page read\n  ---\n  duration_ms: 0.208959\n  type: 'test'\n  ...\n# Subtest: HTTP failure keeps explicit read controls without showing auto success\nok 16 - HTTP failure keeps explicit read controls without showing auto success\n  ---\n  duration_ms: 0.219833\n  type: 'test'\n  ...\n# Subtest: network failure keeps explicit read controls without showing auto success\nok 17 - network failure keeps explicit read controls without showing auto success\n  ---\n  duration_ms: 0.178417\n  type: 'test'\n  ...\n# Subtest: read shortcut respects editable content and key repeats\nok 18 - read shortcut respects editable content and key repeats\n  ---\n  duration_ms: 0.181834\n  type: 'test'\n  ...\n1..18\n# tests 18\n# suites 0\n# pass 18\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 46.909875\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "make",
+      "i18n-check"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "seconds": 0.127,
+    "stdout": "scripts/i18n-check.sh\n✓ i18n: 4 translation(s) current\n",
+    "stderr": ""
+  }
+]

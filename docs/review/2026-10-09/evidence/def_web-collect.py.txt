@@ -1,0 +1,69 @@
+from pathlib import Path
+import json, hashlib, re
+
+repo=Path(__file__).resolve().parents[2]
+evidence=repo/'docs/review/2026-10-09/evidence'
+regions={
+ 'README.md':[(13,27),(53,69),(76,109),(154,174),(179,195),(207,248)],
+ 'README.en.md':[(18,32),(58,73),(81,118),(166,187)],
+ 'docs/getting-started.md':[(4,8),(62,108),(169,179),(216,220)],
+ 'docs/en/getting-started.md':[(179,189),(231,237)],
+ 'docs/troubleshooting.md':[(42,57)],
+ 'docs/en/troubleshooting.md':[(47,60)],
+ 'docs/versioning.md':[(18,28),(86,101)],
+ 'docs/agent-tasks.md':[(53,69),(77,116)],
+ 'docs/second-brain.md':[(85,101),(124,134)],
+ 'docs/taxonomy.md':[(25,62)],
+ 'internal/skills/canopy_wiki.md':[(13,26),(52,63),(82,109),(122,128),(149,172),(181,188),(213,242)],
+ 'internal/skills/canopy_ingest.md':[(14,40),(61,76)],
+ 'internal/skills/skills.go':[(79,129),(158,179)],
+ 'internal/webui/auth.go':[(107,195),(209,274),(281,343)],
+ 'cmd/canopy/serve.go':[(30,83)],
+ 'internal/webui/edit.go':[(15,75)],
+ 'internal/webui/discover.go':[(53,76),(97,155)],
+ 'internal/webui/speak.go':[(34,111)],
+ 'internal/webui/server.go':[(54,77),(127,134),(215,235),(450,468),(520,595)],
+ 'internal/webui/render.go':[(26,88)],
+ 'internal/webui/templates/edit.html':[(1,13)],
+ 'internal/webui/templates/home.html':[(5,34)],
+ 'internal/webui/templates/discover.html':[(1,17)],
+ 'internal/webui/templates/tasks.html':[(1,35)],
+ 'internal/webui/static/app.js':[(94,112),(163,170),(199,240),(242,278)],
+ 'internal/webui/static/graph.js':[(13,26),(137,152),(176,200)],
+ 'internal/webui/static/style.css':[(1,27),(179,187),(291,299)],
+ 'internal/webui/static/chroma.css':[(1,5),(57,65),(120,127)],
+ 'internal/webui/templates/base.html':[(1,25)],
+ 'internal/webui/uitest/app.test.cjs':[(8,46),(80,91)],
+ 'internal/tasks/tasks.go':[(46,59),(136,145),(153,212),(214,270),(341,360)],
+ 'internal/reads/reads.go':[(69,126),(152,193)],
+ 'internal/resurface/state.go':[(47,81)],
+ 'internal/resurface/pick.go':[(49,70)],
+ 'internal/lint/lint.go':[(83,104),(129,144)],
+ 'internal/mermaid/mermaid.go':[(1,34),(51,87)],
+ 'cmd/canopy/write.go':[(131,147),(150,206),(258,311),(337,345),(382,412)],
+ 'cmd/canopy/main.go':[(45,52),(105,139),(709,761)],
+ 'cmd/canopy/checkout.go':[(52,70),(93,134)],
+ 'internal/checkout/checkout.go':[(135,169),(172,206)],
+ 'internal/config/config.go':[(90,104),(242,275)],
+ 'internal/gitops/gitops.go':[(67,99)],
+ 'internal/logops/logops.go':[(24,60)],
+ 'docs/invariants.md':[(3,16),(44,51),(124,132),(181,194),(201,210),(220,225),(228,248),(252,260)],
+ 'docs/review/2026-10-09/evidence/web-reproduce.sh.txt':[(34,57)],
+ 'docs/review/2026-10-09/evidence/docs-cli-probe.py.txt':[(1,25)],
+}
+out=[];manifest={}
+for name,ranges in regions.items():
+ p=repo/name;data=p.read_bytes();lines=data.decode().splitlines();manifest[name]={'sha256':hashlib.sha256(data).hexdigest(),'lines':len(lines),'regions':ranges}
+ for first,last in ranges:
+  out.append(f'\n===== {name}:{first}-{min(last,len(lines))} =====')
+  out.extend(f'{i}: {lines[i-1]}' for i in range(first,min(last,len(lines))+1))
+(evidence/'def_web-source-slices.txt').write_text('\n'.join(out)+'\n')
+(evidence/'def_web-source-manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+links={}
+for report in ['03-web.md','05-docs.md','09-red-web-docs.md']:
+ text=(repo/'docs/review/2026-10-09'/report).read_text()
+ for name in sorted(set(re.findall(r'\]\((evidence/[^)#]+)',text))):
+  p=repo/'docs/review/2026-10-09'/name
+  links[name]={'exists':p.is_file(),'sha256':hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else None}
+(evidence/'def_web-input-artifacts.json').write_text(json.dumps(links,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'source_files':len(manifest),'linked_input_artifacts':len(links),'missing_input_artifacts':[k for k,v in links.items() if not v['exists']]}))

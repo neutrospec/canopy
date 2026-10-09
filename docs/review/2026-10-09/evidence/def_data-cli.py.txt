@@ -1,0 +1,192 @@
+from pathlib import Path
+import os, subprocess, json, time, hashlib, resource, signal, concurrent.futures, sqlite3, datetime
+
+ROOT=Path(os.environ['DEF_DATA_ROOT']); BIN=os.environ['DEF_DATA_BIN']
+REPO=Path('/Users/nobocop/play/canopy'); EVID=Path(os.environ.get('DEF_DATA_EVIDENCE_DIR',str(REPO/'docs/review/2026-10-09/evidence')))
+TRANS=EVID/'def_data-cli-transcript.jsonl'
+TRANS.write_text('')
+def record(a,p):
+    with TRANS.open('a') as f: f.write(json.dumps({'argv':list(map(str,a)),'exit':p.returncode,'stdout':p.stdout,'stderr':p.stderr},ensure_ascii=False)+'\n')
+def run(a, **kw):
+    a=list(map(str,a)); p=subprocess.run(a,text=True,capture_output=True,timeout=kw.pop('timeout',30),**kw); record(a,p); return p
+def cli(w,*a,**kw): return run([BIN,'--wiki',w,*a],**kw)
+def ok(w,*a,**kw):
+    r=cli(w,*a,**kw)
+    assert r.returncode==0,(a,r.stderr,r.stdout)
+    return r
+def js(w,*a): return json.loads(ok(w,*a,'--json').stdout)
+def git(w,*a):
+    r=run(['git','-C',w,*a]); assert r.returncode==0,(a,r.stderr); return r.stdout.strip()
+def put(p,s): p.parent.mkdir(parents=True,exist_ok=True); p.write_text(s); return p
+def page(w,slug='alpha',body='BASE-TEXT',typ='concept',folder='concepts'):
+    return put(w/folder/(slug+'.md'),f'---\ntitle: {slug}\ncreated: 2026-02-01\nupdated: 2026-02-01\ntype: {typ}\ntags: [tool]\n---\n\n{body}\n')
+def fresh(name,body='BASE-TEXT'):
+    w=ROOT/'fixtures'/name; w.mkdir(); ok(w,'init','--json'); page(w,body=body); return w
+def inp(name,s): return put(ROOT/'inputs'/name,s)
+def digest(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+def logs(w): return sum(len(p.read_text().splitlines()) for p in (w/'logs').glob('*.jsonl'))
+def emit(case,**data): print(json.dumps({'case':case,**data},ensure_ascii=False),flush=True)
+def configgit(w):
+    git(w,'config','user.name','Disposable Defense'); git(w,'config','user.email','def-data@example.invalid')
+def initgit(w):
+    git(w,'init','-b','main'); configgit(w); git(w,'add','-A'); git(w,'commit','-m','fixture baseline')
+def peers(name):
+    w=fresh(name); ok(w,'update','alpha','--json'); initgit(w)
+    bare=ROOT/'fixtures'/(name+'-origin.git'); r=run(['git','init','--bare','-b','main',bare]); assert r.returncode==0
+    git(w,'remote','add','origin',str(bare)); git(w,'push','-u','origin','main')
+    peer=ROOT/'fixtures'/(name+'-peer'); r=run(['git','clone',bare,peer]); assert r.returncode==0; configgit(peer)
+    return w,bare,peer
+
+# Local-only bare repositories, real CLI autostash and normal control.
+for conflict in [True,False]:
+    w,bare,peer=peers('C01-conflict' if conflict else 'C02-nonconflict')
+    if conflict: page(peer,body='REMOTE-TEXT')
+    else: page(peer,'remote',body='REMOTE-TEXT')
+    git(peer,'add','-A'); git(peer,'commit','-m','remote fixture change'); git(peer,'push')
+    origin_before=git(bare,'rev-parse','main'); page(w,body='LOCAL-TEXT')
+    r=cli(w,'sync','--json'); pub=git(bare,'show','main:concepts/alpha.md')
+    emit('C01-sync-conflict' if conflict else 'C02-sync-control',exit=r.returncode,result=r.stdout.strip(),
+         origin_changed=origin_before!=git(bare,'rev-parse','main'),published_markers='<<<<<<<' in pub,
+         both_texts=('REMOTE-TEXT' in pub and 'LOCAL-TEXT' in pub) if conflict else ('LOCAL-TEXT' in pub and (w/'concepts/remote.md').exists()),
+         final_unmerged=git(w,'ls-files','-u'),stash=git(w,'stash','list'))
+
+def hold(w,verb,*a):
+    fifo=ROOT/'inputs'/(w.name+'-fifo'); os.mkfifo(fifo)
+    argv=[BIN,'--wiki',str(w),verb,*a,'--body-file',str(fifo),'--json']
+    p=subprocess.Popen(argv,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    end=time.monotonic()+8
+    while time.monotonic()<end:
+        try: return p,os.open(fifo,os.O_WRONLY|os.O_NONBLOCK),argv
+        except OSError:
+            if p.poll() is not None: raise RuntimeError(p.communicate())
+            time.sleep(.01)
+    p.kill(); p.communicate(); raise RuntimeError('FIFO reader did not arrive')
+def release(p,fd,argv,body):
+    os.write(fd,body.encode()); os.close(fd); out,err=p.communicate(timeout=15)
+    record(argv,subprocess.CompletedProcess(argv,p.returncode,out,err)); return p.returncode
+
+w=fresh('C03-create'); p,fd,argv=hold(w,'new','North','--slug','north','--type','concept')
+b=ok(w,'new','North','--slug','north','--type','concept','--body-file',inp('c03b','SECOND-WRITER'),'--json')
+first=release(p,fd,argv,'FIRST-WRITER'); path=w/'concepts/north.md'; h=digest(path)
+serial=cli(w,'new','North','--slug','north','--type','concept','--json')
+emit('C03-create-race',first=first,second=b.returncode,second_retained='SECOND-WRITER' in path.read_text(),serial_exit=serial.returncode,serial_preserved=h==digest(path))
+w=fresh('C04-update'); p,fd,argv=hold(w,'update','alpha'); path=w/'concepts/alpha.md'
+put(path,path.read_text().replace('title: alpha','title: newer-metadata'))
+b=ok(w,'update','alpha','--body-file',inp('c04b','SECOND-BODY'),'--json'); first=release(p,fd,argv,'FIRST-BODY')
+emit('C04-stale-update',first=first,second=b.returncode,second_body_retained='SECOND-BODY' in path.read_text(),metadata_retained='newer-metadata' in path.read_text())
+
+w=fresh('C05-short-write',body='u'*3000+'PREVIOUS-TAIL'); path=w/'concepts/alpha.md'; old=path.read_bytes()
+def limit(): signal.signal(signal.SIGXFSZ,signal.SIG_IGN); resource.setrlimit(resource.RLIMIT_FSIZE,(512,512))
+r=cli(w,'update','alpha','--body-file',inp('c05','z'*6000),'--json',preexec_fn=limit)
+emit('C05-write-failure',exit=r.returncode,old_bytes=len(old),new_bytes=path.stat().st_size,previous_tail_retained=b'PREVIOUS-TAIL' in path.read_bytes(),stderr=r.stderr.strip())
+
+for verb in ['update','checkin']:
+    w=fresh('C06-'+verb); ok(w,'update','alpha','--json'); js(w,'reconcile','bless','--all')
+    path=w/'concepts/alpha.md'; copy=None
+    if verb=='checkin':
+        copy=Path(js(w,'checkout','alpha')['path']); put(copy,copy.read_text()+'APPLIED-BODY\n')
+        args=['checkin','alpha','--json']
+    else: args=['update','alpha','--body-file',str(inp('c06','APPLIED-BODY')),'--json']
+    fault=w/'index/entities.md'; fault.unlink(); fault.mkdir(); n=logs(w); r=cli(w,*args)
+    retry=cli(w,'checkin','alpha','--json') if copy else None
+    emit('C06-pipeline-'+verb,exit=r.returncode,text_present='APPLIED-BODY' in path.read_text(),foreign=js(w,'reconcile')['foreign'],new_logs=logs(w)-n,
+         copy_present=copy.exists() if copy else None,retry_exit=retry.returncode if retry else None)
+    fault.rmdir(); ok(w,'update','alpha','--json')
+    emit('C06-repair-'+verb,text_present='APPLIED-BODY' in path.read_text(),new_logs=logs(w)-n)
+for verb,args in [('mv',['--slug','beta']),('rm',['--force']),('archive',[])]:
+    w=fresh('C07-'+verb); backlink=page(w,'source','[[alpha]]'); n=logs(w); backlink.chmod(0o444)
+    try: r=cli(w,verb,'alpha',*args,'--json')
+    finally: backlink.chmod(0o644)
+    emit('C07-partial-'+verb,exit=r.returncode,old_exists=(w/'concepts/alpha.md').exists(),new_exists=(w/'concepts/beta.md').exists(),archive_exists=(w/'_archive/concepts/alpha.md').exists(),old_link='[[alpha]]' in backlink.read_text(),new_logs=logs(w)-n,uid=os.geteuid())
+w=fresh('C08-archive','ARCHIVE-ONE'); ok(w,'archive','alpha','--json'); a=w/'_archive/concepts/alpha.md'; h=digest(a)
+ok(w,'new','Second','--slug','alpha','--type','concept','--body-file',inp('c08','ARCHIVE-TWO'),'--json'); r=cli(w,'archive','alpha','--json')
+emit('C08-archive-reuse',exit=r.returncode,first_preserved=h==digest(a),files=len(list((w/'_archive').rglob('*.md'))))
+
+for damage in ['healthy','missing','broken','unreadable']:
+    w=fresh('C09-'+damage); path=w/'concepts/alpha.md'; before=digest(path)
+    copy=Path(js(w,'checkout','alpha')['path']); put(copy,copy.read_text()+'ONLY-NEW-EDIT\n'); h=digest(copy); meta=copy.with_suffix('.json')
+    if damage=='missing': meta.unlink()
+    if damage=='broken': put(meta,'{')
+    if damage=='unreadable': meta.chmod(0)
+    try:
+        listing=js(w,'checkout','--list'); r=cli(w,'checkout','alpha','--json')
+    finally:
+        if meta.exists(): meta.chmod(0o644)
+    emit('C09-checkout-'+damage,exit=r.returncode,open_count=len(listing['checkouts'] or []),copy_preserved=h==digest(copy),wiki_preserved=before==digest(path))
+w=fresh('C10-discard'); copy=Path(js(w,'checkout','alpha')['path']); copy.parent.chmod(0o555)
+try: r=cli(w,'checkin','alpha','--discard','--json')
+finally: copy.parent.chmod(0o755)
+emit('C10-discard-failure',exit=r.returncode,copy_present=copy.exists(),meta_present=copy.with_suffix('.json').exists())
+
+for verb,args in [('mv',['--slug','beta']),('rm',['--force']),('archive',[])]:
+    w=fresh('C11-'+verb,body='Self [[alpha#self]]'); src=page(w,'source','[[alpha|Alias]] [[concepts/alpha#part|A]] [[alpha.md]] [[ alpha ]]\n`[[alpha]]`\n```text\n[[alpha]]\n```')
+    ok(w,verb,'alpha',*args,'--json')
+    emit('C11-links-'+verb,source=src.read_text(),self=(w/'concepts/beta.md').read_text() if verb=='mv' else None,lint=js(w,'lint')['counts'])
+w=fresh('C12-schema'); js(w,'reconcile','bless','--all'); path=w/'concepts/alpha.md'
+put(path,path.read_text().replace('type: concept','type: guide').replace('tags: [tool]','tags: [alien]'))
+r=cli(w,'update','alpha','--json'); emit('C12-update-gates',exit=r.returncode,foreign=js(w,'reconcile')['foreign'],lint=js(w,'lint')['counts'])
+for change in ['missing-tags','invalid-tag']:
+    w=fresh('C12-'+change); copy=Path(js(w,'checkout','alpha')['path']); before=digest(w/'concepts/alpha.md')
+    put(copy,copy.read_text().replace('tags: [tool]\n','' if change=='missing-tags' else 'tags: [alien]\n'))
+    r=cli(w,'checkin','alpha','--json'); emit('C12-checkin-'+change,exit=r.returncode,wiki_preserved=before==digest(w/'concepts/alpha.md'))
+w=fresh('C12-links'); r=cli(w,'new','Broken','--slug','broken','--type','concept','--body-file',inp('c12','[[missing-target]]'),'--json'); flagged=cli(w,'new','Flag','--slug','flag','--type','concept','--links','missing-target','--json')
+emit('C12-body-link-policy',body_exit=r.returncode,flag_exit=flagged.returncode)
+for title,slug in [('C:\\new\\tool','escaped'),('C:\\Users\\note','bad'),('Line one\nLine two','multiline')]:
+    w=fresh('C13-'+slug); r=cli(w,'new',title,'--slug',slug,'--type','concept','--json'); emit('C13-title-'+slug,exit=r.returncode,lint=js(w,'lint')['counts'],requested=title)
+w=fresh('C13-block'); path=w/'concepts/alpha.md'; put(path,path.read_text().replace('updated: 2026-02-01','updated: |-\n  2026-02-01')); r=cli(w,'update','alpha','--json'); emit('C13-block-date',exit=r.returncode,raw=path.read_text())
+
+for human in [False,True]:
+    w=fresh('C14-'+str(human)); ok(w,'show','alpha','--json')
+    if human: put(w/'_meta/webui/reads.json',json.dumps({'version':1,'reads':{'alpha':{'first':'2026-10-08T00:00:00Z','last':'2026-10-08T00:00:00Z','count':1,'source':'explicit'}}}))
+    task=js(w,'tasks','add','edit','alpha','--request','Revise body')['task']; ok(w,'mv','alpha','--slug','beta','--json'); done=cli(w,'tasks','done',task['id'],'--json')
+    emit('C14-rename-'+str(human),agent_keys=sorted(json.loads((w/'_meta/attention/agent-reads.json').read_text())['agent']),task_pages=js(w,'tasks','list')['tasks'][0]['pages'],done_exit=done.returncode)
+w,bare,peer=peers('C15-remote-index'); page(peer,'remote'); git(peer,'add','-A');git(peer,'commit','-m','new remote page');git(peer,'push'); r=cli(w,'sync','--json')
+emit('C15-index-after-pull',exit=r.returncode,pages=js(w,'status')['pages'],dashboard=[s for s in (w/'index.md').read_text().splitlines() if 'Total pages' in s],category_has_remote='[[remote]]' in (w/'index/concepts.md').read_text(),dirty=git(w,'status','--porcelain'))
+ok(w,'update','alpha','--json');emit('C15-next-write',category_has_remote='[[remote]]' in (w/'index/concepts.md').read_text())
+w=fresh('C16-duplicate'); target=page(w,'alpha','ENTITY-ORIGINAL','entity','entities'); old=digest(target); lint=js(w,'lint')['counts']; explicit=js(w,'show','entities/alpha.md'); r=cli(w,'mv','alpha','--type','entity','--json')
+emit('C16-duplicate-move',exit=r.returncode,lint_before=lint,explicit_show=explicit,entity_preserved=old==digest(target),concept_exists=(w/'concepts/alpha.md').exists())
+
+w=fresh('C17-connect'); [page(w,s) for s in ['fir','juniper--spruce','fir--juniper','spruce']]
+a=js(w,'tasks','add','connect','fir','juniper--spruce'); b=js(w,'tasks','add','connect','fir--juniper','spruce'); js(w,'tasks','dismiss',a['task']['id']); c=js(w,'tasks','add','connect','fir--juniper','spruce')
+emit('C17-connect-id',first=a,second=b,other_after_dismiss=c)
+w=fresh('C18-GC'); task=js(w,'tasks','add','edit','alpha','--request','keep pending')['task']; alias={**task,'status':'done','closed':'2020-01-01T00:00:00Z'};put(w/'_meta/tasks/alias.json',json.dumps(alias));r=cli(w,'tasks','gc','--days','0','--json')
+emit('C18-GC-identity',exit=r.returncode,pending_exists=(w/'_meta/tasks'/(task['id']+'.json')).exists(),closed_alias_exists=(w/'_meta/tasks/alias.json').exists())
+w=fresh('C19-dismissal');page(w,'beta');task=js(w,'tasks','add','connect','alpha','beta')['task'];js(w,'tasks','dismiss',task['id']);before=js(w,'tasks','add','connect','alpha','beta');gc=js(w,'tasks','gc','--days','0');after=js(w,'tasks','add','connect','alpha','beta')
+emit('C19-dismissed-GC',before_created=before['created'],removed=gc,after_created=after['created'])
+w=fresh('C20-malformed');put(w/'_meta/tasks/broken.json','{');put(w/'_meta/reconcile/state.json','{');emit('C20-status',status=js(w,'status'),tasks_exit=cli(w,'tasks','list','--json').returncode,reconcile_exit=cli(w,'reconcile','--json').returncode)
+w=fresh('C20-null');put(w/'_meta/attention/agent-reads.json','{"version":1,"agent":{"alpha":null}}');r=cli(w,'show','alpha','--json');emit('C20-null-show',exit=r.returncode,panic='panic:' in r.stderr)
+w=fresh('C20-hang');put(w/'_meta/tasks','blocked')
+try:
+    r=cli(w,'tasks','add','edit','alpha','--request','x','--json',timeout=2);emit('C20-stat-error',hung=False,exit=r.returncode)
+except subprocess.TimeoutExpired: emit('C20-stat-error',hung=True,timeout=2)
+w=fresh('C20-other-door');ok(w,'show','alpha','--json');put(w/'_meta/webui/reads.json','{');emit('C20-resurface-other-door',picks=js(w,'resurface','--strategy','random','--peek','-n','10')['picks'])
+w=fresh('C21-digest');path=w/'concepts/alpha.md';put(path,path.read_text().replace('created: 2026-02-01','created: z-invalid-date'));emit('C21-invalid-date',digest=js(w,'digest','--since','2026-10-01'))
+
+w=fresh('C22-retention');ok(w,'show','alpha','--json');db=Path(os.environ['XDG_STATE_HOME'])/'canopy/attention'/(hashlib.sha256(str(w).encode()).hexdigest()[:12]+'.db')
+now=datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)));cut=now-datetime.timedelta(days=90);old=cut-datetime.timedelta(hours=1);new=(cut+datetime.timedelta(hours=1)).astimezone(datetime.timezone.utc)
+with sqlite3.connect(db) as conn:
+    conn.execute('DELETE FROM events')
+    conn.executemany('INSERT INTO events(ts,slug,door,kind,meta) VALUES(?,?,?,?,?)',[(old.isoformat(timespec='seconds'),'old','agent','show',''),(new.isoformat(timespec='seconds'),'new','agent','show','')])
+before=js(w,'events','-n','50');gc=js(w,'events','gc','--days','90');after=js(w,'events','-n','50');emit('C22-offset-GC',cutoff=cut.isoformat(),old=old.isoformat(),recent=new.isoformat(),before=before,gc=gc,after=after)
+w=fresh('C23-compatibility');put(w/'_meta/attention/agent-reads.json','{"version":8,"agent":{},"addon":{"keep":true}}');ok(w,'show','alpha','--json')
+put(w/'_meta/tasks/future.json','{"version":1,"id":"future","type":"unknown","status":"pending","created":"2026-10-01T00:00:00Z","precise":9007199254740993,"string":"keep"}')
+ok(w,'tasks','dismiss','future','--json');emit('C23-roundtrip',agent=json.loads((w/'_meta/attention/agent-reads.json').read_text()),task=json.loads((w/'_meta/tasks/future.json').read_text()))
+special=dict(os.environ);special_root=ROOT/'adopt-env'
+for key,name in [('HOME','home'),('XDG_CONFIG_HOME','config'),('XDG_DATA_HOME','data'),('XDG_STATE_HOME','state'),('XDG_CACHE_HOME','cache'),('TMPDIR','tmp')]:
+    (special_root/name).mkdir(parents=True); special[key]=str(special_root/name)
+cfg=special_root/'config/canopy/config.toml';put(cfg,'default_wiki = ""\naddon_setting = "preserve"\n');w=ROOT/'fixtures/C23-adopt';w.mkdir();r=cli(w,'init','--json',env=special);emit('C23-adopt',exit=r.returncode,config=cfg.read_text())
+w=fresh('C24-R1');put(w/'raw/sentinel.txt','RAW-BYTES');initgit(w)
+def originals(w): return {str(p.relative_to(w)):digest(p) for p in w.rglob('*') if p.is_file() and '.git' not in p.parts and '_meta' not in p.parts}
+before=originals(w);ok(w,'checkout','alpha','--json');changes=git(w,'status','--porcelain','--untracked-files=all');one=originals(w);ok(w,'checkout','alpha','--json');repeat=git(w,'status','--porcelain','--untracked-files=all')
+emit('C24-R1',page_schema_raw_unchanged=before==one,paths=changes,repeat_status_unchanged=changes==repeat)
+w,bare,peer=peers('C25-JSONL');gap=Path('_meta/webui/search-gaps.jsonl');put(w/gap,'{"query":"baseline"}\n');git(w,'add','-A');git(w,'commit','-m','baseline gaps');git(w,'push');git(peer,'pull','--ff-only')
+put(peer/gap,(peer/gap).read_text()+'{"query":"peer-demand"}\n');git(peer,'add','-A');git(peer,'commit','-m','peer gap');git(peer,'push');put(w/gap,(w/gap).read_text()+'{"query":"local-demand"}\n');r=cli(w,'sync','--json');pub=git(bare,'show','main:'+str(gap));emit('C25-JSONL-conflict',exit=r.returncode,markers='<<<<<<<' in pub,both_records='peer-demand' in pub and 'local-demand' in pub)
+
+# Natural CLI cold starts are a control, not a barrier between migration reads.
+special=dict(os.environ);cold=ROOT/'cold-env'
+for key,name in [('HOME','home'),('XDG_CONFIG_HOME','config'),('XDG_DATA_HOME','data'),('XDG_STATE_HOME','state'),('XDG_CACHE_HOME','cache'),('TMPDIR','tmp')]:
+    (cold/name).mkdir(parents=True);special[key]=str(cold/name)
+w=ROOT/'fixtures/C26-cold';w.mkdir()
+def startup(i): return cli(w,'status','--json',env=special)
+with concurrent.futures.ThreadPoolExecutor(max_workers=24) as pool: results=list(pool.map(startup,range(24)))
+emit('C26-natural-CLI-startup',calls=len(results),failures=sum(r.returncode!=0 for r in results),errors=[r.stderr for r in results if r.returncode][:3])

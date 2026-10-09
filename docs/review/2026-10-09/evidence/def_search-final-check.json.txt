@@ -1,0 +1,150 @@
+{
+  "head": "ede67e302a8487aecbb4d59587a8686292018cf6",
+  "index_sha256": "511e2031f26b1522974ee30466faad7e89979058c5e6f53faaec0bb6d029c51a",
+  "tracked_diff": "",
+  "status": "?? .claude/\n?? docs/review/\n?? review_probes/",
+  "head_matches_baseline": true,
+  "index_matches_baseline": true,
+  "originals_sha256": {
+    "docs/review/2026-10-09/02-search.md": "1abc9aaa53492be84a84762c5add9ace3a18fc5be03da02296a1b1a3c69ee352",
+    "docs/review/2026-10-09/06-ops.md": "7d24e9ef1af7400a5625197a4584faa23133c0a74e11adaa311786e86f031c80",
+    "docs/review/2026-10-09/08-red-search.md": "97e3a922fdf09d6b8f93a9ed51f0340f3c6a223c8200b77a46e8a5965fcaa270"
+  },
+  "originals_unchanged": true,
+  "matrix_ids": [
+    "SEARCH-01",
+    "SEARCH-02",
+    "SEARCH-03",
+    "SEARCH-04",
+    "SEARCH-05",
+    "SEARCH-06",
+    "SEARCH-07",
+    "SEARCH-08",
+    "SEARCH-09",
+    "SEARCH-10",
+    "SEARCH-11",
+    "SEARCH-12",
+    "SEARCH-13",
+    "OPS-01",
+    "OPS-02",
+    "OPS-03",
+    "OPS-04",
+    "OPS-05",
+    "OPS-06",
+    "OPS-07",
+    "OPS-08",
+    "OPS-09",
+    "OPS-10",
+    "OPS-11",
+    "RED-B-01"
+  ],
+  "matrix_exact": true,
+  "question_answer_ids": [
+    "SEARCH-01",
+    "SEARCH-02",
+    "SEARCH-03",
+    "SEARCH-04",
+    "SEARCH-05",
+    "SEARCH-06",
+    "SEARCH-07",
+    "SEARCH-08",
+    "SEARCH-09",
+    "SEARCH-10",
+    "SEARCH-11",
+    "SEARCH-12",
+    "SEARCH-13",
+    "OPS-01",
+    "OPS-02",
+    "OPS-03",
+    "OPS-04",
+    "OPS-05",
+    "OPS-06",
+    "OPS-07",
+    "OPS-08",
+    "OPS-09",
+    "OPS-10",
+    "OPS-11",
+    "RED-B-01"
+  ],
+  "answers_exact": true,
+  "missing_local_links": [],
+  "scratch_removed": true,
+  "recorded_fixtures": [
+    {
+      "path": "/private/tmp/canopy-def-search-bu5rfoko",
+      "removed": true
+    },
+    {
+      "path": "/private/tmp/canopy-def-search-_103r3z2",
+      "removed": true
+    },
+    {
+      "path": "/private/tmp/canopy-def-search-follow-76j_3o1d",
+      "removed": true
+    }
+  ],
+  "owned_files": [
+    {
+      "path": "docs/review/2026-10-09/11-defense-search.md",
+      "bytes": 58156,
+      "sha256": "5b1138cc906284409440f6badd5af882085929100c345a9473bb38a97684b7d4"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/def_search-followups.jsonl.txt",
+      "bytes": 14280,
+      "sha256": "8a0023638191834a2f5bf3c11d1eb82b803b5ca03ea77bffc8bf0e822584aad4"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/def_search-followups.py.txt",
+      "bytes": 4976,
+      "sha256": "f49b20c64e3979974bbb95dc11febc732da4b7c7d6ce97c8a32e72f910b75842"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/def_search-initial-attempt.jsonl.txt",
+      "bytes": 11617,
+      "sha256": "18d61681a90932e5490fdae00565b1931705ba966ccdf9e64a239104b0c0e67f"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/def_search-main.go.txt",
+      "bytes": 14784,
+      "sha256": "010ce2c3989b17acf0684a5f3cf30dd2f76ee297ff45759b016df103cd8c3daf"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/def_search-mathjax.cjs.txt",
+      "bytes": 1360,
+      "sha256": "c7ee5e20ffc5e84c031396d40c7d33912867f95ef4ea909869717a5ad136957d"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/def_search-probe-output.txt",
+      "bytes": 22029,
+      "sha256": "6fa1f17c37cfd79037e1c8052e7bf6b45a502b1dbaf4a4ff9ff6d73adf1496a8"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/def_search-probe-stderr.txt",
+      "bytes": 1123,
+      "sha256": "d0861ab7bc61fd5cca6f93aacb64c4bf8a77b47b16f121ea27bfc562c2988a84"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/def_search-run.jsonl.txt",
+      "bytes": 72508,
+      "sha256": "d4104fbfffc25f812123049084b09eff048173589ee7c687b7516e1536145281"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/def_search-run.py.txt",
+      "bytes": 9165,
+      "sha256": "daae8739f1aaf01076e50bd9edb5032c7df92196a4ab3da468ef46aa959908e8"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/def_search-static.txt",
+      "bytes": 60155,
+      "sha256": "a9d9a118b525da370c33514bbbdaf4bc903cd8f2a8bea891b93d4d722da9c796"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/def_search-verify.py.txt",
+      "bytes": 4026,
+      "sha256": "1a09a15ab15150f62b5ebf022b8063d30aa4efeb7ab4bf1cd2bfdba1964e0e70"
+    }
+  ],
+  "all_checks_pass": true,
+  "verification_fixture_removed": true
+}

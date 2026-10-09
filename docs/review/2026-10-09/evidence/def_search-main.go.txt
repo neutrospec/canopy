@@ -1,0 +1,420 @@
+package main
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"html"
+	"math"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"regexp"
+	"runtime"
+	"sort"
+	"strings"
+	"sync/atomic"
+	"time"
+
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/embed"
+	"github.com/neutrospec/canopy/internal/indexer"
+	"github.com/neutrospec/canopy/internal/mermaid"
+	"github.com/neutrospec/canopy/internal/resurface"
+	"github.com/neutrospec/canopy/internal/search"
+	"github.com/neutrospec/canopy/internal/store"
+	"github.com/neutrospec/canopy/internal/webui"
+	"github.com/neutrospec/canopy/internal/wiki"
+)
+
+var base string
+
+func must(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+func emit(k string, v any) { b, e := json.Marshal(v); must(e); fmt.Println(k, string(b)) }
+func mk(label string) *config.Wiki {
+	w := &config.Wiki{Root: filepath.Join(base, label), Cfg: config.Default()}
+	must(os.MkdirAll(filepath.Join(w.Root, "concepts"), 0755))
+	must(w.WriteTOML())
+	return w
+}
+func page(w *config.Wiki, s, t, b string) {
+	must(os.WriteFile(filepath.Join(w.Root, "concepts", s+".md"), []byte("---\ntitle: "+t+"\ntype: concept\ncreated: 2026-10-09\nupdated: 2026-10-09\ntags: []\n---\n"+b), 0644))
+}
+func db(w *config.Wiki) *store.Store { s, e := store.Open(w.DBPath()); must(e); return s }
+
+type eng struct {
+	v     []float32
+	calls int
+	fail  bool
+}
+
+func (e *eng) Embed(ts []string) ([][]float32, error) {
+	e.calls++
+	if e.fail {
+		return nil, fmt.Errorf("defense injected inference failure")
+	}
+	out := make([][]float32, len(ts))
+	for i := range out {
+		out[i] = append([]float32(nil), e.v...)
+	}
+	return out, nil
+}
+func (e *eng) Close() error { return nil }
+func refresh(w *config.Wiki, s *store.Store, e embed.Engine) *indexer.Result {
+	r, err := indexer.Reindex(w, s, nil, e, nil)
+	must(err)
+	return r
+}
+func chunks(s *store.Store, v []float32) []store.ChunkHit {
+	h, e := s.SearchChunks(v, 10, 2)
+	must(e)
+	return h
+}
+func pan(f func()) (p string) {
+	defer func() {
+		if x := recover(); x != nil {
+			p = fmt.Sprint(x)
+		}
+	}()
+	f()
+	return
+}
+func get(h http.Handler, path string) *httptest.ResponseRecorder {
+	r := httptest.NewRecorder()
+	h.ServeHTTP(r, httptest.NewRequest("GET", path, nil))
+	return r
+}
+func response(r *httptest.ResponseRecorder) map[string]any {
+	return map[string]any{"status": r.Code, "body": r.Body.String()}
+}
+
+func transitions() {
+	a := &eng{v: []float32{1, 0, 0}}
+	w := mk("transitions")
+	s := db(w)
+	defer s.Close()
+	page(w, "valve", "Valve", "The retired valve rating was 9 bars.\n")
+	emit("initial", refresh(w, s, a))
+	emit("unchanged", refresh(w, s, a))
+	page(w, "valve", "Valve", " \n\t\n")
+	emit("blank", map[string]any{"refresh": refresh(w, s, a), "returned": chunks(s, a.v)})
+	srv, e := webui.NewServer(w, a)
+	must(e)
+	r := get(srv.Handler(), "/search?q=bars")
+	emit("blank_http", map[string]any{"status": r.Code, "retired_text_present": strings.Contains(r.Body.String(), "retired valve rating was 9 bars"), "html": r.Body.String()})
+	// Empty ReplaceChunks is an existing atomic API, not an implementation fix.
+	must(s.ReplaceChunks("valve", nil, nil, nil, nil))
+	n, e := s.ChunkCount()
+	must(e)
+	emit("empty_replace_control", n)
+	page(w, "valve", "Valve", "The current valve rating is 18 bars.\n")
+	emit("nonempty_control", refresh(w, s, a))
+	must(os.Remove(filepath.Join(w.Root, "concepts/valve.md")))
+	emit("delete_control", refresh(w, s, a))
+
+	w = mk("nil")
+	s2 := db(w)
+	defer s2.Close()
+	page(w, "iris", "Iris", "Old lilac fact.")
+	refresh(w, s2, a)
+	page(w, "iris", "New Iris", "New violet fact.")
+	refresh(w, s2, nil)
+	emit("nil_changed", chunks(s2, a.v))
+	must(os.Remove(filepath.Join(w.Root, "concepts/iris.md")))
+	refresh(w, s2, nil)
+	vs, e := s2.PageVectors()
+	must(e)
+	emit("nil_deleted", map[string]any{"joined_chunks": len(chunks(s2, a.v)), "raw_vectors": len(vs)})
+
+	w = mk("profile")
+	s3 := db(w)
+	defer s3.Close()
+	page(w, "iris", "Iris", "Unchanged iris text.")
+	refresh(w, s3, a)
+	w.Cfg.Embedding.Model = "def-profile-b"
+	w.Cfg.Embedding.ChunkTokens = 1
+	w.Cfg.Embedding.Dimension = 3
+	b := &eng{v: []float32{0, 1, 0}}
+	rr := refresh(w, s3, b)
+	emit("profile_switch", map[string]any{"result": rr, "b_calls": b.calls, "hits": chunks(s3, b.v)})
+	page(w, "iris", "New title", "Unchanged iris text.")
+	rr = refresh(w, s3, b)
+	emit("title_control", map[string]any{"result": rr, "b_calls": b.calls})
+	page(w, "iris", "Newest title", "Changed text.")
+	_, e = indexer.Reindex(w, s3, nil, &eng{fail: true}, nil)
+	emit("partial_failure", map[string]any{"error": fmt.Sprint(e), "hits": chunks(s3, b.v)})
+
+	for _, name := range []string{"bridge", "reconcile"} {
+		w = mk(name)
+		ss := db(w)
+		page(w, "cedar", "Cedar", "Shared old photosynthesis sentence.")
+		page(w, "maple", "Maple", "Shared old photosynthesis sentence.")
+		refresh(w, ss, a)
+		must(ss.Close())
+		if name == "bridge" {
+			page(w, "maple", "Maple", "Current maple mechanical assembly instructions.")
+		}
+	}
+}
+
+func api() {
+	w := mk("api")
+	page(w, "gauge", "Gauge", "oldgauge pressure observation.")
+	srv, e := webui.NewServer(w, nil)
+	must(e)
+	h := srv.Handler()
+	emit("api_cold", response(get(h, "/api/search?q=oldgauge")))
+	emit("exact_redirect", response(get(h, "/search?q=gauge")))
+	emit("api_after_exact", response(get(h, "/api/search?q=oldgauge")))
+	emit("full_control", get(h, "/search?q=oldgauge").Code)
+	emit("api_seeded", response(get(h, "/api/search?q=oldgauge")))
+	page(w, "gauge", "New Gauge", "newgauge revised observation.")
+	emit("api_old_after_edit", response(get(h, "/api/search?q=oldgauge")))
+	emit("api_new_after_edit", response(get(h, "/api/search?q=newgauge")))
+	must(os.Remove(filepath.Join(w.Root, "concepts/gauge.md")))
+	emit("api_after_delete", response(get(h, "/api/search?q=oldgauge")))
+	page(w, "gauge", "New Gauge", "newgauge revised observation.")
+	get(h, "/search?q=newgauge")
+	bad, e := webui.NewServer(w, &eng{fail: true})
+	must(e)
+	emit("api_infer_failure", response(get(bad.Handler(), "/api/search?q=newgauge")))
+	for _, p := range []string{"/static/vendor/tex-svg.js", "/static/vendor/input/tex/extensions/color.js", "/static/vendor/input/tex/extensions/physics.js"} {
+		emit("asset_route", map[string]any{"path": p, "status": get(h, p).Code})
+	}
+	w = mk("api_k")
+	for i := 0; i < 12; i++ {
+		slug := fmt.Sprintf("sample-%02d", i)
+		page(w, slug, slug, "boundmarker content.")
+	}
+	s := db(w)
+	refresh(w, s, nil)
+	must(s.Close())
+	srv, e = webui.NewServer(w, nil)
+	must(e)
+	for _, k := range []string{"-1", "0", "1", "51", "99999999999999999999"} {
+		emit("api_k", map[string]any{"k": k, "response": response(get(srv.Handler(), "/api/search?q=boundmarker&k="+k))})
+	}
+}
+
+type waitEng struct {
+	calls   atomic.Int32
+	entered chan struct{}
+	release chan struct{}
+}
+
+func (e *waitEng) Close() error { return nil }
+func (e *waitEng) Embed(ts []string) ([][]float32, error) {
+	e.calls.Add(1)
+	e.entered <- struct{}{}
+	<-e.release
+	out := make([][]float32, len(ts))
+	for i := range out {
+		out[i] = []float32{1, 0, 0}
+	}
+	return out, nil
+}
+func cancellation() {
+	w := mk("cancel")
+	page(w, "poll", "Poll", "Polling statement.")
+	s := db(w)
+	refresh(w, s, &eng{v: []float32{1, 0, 0}})
+	must(s.Close())
+	en := &waitEng{entered: make(chan struct{}, 3), release: make(chan struct{})}
+	srv, e := webui.NewServer(w, en)
+	must(e)
+	h := srv.Handler()
+	done1 := make(chan int, 1)
+	done2 := make(chan int, 1)
+	go func() { done1 <- get(h, "/api/search?q=poll").Code }()
+	<-en.entered
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	go func() {
+		r := httptest.NewRecorder()
+		h.ServeHTTP(r, httptest.NewRequest("GET", "/api/search?q=poll", nil).WithContext(ctx))
+		done2 <- r.Code
+	}()
+	returned := false
+	select {
+	case <-done2:
+		returned = true
+	case <-time.After(30 * time.Millisecond):
+	}
+	close(en.release)
+	a := <-done1
+	b := <-done2
+	emit("queued_cancel", map[string]any{"returned_before_first_release": returned, "engine_calls": en.calls.Load(), "first_status": a, "canceled_status": b})
+}
+
+func vectors() {
+	w := mk("vectors")
+	s := db(w)
+	defer s.Close()
+	a := &eng{v: []float32{1, 0, 0}}
+	for _, slug := range []string{"birch", "elm", "pine"} {
+		page(w, slug, slug, "Identical needle.")
+	}
+	refresh(w, s, a)
+	for _, k := range []int{-1, 0, 1} {
+		ch, e := s.SearchChunks(a.v, k, 1)
+		must(e)
+		kw, e := s.SearchKeyword("needle", k)
+		must(e)
+		var n int
+		pp := pan(func() { x, e := s.SearchSemantic(a.v, k); must(e); n = len(x) })
+		emit("count_bound", map[string]any{"k": k, "chunks": len(ch), "keyword": len(kw), "semantic": n, "panic": pp})
+	}
+	sem, rrf := map[string]bool{}, map[string]bool{}
+	for i := 0; i < 300; i++ {
+		h, e := s.SearchSemantic(a.v, 1)
+		must(e)
+		sem[h[0].Slug] = true
+		h = search.Fuse(1, []store.Hit{{Slug: "birch"}, {Slug: "elm"}}, []store.Hit{{Slug: "elm"}, {Slug: "birch"}})
+		rrf[h[0].Slug] = true
+	}
+	emit("ties", map[string]any{"semantic_winners": sem, "rrf_winners": rrf})
+	emit("dim_mismatch", chunks(s, []float32{1, 0}))
+	must(s.ReplaceChunks("birch", []int{0}, []string{"hash"}, []string{"unit violation"}, [][]float32{{2, 0}}))
+	emit("nonunit", chunks(s, []float32{1, 0}))
+	must(s.ReplaceChunks("birch", []int{0, 1}, []string{"a", "b"}, []string{"short", "long"}, [][]float32{{1, 0}, {1, 0, 0}}))
+	emit("mixed_dim_panic", pan(func() { _, e := s.PageVectors(); must(e) }))
+	must(s.ReplaceChunks("birch", []int{0}, []string{"nan"}, []string{"nan"}, [][]float32{{float32(math.NaN()), 0}}))
+	_, e := json.Marshal(chunks(s, []float32{1, 0}))
+	emit("nan_json", fmt.Sprint(e))
+	raw, e := sql.Open("sqlite", w.DBPath())
+	must(e)
+	_, e = raw.Exec("UPDATE chunks SET vector=x'0102' WHERE slug='birch'")
+	must(e)
+	must(raw.Close())
+	_, e = s.SearchChunks(a.v, 1, 1)
+	emit("malformed_blob_control", fmt.Sprint(e))
+	emit("slice_count_panic", pan(func() { _ = s.ReplaceChunks("birch", []int{0}, nil, nil, nil) }))
+}
+
+func textAndMarkdown() {
+	for label, body := range map[string]string{"normal": "First.\n\nSecond.", "whitespace": "First.  \n\n    indented statement\n\n\nLast.\n", "crlf": "First.\r\n\r\nSecond.\r\n", "unicode": strings.Repeat("한é🌿", 700)} {
+		cc := embed.Split("Title", body)
+		ok := true
+		for _, c := range cc {
+			ok = ok && strings.Contains(body, strings.TrimPrefix(c.Text, "Title\n\n"))
+		}
+		emit("source_slice", map[string]any{"case": label, "substring": ok, "chunks": len(cc)})
+	}
+	rawA := "First.  \n\n    indented statement"
+	rawB := "First.\n\nindented statement"
+	emit("normalized_hash_control", map[string]any{"raw_equal": rawA == rawB, "chunk_hash_equal": embed.Split("Title", rawA)[0].Hash == embed.Split("Title", rawB)[0].Hash})
+	v := mermaid.NewValidator()
+	re := regexp.MustCompile(`(?s)<pre class="mermaid">(.*?)</pre>`)
+	for label, body := range map[string]string{"three": "```mermaid\nflowchart LR\n A[[widget]] --> B[Done]\n```\n", "four": "````mermaid\nflowchart LR\n A[[widget]] --> B[Done]\n````\n", "tilde": "~~~mermaid\nflowchart LR\n A[[widget]] --> B[Done]\n~~~\n", "quote": "> ```mermaid\n> flowchart LR\n>  A[[widget]] --> B[Done]\n> ```\n"} {
+		bs := mermaid.Blocks(body)
+		source := bs[0].Source
+		before, be := v.Validate(source)
+		rendered, e := webui.RenderPage(body, func(string) bool { return true })
+		must(e)
+		m := re.FindStringSubmatch(string(rendered))
+		if len(m) != 2 {
+			panic(string(rendered))
+		}
+		after := html.UnescapeString(m[1])
+		bad, ee := v.Validate(after)
+		emit("mermaid_parity", map[string]any{"case": label, "source_equal": source == after, "before_bad": before, "before_env": fmt.Sprint(be), "after_bad": bad, "after_env": fmt.Sprint(ee), "extracted_links": wiki.ExtractLinks(body), "rendered_source": after})
+	}
+	// Only the probe process's exported bundle changes; production files do not.
+	saved := mermaid.Bundle
+	mermaid.Bundle = []byte("throw new Error('defense boot fault')")
+	bad, ee := mermaid.NewValidator().Validate("flowchart LR\n A --> B")
+	mermaid.Bundle = saved
+	emit("p4_boot_control", map[string]any{"diagram": bad, "environment": fmt.Sprint(ee)})
+}
+
+func capAndScale() {
+	w := mk("cap")
+	s := db(w)
+	defer s.Close()
+	page(w, "aa", "AA", "A")
+	page(w, "bb", "BB", "B")
+	refresh(w, s, nil)
+	must(s.ReplaceChunks("aa", []int{0, 1}, []string{"a", "b"}, []string{"A0", "A1"}, [][]float32{{1, 0}, {0.99, float32(math.Sqrt(1 - 0.99*0.99))}}))
+	must(s.ReplaceChunks("bb", []int{0}, []string{"c"}, []string{"B0"}, [][]float32{{0.8, 0.6}}))
+	emit("cap_counterexample", chunksWithCap(s))
+	for _, n := range []int{200, 1000} {
+		scan := &wiki.ScanResult{BySlug: map[string]*wiki.Page{}}
+		vs := map[string][]float32{}
+		for i := 0; i < n; i++ {
+			slug := fmt.Sprintf("tree-%04d", i)
+			p := &wiki.Page{Slug: slug, Title: slug, RelPath: "concepts/" + slug + ".md", Body: "A bounded independent scale sentence."}
+			scan.Pages = append(scan.Pages, p)
+			scan.BySlug[slug] = p
+			vs[slug] = []float32{1, 0, 0}
+		}
+		st, e := resurface.LoadState(w)
+		must(e)
+		for _, cut := range []float64{0.7, 1.1} {
+			runtime.GC()
+			var before, after runtime.MemStats
+			runtime.ReadMemStats(&before)
+			start := time.Now()
+			picks := resurface.PickBridges(scan, vs, st, cut, 5, false, time.Date(2026, 10, 9, 0, 0, 0, 0, time.UTC))
+			elapsed := time.Since(start)
+			runtime.ReadMemStats(&after)
+			keys := []string{}
+			for _, p := range picks {
+				keys = append(keys, p.A.Slug+"|"+p.B.Slug)
+			}
+			emit("bridge_scale", map[string]any{"pages": n, "min_sim": cut, "picks": keys, "total_alloc_bytes": after.TotalAlloc - before.TotalAlloc, "elapsed_ms": float64(elapsed.Microseconds()) / 1000})
+		}
+	}
+}
+func chunksWithCap(s *store.Store) map[string]any {
+	h, e := s.SearchChunks([]float32{1, 0}, 2, 1)
+	must(e)
+	all, e := s.SearchChunks([]float32{1, 0}, 2, 0)
+	must(e)
+	var naive []string
+	seen := map[string]bool{}
+	for _, c := range all {
+		if !seen[c.Slug] {
+			naive = append(naive, c.Slug)
+			seen[c.Slug] = true
+		}
+	}
+	var correct []string
+	for _, c := range h {
+		correct = append(correct, c.Slug)
+	}
+	return map[string]any{"actual_capped_slugs": correct, "truncate_before_cap_slugs": naive}
+}
+func literal() {
+	w := mk("literal")
+	s := db(w)
+	defer s.Close()
+	for slug, body := range map[string]string{"ko": "프로토콜은 산업용 통신 규칙이다.", "zh": "工业协议用于通信。", "c": "C language only.", "cpp": "C++ language only."} {
+		page(w, slug, slug, body)
+	}
+	refresh(w, s, nil)
+	for _, q := range []string{"프로토콜", "프로토콜을", "工业协议", "协议", "C++", "\" OR *"} {
+		h, e := s.SearchKeyword(q, 10)
+		var slugs []string
+		for _, a := range h {
+			slugs = append(slugs, a.Slug)
+		}
+		sort.Strings(slugs)
+		emit("literal", map[string]any{"q": q, "slugs": slugs, "error": fmt.Sprint(e)})
+	}
+}
+func main() {
+	base = os.Args[1]
+	transitions()
+	api()
+	cancellation()
+	vectors()
+	textAndMarkdown()
+	literal()
+	capAndScale()
+}

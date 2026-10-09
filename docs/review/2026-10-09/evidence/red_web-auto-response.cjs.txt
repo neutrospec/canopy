@@ -1,0 +1,38 @@
+// Independent minimal environment for the shipped auto-read logic; no layout or browser claim.
+const fs = require('node:fs');
+const vm = require('node:vm');
+const path = require('node:path');
+const source = fs.readFileSync(path.join(process.argv[2], 'internal/webui/static/app.js'), 'utf8');
+(async () => {
+  for (const [name, status, type, payload] of [
+    ['login-html', 200, 'text/html', '<form action="/login">Login</form>'],
+    ['json-false', 200, 'application/json', '{"read":false}'],
+    ['unauthorized', 401, 'application/json', '{"error":"auth"}'],
+    ['stored-read', 200, 'application/json', '{"read":true}'],
+  ]) {
+    let callback, jsonCalls = 0, requests = 0;
+    const readform = {innerHTML: 'ORIGINAL-CONTROLS'};
+    const doc = {
+      visibilityState: 'visible',
+      documentElement: {scrollHeight: 500},
+      getElementById: id => id === 'readform' ? readform : null,
+      querySelector: selector => selector === 'article[data-slug]' ? {dataset: {slug: 'maple-0', readSecs: '1'}} : null,
+      querySelectorAll: () => [],
+      addEventListener() {},
+    };
+    const response = new Response(payload, {status, headers: {'Content-Type': type}});
+    const originalJSON = response.json.bind(response);
+    response.json = async () => {jsonCalls++; return originalJSON();};
+    const sandbox = {
+      document: doc, window: {}, innerHeight: 1000, scrollY: 0,
+      matchMedia: () => ({matches: false}), addEventListener() {},
+      setInterval: fn => {callback = fn; return 1;}, clearInterval() {},
+      fetch: async () => {requests++; return response;},
+    };
+    vm.runInNewContext(source, sandbox);
+    await callback();
+    console.log(JSON.stringify({probe:'independent-auto-read', name, status, type, requests, jsonCalls,
+      showsSuccess: readform.innerHTML.includes('readmark'), preservesControls: readform.innerHTML === 'ORIGINAL-CONTROLS',
+      limit:'VM and real Response object, without native DOM/browser navigation'}));
+  }
+})().catch(error => {console.error(error); process.exitCode=1;});

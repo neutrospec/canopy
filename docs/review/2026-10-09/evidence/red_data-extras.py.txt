@@ -1,0 +1,42 @@
+from pathlib import Path
+import os, subprocess, json, concurrent.futures, sqlite3, hashlib
+ROOT=Path(os.environ['RED_DATA_ROOT']);BIN=Path(os.environ['RED_DATA_BIN']);ENV=dict(os.environ)
+TRACE=Path('docs/review/2026-10-09/evidence/red_data-extra-transcript.jsonl').open('w')
+def run(argv,env=None):
+    argv=list(map(str,argv));r=subprocess.run(argv,env=env or ENV,text=True,capture_output=True,timeout=35)
+    TRACE.write(json.dumps(dict(argv=argv,exit=r.returncode,stdout=r.stdout,stderr=r.stderr))+'\n');TRACE.flush();return r
+def cli(w,*a):return run([BIN,'--wiki',w,*a])
+def good(w,*a):
+    r=cli(w,*a);assert not r.returncode,(a,r.stderr);return r
+def git(w,*a):
+    r=run(['git','-C',w,*a]);assert not r.returncode,(a,r.stderr);return r.stdout.strip()
+def page(w,s,text):
+    p=w/'concepts'/(s+'.md');p.parent.mkdir(parents=True,exist_ok=True);p.write_text(f'---\ntitle: {s}\ncreated: 2026-03-04\nupdated: 2026-03-04\ntype: concept\ntags: []\n---\n\n{text}\n')
+def fresh(name):
+    w=ROOT/'fixtures'/name;w.mkdir();(w/'canopy.toml').write_text('[schema]\n');page(w,'fir','base');return w
+def init(w):
+    git(w,'init','-b','main');git(w,'config','user.name','Red Extra');git(w,'config','user.email','red-extra@example.invalid');git(w,'add','-A');git(w,'commit','-m','fixture baseline')
+def peers(name):
+    w=fresh(name);good(w,'update','fir','--json');gaps=w/'_meta/webui/search-gaps.jsonl';gaps.parent.mkdir(parents=True);gaps.write_text('{"query":"common"}\n');init(w)
+    origin=ROOT/'fixtures'/(name+'-origin.git');peer=ROOT/'fixtures'/(name+'-peer');r=run(['git','init','--bare','-b','main',origin]);assert not r.returncode
+    git(w,'remote','add','origin',origin);git(w,'push','-u','origin','main');r=run(['git','clone',origin,peer]);assert not r.returncode;git(peer,'config','user.name','Red Peer');git(peer,'config','user.email','red-peer@example.invalid');return w,origin,peer
+def emit(case,**data):print(json.dumps(dict(case=case,**data)),flush=True)
+w,origin,peer=peers('jsonl-merge')
+p=peer/'_meta/webui/search-gaps.jsonl';p.write_text(p.read_text()+'{"query":"remote-demand"}\n');git(peer,'add','-A');git(peer,'commit','-m','peer gap');git(peer,'push')
+p=w/'_meta/webui/search-gaps.jsonl';p.write_text(p.read_text()+'{"query":"local-demand"}\n');r=cli(w,'sync','--json');final=git(origin,'show','main:_meta/webui/search-gaps.jsonl')
+emit('P25-real-jsonl-sync',exit=r.returncode,conflict_markers_in_published_metadata='<<<<<<<' in final,both_original_records_present='local-demand' in final and 'remote-demand' in final)
+w,origin,peer=peers('write-sync-cache')
+page(peer,'spruce','REMOTE-SEARCH-NEEDLE');git(peer,'add','-A');git(peer,'commit','-m','peer new page');git(peer,'push');r=cli(w,'update','fir','--sync','--json')
+key=hashlib.sha256(str(w).encode()).hexdigest()[:12];db=Path(ENV['XDG_CACHE_HOME'])/'canopy/index'/(key+'.db')
+with sqlite3.connect(db) as c:before=[x[0] for x in c.execute('SELECT slug FROM pages ORDER BY slug')]
+search=cli(w,'search','REMOTE-SEARCH-NEEDLE','--mode','keyword','--json')
+with sqlite3.connect(db) as c:after=[x[0] for x in c.execute('SELECT slug FROM pages ORDER BY slug')]
+emit('P26-write-sync-cache-control',exit=r.returncode,remote_file_exists=(w/'concepts/spruce.md').exists(),cache_before_search=before,search_exit=search.returncode,cache_after_search=after)
+w=fresh('parallel-startup');cold=ROOT/'cold-env';cold.mkdir()
+env=dict(ENV)
+for key,name in [('HOME','home'),('XDG_CONFIG_HOME','config'),('XDG_STATE_HOME','state'),('XDG_CACHE_HOME','cache'),('XDG_DATA_HOME','share'),('TMPDIR','tmp')]:
+    d=cold/name;d.mkdir();env[key]=str(d)
+def startup(_):return run([BIN,'--wiki',w,'status','--json'],env)
+with concurrent.futures.ThreadPoolExecutor(max_workers=36) as pool:results=list(pool.map(startup,range(36)))
+emit('P27-real-concurrent-cli-startup',calls=36,failed=sum(x.returncode!=0 for x in results),errors=[x.stderr.strip() for x in results if x.returncode][:3])
+TRACE.close()

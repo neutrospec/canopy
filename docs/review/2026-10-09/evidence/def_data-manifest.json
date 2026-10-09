@@ -1,0 +1,35 @@
+{
+  "head": "ede67e302a8487aecbb4d59587a8686292018cf6",
+  "report": "docs/review/2026-10-09/10-defense-data.md",
+  "fixture_root_during_execution": "/private/tmp/canopy-review/def_data-pjuwdqcl",
+  "fixtures_removed": true,
+  "scratch_removed": true,
+  "go_cache_retained": "/private/tmp/canopy-review/go-cache",
+  "new_claims_unvalidated": [
+    "DEF-A-01"
+  ],
+  "evidence_sha256": {
+    "docs/review/2026-10-09/evidence/def_data-actual-K-output.txt": "6a67387e3c05936e2915041eba614812cc46379c60ddafcb81f8d19f31b847e5",
+    "docs/review/2026-10-09/evidence/def_data-baseline.json": "2ed8b409f41494f873d6e8bae4715280f5c6beac0ae758611769d1d52abae3d4",
+    "docs/review/2026-10-09/evidence/def_data-build.txt": "74edf2c065fefda33b1340c616eccc3584f7d977e5084c48f15eb6b36a0f15a9",
+    "docs/review/2026-10-09/evidence/def_data-cli-output.txt": "ce66714e15ee02530313e216343e3314a910d8effcdc357fc1cbd7ee04d4e3c2",
+    "docs/review/2026-10-09/evidence/def_data-cli-transcript.jsonl": "fc8612f192d17395f14fd1f2904c773b136e1195d7a706bec6bcc2267339a876",
+    "docs/review/2026-10-09/evidence/def_data-cli-window-output.txt": "732504ab01c7399ede153db3ebd91d1914f7ca0f8877a627690884dd23a06f1d",
+    "docs/review/2026-10-09/evidence/def_data-cli.py.txt": "91a417f18453180c0bad7b1969314d18b3a2baf5cae4761e0fb8955e9b8eaf50",
+    "docs/review/2026-10-09/evidence/def_data-driver.py.txt": "78c4c0230d569d6b1890cf96435033d956d7bc0015c19c88324dabf0e8d0ca03",
+    "docs/review/2026-10-09/evidence/def_data-existing-tests.txt": "f4601be4ab4996c1febaf35f80285c9787ab158c93c9609c06f36038db69b603",
+    "docs/review/2026-10-09/evidence/def_data-extra-first-extra-output.txt": "9c0fbe124e46dc4b0e7a12d91bc9fbd896b50246c9740c4ace338ca8810d1bc2",
+    "docs/review/2026-10-09/evidence/def_data-extra-first-extra-transcript.jsonl": "f6e8c8eb321769dab72acaebb5d85a8637412496f5f09e4c43fca47e9420bd58",
+    "docs/review/2026-10-09/evidence/def_data-extra-output.txt": "d335faeb263a4b299de57ae3557cc047d031a3515dabcb9f3d25857171e212b8",
+    "docs/review/2026-10-09/evidence/def_data-extra-transcript.jsonl": "3691923052bb7b772fa8a9156a581a0d1fe7193bf40941f790e5c1ab356e9ee4",
+    "docs/review/2026-10-09/evidence/def_data-extra.py.txt": "99cf6734db64877956232c43c5baf7b85d4022b4c280cd3a3f1c3cda6e339078",
+    "docs/review/2026-10-09/evidence/def_data-go-output.txt": "d15710e099d27a22617edc4a99473f0dcaba9732ff933a05b2ad56b3e97504f3",
+    "docs/review/2026-10-09/evidence/def_data-go-version.txt": "b575970de7f0149928da16476b7112e16b0fd2dad9625ff68e818cd7de93c958",
+    "docs/review/2026-10-09/evidence/def_data-initial-go-build-error.txt": "a1c1489297a4c902aa65c1cfbce6e6e67dd2e209ad3664664cd848536e76541e",
+    "docs/review/2026-10-09/evidence/def_data-probe-format.txt": "aff285757254daa5f1423abdd442c7cc2c1f0301c6c1f456548d174071ff9be7",
+    "docs/review/2026-10-09/evidence/def_data-probe_test.go.txt": "5a5eff83f8dd78fd9a7b4a0e38b6942a9fb0d5539475e69ac60127270361ceae",
+    "docs/review/2026-10-09/evidence/def_data-report-qa.json": "86257e0a0917bfa5aa0891b251594de23f6f1c8593b9a2a6821fc711333382ae",
+    "docs/review/2026-10-09/evidence/def_data-source-lines.txt": "b160da892501b12be6203836d948c081bc4f3dd7d97b9415cbc72e7c4cd666cb"
+  },
+  "report_sha256": "143f99d5ff3a062dbbfac1e9bce3d4b06009c89f20552accac5d56a211ce151f"
+}

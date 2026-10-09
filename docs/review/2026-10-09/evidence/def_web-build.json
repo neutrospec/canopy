@@ -1,0 +1,50 @@
+[
+  {
+    "observation": "isolation",
+    "environment": {
+      "HOME": "/private/tmp/canopy-review-def-web-duv7b75v/home",
+      "XDG_CONFIG_HOME": "/private/tmp/canopy-review-def-web-duv7b75v/config",
+      "XDG_CACHE_HOME": "/private/tmp/canopy-review-def-web-duv7b75v/cache",
+      "XDG_DATA_HOME": "/private/tmp/canopy-review-def-web-duv7b75v/data",
+      "XDG_STATE_HOME": "/private/tmp/canopy-review-def-web-duv7b75v/state",
+      "TMPDIR": "/private/tmp/canopy-review-def-web-duv7b75v/tmp",
+      "GOPATH": "/private/tmp/canopy-review-def-web-duv7b75v/gopath",
+      "GOMODCACHE": "/Users/nobocop/go/pkg/mod",
+      "GOCACHE": "/private/tmp/canopy-review/go-cache",
+      "GOTELEMETRY": "off",
+      "GOPROXY": "off",
+      "GOTOOLCHAIN": "local",
+      "GOENV": "off",
+      "GOSUMDB": "off",
+      "GIT_CONFIG_GLOBAL": "/dev/null"
+    }
+  },
+  {
+    "argv": [
+      "go",
+      "version"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "seconds": 0.025,
+    "stdout": "go version go1.27.1 darwin/arm64\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "go",
+      "build",
+      "-mod=readonly",
+      "-ldflags",
+      "-X github.com/neutrospec/canopy/internal/buildinfo.version=v0.10.0 -X github.com/neutrospec/canopy/internal/buildinfo.commit=ede67e3",
+      "-o",
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "./cmd/canopy"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "seconds": 1.058,
+    "stdout": "",
+    "stderr": ""
+  }
+]

@@ -1,0 +1,57 @@
+{
+  "run": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+  "records": [
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "new",
+        "Sync flag example",
+        "--slug",
+        "sync-flag",
+        "--type",
+        "concept",
+        "--sync",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"committed\": true,\n  \"message\": \"canopy: sync-flag\",\n  \"pushed\": true\n}\n{\n  \"created\": \"concepts/sync-flag.md\",\n  \"related\": []\n}\n",
+      "stderr": "",
+      "json_values": [
+        {
+          "committed": true,
+          "message": "canopy: sync-flag",
+          "pushed": true
+        },
+        {
+          "created": "concepts/sync-flag.md",
+          "related": []
+        }
+      ],
+      "json_value_count": 2
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "update",
+        "sync-flag",
+        "--sync",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"committed\": true,\n  \"message\": \"canopy: sync-flag\",\n  \"pushed\": true\n}\n",
+      "stderr": "",
+      "json_values": [
+        {
+          "committed": true,
+          "message": "canopy: sync-flag",
+          "pushed": true
+        }
+      ],
+      "json_value_count": 1
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+bge-m3 sha256= a58799bf3ef61932ee1523a9a9a1de8e84d13fc8dbd6aabb001bfaf31e5d90ab outputs= [('last_hidden_state', ['batch_size', 'sequence_length', 1024])] quantized_nodes= {'DynamicQuantizeLinear': 96, 'MatMulInteger': 72}
+bge-m3-fp32.bak sha256= ef046f21faf5aa86bcff05b6fb25c34ef9b163ee86053c147c6434160f13a914 outputs= [('last_hidden_state', ['batch_size', 'sequence_length', 1024])] quantized_nodes= {}

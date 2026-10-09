@@ -1,0 +1,131 @@
+
+CASE atomic-failure
+faulted Save=write /private/tmp/canopy-audit-20261009/state-fb76b/fixtures/atomic-failure-1411976554/_meta/webui/reads.json: file too large bytes=128 subsequent Load=unexpected end of JSON input
+prior_complete_file_preserved=false
+
+CASE checkout-git
+CLI checkout exit=0 git_status_identical=false page_identical=true agent_record_created=true
+
+CASE checkout-meta
+corrupt-meta open_count=0 Checkout_error=nil Modified=false edited_copy_preserved=false wiki_unchanged=true
+missing-meta edited_copy_preserved=false
+unwritable_checkout_dir Discard_error=<nil> copy_still_exists=true meta_still_exists=true
+
+CASE compatibility
+human version=9 unknown_top=<missing> nested_preserved=false
+agent version=1 unknown_top=<missing> nested_preserved=false
+resurface version=9 unknown_top=<missing>
+ledger version=9 unknown_top=<missing>
+task future_number_before=9007199254740993 after=9007199254740992 string_after="keep"
+config adopted=true future_setting_preserved=false
+
+CASE completion
+edit request_unfulfilled=true body_unchanged=true frontmatter_only_change done_error=<nil>
+future-version=99 known-type=connect done_error=<nil>
+stale-form POST=303 base_matches_form=false base_matches_post=true
+
+CASE concurrent-edits
+web_requests=48 HTTP=map[303:48] task_files=13 valid_files=13 distinct_preserved_bodies=13 corrupt=0
+independent_device_ids_equal=true id=edit-topic-20261009-120000
+
+CASE connect-id
+valid_filename(a)=true
+valid_filename(b--c)=true
+valid_filename(a--b)=true
+valid_filename(c)=true
+requested_pairs=[a b--c],[a--b c] first_id=connect-a--b--c second_id=connect-a--b--c created=true,false stored_second_pages=[a b--c]
+
+CASE determinism
+unchanged attention state iterations=100 distinct_top10_orders=100
+same state+same_now auto rng_seeds=100 distinct_first_picks=8
+digest non-date created="z-not-a-date" counted=1
+digest non-date updated="z-not-a-date" counted=1
+
+CASE gc-dismissal
+dismissed before_gc refiling_created=false
+gc removed=1 refiling_created=true status=pending
+
+CASE gc-id
+gc removed=1 actual_pending_file_missing=true closed_alias_survives=true
+
+CASE lost-updates
+human saves=2 alpha=false beta=true
+agent saves=2 alpha=false beta=true
+resurface saves=2 snooze_alpha="" dismissed_pair="dismissed"
+ledger saves=2 deleted_alpha_persisted=false deleted_beta_persisted=true
+
+CASE malformed
+human null-entry Load=<nil>
+human null-entry Mark panic=runtime error: invalid memory address or nil pointer dereference
+agent null-entry Load=<nil> MarkAgent panic=runtime error: invalid memory address or nil pointer dereference
+task null Load=<nil> len=1 pending=0 count_error=<nil>
+task truncated Load=null.json: unexpected end of JSON input
+status exit=0 says_pending_zero=true output={
+  "checkouts_open": 0,
+  "git": {
+    "is_repo": false,
+    "branch": "",
+    "dirty": 0,
+    "ahead": 0,
+    "behind": 0
+  },
+  "initialized": false,
+  "pages": 0,
+  "root": "/private/tmp/canopy-audit-20261009/state-fb76b/fixtures/malformed-1629194800",
+  "stray_root": null,
+  "tasks_pending": 0
+}
+corrupt-ledger status exit=0 exposes_ledger_error=false
+resurface healthy_agent_today+corrupt_human exit=0 picks_alpha=true
+task_dir_is_file filing_hung_until_timeout=true command_error=signal: killed
+
+CASE merge
+two JSONL appends merge-file exit=1 conflict_markers=true
+{"query":"base"}
+<<<<<<< /private/tmp/canopy-audit-20261009/state-fb76b/fixtures/merge-2754067327/ours
+{"query":"device-a"}
+=======
+{"query":"device-b"}
+>>>>>>> /private/tmp/canopy-audit-20261009/state-fb76b/fixtures/merge-2754067327/theirs
+
+CASE migration
+migrate input=missing result={From:1 To:1 Applied:[]} error=<nil> second={From:1 To:1 Applied:[]} second_error=<nil>
+migrate input={"schema_version":99} result={From:99 To:99 Applied:[]} error=canopy is older (schema 1) than your data (schema 99) — upgrade canopy second={From:99 To:99 Applied:[]} second_error=canopy is older (schema 1) than your data (schema 99) — upgrade canopy
+migrate input={ result={From:0 To:0 Applied:[]} error=parse /private/tmp/canopy-audit-20261009/state-fb76b/fixtures/migrate-494774793/config/state.json: unexpected end of JSON input second={From:0 To:0 Applied:[]} second_error=parse /private/tmp/canopy-audit-20261009/state-fb76b/fixtures/migrate-494774793/config/state.json: unexpected end of JSON input
+migrate input=null result={From:0 To:1 Applied:[relocate legacy ~/.canopy into XDG directories]} error=<nil> second={From:1 To:1 Applied:[]} second_error=<nil>
+migrate input={"schema_version":-1} result={From:-1 To:1 Applied:[relocate legacy ~/.canopy into XDG directories]} error=<nil> second={From:1 To:1 Applied:[]} second_error=<nil>
+fresh concurrent Ensure calls=32 failed=23 example=rename /private/tmp/canopy-audit-20261009/state-fb76b/fixtures/migrate-concurrent-1359785405/config/state.json.tmp /private/tmp/canopy-audit-20261009/state-fb76b/fixtures/migrate-concurrent-1359785405/config/state.json: no such file or directory
+future attention DB user_version=99 Open_error=<nil>
+future attention DB Log_error=<nil>
+future attention DB after Open version=99 events_table_created=true
+
+CASE migration-interruption
+partial migration To=0 failed=true already_moved_model_preserved=true remaining_legacy_config_preserved=true
+retry migration To=1 model_preserved=true auth_preserved=true rerun_applied=0 config_unchanged=true
+
+CASE offsets
+since=2026-10-09T04:00:00Z expected=[newer] actual=[older newer]
+prune_before=2026-10-09T10:00:00+09:00 removed=2 expected_remaining=[newer] actual=[]
+RecentAccessSlugs expected=[newer older] actual=[older newer]
+
+CASE path-identity
+same_wiki_via_symlink root_equal=false event_DB_equal=false checkout_dir_equal=false open_checkout_visible_via_alias=0
+
+CASE positive-boundaries
+human API=200 explicit_not_downgraded=true
+edit unchanged_done_rejected=true filing_page_unchanged=true
+event_DB_delete queue_unchanged=true human_unchanged=true
+checkout sequential_base_conflict_rejected=true copy_retained=true
+discard copy_removed=true wiki_other_writer_preserved=true
+resurface recent_shown_excluded=true
+lite hybrid search exit=0 keyword_fallback_warning=true
+
+CASE rename
+mv exit=0 agent_old=true agent_new=false output=
+after mv task_pages=[alpha] snooze_old="2026-10-16" snooze_new=""
+human+agent mv exit=0 human_new=true agent_new=true
+
+CASE snooze
+snooze=1 now=2026-10-09T23:00:00+09:00 until=2026-10-10 elapsed=9h eligible=false
+snooze=1 now=2026-10-09T23:00:00+09:00 until=2026-10-10 elapsed=10h eligible=true
+snooze=1 now=2026-10-09T23:00:00+09:00 until=2026-10-10 elapsed=24h eligible=true

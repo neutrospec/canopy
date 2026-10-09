@@ -1,0 +1,61 @@
+"""Restore the owned internal-import probe, run offline, and always remove it.
+
+Usage: python3 docs/review/2026-10-09/evidence/state-run.py.txt --case all
+The .txt artifact is source evidence, not an installed executable or test.
+"""
+
+import argparse
+import os
+from pathlib import Path
+import subprocess
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--case", default="all")
+    args = parser.parse_args()
+    evidence = Path(__file__).resolve().parent
+    repo = evidence.parents[3]
+    target = "ede67e302a8487aecbb4d59587a8686292018cf6"
+    actual = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip()
+    if actual != target:
+        raise SystemExit(f"Expected {target}, got {actual}; do not change another worker's checkout")
+    fixture = Path("/private/tmp/canopy-audit-20261009/state-fb76b")
+    probe = repo / "review_probes" / "state"
+    if probe.exists():
+        raise SystemExit(f"Owned probe path already exists: {probe}; refusing to overwrite it")
+    for name in ["home", "config", "cache", "data", "local-state", "tmp", "fixtures"]:
+        (fixture / name).mkdir(parents=True, exist_ok=True)
+    env = os.environ.copy()
+    env.update({
+        "HOME": str(fixture / "home"),
+        "XDG_CONFIG_HOME": str(fixture / "config"),
+        "XDG_CACHE_HOME": str(fixture / "cache"),
+        "XDG_DATA_HOME": str(fixture / "data"),
+        "XDG_STATE_HOME": str(fixture / "local-state"),
+        "TMPDIR": str(fixture / "tmp"),
+        "CANOPY_WIKI": "",
+        "GOCACHE": "/private/tmp/canopy-review/go-cache",
+        "GOPROXY": "off",
+        "GOMODCACHE": os.environ.get("GOMODCACHE", "/Users/nobocop/go/pkg/mod"),
+        "GOTOOLCHAIN": "local",
+        "GOENV": "off",
+        "GOTELEMETRY": "off",
+        "CGO_ENABLED": "0",
+    })
+    probe.mkdir(parents=True)
+    source = probe / "main.go"
+    source.write_bytes((evidence / "state-probe.go.txt").read_bytes())
+    try:
+        subprocess.run(["go", "build", "-mod=readonly", "-o", str(fixture / "canopy"), "./cmd/canopy"],
+                       cwd=repo, env=env, check=True)
+        subprocess.run(["go", "run", "-mod=readonly", "./review_probes/state", "-case", args.case,
+                        "-root", str(fixture / "fixtures"), "-cli", str(fixture / "canopy")],
+                       cwd=repo, env=env, check=True)
+    finally:
+        source.unlink()
+        probe.rmdir()
+
+
+if __name__ == "__main__":
+    main()

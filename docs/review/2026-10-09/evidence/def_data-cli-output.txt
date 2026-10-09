@@ -1,0 +1,51 @@
+$ ['python3', '/Users/nobocop/play/canopy/review_probes/def_data/cli.py']
+{"case": "C01-sync-conflict", "exit": 0, "result": "{\n  \"committed\": true,\n  \"message\": \"canopy: alpha\",\n  \"pushed\": true\n}", "origin_changed": true, "published_markers": true, "both_texts": true, "final_unmerged": "", "stash": "stash@{0}: autostash"}
+{"case": "C02-sync-control", "exit": 0, "result": "{\n  \"committed\": true,\n  \"message\": \"canopy: alpha\",\n  \"pushed\": true\n}", "origin_changed": true, "published_markers": false, "both_texts": true, "final_unmerged": "", "stash": ""}
+{"case": "C03-create-race", "first": 0, "second": 0, "second_retained": false, "serial_exit": 1, "serial_preserved": true}
+{"case": "C04-stale-update", "first": 0, "second": 0, "second_body_retained": false, "metadata_retained": false}
+{"case": "C05-write-failure", "exit": 1, "old_bytes": 3103, "new_bytes": 512, "previous_tail_retained": false, "stderr": "error: write /private/tmp/canopy-review/def_data-pjuwdqcl/fixtures/C05-short-write/concepts/alpha.md: file too large"}
+{"case": "C06-pipeline-update", "exit": 1, "text_present": true, "foreign": [], "new_logs": 0, "copy_present": null, "retry_exit": null}
+{"case": "C06-repair-update", "text_present": true, "new_logs": 1}
+{"case": "C06-pipeline-checkin", "exit": 1, "text_present": true, "foreign": [], "new_logs": 0, "copy_present": false, "retry_exit": 1}
+{"case": "C06-repair-checkin", "text_present": true, "new_logs": 1}
+{"case": "C07-partial-mv", "exit": 1, "old_exists": false, "new_exists": true, "archive_exists": false, "old_link": true, "new_logs": 0, "uid": 501}
+{"case": "C07-partial-rm", "exit": 1, "old_exists": false, "new_exists": false, "archive_exists": false, "old_link": true, "new_logs": 0, "uid": 501}
+{"case": "C07-partial-archive", "exit": 1, "old_exists": false, "new_exists": false, "archive_exists": true, "old_link": true, "new_logs": 0, "uid": 501}
+{"case": "C08-archive-reuse", "exit": 0, "first_preserved": false, "files": 1}
+{"case": "C09-checkout-healthy", "exit": 0, "open_count": 1, "copy_preserved": true, "wiki_preserved": true}
+{"case": "C09-checkout-missing", "exit": 0, "open_count": 0, "copy_preserved": false, "wiki_preserved": true}
+{"case": "C09-checkout-broken", "exit": 0, "open_count": 0, "copy_preserved": false, "wiki_preserved": true}
+{"case": "C09-checkout-unreadable", "exit": 1, "open_count": 0, "copy_preserved": false, "wiki_preserved": true}
+{"case": "C10-discard-failure", "exit": 0, "copy_present": true, "meta_present": true}
+{"case": "C11-links-mv", "source": "---\ntitle: source\ncreated: 2026-02-01\nupdated: 2026-02-01\ntype: concept\ntags: [tool]\n---\n\n[[beta|Alias]] [[concepts/alpha#part|A]] [[alpha.md]] [[ alpha ]]\n`[[beta]]`\n```text\n[[beta]]\n```\n", "self": "---\ntitle: alpha\ncreated: 2026-02-01\nupdated: 2026-10-09\ntype: concept\ntags: [tool]\n---\nSelf [[alpha#self]]\n", "lint": {"broken-link": 2, "orphan": 1, "stale": 1}}
+{"case": "C11-links-rm", "source": "---\ntitle: source\ncreated: 2026-02-01\nupdated: 2026-02-01\ntype: concept\ntags: [tool]\n---\n\nAlias [[concepts/alpha#part|A]] [[alpha.md]] [[ alpha ]]\n`alpha`\n```text\nalpha\n```\n", "self": null, "lint": {"broken-link": 1, "orphan": 1, "stale": 1}}
+{"case": "C11-links-archive", "source": "---\ntitle: source\ncreated: 2026-02-01\nupdated: 2026-02-01\ntype: concept\ntags: [tool]\n---\n\nAlias [[concepts/alpha#part|A]] [[alpha.md]] [[ alpha ]]\n`alpha`\n```text\nalpha\n```\n", "self": null, "lint": {"broken-link": 1, "orphan": 1, "stale": 1}}
+{"case": "C12-update-gates", "exit": 0, "foreign": [], "lint": {"invalid-tag": 1, "invalid-type": 1, "orphan": 1}}
+{"case": "C12-checkin-missing-tags", "exit": 0, "wiki_preserved": false}
+{"case": "C12-checkin-invalid-tag", "exit": 1, "wiki_preserved": true}
+{"case": "C12-body-link-policy", "body_exit": 0, "flag_exit": 1}
+{"case": "C13-title-escaped", "exit": 0, "lint": {"island": 1, "orphan": 2, "stale": 1}, "requested": "C:\\new\\tool"}
+{"case": "C13-title-bad", "exit": 0, "lint": {"bad-frontmatter": 1, "island": 1, "orphan": 2, "stale": 1}, "requested": "C:\\Users\\note"}
+{"case": "C13-title-multiline", "exit": 0, "lint": {"island": 1, "orphan": 2, "stale": 1}, "requested": "Line one\nLine two"}
+{"case": "C13-block-date", "exit": 0, "raw": "---\ntitle: alpha\ncreated: 2026-02-01\nupdated: 2026-10-09\n  2026-02-01\ntype: concept\ntags: [tool]\n---\nBASE-TEXT\n"}
+{"case": "C14-rename-False", "agent_keys": ["alpha"], "task_pages": ["alpha"], "done_exit": 1}
+{"case": "C14-rename-True", "agent_keys": ["beta"], "task_pages": ["alpha"], "done_exit": 1}
+{"case": "C15-index-after-pull", "exit": 0, "pages": 2, "dashboard": ["> **Last updated**: 2026-10-09 | **Total pages**: 1"], "category_has_remote": false, "dirty": ""}
+{"case": "C15-next-write", "category_has_remote": true}
+{"case": "C16-duplicate-move", "exit": 0, "lint_before": {"orphan": 2, "stale": 2}, "explicit_show": {"content": "---\ntitle: alpha\ncreated: 2026-02-01\nupdated: 2026-02-01\ntype: concept\ntags: [tool]\n---\n\nBASE-TEXT\n", "rel_path": "concepts/alpha.md"}, "entity_preserved": false, "concept_exists": false}
+{"case": "C17-connect-id", "first": {"created": true, "task": {"version": 1, "id": "connect-fir--juniper--spruce", "type": "connect", "status": "pending", "door": "cli", "created": "2026-10-09T14:49:34+09:00", "pages": ["fir", "juniper--spruce"]}}, "second": {"created": false, "task": {"version": 1, "id": "connect-fir--juniper--spruce", "type": "connect", "status": "pending", "door": "cli", "created": "2026-10-09T14:49:34+09:00", "pages": ["fir", "juniper--spruce"]}}, "other_after_dismiss": {"created": false, "task": {"version": 1, "id": "connect-fir--juniper--spruce", "type": "connect", "status": "dismissed", "door": "cli", "created": "2026-10-09T14:49:34+09:00", "closed": "2026-10-09T14:49:34+09:00", "pages": ["fir", "juniper--spruce"]}}}
+{"case": "C18-GC-identity", "exit": 0, "pending_exists": false, "closed_alias_exists": true}
+{"case": "C19-dismissed-GC", "before_created": false, "removed": {"removed": 1}, "after_created": true}
+{"case": "C20-status", "status": {"checkouts_open": 0, "git": {"is_repo": false, "branch": "", "dirty": 0, "ahead": 0, "behind": 0}, "initialized": true, "pages": 1, "root": "/private/tmp/canopy-review/def_data-pjuwdqcl/fixtures/C20-malformed", "stray_root": null, "tasks_pending": 0}, "tasks_exit": 1, "reconcile_exit": 1}
+{"case": "C20-null-show", "exit": 2, "panic": true}
+{"case": "C20-stat-error", "hung": true, "timeout": 2}
+{"case": "C20-resurface-other-door", "picks": [{"slug": "alpha", "rel_path": "concepts/alpha.md", "title": "alpha", "strategy": "random-forgotten", "days_stale": 250, "excerpt": "BASE-TEXT", "explanation": "250일간 열람·갱신이 없던 페이지"}]}
+{"case": "C21-invalid-date", "digest": {"since": "2026-10-01", "created_pages": [{"slug": "alpha", "rel_path": "concepts/alpha.md", "title": "alpha", "type": "concept", "created": "z-invalid-date", "updated": "2026-02-01"}], "updated_pages": [], "tag_counts": {"tool": 1}, "decisions": [], "stats": {"created": 1, "updated": 0, "total_pages": 1}, "top_consumed": []}}
+{"case": "C22-offset-GC", "cutoff": "2026-07-11T14:49:36.570975+09:00", "old": "2026-07-11T13:49:36.570975+09:00", "recent": "2026-07-11T06:49:36.570975+00:00", "before": {"count": 2, "events": [{"ts": "2026-07-11T13:49:36+09:00", "slug": "old", "door": "agent", "kind": "show"}, {"ts": "2026-07-11T06:49:36+00:00", "slug": "new", "door": "agent", "kind": "show"}]}, "gc": {"removed": 2}, "after": {"count": 0, "events": []}}
+{"case": "C23-roundtrip", "agent": {"version": 1, "agent": {"alpha": {"first": "2026-10-09T14:49:36+09:00", "last": "2026-10-09T14:49:36+09:00", "days": 1}}}, "task": {"closed": "2026-10-09T14:49:36+09:00", "created": "2026-10-01T00:00:00Z", "id": "future", "precise": 9007199254740992, "status": "dismissed", "string": "keep", "type": "unknown", "version": 1}}
+{"case": "C23-adopt", "exit": 0, "config": "default_wiki = \"/private/tmp/canopy-review/def_data-pjuwdqcl/fixtures/C23-adopt\"\n"}
+{"case": "C24-R1", "page_schema_raw_unchanged": true, "paths": "?? _meta/attention/agent-reads.json", "repeat_status_unchanged": true}
+{"case": "C25-JSONL-conflict", "exit": 0, "markers": true, "both_records": true}
+{"case": "C26-natural-CLI-startup", "calls": 24, "failures": 0, "errors": []}
+
+EXIT 0

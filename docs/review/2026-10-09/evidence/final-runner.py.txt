@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""Replay in a fresh FINAL_REPLAY_ROOT; restores audit-only probe source separately."""
+import datetime, hashlib, json, os, pathlib, shutil, subprocess
+
+repo = pathlib.Path(os.environ.get('FINAL_SOURCE_REPO', pathlib.Path(__file__).resolve().parents[4]))
+root = pathlib.Path(os.environ['FINAL_REPLAY_ROOT'])
+root.mkdir(parents=True, exist_ok=True)
+run = root / 'run'
+run.mkdir(exist_ok=False)
+env = os.environ.copy()
+for key, suffix in {'HOME':'home','XDG_CONFIG_HOME':'config','XDG_CACHE_HOME':'cache','XDG_DATA_HOME':'data','XDG_STATE_HOME':'state','TMPDIR':'tmp','GOCACHE':'gocache'}.items():
+    p = run / suffix
+    p.mkdir()
+    env[key] = str(p)
+env.update(GOPROXY='off',GOTELEMETRY='off',GOENV='off',GOSUMDB='off',GOTOOLCHAIN='local',CGO_ENABLED='0',GOMODCACHE='/Users/nobocop/go/pkg/mod',GIT_CONFIG_GLOBAL='/dev/null',GIT_CONFIG_NOSYSTEM='1',GIT_TERMINAL_PROMPT='0',TZ='UTC')
+records = []
+def call(argv, cwd=repo, overrides=None):
+    e = env.copy(); e.update(overrides or {})
+    p = subprocess.run([str(a) for a in argv], cwd=cwd, env=e, text=True, capture_output=True, timeout=240)
+    rec = {'argv':[str(a) for a in argv],'cwd':str(cwd),'exit':p.returncode,'stdout':p.stdout,'stderr':p.stderr}
+    records.append(rec)
+    return rec
+def ok(argv,cwd=repo,overrides=None):
+    r=call(argv,cwd,overrides)
+    if r['exit'] != 0: raise RuntimeError(json.dumps(r,ensure_ascii=False))
+    return r
+binary=run/'canopy-lite'
+ok(['go','build','-mod=readonly','-o',binary,'./cmd/canopy'])
+api=ok(['go','run','-mod=readonly','./review_probes/final'],overrides={'FINAL_API_ROOT':str(run/'api')})
+api_result=json.loads(api['stdout'])
+def canopy(w,args,overrides=None): return call([binary,*args,'--wiki',w,'--json'],overrides=overrides)
+def init(name):
+    w=run/name; w.mkdir()
+    r=canopy(w,['init']); assert r['exit']==0,r
+    return w
+def git(w,*args): return ok(['git','-C',w,*args])
+def decode_sequence(raw):
+    dec=json.JSONDecoder(); vals=[]; s=raw
+    while s.strip():
+        s=s.lstrip(); obj,n=dec.raw_decode(s); vals.append(obj); s=s[n:]
+    return vals
+def framing(r):
+    try: json.loads(r['stdout']); single=True
+    except ValueError: single=False
+    try: vals=decode_sequence(r['stdout'])
+    except ValueError: vals=None
+    lines=r['stdout'].splitlines()
+    try: [json.loads(line) for line in lines if line.strip()]; jsonl=bool(lines)
+    except ValueError: jsonl=False
+    return {'exit':r['exit'],'single_JSON':single,'JSON_values':vals,'JSONL':jsonl}
+
+w=init('json wiki')
+git(w,'init','--initial-branch=main')
+git(w,'config','user.name','Canopy Fixture')
+git(w,'config','user.email','fixture@invalid.local')
+bare=run/'remote.git'
+ok(['git','init','--bare','--initial-branch=main',bare])
+git(w,'add','-A'); git(w,'commit','-m','fixture baseline')
+git(w,'remote','add','origin',bare); git(w,'push','-u','origin','main')
+body=run/'body.md'; body.write_text('First authored body.\n')
+new=canopy(w,['new','Alpha','--slug','alpha','--type','concept','--body-file',body,'--sync'])
+body.write_text('Second authored body.\n')
+update=canopy(w,['update','alpha','--body-file',body,'--sync'])
+body.write_text('Third authored body.\n')
+plain=canopy(w,['update','alpha','--body-file',body])
+framed={name:framing(r) for name,r in [('new_sync',new),('update_sync',update),('update_plain',plain)]}
+assert all(r['exit']==0 for r in (new,update,plain))
+
+# Failure after the page has been written: a generated index path is a directory.
+index=w/'index/entities.md'; index.unlink(); index.mkdir()
+body.write_text('Partial update survives in the wiki.\n')
+partial_update=canopy(w,['update','alpha','--body-file',body])
+page=w/'concepts/alpha.md'
+partial={'update_exit':partial_update['exit'],'update_stdout':partial_update['stdout'],'page_contains_intended':body.read_text().strip() in page.read_text(),'external_body_exists':body.exists()}
+index.rmdir()
+okrec=canopy(w,['update','alpha','--body-file',body]); assert okrec['exit']==0
+co=canopy(w,['checkout','alpha']); assert co['exit']==0
+copy=pathlib.Path(json.loads(co['stdout'])['path'])
+copy.write_text(copy.read_text().replace('Partial update survives in the wiki.','Partial checkin survives in the wiki.'))
+backup=run/'checkin-backup.md'; shutil.copyfile(copy,backup)
+index.unlink(); index.mkdir()
+checkin=canopy(w,['checkin','alpha'])
+partial.update(checkin_exit=checkin['exit'],checkin_stdout=checkin['stdout'],checkin_copy_exists=copy.exists(),checkin_backup_exists=backup.exists(),checkin_page_contains_intended='Partial checkin survives in the wiki.' in page.read_text())
+
+# Use the current wall clock, selecting an ordinary TZ whose local date remains
+# the previous UTC day after +24h. If the hour cannot support this condition,
+# report it as a non-reproduction instead of changing the system clock.
+s=init('snooze wiki'); (s/'concepts').mkdir()
+(s/'concepts/alpha.md').write_text('---\ntitle: Alpha\ncreated: 2020-01-01\nupdated: 2020-01-01\ntype: concept\ntags: []\n---\n\nOld fixture page.\n')
+utc=datetime.datetime.now(datetime.timezone.utc)
+tz='Etc/GMT+12'
+before=canopy(s,['resurface','--strategy','random','--peek'],{'TZ':tz})
+one=canopy(s,['resurface','feedback','alpha','--snooze','1'],{'TZ':tz})
+one_state=json.loads((s/'_meta/resurface/state.json').read_text())
+one_pick=canopy(s,['resurface','--strategy','random','--peek'],{'TZ':tz})
+seven=canopy(s,['resurface','feedback','alpha','--snooze','7'],{'TZ':tz})
+seven_state=json.loads((s/'_meta/resurface/state.json').read_text())
+seven_pick=canopy(s,['resurface','--strategy','random','--peek'],{'TZ':tz})
+snooze={'utc':utc.isoformat(),'TZ':tz,'one_state':one_state,'one_response':json.loads(one['stdout']),'before':json.loads(before['stdout']),'one_after':json.loads(one_pick['stdout']),'seven_state':seven_state,'seven_response':json.loads(seven['stdout']),'seven_after':json.loads(seven_pick['stdout']),'wall_clock_condition':utc.hour<12}
+
+result={'head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True,env=env).strip(),'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'environment':{k:env[k] for k in ['HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME','XDG_DATA_HOME','XDG_STATE_HOME','TMPDIR','GOCACHE','GOPROXY','GOTELEMETRY','GOENV','GOMODCACHE','CGO_ENABLED']},'api':api_result,'stdout_framing':framed,'partial_apply':partial,'snooze_CLI':snooze,'records':records,'limits':['No browser, ORT inference, model download, installed asset changes, production performance, or user wiki access.','Synthetic engines establish local cache behavior, not retrieval quality.','Current wall-clock snooze CLI reproduces only when its stated TZ condition holds.']}
+(run/'results.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'results':str(run/'results.json'),'stdout_framing':framed,'partial_apply':partial,'snooze_CLI':snooze},ensure_ascii=False,indent=2))

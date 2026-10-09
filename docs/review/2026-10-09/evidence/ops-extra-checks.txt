@@ -1,0 +1,96 @@
+대상: v0.10.0 / ede67e302a8487aecbb4d59587a8686292018cf6
+호스트: darwin/arm64, go1.27.1 (go.mod: go 1.26.4)
+모든 Go 호출: GOCACHE=/private/tmp/canopy-review/go-cache GOPROXY=off GOTOOLCHAIN=local
+후속 빌드/테스트/모든 canopy 실행: HOME, XDG_CONFIG_HOME, XDG_CACHE_HOME,
+XDG_DATA_HOME, XDG_STATE_HOME, TMPDIR는 /private/tmp/canopy-audit-20261009/ops-term398 아래.
+초기 SDK version/build/vet/mod verify/tidy -diff 호출은 기존 HOME 상속.
+따라서 초기 Go telemetry 기록 유무는 미확인; 실제 canopy 설정 변경 명령은 없음.
+
+빌드 (모두 exit 0, 기존 root canopy 파일을 만들지 않음):
+CGO_ENABLED=0 go build -ldflags '-X github.com/neutrospec/canopy/internal/buildinfo.version=v0.10.0 -X github.com/neutrospec/canopy/internal/buildinfo.commit=ede67e3 -X github.com/neutrospec/canopy/internal/buildinfo.date=audit' -o /private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-lite ./cmd/canopy
+CGO_ENABLED=1 CGO_LDFLAGS=-L/Users/nobocop/.local/share/canopy/lib go build -tags ORT -ldflags '-X github.com/neutrospec/canopy/internal/buildinfo.version=v0.10.0 -X github.com/neutrospec/canopy/internal/buildinfo.commit=ede67e3 -X github.com/neutrospec/canopy/internal/buildinfo.date=audit' -o /private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-ort ./cmd/canopy
+ORT linker 경고: ld: warning: ignoring duplicate libraries: '-ldl'
+CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o /private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-darwin-amd64-lite ./cmd/canopy
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-linux-amd64-lite ./cmd/canopy
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-linux-arm64-lite ./cmd/canopy
+darwin/arm64는 위의 실행한 canopy-lite 빌드로 확인.
+크로스 빌드 결과는 다른 OS/아키텍처에서 실행하지 않음.
+
+go mod verify: exit 0, all modules verified
+go vet ./... (기본 태그, CGO_LDFLAGS=''): exit 0
+go test ./cmd/canopy: exit 0, [no test files]
+goreleaser check --config .goreleaser.yaml: exit 0, 1 configuration file(s) validated
+ruby -c packaging/homebrew/canopy.rb: exit 0, Syntax OK
+bash -n scripts/brew-sha256.sh scripts/i18n-check.sh scripts/release-lineage-check.sh: exit 0
+
+go mod tidy -diff: exit 1 (기존 go.mod/go.sum 변경 없음)
+go: downloading github.com/Masterminds/semver/v3 v3.5.0
+go: downloading github.com/goccy/go-yaml v1.19.2
+go: github.com/neutrospec/canopy/internal/mermaid imports
+ github.com/dop251/goja tested by
+ github.com/dop251/goja.test imports
+ github.com/Masterminds/semver/v3: module lookup disabled by GOPROXY=off
+go: github.com/neutrospec/canopy/internal/mermaid imports
+ github.com/dop251/goja tested by
+ github.com/dop251/goja.test imports
+ github.com/goccy/go-yaml: module lookup disabled by GOPROXY=off
+위 downloading 문구는 시도이며 실제 network download는 GOPROXY=off로 거부됨.
+
+env GOOS=linux GOARCH=amd64 make -Bn deps XDG_DATA_HOME=/private/tmp/canopy-audit-20261009/ops-term398/fixtures/linux-deps
+exit 0, 출력:
+mkdir -p /private/tmp/canopy-audit-20261009/ops-term398/fixtures/linux-deps/canopy/lib
+curl -sL https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.darwin-arm64.tar.gz | tar xz -C /private/tmp/canopy-audit-20261009/ops-term398/fixtures/linux-deps/canopy/lib
+dry-run만 수행: curl/tar/deps 설치는 실행하지 않음.
+
+실제 추론에 읽기 전용으로 사용한 기존 자산:
+/opt/homebrew/lib/libonnxruntime.dylib: 19,979,920 bytes
+/Users/nobocop/.local/share/canopy/lib/libtokenizers.a: 39,029,280 bytes
+/Users/nobocop/.local/share/canopy/models/bge-m3/model.onnx: 193,354 bytes
+/Users/nobocop/.local/share/canopy/models/bge-m3/model.onnx.data: 567,735,312 bytes
+임시 data/canopy/models/bge-m3 symlink로만 연결, 모델 다운로드/양자화 없음.
+이 자산의 공식 fp32 모델 revision/양자화 출처 또는 pooling reference 적합성은 검증하지 않음.
+
+MathJax loader 추출 probe (원본 webpack 모듈, 실제 DOM/TeX 렌더러 미실행):
+node /private/tmp/canopy-audit-20261009/ops-term398/mathjax-probe.cjs
+exit 0:
+{"version":"3.2.2","mathjaxRoot":"http://localhost:8737/static/vendor"}
+{"extension":"color","resolved":"http://localhost:8737/static/vendor/input/tex/extensions/color.js"}
+{"extension":"physics","resolved":"http://localhost:8737/static/vendor/input/tex/extensions/physics.js"}
+ops-probe mathjax-static-routes (httptest, service 기동 없음): exit 0
+{"bytes":2108580,"path":"/static/vendor/tex-svg.js","status":200}
+{"bytes":19,"path":"/static/vendor/input/tex/extensions/color.js","status":404}
+{"bytes":19,"path":"/static/vendor/input/tex/extensions/physics.js","status":404}
+
+추적 소스의 정적 규모 (원래 git ls-files만 계수, review_probes 제외):
+cmd/: 생산 Go 10파일 3047행, test 파일 0
+internal/: 생산 Go 45파일 7741행, test 파일 24, Test 함수 112
+spike/: 생산 Go 3파일 133행, test 파일 0
+클라이언트: app.test.cjs 18 test 실행, 실패/skip 0
+내장 JS SHA256:
+internal/mermaid/mermaid.min.js: 74d7c46dabca328c2294733910a8aa1ed0c37451776e8d5295da38a2b758fb9b
+internal/webui/static/vendor/force-graph.min.js: 1008539bb9e171a0dc343453366451a1b3a6ded06028ef4f978608b658ba2d0a
+internal/webui/static/vendor/tex-svg.js: d4295dc33744836935c1399feece5159577b34c5c8ffb9f1c6324cd82e03a882
+force-graph 헤더: Version 1.51.4; 전체 파일 Copyright/license/LICENSE 문자열 0
+MathJax 모듈 VERSION: 3.2.2; 전체 파일 Copyright/license/LICENSE 문자열 0
+Mermaid는 일부 하위 라이브러리 license 주석을 포함: 고지가 전부 없다는 뜻은 아님.
+
+양자화 스크립트 AST 읽기 (실행/변환 없음):
+line 6: src_dir = os.path.expanduser('~/.local/share/canopy/models/bge-m3')
+line 7: dst_dir = os.path.expanduser('~/.local/share/canopy/models/bge-m3-int8')
+XDG_DATA_HOME 참조, 인수 파싱, 임시 출력 디렉토리/완료 manifest는 소스에 없음.
+
+정적 자산 확인 재현 명령 (모두 읽기 전용):
+shasum -a 256 internal/mermaid/mermaid.min.js internal/webui/static/vendor/force-graph.min.js internal/webui/static/vendor/tex-svg.js
+rg -ni 'copyright|license' internal/webui/static/vendor/force-graph.min.js internal/webui/static/vendor/tex-svg.js
+후자 두 파일은 match 없음(exit 1). Mermaid는 일부 하위 라이브러리 고지 match가 있음.
+
+probe 재현 방법 (새로운 자신 소유의 경로에서만 실행; 검토 당시의 review_probes/ops는 제거함):
+mkdir -p review_probes/ops-repro
+cp docs/review/2026-10-09/evidence/ops-probe.go.txt review_probes/ops-repro/main.go
+GOCACHE=/private/tmp/canopy-review/go-cache GOPROXY=off GOTOOLCHAIN=local CGO_ENABLED=0 go build -o <자신의 임시 디렉토리>/ops-probe-lite ./review_probes/ops-repro
+<자신의 임시 디렉토리>/ops-probe-lite render-parity
+<자신의 임시 디렉토리>/ops-probe-lite mathjax-static-routes
+실행 전 HOME/XDG_CONFIG_HOME/XDG_CACHE_HOME/XDG_DATA_HOME/XDG_STATE_HOME/TMPDIR를 자신의 임시 영역으로 지정한다.
+이 두 모드는 외부 모델·브라우저·listen socket을 사용하지 않는다.
+실제 추론은 CGO_ENABLED=1 CGO_LDFLAGS=-L<기존 libtokenizers 경로>와 -tags ORT로 같은 probe를 빌드하고 embed-smoke를 호출한다.
+사용한 Go probe 원문은 빌드한 review_probes/ops/main.go와 동일함을 cleanup 때 bytes 비교했음.

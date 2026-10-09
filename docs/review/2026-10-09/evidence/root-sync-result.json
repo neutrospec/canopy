@@ -1,0 +1,226 @@
+{
+  "fixture": "/private/tmp/canopy-root-sync-sv00f6l2",
+  "sync_exit": 0,
+  "sync_stdout": "{\n  \"committed\": true,\n  \"message\": \"audit sync\",\n  \"pushed\": true\n}\n",
+  "sync_stderr": "",
+  "working_body": "---\ntitle: Conflict\ncreated: 2026-01-01\nupdated: 2026-01-01\ntype: concept\ntags: []\n---\n\n# Conflict\n\n<<<<<<< Updated upstream\nvalue = remote\n=======\nvalue = local\n>>>>>>> Stashed changes\n",
+  "remote_body": "---\ntitle: Conflict\ncreated: 2026-01-01\nupdated: 2026-01-01\ntype: concept\ntags: []\n---\n\n# Conflict\n\n<<<<<<< Updated upstream\nvalue = remote\n=======\nvalue = local\n>>>>>>> Stashed changes\n",
+  "remote_has_conflict_markers": true,
+  "records": [
+    {
+      "argv": [
+        "git",
+        "init",
+        "--bare",
+        "--initial-branch=main",
+        "/private/tmp/canopy-root-sync-sv00f6l2/origin.git"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "Initialized empty Git repository in /private/tmp/canopy-root-sync-sv00f6l2/origin.git/\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "clone",
+        "/private/tmp/canopy-root-sync-sv00f6l2/origin.git",
+        "/private/tmp/canopy-root-sync-sv00f6l2/a"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into '/private/tmp/canopy-root-sync-sv00f6l2/a'...\nwarning: You appear to have cloned an empty repository.\ndone.\n"
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-root-sync-sv00f6l2/a",
+        "config",
+        "user.name",
+        "Audit"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-root-sync-sv00f6l2/a",
+        "config",
+        "user.email",
+        "audit@example.invalid"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/canopy-lite",
+        "init",
+        "--wiki",
+        "/private/tmp/canopy-root-sync-sv00f6l2/a",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-root-sync-sv00f6l2/cache/canopy/index/2e667823c8fb.db\",\n  \"default_wiki_set\": true,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-root-sync-sv00f6l2/a\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-root-sync-sv00f6l2/a",
+        "add",
+        "-A"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-root-sync-sv00f6l2/a",
+        "commit",
+        "-m",
+        "base"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "[main (root-commit) 95aeb5a] base\n 2 files changed, 31 insertions(+)\n create mode 100644 canopy.toml\n create mode 100644 concepts/conflict.md\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-root-sync-sv00f6l2/a",
+        "push",
+        "-u",
+        "origin",
+        "main"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "branch 'main' set up to track 'origin/main'.\n",
+      "stderr": "To /private/tmp/canopy-root-sync-sv00f6l2/origin.git\n * [new branch]      main -> main\n"
+    },
+    {
+      "argv": [
+        "git",
+        "clone",
+        "/private/tmp/canopy-root-sync-sv00f6l2/origin.git",
+        "/private/tmp/canopy-root-sync-sv00f6l2/b"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into '/private/tmp/canopy-root-sync-sv00f6l2/b'...\ndone.\n"
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-root-sync-sv00f6l2/b",
+        "config",
+        "user.name",
+        "Audit"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-root-sync-sv00f6l2/b",
+        "config",
+        "user.email",
+        "audit@example.invalid"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-root-sync-sv00f6l2/b",
+        "add",
+        "-A"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-root-sync-sv00f6l2/b",
+        "commit",
+        "-m",
+        "remote edit"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "[main 459e91e] remote edit\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-root-sync-sv00f6l2/b",
+        "push"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "To /private/tmp/canopy-root-sync-sv00f6l2/origin.git\n   95aeb5a..459e91e  main -> main\n"
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/canopy-lite",
+        "sync",
+        "--wiki",
+        "/private/tmp/canopy-root-sync-sv00f6l2/a",
+        "--json",
+        "-m",
+        "audit sync"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "{\n  \"committed\": true,\n  \"message\": \"audit sync\",\n  \"pushed\": true\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "--git-dir",
+        "/private/tmp/canopy-root-sync-sv00f6l2/origin.git",
+        "show",
+        "main:concepts/conflict.md"
+      ],
+      "cwd": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "exit": 0,
+      "stdout": "---\ntitle: Conflict\ncreated: 2026-01-01\nupdated: 2026-01-01\ntype: concept\ntags: []\n---\n\n# Conflict\n\n<<<<<<< Updated upstream\nvalue = remote\n=======\nvalue = local\n>>>>>>> Stashed changes\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,2641 @@
+Target HEAD: ede67e302a8487aecbb4d59587a8686292018cf6
+These are read-only source extracts, not proposed changes.
+
+FILE cmd/canopy/write.go SHA256 f24e8c18f2a83bbdb992698810addba71873c38731ccc39798fdb9fc2d6a1131
+RANGE 110-216
+  110 		n := 0
+  111 		for _, t := range p.Tags {
+  112 			if tagSet[t] {
+  113 				n++
+  114 			}
+  115 		}
+  116 		return n
+  117 	}
+  118 	related := []store.Hit{}
+  119 	for _, h := range hits {
+  120 		if h.Slug == selfSlug || h.Score < relatedThreshold {
+  121 			continue
+  122 		}
+  123 		related = append(related, h)
+  124 	}
+  125 	sort.SliceStable(related, func(i, j int) bool {
+  126 		return overlap(related[i].Slug) > overlap(related[j].Slug)
+  127 	})
+  128 	if len(related) > 5 {
+  129 		related = related[:5]
+  130 	}
+  131 	return related
+  132 }
+  133 
+  134 // afterWrite runs the shared invariant pipeline (writeops.Run — same
+  135 // path the web UI editor uses), then the CLI-only tail: optional sync
+  136 // and the NEXT hint.
+  137 func afterWrite(w *config.Wiki, action, relPath string, related []string, note string, eff reconcile.Effects, syncNow bool, syncMsg string) error {
+  138 	if _, err := writeops.Run(w, action, relPath, related, note, eff); err != nil {
+  139 		return err
+  140 	}
+  141 	if syncNow {
+  142 		return runSync(w, syncMsg)
+  143 	}
+  144 	if !flagJSON {
+  145 		fmt.Println("NEXT: canopy sync   (commit & push this change, alone or batched with more writes)")
+  146 	}
+  147 	return nil
+  148 }
+  149 
+  150 func runSync(w *config.Wiki, message string) error {
+  151 	st, err := gitops.GetStatus(w.Root)
+  152 	if err != nil {
+  153 		return err
+  154 	}
+  155 	if !st.IsRepo {
+  156 		return fmt.Errorf("%s is not a git repository", w.Root)
+  157 	}
+  158 	out, err := gitops.Pull(w.Root)
+  159 	if err != nil {
+  160 		return fmt.Errorf("pull failed (resolve manually in %s): %w", w.Root, err)
+  161 	}
+  162 	if out != "" && !flagJSON {
+  163 		fmt.Println("pull:", firstLine(out))
+  164 	}
+  165 
+  166 	st, err = gitops.GetStatus(w.Root)
+  167 	if err != nil {
+  168 		return err
+  169 	}
+  170 	committed := false
+  171 	dirtyCount := st.Dirty
+  172 	if st.Dirty > 0 {
+  173 		// Non-blocking by design (reconcile-design.md): warn, never gate —
+  174 		// but a forgotten judgment must not pass silently into main (K6).
+  175 		if n, ok, err := reconcile.Count(w); err == nil && ok && n > 0 && !flagJSON {
+  176 			fmt.Fprintf(os.Stderr, "⚠ 미정규화 외부 변경 %d건이 함께 커밋됩니다 — 검토는 `canopy reconcile`\n", n)
+  177 		}
+  178 		if message == "" {
+  179 			message = autoMessage(st.Changed)
+  180 		}
+  181 		// Log the sync itself before committing so the entry rides along.
+  182 		if err := logops.Append(w, "sync", "", nil, message); err != nil {
+  183 			return fmt.Errorf("log sync: %w", err)
+  184 		}
+  185 		if _, err := gitops.CommitAll(w.Root, message); err != nil {
+  186 			return err
+  187 		}
+  188 		committed = true
+  189 	}
+  190 	st, err = gitops.GetStatus(w.Root)
+  191 	if err != nil {
+  192 		return err
+  193 	}
+  194 	pushed := false
+  195 	if st.Ahead > 0 {
+  196 		if _, err := gitops.Push(w.Root); err != nil {
+  197 			return fmt.Errorf("push failed — commits are safe locally, rerun `canopy sync`: %w", err)
+  198 		}
+  199 		pushed = true
+  200 	}
+  201 	attention.LogLifecycle(w, time.Now(), "", attention.DoorAgent, attention.KindSyncDone,
+  202 		fmt.Sprintf("committed=%v pushed=%v", committed, pushed))
+  203 	if flagJSON {
+  204 		return emitJSON(map[string]any{"committed": committed, "pushed": pushed, "message": message})
+  205 	}
+  206 	switch {
+  207 	case committed && pushed:
+  208 		fmt.Printf("✓ synced: committed %d change(s) and pushed\n", dirtyCount)
+  209 	case pushed:
+  210 		fmt.Println("✓ synced: pushed pending commit(s)")
+  211 	case committed:
+  212 		fmt.Println("✓ committed (no remote push configured or nothing to push)")
+  213 	default:
+  214 		fmt.Println("✓ already in sync — nothing to commit or push")
+  215 	}
+  216 	return nil
+RANGE 256-315
+  256 				return err
+  257 			}
+  258 			banner(w)
+  259 			dir, err := dirForType(w, typ)
+  260 			if err != nil {
+  261 				return err
+  262 			}
+  263 			if err := validateTags(w, tags); err != nil {
+  264 				return err
+  265 			}
+  266 			if slug == "" {
+  267 				slug = wiki.Slugify(title)
+  268 				if slug == "" {
+  269 					return fmt.Errorf("title has no ASCII letters to derive a filename from — pass an explicit English --slug (filenames must be English)")
+  270 				}
+  271 			}
+  272 			if !wiki.ValidFilename(slug + ".md") {
+  273 				return fmt.Errorf("invalid slug %q: lowercase ASCII letters, digits, hyphens only", slug)
+  274 			}
+  275 			scan, err := wiki.Scan(w)
+  276 			if err != nil {
+  277 				return err
+  278 			}
+  279 			if p, exists := scan.BySlug[strings.ToLower(slug)]; exists {
+  280 				return fmt.Errorf("page already exists: %s — update it instead of duplicating", p.RelPath)
+  281 			}
+  282 			for _, l := range links {
+  283 				if _, ok := scan.BySlug[wiki.NormalizeLink(l)]; !ok {
+  284 					return fmt.Errorf("--links target %q does not exist (run `canopy search` to find real pages; links to nonexistent pages are the top lint issue)", l)
+  285 				}
+  286 			}
+  287 			body := ""
+  288 			if bodyFile != "" {
+  289 				var data []byte
+  290 				if bodyFile == "-" {
+  291 					data, err = io.ReadAll(os.Stdin)
+  292 				} else {
+  293 					data, err = os.ReadFile(bodyFile)
+  294 				}
+  295 				if err != nil {
+  296 					return err
+  297 				}
+  298 				body = string(data)
+  299 			}
+  300 			today := time.Now().Format("2006-01-02")
+  301 			content := wiki.NewPageContent(title, typ, today, tags, links, body)
+  302 			if err := validateMermaid(content); err != nil {
+  303 				return err
+  304 			}
+  305 			relPath := filepath.Join(dir, slug+".md")
+  306 			// Fresh wikis start without category directories.
+  307 			if err := os.MkdirAll(filepath.Join(w.Root, dir), 0o755); err != nil {
+  308 				return err
+  309 			}
+  310 			if err := os.WriteFile(filepath.Join(w.Root, relPath), []byte(content), 0o644); err != nil {
+  311 				return err
+  312 			}
+  313 			if !flagJSON {
+  314 				fmt.Printf("✓ created %s\n", relPath)
+  315 			}
+RANGE 370-411
+  370 				return err
+  371 			}
+  372 			banner(w)
+  373 			scan, err := wiki.Scan(w)
+  374 			if err != nil {
+  375 				return err
+  376 			}
+  377 			p, ok := scan.BySlug[wiki.NormalizeLink(args[0])]
+  378 			if !ok {
+  379 				return fmt.Errorf("page not found: %s", args[0])
+  380 			}
+  381 			path := filepath.Join(w.Root, p.RelPath)
+  382 			raw, err := os.ReadFile(path)
+  383 			if err != nil {
+  384 				return err
+  385 			}
+  386 			content := string(raw)
+  387 			if bodyFile != "" {
+  388 				var data []byte
+  389 				if bodyFile == "-" {
+  390 					data, err = io.ReadAll(os.Stdin)
+  391 				} else {
+  392 					data, err = os.ReadFile(bodyFile)
+  393 				}
+  394 				if err != nil {
+  395 					return err
+  396 				}
+  397 				content = wiki.ReplaceBody(content, string(data))
+  398 			}
+  399 			content = wiki.SetFrontmatterField(content, "updated", time.Now().Format("2006-01-02"))
+  400 			// Gate replaced bodies AND direct file edits being normalized —
+  401 			// both surface the parse error to the agent who can fix it now.
+  402 			if err := validateMermaid(content); err != nil {
+  403 				return err
+  404 			}
+  405 			if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+  406 				return err
+  407 			}
+  408 			if !flagJSON {
+  409 				fmt.Printf("✓ updated %s\n", p.RelPath)
+  410 			}
+  411 			return afterWrite(w, "update", p.RelPath, p.Tags, "", reconcile.Effects{Written: []string{p.RelPath}}, syncNow, syncMsg)
+RANGE 440-525
+  440 			}
+  441 			p, ok := scan.BySlug[wiki.NormalizeLink(args[0])]
+  442 			if !ok {
+  443 				return fmt.Errorf("page not found: %s", args[0])
+  444 			}
+  445 			typ, slug := p.Type, p.Slug
+  446 			if newType != "" {
+  447 				typ = newType
+  448 			}
+  449 			if newSlug != "" {
+  450 				if !wiki.ValidFilename(newSlug + ".md") {
+  451 					return fmt.Errorf("invalid slug %q", newSlug)
+  452 				}
+  453 				if _, exists := scan.BySlug[strings.ToLower(newSlug)]; exists && !strings.EqualFold(newSlug, p.Slug) {
+  454 					return fmt.Errorf("target slug already exists: %s", newSlug)
+  455 				}
+  456 				slug = newSlug
+  457 			}
+  458 			dir, err := dirForType(w, typ)
+  459 			if err != nil {
+  460 				return err
+  461 			}
+  462 			oldPath := filepath.Join(w.Root, p.RelPath)
+  463 			newRel := filepath.Join(dir, slug+".md")
+  464 			raw, err := os.ReadFile(oldPath)
+  465 			if err != nil {
+  466 				return err
+  467 			}
+  468 			content := string(raw)
+  469 			if typ != p.Type {
+  470 				content = wiki.SetFrontmatterField(content, "type", typ)
+  471 			}
+  472 			content = wiki.SetFrontmatterField(content, "updated", time.Now().Format("2006-01-02"))
+  473 			if err := os.MkdirAll(filepath.Join(w.Root, dir), 0o755); err != nil {
+  474 				return err
+  475 			}
+  476 			if err := os.WriteFile(filepath.Join(w.Root, newRel), []byte(content), 0o644); err != nil {
+  477 				return err
+  478 			}
+  479 			if newRel != p.RelPath {
+  480 				if err := os.Remove(oldPath); err != nil {
+  481 					return err
+  482 				}
+  483 			}
+  484 			// Retarget inbound links on rename. Rewritten pages join the
+  485 			// mutation's declared effects so the ledger absorbs them too.
+  486 			eff := reconcile.Effects{Written: []string{newRel}}
+  487 			if newRel != p.RelPath {
+  488 				eff.Removed = []string{p.RelPath}
+  489 			}
+  490 			if !strings.EqualFold(slug, p.Slug) {
+  491 				for _, other := range scan.Pages {
+  492 					if other.Slug == p.Slug {
+  493 						continue
+  494 					}
+  495 					op := filepath.Join(w.Root, other.RelPath)
+  496 					b, err := os.ReadFile(op)
+  497 					if err != nil {
+  498 						return err
+  499 					}
+  500 					rewritten := wiki.RewriteLinks(string(b), p.Slug, slug)
+  501 					if rewritten != string(b) {
+  502 						if err := os.WriteFile(op, []byte(rewritten), 0o644); err != nil {
+  503 							return err
+  504 						}
+  505 						eff.Written = append(eff.Written, other.RelPath)
+  506 						if !flagJSON {
+  507 							fmt.Printf("  relinked %s\n", other.RelPath)
+  508 						}
+  509 					}
+  510 				}
+  511 			}
+  512 			// Read history follows the page across renames.
+  513 			if !strings.EqualFold(slug, p.Slug) {
+  514 				if rs, err := reads.Load(w); err == nil && rs.IsRead(p.Slug) {
+  515 					rs.Rename(p.Slug, slug)
+  516 					if err := rs.Save(w); err != nil {
+  517 						fmt.Fprintf(os.Stderr, "warning: read history not migrated: %v\n", err)
+  518 					}
+  519 				}
+  520 			}
+  521 			if !flagJSON {
+  522 				fmt.Printf("✓ moved %s → %s\n", p.RelPath, newRel)
+  523 			}
+  524 			return afterWrite(w, "move", newRel, nil, "from "+p.RelPath, eff, syncNow, syncMsg)
+  525 		},
+RANGE 555-585
+  555 			sources := scan.Backlinks()[strings.ToLower(p.Slug)]
+  556 			if len(sources) > 0 && !force {
+  557 				return fmt.Errorf("%s has %d backlink(s) (%s) — they would break; use `canopy archive` or --force",
+  558 					p.Slug, len(sources), strings.Join(sources, ", "))
+  559 			}
+  560 			if err := os.Remove(filepath.Join(w.Root, p.RelPath)); err != nil {
+  561 				return err
+  562 			}
+  563 			eff := reconcile.Effects{Removed: []string{p.RelPath}}
+  564 			// --force delete: strip now-dangling links.
+  565 			for _, src := range sources {
+  566 				sp := scan.BySlug[strings.ToLower(src)]
+  567 				path := filepath.Join(w.Root, sp.RelPath)
+  568 				b, err := os.ReadFile(path)
+  569 				if err != nil {
+  570 					return err
+  571 				}
+  572 				if err := os.WriteFile(path, []byte(wiki.StripLinks(string(b), p.Slug)), 0o644); err != nil {
+  573 					return err
+  574 				}
+  575 				eff.Written = append(eff.Written, sp.RelPath)
+  576 			}
+  577 			if !flagJSON {
+  578 				fmt.Printf("✓ deleted %s\n", p.RelPath)
+  579 			}
+  580 			return afterWrite(w, "delete", p.RelPath, nil, "", eff, syncNow, syncMsg)
+  581 		},
+  582 	}
+  583 	c.Flags().BoolVar(&force, "force", false, "delete even with backlinks (they become plain text)")
+  584 	c.Flags().BoolVar(&syncNow, "sync", false, "run canopy sync right after")
+  585 	c.Flags().StringVarP(&syncMsg, "message", "m", "", "commit message when using --sync")
+RANGE 605-671
+  605 			}
+  606 			p, ok := scan.BySlug[wiki.NormalizeLink(args[0])]
+  607 			if !ok {
+  608 				return fmt.Errorf("page not found: %s", args[0])
+  609 			}
+  610 			dstDir := filepath.Join(w.Root, "_archive", p.Dir)
+  611 			if err := os.MkdirAll(dstDir, 0o755); err != nil {
+  612 				return err
+  613 			}
+  614 			if err := os.Rename(filepath.Join(w.Root, p.RelPath), filepath.Join(dstDir, filepath.Base(p.RelPath))); err != nil {
+  615 				return err
+  616 			}
+  617 			eff := reconcile.Effects{Removed: []string{p.RelPath}}
+  618 			for _, src := range scan.Backlinks()[strings.ToLower(p.Slug)] {
+  619 				sp := scan.BySlug[strings.ToLower(src)]
+  620 				path := filepath.Join(w.Root, sp.RelPath)
+  621 				b, err := os.ReadFile(path)
+  622 				if err != nil {
+  623 					return err
+  624 				}
+  625 				if err := os.WriteFile(path, []byte(wiki.StripLinks(string(b), p.Slug)), 0o644); err != nil {
+  626 					return err
+  627 				}
+  628 				eff.Written = append(eff.Written, sp.RelPath)
+  629 				if !flagJSON {
+  630 					fmt.Printf("  unlinked in %s\n", sp.RelPath)
+  631 				}
+  632 			}
+  633 			if !flagJSON {
+  634 				fmt.Printf("✓ archived %s → _archive/%s\n", p.RelPath, p.RelPath)
+  635 			}
+  636 			return afterWrite(w, "archive", p.RelPath, nil, "", eff, syncNow, syncMsg)
+  637 		},
+  638 	}
+  639 	c.Flags().BoolVar(&syncNow, "sync", false, "run canopy sync right after")
+  640 	c.Flags().StringVarP(&syncMsg, "message", "m", "", "commit message when using --sync")
+  641 	return c
+  642 }
+  643 
+  644 func cmdSync() *cobra.Command {
+  645 	var msg string
+  646 	c := &cobra.Command{
+  647 		Use:   "sync",
+  648 		Short: "pull --rebase → commit all wiki changes → push → refresh index",
+  649 		RunE: func(cmd *cobra.Command, args []string) error {
+  650 			w, err := loadWiki()
+  651 			if err != nil {
+  652 				return err
+  653 			}
+  654 			if err := runSync(w, msg); err != nil {
+  655 				return err
+  656 			}
+  657 			// Post-pull content may differ; keep the derived index fresh.
+  658 			var eng embed.Engine
+  659 			if embed.Available() && embed.ModelAvailable() {
+  660 				if e, err := embed.New(); err == nil {
+  661 					eng = e
+  662 					defer eng.Close()
+  663 				}
+  664 			}
+  665 			st, err := store.Open(w.DBPath())
+  666 			if err != nil {
+  667 				return err
+  668 			}
+  669 			defer st.Close()
+  670 			_, err = indexer.Reindex(w, st, nil, eng, nil)
+  671 			return err
+
+FILE cmd/canopy/checkout.go SHA256 d8ceed81795d1d30bec16233a025ac6150e187e5924a3cf14dab6065957680b3
+RANGE 45-80
+   45 				for _, o := range open {
+   46 					state := "unmodified"
+   47 					if o.Modified {
+   48 						state = "modified"
+   49 					}
+   50 					fmt.Printf("%s  (%s, since %s)\n  %s\n", o.Slug, state, o.OpenedAt, o.Path)
+   51 				}
+   52 				return nil
+   53 			}
+   54 			scan, err := wiki.Scan(w)
+   55 			if err != nil {
+   56 				return err
+   57 			}
+   58 			info, err := checkout.Checkout(w, scan, args[0])
+   59 			if err != nil {
+   60 				return err
+   61 			}
+   62 			// A checkout hands the agent the full page content — record it
+   63 			// like a show (H6/H7 apply; meta distinguishes it in events).
+   64 			touchAttention(w, []string{info.Slug}, attention.KindShow, "checkout")
+   65 			if flagJSON {
+   66 				return emitJSON(info)
+   67 			}
+   68 			if info.Modified {
+   69 				fmt.Fprintln(os.Stderr, "already checked out with edits in progress — continuing on the same copy")
+   70 			}
+   71 			fmt.Printf("✓ checked out %s\n", info.RelPath)
+   72 			fmt.Printf("  %s\n", info.Path)
+   73 			fmt.Println("edit that file with your own tools, then: canopy checkin " + info.Slug)
+   74 			return nil
+   75 		},
+   76 	}
+   77 	c.Flags().BoolVar(&list, "list", false, "list open checkouts (slug, state, path)")
+   78 	return c
+   79 }
+   80 
+RANGE 108-132
+  108 			res, err := checkout.Checkin(w, scan, args[0], mermaid.NewValidator())
+  109 			if err != nil {
+  110 				return err
+  111 			}
+  112 			for _, warn := range res.Warnings {
+  113 				fmt.Fprintln(os.Stderr, "⚠ "+warn)
+  114 			}
+  115 			if res.Unchanged {
+  116 				if flagJSON {
+  117 					return emitJSON(res)
+  118 				}
+  119 				fmt.Printf("no changes — working copy of %s reclaimed\n", args[0])
+  120 				return nil
+  121 			}
+  122 			if !flagJSON {
+  123 				fmt.Printf("✓ checked in %s (%d → %d lines)\n", res.RelPath, res.OldLines, res.NewLines)
+  124 			}
+  125 			p := scan.BySlug[wiki.NormalizeLink(args[0])]
+  126 			if err := afterWrite(w, "update", res.RelPath, p.Tags, "", reconcile.Effects{Written: []string{res.RelPath}}, syncNow, syncMsg); err != nil {
+  127 				return err
+  128 			}
+  129 			if flagJSON {
+  130 				return emitJSON(res)
+  131 			}
+  132 			return nil
+
+FILE cmd/canopy/main.go SHA256 bc6d6c854514a359d0271b4332f2f175c1eb81679e2ce86dd48f5c3993f0e34d
+RANGE 246-270
+  246 			scan, err := wiki.Scan(w)
+  247 			if err != nil {
+  248 				return err
+  249 			}
+  250 			git, err := gitops.GetStatus(w.Root)
+  251 			if err != nil {
+  252 				return err
+  253 			}
+  254 			recN, recOn, _ := reconcile.Count(w)
+  255 			taskN, _ := tasks.PendingCount(w)
+  256 			openCO, _ := checkout.Open(w)
+  257 			if flagJSON {
+  258 				out := map[string]any{
+  259 					"root":           w.Root,
+  260 					"pages":          len(scan.Pages),
+  261 					"stray_root":     scan.StrayRoot,
+  262 					"git":            git,
+  263 					"initialized":    w.HasTOML,
+  264 					"tasks_pending":  taskN,
+  265 					"checkouts_open": len(openCO),
+  266 				}
+  267 				if recOn {
+  268 					out["unreconciled"] = recN
+  269 				}
+  270 				return emitJSON(out)
+RANGE 388-408
+  388 			if mode != "keyword" {
+  389 				eng, err = newEngine()
+  390 				if err != nil {
+  391 					if mode == "semantic" {
+  392 						return err
+  393 					}
+  394 					fmt.Fprintf(os.Stderr, "hybrid → keyword only (%v)\n", err)
+  395 					mode = "keyword"
+  396 				} else {
+  397 					defer eng.Close()
+  398 				}
+  399 			}
+  400 
+  401 			st, _, err := refreshIndex(w, eng)
+  402 			if err != nil {
+  403 				return err
+  404 			}
+  405 			defer st.Close()
+  406 
+  407 			var hits []store.Hit
+  408 			var kw, sem []store.Hit
+
+FILE cmd/canopy/resurface.go SHA256 c8ab6b4143bea1ec4509dff9ad85c7d3a6d2a65c4bf636bbe8eeee96895b2011
+RANGE 35-55
+   35 				return err
+   36 			}
+   37 			st, err := resurface.LoadState(w)
+   38 			if err != nil {
+   39 				return err
+   40 			}
+   41 			now := time.Now()
+   42 			rng := rand.New(rand.NewSource(now.UnixNano()))
+   43 			// Attention aggregates keep recently-accessed pages out of the
+   44 			// pool (H6); on load failure fall back to edit dates alone.
+   45 			rd, err := reads.Load(w)
+   46 			if err != nil {
+   47 				rd = nil
+   48 			}
+   49 			picks, err := resurface.PickPages(scan, st, rd, strategy, n, now, rng)
+   50 			if err != nil {
+   51 				return err
+   52 			}
+   53 			if !peek && len(picks) > 0 {
+   54 				var slugs []string
+   55 				for _, p := range picks {
+RANGE 121-135
+  121 				return emitJSON(map[string]any{"slug": slug, "recorded": true})
+  122 			}
+  123 			fmt.Println("✓ recorded")
+  124 			return nil
+  125 		},
+  126 	}
+  127 	c.Flags().BoolVar(&up, "up", false, "this pick was valuable")
+  128 	c.Flags().BoolVar(&down, "down", false, "this pick was noise (120d cooldown)")
+  129 	c.Flags().IntVar(&snooze, "snooze", 0, "hide this page for N days")
+  130 	return c
+  131 }
+  132 
+  133 func cmdBridge() *cobra.Command {
+  134 	var n int
+  135 	var minSim float64
+
+FILE internal/gitops/gitops.go SHA256 8a997f19cc08d59dc598748049d2c22d74e4bfc177aa718bb094f3a2d1d8b772
+RANGE 65-86
+   65 		}
+   66 	}
+   67 	return st, nil
+   68 }
+   69 
+   70 // Pull rebases local work onto origin. Called before committing so a
+   71 // user's direct edits (e.g. via Obsidian on another machine) merge in.
+   72 func Pull(dir string) (string, error) {
+   73 	out, err := run(dir, "pull", "--rebase", "--autostash")
+   74 	if err != nil && strings.Contains(err.Error(), "no tracking information") {
+   75 		return "no upstream configured, skipping pull", nil
+   76 	}
+   77 	return strings.TrimSpace(out), err
+   78 }
+   79 
+   80 func CommitAll(dir, message string) (string, error) {
+   81 	if _, err := run(dir, "add", "-A"); err != nil {
+   82 		return "", err
+   83 	}
+   84 	out, err := run(dir, "commit", "-m", message)
+   85 	return strings.TrimSpace(out), err
+   86 }
+
+FILE internal/checkout/checkout.go SHA256 190b653039bfaedd88253546b149332da225c2cccebb2b221fba5a10ce37906c
+RANGE 75-110
+   75 // clobbered) with Modified=true.
+   76 func Checkout(w *config.Wiki, scan *wiki.ScanResult, slug string) (*Info, error) {
+   77 	p, ok := scan.BySlug[wiki.NormalizeLink(slug)]
+   78 	if !ok {
+   79 		return nil, fmt.Errorf("page not found: %s", slug)
+   80 	}
+   81 	current, err := os.ReadFile(filepath.Join(w.Root, p.RelPath))
+   82 	if err != nil {
+   83 		return nil, err
+   84 	}
+   85 	copyPath, metaPath := paths(w, p.Slug)
+   86 
+   87 	if m, err := readMeta(metaPath); err == nil {
+   88 		copyData, err := os.ReadFile(copyPath)
+   89 		if err != nil {
+   90 			return nil, fmt.Errorf("checkout meta exists but copy is gone — `canopy checkin %s --discard` to reset: %w", p.Slug, err)
+   91 		}
+   92 		if hashOf(copyData) != m.Base {
+   93 			// Edits in progress: hand back the same copy untouched.
+   94 			return &Info{Slug: p.Slug, RelPath: m.RelPath, Path: copyPath, Base: m.Base, OpenedAt: m.OpenedAt, Modified: true}, nil
+   95 		}
+   96 		// Unmodified: refresh to current wiki content (base moves with it).
+   97 	}
+   98 
+   99 	if err := os.MkdirAll(w.CheckoutDir(), 0o755); err != nil {
+  100 		return nil, err
+  101 	}
+  102 	base := hashOf(current)
+  103 	m := meta{RelPath: p.RelPath, Base: base, OpenedAt: time.Now().Format(time.RFC3339)}
+  104 	mdata, _ := json.MarshalIndent(m, "", "  ")
+  105 	if err := os.WriteFile(copyPath, current, 0o644); err != nil {
+  106 		return nil, err
+  107 	}
+  108 	if err := os.WriteFile(metaPath, mdata, 0o644); err != nil {
+  109 		return nil, err
+  110 	}
+RANGE 120-195
+  120 	if err != nil {
+  121 		return nil, fmt.Errorf("not checked out: %s (run `canopy checkout %s` first)", slug, slug)
+  122 	}
+  123 	copyData, err := os.ReadFile(copyPath)
+  124 	if err != nil {
+  125 		return nil, fmt.Errorf("working copy missing — `canopy checkin %s --discard` to reset: %w", slug, err)
+  126 	}
+  127 
+  128 	p, ok := scan.BySlug[wiki.NormalizeLink(slug)]
+  129 	if !ok || p.RelPath != m.RelPath {
+  130 		return nil, fmt.Errorf("page moved or removed since checkout (%s) — re-checkout and re-apply; `--discard` drops this copy", m.RelPath)
+  131 	}
+  132 	wikiPath := filepath.Join(w.Root, p.RelPath)
+  133 	current, err := os.ReadFile(wikiPath)
+  134 	if err != nil {
+  135 		return nil, err
+  136 	}
+  137 
+  138 	// R4: the wiki moved underneath us — refuse, never merge silently.
+  139 	if hashOf(current) != m.Base {
+  140 		return nil, fmt.Errorf("page changed since checkout (another machine, web edit, or direct write) — re-checkout %s and re-apply your edits; `--discard` drops this copy", slug)
+  141 	}
+  142 
+  143 	// R8: nothing changed — reclaim the copy, leave the wiki untouched.
+  144 	if hashOf(copyData) == m.Base {
+  145 		reclaim(copyPath, metaPath)
+  146 		return &Result{RelPath: p.RelPath, Unchanged: true}, nil
+  147 	}
+  148 
+  149 	res := &Result{RelPath: p.RelPath,
+  150 		OldLines: strings.Count(string(current), "\n") + 1,
+  151 		NewLines: strings.Count(string(copyData), "\n") + 1}
+  152 	if err := validate(w, p, copyData, mv, res); err != nil {
+  153 		return nil, err
+  154 	}
+  155 
+  156 	content := wiki.SetFrontmatterField(string(copyData), "updated", time.Now().Format("2006-01-02"))
+  157 	if err := os.WriteFile(wikiPath, []byte(content), 0o644); err != nil {
+  158 		return nil, err
+  159 	}
+  160 	reclaim(copyPath, metaPath)
+  161 	return res, nil
+  162 }
+  163 
+  164 // validate runs the write gates on the edited copy: frontmatter shape,
+  165 // immutable fields (R7), taxonomy (A5), mermaid (P2 — env faults fail
+  166 // open into res.Warnings, per P4).
+  167 func validate(w *config.Wiki, p *wiki.Page, copyData []byte, mv *mermaid.Validator, res *Result) error {
+  168 	edited := wiki.Parse(p.RelPath, copyData)
+  169 	if !edited.HasFrontmatter {
+  170 		return fmt.Errorf("frontmatter block missing — the copy must keep its `---` header")
+  171 	}
+  172 	if edited.FMErr != "" {
+  173 		return fmt.Errorf("frontmatter parse error: %s", edited.FMErr)
+  174 	}
+  175 	if edited.Title == "" {
+  176 		return fmt.Errorf("frontmatter title must not be empty")
+  177 	}
+  178 	if edited.Type != p.Type {
+  179 		return fmt.Errorf("type change (%s → %s) is not a checkin — `canopy mv %s --type %s` moves the page between category dirs", p.Type, edited.Type, p.Slug, edited.Type)
+  180 	}
+  181 	if edited.Created != p.Created {
+  182 		return fmt.Errorf("created (%s) is history — restore it (was changed to %s)", p.Created, edited.Created)
+  183 	}
+  184 	allowed := map[string]bool{}
+  185 	for _, t := range w.Cfg.Schema.AllTags() {
+  186 		allowed[t] = true
+  187 	}
+  188 	var bad []string
+  189 	for _, t := range edited.Tags {
+  190 		if !allowed[t] {
+  191 			bad = append(bad, t)
+  192 		}
+  193 	}
+  194 	if len(bad) > 0 {
+  195 		return fmt.Errorf("tags not in taxonomy: %s (see `canopy tags`)", strings.Join(bad, ", "))
+RANGE 205-254
+  205 				return fmt.Errorf("mermaid block at line %d fails the renderer's parser — fix it in the working copy and retry:\n%s", b.Line, diagErr.Message)
+  206 			}
+  207 		}
+  208 	}
+  209 	return nil
+  210 }
+  211 
+  212 // Discard drops a checkout without touching the wiki.
+  213 func Discard(w *config.Wiki, slug string) error {
+  214 	copyPath, metaPath := paths(w, wiki.NormalizeLink(slug))
+  215 	if _, err := os.Stat(metaPath); err != nil {
+  216 		return fmt.Errorf("not checked out: %s", slug)
+  217 	}
+  218 	reclaim(copyPath, metaPath)
+  219 	return nil
+  220 }
+  221 
+  222 func reclaim(copyPath, metaPath string) {
+  223 	os.Remove(copyPath)
+  224 	os.Remove(metaPath)
+  225 }
+  226 
+  227 // Open lists checkouts, oldest first, with their modified state (R6).
+  228 func Open(w *config.Wiki) ([]Info, error) {
+  229 	entries, err := os.ReadDir(w.CheckoutDir())
+  230 	if os.IsNotExist(err) {
+  231 		return nil, nil
+  232 	}
+  233 	if err != nil {
+  234 		return nil, err
+  235 	}
+  236 	var out []Info
+  237 	for _, e := range entries {
+  238 		if !strings.HasSuffix(e.Name(), ".json") {
+  239 			continue
+  240 		}
+  241 		slug := strings.TrimSuffix(e.Name(), ".json")
+  242 		copyPath, metaPath := paths(w, slug)
+  243 		m, err := readMeta(metaPath)
+  244 		if err != nil {
+  245 			continue
+  246 		}
+  247 		info := Info{Slug: slug, RelPath: m.RelPath, Path: copyPath, Base: m.Base, OpenedAt: m.OpenedAt}
+  248 		if data, err := os.ReadFile(copyPath); err == nil {
+  249 			info.Modified = hashOf(data) != m.Base
+  250 		}
+  251 		out = append(out, info)
+  252 	}
+  253 	sort.Slice(out, func(i, j int) bool { return out[i].OpenedAt < out[j].OpenedAt })
+  254 	return out, nil
+
+FILE internal/writeops/writeops.go SHA256 450beb5df5758f7836f1e002732606f90a20a1d97fcc28615d2b1528ebb40b0f
+RANGE 1-58
+    1 // Package writeops is the invariant pipeline every wiki mutation runs:
+    2 // one filesystem scan, index regeneration, activity log, reindex (with
+    3 // embeddings when the stack is available). The CLI write commands and
+    4 // the web UI editor both call Run — there is exactly one write path,
+    5 // so the invariants cannot drift between entry points.
+    6 package writeops
+    7 
+    8 import (
+    9 	"github.com/neutrospec/canopy/internal/config"
+   10 	"github.com/neutrospec/canopy/internal/embed"
+   11 	"github.com/neutrospec/canopy/internal/genindex"
+   12 	"github.com/neutrospec/canopy/internal/indexer"
+   13 	"github.com/neutrospec/canopy/internal/logops"
+   14 	"github.com/neutrospec/canopy/internal/reconcile"
+   15 	"github.com/neutrospec/canopy/internal/store"
+   16 	"github.com/neutrospec/canopy/internal/wiki"
+   17 )
+   18 
+   19 // Run executes the post-mutation pipeline. It performs ONE filesystem
+   20 // scan (after the mutation) and uses it for both index regeneration and
+   21 // reindexing — genindex only touches index/ files which are outside
+   22 // governed dirs, so the page set is unchanged.
+   23 //
+   24 // eff declares what the mutation wrote/removed so the reconcile ledger
+   25 // absorbs it (자동 축복, invariant K2): pipeline products never surface
+   26 // as foreign changes. Callers must be complete — mv lists the rewritten
+   27 // inbound pages, rm/archive the link-stripped sources.
+   28 func Run(w *config.Wiki, action, relPath string, related []string, note string, eff reconcile.Effects) (*wiki.ScanResult, error) {
+   29 	if err := reconcile.Record(w, eff); err != nil {
+   30 		return nil, err
+   31 	}
+   32 	scan, err := wiki.Scan(w)
+   33 	if err != nil {
+   34 		return nil, err
+   35 	}
+   36 	if err := genindex.Regenerate(w, scan); err != nil {
+   37 		return nil, err
+   38 	}
+   39 	if err := logops.Append(w, action, relPath, related, note); err != nil {
+   40 		return nil, err
+   41 	}
+   42 	var eng embed.Engine
+   43 	if embed.Available() && embed.ModelAvailable() {
+   44 		if e, err := embed.New(); err == nil {
+   45 			eng = e
+   46 			defer eng.Close()
+   47 		}
+   48 	}
+   49 	st, err := store.Open(w.DBPath())
+   50 	if err != nil {
+   51 		return nil, err
+   52 	}
+   53 	defer st.Close()
+   54 	if _, err := indexer.Reindex(w, st, scan, eng, nil); err != nil {
+   55 		return nil, err
+   56 	}
+   57 	return scan, nil
+   58 }
+
+FILE internal/wiki/page.go SHA256 e6c6fa595491fc9c536fef3fb80117de222a6ba3f3a0b8c5a1f31123b1e691da
+RANGE 38-72
+   38 	wikilinkRe   = regexp.MustCompile(`\[\[([^\]\[|#]+)(?:#[^\]\[|]*)?(?:\|[^\]\[]*)?\]\]`)
+   39 	fencedCodeRe = regexp.MustCompile("(?ms)^\\s*```.*?^\\s*```\\s*$")
+   40 	inlineCodeRe = regexp.MustCompile("`[^`\n]*`")
+   41 )
+   42 
+   43 // ExtractLinks returns normalized wikilink targets found in text.
+   44 // Fenced code blocks and inline code are ignored so bash conditionals
+   45 // like [[ "$x" == y ]] inside examples don't register as links.
+   46 func ExtractLinks(text string) []string {
+   47 	text = fencedCodeRe.ReplaceAllString(text, "")
+   48 	text = inlineCodeRe.ReplaceAllString(text, "")
+   49 	seen := map[string]bool{}
+   50 	var out []string
+   51 	for _, m := range wikilinkRe.FindAllStringSubmatch(text, -1) {
+   52 		t := NormalizeLink(m[1])
+   53 		if t == "" || seen[t] {
+   54 			continue
+   55 		}
+   56 		seen[t] = true
+   57 		out = append(out, t)
+   58 	}
+   59 	return out
+   60 }
+   61 
+   62 // NormalizeLink lowercases and trims a wikilink target so it can be
+   63 // compared against page slugs (Obsidian resolves links case-insensitively).
+   64 func NormalizeLink(s string) string {
+   65 	s = strings.TrimSpace(s)
+   66 	// Links may carry a path (e.g. concepts/foo); resolve by basename like Obsidian.
+   67 	if i := strings.LastIndex(s, "/"); i >= 0 {
+   68 		s = s[i+1:]
+   69 	}
+   70 	s = strings.TrimSuffix(s, ".md")
+   71 	return strings.ToLower(s)
+   72 }
+RANGE 84-141
+   84 	p.Lines = strings.Count(content, "\n") + 1
+   85 	p.Body = content
+   86 
+   87 	fm, body, ok := splitFrontmatter(content)
+   88 	if ok {
+   89 		p.HasFrontmatter = true
+   90 		p.Body = body
+   91 		var m map[string]any
+   92 		if err := yaml.Unmarshal([]byte(fm), &m); err != nil {
+   93 			p.FMErr = err.Error()
+   94 		} else {
+   95 			p.Title = coerceString(m["title"])
+   96 			p.Type = coerceString(m["type"])
+   97 			p.Created = coerceString(m["created"])
+   98 			p.Updated = coerceString(m["updated"])
+   99 			p.Tags = coerceStringList(m["tags"])
+  100 			p.Sources = coerceStringList(m["sources"])
+  101 		}
+  102 	}
+  103 	p.Links = ExtractLinks(p.Body)
+  104 	return p
+  105 }
+  106 
+  107 func splitFrontmatter(content string) (fm, body string, ok bool) {
+  108 	if !strings.HasPrefix(content, "---\n") && !strings.HasPrefix(content, "---\r\n") {
+  109 		return "", content, false
+  110 	}
+  111 	rest := content[strings.Index(content, "\n")+1:]
+  112 	// Closing delimiter: a line that is exactly "---".
+  113 	closeRe := regexp.MustCompile(`(?m)^---\s*$`)
+  114 	loc := closeRe.FindStringIndex(rest)
+  115 	if loc == nil {
+  116 		return "", content, false
+  117 	}
+  118 	fm = rest[:loc[0]]
+  119 	body = rest[loc[1]:]
+  120 	body = strings.TrimPrefix(body, "\n")
+  121 	return fm, body, true
+  122 }
+  123 
+  124 func coerceString(v any) string {
+  125 	switch t := v.(type) {
+  126 	case string:
+  127 		return t
+  128 	case time.Time:
+  129 		// yaml.v3 resolves unquoted YYYY-MM-DD to time.Time.
+  130 		return t.Format("2006-01-02")
+  131 	case nil:
+  132 		return ""
+  133 	default:
+  134 		return fmt.Sprintf("%v", t)
+  135 	}
+  136 }
+  137 
+  138 func coerceStringList(v any) []string {
+  139 	switch t := v.(type) {
+  140 	case []any:
+  141 		out := make([]string, 0, len(t))
+RANGE 177-216
+  177 	for _, f := range w.Cfg.Schema.RootFiles {
+  178 		rootAllowed[f] = true
+  179 	}
+  180 	for _, e := range entries {
+  181 		if !e.IsDir() && strings.HasSuffix(e.Name(), ".md") && !rootAllowed[e.Name()] {
+  182 			res.StrayRoot = append(res.StrayRoot, e.Name())
+  183 		}
+  184 	}
+  185 
+  186 	for _, dir := range w.Cfg.Schema.PageDirs {
+  187 		dirPath := filepath.Join(w.Root, dir)
+  188 		files, err := os.ReadDir(dirPath)
+  189 		if os.IsNotExist(err) {
+  190 			continue
+  191 		}
+  192 		if err != nil {
+  193 			return nil, err
+  194 		}
+  195 		for _, f := range files {
+  196 			if f.IsDir() || !strings.HasSuffix(f.Name(), ".md") {
+  197 				continue
+  198 			}
+  199 			raw, err := os.ReadFile(filepath.Join(dirPath, f.Name()))
+  200 			if err != nil {
+  201 				return nil, err
+  202 			}
+  203 			p := Parse(filepath.Join(dir, f.Name()), raw)
+  204 			res.Pages = append(res.Pages, p)
+  205 			res.BySlug[strings.ToLower(p.Slug)] = p
+  206 		}
+  207 	}
+  208 
+  209 	if files, err := os.ReadDir(filepath.Join(w.Root, "index")); err == nil {
+  210 		for _, f := range files {
+  211 			if !f.IsDir() && strings.HasSuffix(f.Name(), ".md") {
+  212 				res.IndexPages = append(res.IndexPages, "index/"+f.Name())
+  213 			}
+  214 		}
+  215 	}
+  216 
+
+FILE internal/wiki/edit.go SHA256 00e8fd5771e685f475a69f90757422be1c82f13b6f282f1f26f72729a896e2dc
+RANGE 1-82
+    1 package wiki
+    2 
+    3 import (
+    4 	"fmt"
+    5 	"regexp"
+    6 	"strings"
+    7 )
+    8 
+    9 // SetFrontmatterField rewrites (or inserts) a scalar field in the YAML
+   10 // frontmatter without touching any other line, preserving field order
+   11 // and unknown fields.
+   12 func SetFrontmatterField(content, key, value string) string {
+   13 	fm, body, ok := splitFrontmatter(content)
+   14 	if !ok {
+   15 		return content
+   16 	}
+   17 	re := regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(key) + `:.*$`)
+   18 	if re.MatchString(fm) {
+   19 		fm = re.ReplaceAllString(fm, key+": "+value)
+   20 	} else {
+   21 		fm = strings.TrimRight(fm, "\n") + "\n" + key + ": " + value + "\n"
+   22 	}
+   23 	return "---\n" + strings.TrimRight(fm, "\n") + "\n---\n" + body
+   24 }
+   25 
+   26 // ReplaceBody swaps everything after the frontmatter block.
+   27 func ReplaceBody(content, newBody string) string {
+   28 	fm, _, ok := splitFrontmatter(content)
+   29 	if !ok {
+   30 		return newBody
+   31 	}
+   32 	return "---\n" + strings.TrimRight(fm, "\n") + "\n---\n\n" + strings.TrimLeft(newBody, "\n")
+   33 }
+   34 
+   35 // linkPattern matches [[target]] and [[target|alias]] (with optional
+   36 // #anchor), case-insensitively on the target.
+   37 func linkPattern(target string) *regexp.Regexp {
+   38 	return regexp.MustCompile(`(?i)\[\[` + regexp.QuoteMeta(target) + `(#[^\]\[|]*)?(\|[^\]\[]*)?\]\]`)
+   39 }
+   40 
+   41 // RewriteLinks retargets wikilinks from oldSlug to newSlug, keeping
+   42 // anchors and aliases.
+   43 func RewriteLinks(content, oldSlug, newSlug string) string {
+   44 	return linkPattern(oldSlug).ReplaceAllString(content, "[["+newSlug+"$1$2]]")
+   45 }
+   46 
+   47 // StripLinks converts wikilinks to plain text: [[t]] → t, [[t|a]] → a.
+   48 // Used when the target page is archived or deleted.
+   49 func StripLinks(content, target string) string {
+   50 	return linkPattern(target).ReplaceAllStringFunc(content, func(m string) string {
+   51 		inner := strings.TrimSuffix(strings.TrimPrefix(m, "[["), "]]")
+   52 		if i := strings.Index(inner, "|"); i >= 0 {
+   53 			return inner[i+1:]
+   54 		}
+   55 		if i := strings.Index(inner, "#"); i >= 0 {
+   56 			return inner[:i]
+   57 		}
+   58 		return inner
+   59 	})
+   60 }
+   61 
+   62 // NewPageContent renders a schema-compliant page.
+   63 func NewPageContent(title, typ, created string, tags, links []string, body string) string {
+   64 	var b strings.Builder
+   65 	fmt.Fprintf(&b, "---\ntitle: \"%s\"\ncreated: %s\nupdated: %s\ntype: %s\ntags: [%s]\nsources: []\n---\n\n",
+   66 		strings.ReplaceAll(title, `"`, `\"`), created, created, typ, strings.Join(tags, ", "))
+   67 	body = strings.TrimSpace(body)
+   68 	if body == "" {
+   69 		body = "# " + title
+   70 	} else if !strings.HasPrefix(body, "#") {
+   71 		body = "# " + title + "\n\n" + body
+   72 	}
+   73 	b.WriteString(body)
+   74 	b.WriteString("\n")
+   75 	if len(links) > 0 {
+   76 		b.WriteString("\n## 관련 페이지\n\n")
+   77 		for _, l := range links {
+   78 			fmt.Fprintf(&b, "- [[%s]]\n", l)
+   79 		}
+   80 	}
+   81 	return b.String()
+   82 }
+
+FILE internal/wiki/slug.go SHA256 a8b677198c530955b8150f45168509a4aaf68b4a46a1d4a6936d0d3d54de84df
+RANGE 1-29
+    1 package wiki
+    2 
+    3 import (
+    4 	"regexp"
+    5 	"strings"
+    6 )
+    7 
+    8 var validFilenameRe = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]*\.md$`)
+    9 
+   10 // ValidFilename reports whether a page filename follows the schema:
+   11 // English only, lowercase, hyphens instead of spaces.
+   12 func ValidFilename(name string) bool {
+   13 	return validFilenameRe.MatchString(name)
+   14 }
+   15 
+   16 var slugStripRe = regexp.MustCompile(`[^a-z0-9]+`)
+   17 
+   18 // Slugify derives a filename slug from a title. Returns "" when the
+   19 // title has no ASCII content (e.g. pure Korean) — callers must then
+   20 // require an explicit --slug from the user instead of guessing.
+   21 func Slugify(title string) string {
+   22 	s := strings.ToLower(title)
+   23 	s = slugStripRe.ReplaceAllString(s, "-")
+   24 	s = strings.Trim(s, "-")
+   25 	if !regexp.MustCompile(`[a-z]`).MatchString(s) {
+   26 		return ""
+   27 	}
+   28 	return s
+   29 }
+
+FILE internal/reads/reads.go SHA256 c478e46229ab83ee1c794ffa0a3eb4ed7445145aa56bb7d6d1f4c152227cc1cd
+RANGE 35-272
+   35 	Last  string `json:"last"`  // RFC3339, latest agent touch
+   36 	Days  int    `json:"days"`  // distinct days touched
+   37 }
+   38 
+   39 type State struct {
+   40 	Version int              `json:"version"`
+   41 	Reads   map[string]*Read `json:"reads"` // lowercased slug -> human read
+   42 	// Agent lives in its own file (_meta/attention/agent-reads.json), not
+   43 	// in reads.json v2: an older canopy re-saving reads.json would silently
+   44 	// drop fields it doesn't know (AGENTS.md 규칙 1b — mixed-version safety).
+   45 	Agent map[string]*AgentRead `json:"-"`
+   46 
+   47 	readsDirty bool
+   48 	agentDirty bool
+   49 }
+   50 
+   51 // agentFile is the on-disk shape of the agent aggregate.
+   52 type agentFile struct {
+   53 	Version int                   `json:"version"`
+   54 	Agent   map[string]*AgentRead `json:"agent"`
+   55 }
+   56 
+   57 func Path(w *config.Wiki) string {
+   58 	return filepath.Join(w.Root, "_meta", "webui", "reads.json")
+   59 }
+   60 
+   61 // AgentPath is the agent-door aggregate, committed to the wiki like
+   62 // reads.json (docs/web-ui-plan-4.md).
+   63 func AgentPath(w *config.Wiki) string {
+   64 	return filepath.Join(w.Root, "_meta", "attention", "agent-reads.json")
+   65 }
+   66 
+   67 // Load reads both attention aggregates (human reads + agent reads); a
+   68 // missing file is an empty state, and unknown future versions are read
+   69 // tolerantly (self-versioned wiki files, AGENTS.md 규칙 1b).
+   70 func Load(w *config.Wiki) (*State, error) {
+   71 	s := &State{Version: 1, Reads: map[string]*Read{}, Agent: map[string]*AgentRead{}}
+   72 	data, err := os.ReadFile(Path(w))
+   73 	if err == nil {
+   74 		if err := json.Unmarshal(data, s); err != nil {
+   75 			return nil, err
+   76 		}
+   77 	} else if !os.IsNotExist(err) {
+   78 		return nil, err
+   79 	}
+   80 	if s.Reads == nil {
+   81 		s.Reads = map[string]*Read{}
+   82 	}
+   83 	af := agentFile{}
+   84 	adata, err := os.ReadFile(AgentPath(w))
+   85 	if err == nil {
+   86 		if err := json.Unmarshal(adata, &af); err != nil {
+   87 			return nil, err
+   88 		}
+   89 	} else if !os.IsNotExist(err) {
+   90 		return nil, err
+   91 	}
+   92 	s.Agent = af.Agent
+   93 	if s.Agent == nil {
+   94 		s.Agent = map[string]*AgentRead{}
+   95 	}
+   96 	return s, nil
+   97 }
+   98 
+   99 // Save writes only the file(s) whose data actually changed, so an
+  100 // agent-only touch never creates or rewrites reads.json (H4) and a plain
+  101 // web mark never touches the agent file.
+  102 func (s *State) Save(w *config.Wiki) error {
+  103 	if s.readsDirty {
+  104 		if err := writeJSON(Path(w), s); err != nil {
+  105 			return err
+  106 		}
+  107 		s.readsDirty = false
+  108 	}
+  109 	if len(s.Agent) > 0 && s.agentDirty {
+  110 		if err := writeJSON(AgentPath(w), agentFile{Version: 1, Agent: s.Agent}); err != nil {
+  111 			return err
+  112 		}
+  113 		s.agentDirty = false
+  114 	}
+  115 	return nil
+  116 }
+  117 
+  118 func writeJSON(path string, v any) error {
+  119 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+  120 		return err
+  121 	}
+  122 	data, err := json.MarshalIndent(v, "", "  ")
+  123 	if err != nil {
+  124 		return err
+  125 	}
+  126 	return os.WriteFile(path, data, 0o644)
+  127 }
+  128 
+  129 func norm(slug string) string { return strings.ToLower(slug) }
+  130 
+  131 // Mark records a read. Explicit marks upgrade auto ones; auto marks
+  132 // never downgrade an explicit one.
+  133 func (s *State) Mark(slug, source string, now time.Time) {
+  134 	k := norm(slug)
+  135 	ts := now.Format(time.RFC3339)
+  136 	s.readsDirty = true
+  137 	r, ok := s.Reads[k]
+  138 	if !ok {
+  139 		s.Reads[k] = &Read{First: ts, Last: ts, Count: 1, Source: source}
+  140 		return
+  141 	}
+  142 	r.Last = ts
+  143 	r.Count++
+  144 	if source == "explicit" {
+  145 		r.Source = "explicit"
+  146 	}
+  147 }
+  148 
+  149 // Unmark forgets a read entirely (the undo affordance).
+  150 func (s *State) Unmark(slug string) {
+  151 	k := norm(slug)
+  152 	if _, ok := s.Reads[k]; ok {
+  153 		delete(s.Reads, k)
+  154 		s.readsDirty = true
+  155 	}
+  156 }
+  157 
+  158 func (s *State) Get(slug string) *Read {
+  159 	return s.Reads[norm(slug)]
+  160 }
+  161 
+  162 func (s *State) IsRead(slug string) bool {
+  163 	return s.Reads[norm(slug)] != nil
+  164 }
+  165 
+  166 // MarkAgent records an agent-door consumption (show/recall), quantized to
+  167 // one wiki-file change per day: it reports true — data changed, caller
+  168 // should Save — only on the first touch of a calendar day (invariant H7).
+  169 // It never touches the human Reads map (invariant H4).
+  170 func (s *State) MarkAgent(slug string, now time.Time) bool {
+  171 	k := norm(slug)
+  172 	ts := now.Format(time.RFC3339)
+  173 	day := now.Format("2006-01-02")
+  174 	a, ok := s.Agent[k]
+  175 	if !ok {
+  176 		s.Agent[k] = &AgentRead{First: ts, Last: ts, Days: 1}
+  177 		s.agentDirty = true
+  178 		return true
+  179 	}
+  180 	if prev, err := time.Parse(time.RFC3339, a.Last); err == nil && prev.Local().Format("2006-01-02") == day {
+  181 		return false // already recorded today
+  182 	}
+  183 	a.Last = ts
+  184 	a.Days++
+  185 	s.agentDirty = true
+  186 	return true
+  187 }
+  188 
+  189 // LastAccess returns the most recent touch through ANY door (human read or
+  190 // agent consumption). This is the "forgotten?" signal resurface uses —
+  191 // a page cited by recall yesterday is not forgotten (invariant H6).
+  192 func (s *State) LastAccess(slug string) (time.Time, bool) {
+  193 	k := norm(slug)
+  194 	var best time.Time
+  195 	if r, ok := s.Reads[k]; ok {
+  196 		if t, err := time.Parse(time.RFC3339, r.Last); err == nil {
+  197 			best = t
+  198 		}
+  199 	}
+  200 	if a, ok := s.Agent[k]; ok {
+  201 		if t, err := time.Parse(time.RFC3339, a.Last); err == nil && t.After(best) {
+  202 			best = t
+  203 		}
+  204 	}
+  205 	return best, !best.IsZero()
+  206 }
+  207 
+  208 // Rename migrates history when a page moves (canopy mv).
+  209 func (s *State) Rename(oldSlug, newSlug string) {
+  210 	k := norm(oldSlug)
+  211 	if r, ok := s.Reads[k]; ok {
+  212 		delete(s.Reads, k)
+  213 		s.Reads[norm(newSlug)] = r
+  214 		s.readsDirty = true
+  215 	}
+  216 	if a, ok := s.Agent[k]; ok {
+  217 		delete(s.Agent, k)
+  218 		s.Agent[norm(newSlug)] = a
+  219 		s.agentDirty = true
+  220 	}
+  221 }
+  222 
+  223 // RecentAccessSlugs returns up to n slugs by most recent access through
+  224 // ANY door — the "current interest" signal for discovery affinity. The
+  225 // agent door counts because the user's questions drive it: what recall
+  226 // keeps citing is what the user is thinking about (web-ui-plan-4 M12).
+  227 func (s *State) RecentAccessSlugs(n int) []string {
+  228 	last := map[string]string{}
+  229 	for slug, r := range s.Reads {
+  230 		last[slug] = r.Last
+  231 	}
+  232 	for slug, a := range s.Agent {
+  233 		if a.Last > last[slug] {
+  234 			last[slug] = a.Last
+  235 		}
+  236 	}
+  237 	type item struct{ slug, ts string }
+  238 	items := make([]item, 0, len(last))
+  239 	for slug, ts := range last {
+  240 		items = append(items, item{slug, ts})
+  241 	}
+  242 	sort.Slice(items, func(i, j int) bool { return items[i].ts > items[j].ts })
+  243 	if len(items) > n {
+  244 		items = items[:n]
+  245 	}
+  246 	out := make([]string, len(items))
+  247 	for i, it := range items {
+  248 		out[i] = it.slug
+  249 	}
+  250 	return out
+  251 }
+  252 
+  253 // RecentSlugs returns up to n read slugs, most recently read first —
+  254 // the "current interest" signal for discovery ranking.
+  255 func (s *State) RecentSlugs(n int) []string {
+  256 	type item struct {
+  257 		slug, last string
+  258 	}
+  259 	items := make([]item, 0, len(s.Reads))
+  260 	for slug, r := range s.Reads {
+  261 		items = append(items, item{slug, r.Last})
+  262 	}
+  263 	sort.Slice(items, func(i, j int) bool { return items[i].last > items[j].last })
+  264 	if len(items) > n {
+  265 		items = items[:n]
+  266 	}
+  267 	out := make([]string, len(items))
+  268 	for i, it := range items {
+  269 		out[i] = it.slug
+  270 	}
+  271 	return out
+  272 }
+
+FILE internal/tasks/tasks.go SHA256 24ac0a79b84d7f9a6944de23788ace4c3178c023b8ce04f53f4fede5e466f169
+RANGE 55-110
+   55 	Base    string   `json:"base,omitempty"`    // edit: sha256 of the file when filed
+   56 	Body    string   `json:"body,omitempty"`    // edit: proposed full body (web editor files
+   57 	// the submitted text here instead of writing the page — the agent
+   58 	// judges and integrates it; docs/agent-tasks.md "웹 편집 = 제안")
+   59 }
+   60 
+   61 func Dir(w *config.Wiki) string { return filepath.Join(w.Root, "_meta", "tasks") }
+   62 
+   63 func pathOf(w *config.Wiki, id string) string { return filepath.Join(Dir(w), id+".json") }
+   64 
+   65 // Load reads every task, oldest first. A missing directory is an empty
+   66 // queue; a corrupt file is an error (the queue is judged state, not a
+   67 // rebuildable cache — silently skipping would hide lost work).
+   68 func Load(w *config.Wiki) ([]*Task, error) {
+   69 	entries, err := os.ReadDir(Dir(w))
+   70 	if os.IsNotExist(err) {
+   71 		return nil, nil
+   72 	}
+   73 	if err != nil {
+   74 		return nil, err
+   75 	}
+   76 	var out []*Task
+   77 	for _, e := range entries {
+   78 		if e.IsDir() || !strings.HasSuffix(e.Name(), ".json") {
+   79 			continue
+   80 		}
+   81 		t, err := Get(w, strings.TrimSuffix(e.Name(), ".json"))
+   82 		if err != nil {
+   83 			return nil, fmt.Errorf("%s: %w", e.Name(), err)
+   84 		}
+   85 		out = append(out, t)
+   86 	}
+   87 	sort.Slice(out, func(i, j int) bool {
+   88 		if out[i].Created != out[j].Created {
+   89 			return out[i].Created < out[j].Created
+   90 		}
+   91 		return out[i].ID < out[j].ID
+   92 	})
+   93 	return out, nil
+   94 }
+   95 
+   96 // Get reads one task tolerantly: unknown fields and future versions
+   97 // still load — only closing as done is version/type-gated.
+   98 func Get(w *config.Wiki, id string) (*Task, error) {
+   99 	data, err := os.ReadFile(pathOf(w, id))
+  100 	if err != nil {
+  101 		return nil, err
+  102 	}
+  103 	t := &Task{}
+  104 	if err := json.Unmarshal(data, t); err != nil {
+  105 		return nil, err
+  106 	}
+  107 	return t, nil
+  108 }
+  109 
+  110 // PendingCount is the status/banner signal (invariant T7).
+RANGE 127-210
+  127 	slug = strings.ToLower(slug)
+  128 	for _, p := range t.Pages {
+  129 		if strings.ToLower(p) == slug {
+  130 			return true
+  131 		}
+  132 	}
+  133 	return false
+  134 }
+  135 
+  136 func writeTask(w *config.Wiki, id string, v any) error {
+  137 	if err := os.MkdirAll(Dir(w), 0o755); err != nil {
+  138 		return err
+  139 	}
+  140 	data, err := json.MarshalIndent(v, "", "  ")
+  141 	if err != nil {
+  142 		return err
+  143 	}
+  144 	return os.WriteFile(pathOf(w, id), append(data, '\n'), 0o644)
+  145 }
+  146 
+  147 // ConnectID is deterministic (sorted pair) so refiling the same pair is
+  148 // a no-op — including after a dismiss, which is a judgment to respect
+  149 // (invariant T4).
+  150 func ConnectID(a, b string) string {
+  151 	a, b = strings.ToLower(a), strings.ToLower(b)
+  152 	if b < a {
+  153 		a, b = b, a
+  154 	}
+  155 	return "connect-" + a + "--" + b
+  156 }
+  157 
+  158 // FileConnect files a connect task. Filing never edits pages (T6).
+  159 // created=false means a task for this pair already exists (any status).
+  160 func FileConnect(w *config.Wiki, a, b string, sim float64, door string, now time.Time) (t *Task, created bool, err error) {
+  161 	a, b = strings.ToLower(a), strings.ToLower(b)
+  162 	if a == b {
+  163 		return nil, false, fmt.Errorf("connect needs two different pages")
+  164 	}
+  165 	if b < a {
+  166 		a, b = b, a
+  167 	}
+  168 	id := ConnectID(a, b)
+  169 	if existing, err := Get(w, id); err == nil {
+  170 		return existing, false, nil
+  171 	} else if !os.IsNotExist(err) {
+  172 		return nil, false, err
+  173 	}
+  174 	t = &Task{
+  175 		Version: FormatVersion, ID: id, Type: TypeConnect, Status: StatusPending,
+  176 		Door: door, Created: now.Format(time.RFC3339), Pages: []string{a, b}, Sim: sim,
+  177 	}
+  178 	if err := writeTask(w, id, t); err != nil {
+  179 		return nil, false, err
+  180 	}
+  181 	attention.LogLifecycle(w, now, "", door, attention.KindTaskFiled, id)
+  182 	return t, true, nil
+  183 }
+  184 
+  185 // FileEdit files an edit request: an instruction (request), a proposed
+  186 // full body (body — the web editor's "저장"), or both. base is the page
+  187 // file's sha256 at filing time — verifyEdit later requires the content
+  188 // to have moved.
+  189 func FileEdit(w *config.Wiki, slug, request, body, base, door string, now time.Time) (*Task, error) {
+  190 	slug = strings.ToLower(slug)
+  191 	if strings.TrimSpace(request) == "" && strings.TrimSpace(body) == "" {
+  192 		return nil, fmt.Errorf("edit task needs a request or a proposed body")
+  193 	}
+  194 	stamp := now.Format("20060102-150405")
+  195 	id := fmt.Sprintf("edit-%s-%s", slug, stamp)
+  196 	for i := 2; ; i++ {
+  197 		if _, err := os.Stat(pathOf(w, id)); os.IsNotExist(err) {
+  198 			break
+  199 		}
+  200 		id = fmt.Sprintf("edit-%s-%s-%d", slug, stamp, i)
+  201 	}
+  202 	t := &Task{
+  203 		Version: FormatVersion, ID: id, Type: TypeEdit, Status: StatusPending,
+  204 		Door: door, Created: now.Format(time.RFC3339), Pages: []string{slug},
+  205 		Request: request, Base: base, Body: body,
+  206 	}
+  207 	if err := writeTask(w, id, t); err != nil {
+  208 		return nil, err
+  209 	}
+  210 	attention.LogLifecycle(w, now, "", door, attention.KindTaskFiled, id)
+RANGE 224-293
+  224 	data, err := os.ReadFile(pathOf(w, id))
+  225 	if os.IsNotExist(err) {
+  226 		return nil, fmt.Errorf("task not found: %s", id)
+  227 	}
+  228 	if err != nil {
+  229 		return nil, err
+  230 	}
+  231 	t := &Task{}
+  232 	if err := json.Unmarshal(data, t); err != nil {
+  233 		return nil, err
+  234 	}
+  235 	if t.Status != StatusPending {
+  236 		return nil, fmt.Errorf("task %s is already %s", id, t.Status)
+  237 	}
+  238 	if status == StatusDone {
+  239 		v, ok := verifiers[t.Type]
+  240 		if !ok {
+  241 			return nil, fmt.Errorf("unknown task type %q — filed by a newer canopy; upgrade before closing as done (dismiss is allowed)", t.Type)
+  242 		}
+  243 		if err := v(w, scan, t); err != nil {
+  244 			// The one signal the task file never keeps: a rejected done
+  245 			// attempt (docs/events.md §2).
+  246 			attention.LogLifecycle(w, now, "", door, attention.KindTaskRejected, id+": "+err.Error())
+  247 			return nil, fmt.Errorf("done rejected (%s): %w", t.Type, err)
+  248 		}
+  249 	}
+  250 	var raw map[string]any
+  251 	if err := json.Unmarshal(data, &raw); err != nil {
+  252 		return nil, err
+  253 	}
+  254 	t.Status, t.Closed = status, now.Format(time.RFC3339)
+  255 	raw["status"], raw["closed"] = t.Status, t.Closed
+  256 	if note != "" {
+  257 		t.Note = note
+  258 		raw["note"] = note
+  259 	}
+  260 	if err := writeTask(w, id, raw); err != nil {
+  261 		return nil, err
+  262 	}
+  263 	kind := attention.KindTaskDone
+  264 	if status == StatusDismissed {
+  265 		kind = attention.KindTaskDismissed
+  266 	}
+  267 	attention.LogLifecycle(w, now, "", door, kind, id)
+  268 	return t, nil
+  269 }
+  270 
+  271 // GC removes closed tasks whose Closed time is older than keep.
+  272 // Pending tasks are never removed (invariant T8).
+  273 func GC(w *config.Wiki, keep time.Duration, now time.Time) (int, error) {
+  274 	list, err := Load(w)
+  275 	if err != nil {
+  276 		return 0, err
+  277 	}
+  278 	removed := 0
+  279 	for _, t := range list {
+  280 		if t.Status == StatusPending || t.Closed == "" {
+  281 			continue
+  282 		}
+  283 		closed, err := time.Parse(time.RFC3339, t.Closed)
+  284 		if err != nil || now.Sub(closed) < keep {
+  285 			continue
+  286 		}
+  287 		if err := os.Remove(pathOf(w, t.ID)); err != nil {
+  288 			return removed, err
+  289 		}
+  290 		removed++
+  291 	}
+  292 	if removed > 0 {
+  293 		attention.LogLifecycle(w, now, "", attention.DoorAgent, attention.KindTaskGC, fmt.Sprintf("%d", removed))
+RANGE 333-363
+  333 	for _, l := range p.Links {
+  334 		if l == target {
+  335 			return true
+  336 		}
+  337 	}
+  338 	return false
+  339 }
+  340 
+  341 func verifyEdit(w *config.Wiki, scan *wiki.ScanResult, t *Task) error {
+  342 	if len(t.Pages) != 1 {
+  343 		return fmt.Errorf("edit task needs 1 page, has %d", len(t.Pages))
+  344 	}
+  345 	p, ok := scan.BySlug[strings.ToLower(t.Pages[0])]
+  346 	if !ok {
+  347 		return fmt.Errorf("page not found: %s (dismiss if removing it was the judgment)", t.Pages[0])
+  348 	}
+  349 	if t.Base == "" {
+  350 		return nil // old/handmade task without a baseline: existence is all we can check
+  351 	}
+  352 	raw, err := os.ReadFile(filepath.Join(w.Root, p.RelPath))
+  353 	if err != nil {
+  354 		return err
+  355 	}
+  356 	if hashBytes(raw) == t.Base {
+  357 		return fmt.Errorf("%s is unchanged since the request was filed", p.Slug)
+  358 	}
+  359 	return nil
+  360 }
+  361 
+  362 func hashBytes(b []byte) string {
+  363 	h := sha256.Sum256(b)
+
+FILE internal/resurface/state.go SHA256 0db3e18d60a4dd26dab6a08bdf06835cf553cc5432b9d1345026a68943f8f18e
+RANGE 1-148
+    1 // Package resurface generates "re-encounter" candidates: forgotten
+    2 // pages, stale hubs, and similar-but-unlinked page pairs. canopy only
+    3 // selects candidates deterministically; judging whether a candidate is
+    4 // interesting, phrasing it, and delivering it (e.g. Telegram) is the
+    5 // agent's job. See docs/second-brain.md.
+    6 package resurface
+    7 
+    8 import (
+    9 	"encoding/json"
+   10 	"os"
+   11 	"path/filepath"
+   12 	"sort"
+   13 	"strings"
+   14 	"time"
+   15 
+   16 	"github.com/neutrospec/canopy/internal/config"
+   17 )
+   18 
+   19 // State is the pick history and user feedback. It is NOT a derived
+   20 // cache — it cannot be rebuilt — so it lives inside the wiki repo at
+   21 // _meta/resurface/state.json and syncs across devices with the wiki.
+   22 type State struct {
+   23 	Version    int               `json:"version"`
+   24 	Shown      map[string]string `json:"shown"`       // slug -> RFC3339 last shown
+   25 	ShownPairs map[string]string `json:"shown_pairs"` // "a|b" (sorted) -> RFC3339
+   26 	Snoozed    map[string]string `json:"snoozed"`     // slug -> YYYY-MM-DD until
+   27 	Feedback   []Feedback        `json:"feedback"`
+   28 }
+   29 
+   30 type Feedback struct {
+   31 	Slug string `json:"slug"`
+   32 	Vote string `json:"vote"` // up | down
+   33 	Time string `json:"time"`
+   34 }
+   35 
+   36 // Cooldowns: a page shown recently, or downvoted, stays out of the pool.
+   37 const (
+   38 	shownCooldown = 45 * 24 * time.Hour
+   39 	pairCooldown  = 90 * 24 * time.Hour
+   40 	downCooldown  = 120 * 24 * time.Hour
+   41 )
+   42 
+   43 func StatePath(w *config.Wiki) string {
+   44 	return filepath.Join(w.Root, "_meta", "resurface", "state.json")
+   45 }
+   46 
+   47 func LoadState(w *config.Wiki) (*State, error) {
+   48 	s := &State{Version: 1, Shown: map[string]string{}, ShownPairs: map[string]string{}, Snoozed: map[string]string{}}
+   49 	data, err := os.ReadFile(StatePath(w))
+   50 	if os.IsNotExist(err) {
+   51 		return s, nil
+   52 	}
+   53 	if err != nil {
+   54 		return nil, err
+   55 	}
+   56 	if err := json.Unmarshal(data, s); err != nil {
+   57 		return nil, err
+   58 	}
+   59 	if s.Shown == nil {
+   60 		s.Shown = map[string]string{}
+   61 	}
+   62 	if s.ShownPairs == nil {
+   63 		s.ShownPairs = map[string]string{}
+   64 	}
+   65 	if s.Snoozed == nil {
+   66 		s.Snoozed = map[string]string{}
+   67 	}
+   68 	return s, nil
+   69 }
+   70 
+   71 func (s *State) Save(w *config.Wiki) error {
+   72 	path := StatePath(w)
+   73 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+   74 		return err
+   75 	}
+   76 	data, err := json.MarshalIndent(s, "", "  ")
+   77 	if err != nil {
+   78 		return err
+   79 	}
+   80 	return os.WriteFile(path, append(data, '\n'), 0o644)
+   81 }
+   82 
+   83 func pairKey(a, b string) string {
+   84 	if a > b {
+   85 		a, b = b, a
+   86 	}
+   87 	return a + "|" + b
+   88 }
+   89 
+   90 // eligible reports whether a page may be picked now.
+   91 func (s *State) eligible(slug string, now time.Time) bool {
+   92 	if until, ok := s.Snoozed[slug]; ok {
+   93 		if t, err := time.Parse("2006-01-02", until); err == nil && now.Before(t) {
+   94 			return false
+   95 		}
+   96 	}
+   97 	if ts, ok := s.Shown[slug]; ok {
+   98 		if t, err := time.Parse(time.RFC3339, ts); err == nil && now.Sub(t) < shownCooldown {
+   99 			return false
+  100 		}
+  101 	}
+  102 	for _, f := range s.Feedback {
+  103 		if f.Slug == slug && f.Vote == "down" {
+  104 			if t, err := time.Parse(time.RFC3339, f.Time); err == nil && now.Sub(t) < downCooldown {
+  105 				return false
+  106 			}
+  107 		}
+  108 	}
+  109 	return true
+  110 }
+  111 
+  112 func (s *State) pairEligible(a, b string, now time.Time) bool {
+  113 	if ts, ok := s.ShownPairs[pairKey(a, b)]; ok {
+  114 		if ts == "dismissed" {
+  115 			return false
+  116 		}
+  117 		if t, err := time.Parse(time.RFC3339, ts); err == nil && now.Sub(t) < pairCooldown {
+  118 			return false
+  119 		}
+  120 	}
+  121 	return true
+  122 }
+  123 
+  124 func (s *State) MarkShown(slugs []string, now time.Time) {
+  125 	for _, slug := range slugs {
+  126 		s.Shown[slug] = now.Format(time.RFC3339)
+  127 	}
+  128 }
+  129 
+  130 func (s *State) MarkPairShown(a, b string, now time.Time) {
+  131 	s.ShownPairs[pairKey(a, b)] = now.Format(time.RFC3339)
+  132 }
+  133 
+  134 func (s *State) DismissPair(a, b string) {
+  135 	s.ShownPairs[pairKey(a, b)] = "dismissed"
+  136 }
+  137 
+  138 func (s *State) AddFeedback(slug, vote string, now time.Time) {
+  139 	s.Feedback = append(s.Feedback, Feedback{Slug: slug, Vote: vote, Time: now.Format(time.RFC3339)})
+  140 	sort.SliceStable(s.Feedback, func(i, j int) bool { return s.Feedback[i].Time < s.Feedback[j].Time })
+  141 }
+  142 
+  143 func (s *State) Snooze(slug string, days int, now time.Time) {
+  144 	s.Snoozed[slug] = now.Add(time.Duration(days) * 24 * time.Hour).Format("2006-01-02")
+  145 }
+  146 
+  147 // normalizeSlug matches state keys case-insensitively like wikilinks.
+  148 func normalizeSlug(s string) string { return strings.ToLower(s) }
+
+FILE internal/reconcile/reconcile.go SHA256 7b23b6b9e8601427704e78db57d1d719734d3e74d12437455652f83628ca5a33
+RANGE 20-78
+   20 	"path/filepath"
+   21 	"sort"
+   22 	"strings"
+   23 
+   24 	"github.com/neutrospec/canopy/internal/config"
+   25 )
+   26 
+   27 // State is the blessed-content ledger, committed to the wiki so every
+   28 // device agrees on what has been judged (invariant K1). Self-versioned
+   29 // wiki file (AGENTS.md 규칙 1b).
+   30 type State struct {
+   31 	Version int               `json:"version"`
+   32 	Blessed map[string]string `json:"blessed"` // rel path -> sha256 hex of reviewed content
+   33 }
+   34 
+   35 func Path(w *config.Wiki) string {
+   36 	return filepath.Join(w.Root, "_meta", "reconcile", "state.json")
+   37 }
+   38 
+   39 // Load reads the ledger. initialized=false means the gate has not been
+   40 // opted into on this wiki (no state file).
+   41 func Load(w *config.Wiki) (*State, bool, error) {
+   42 	s := &State{Version: 1, Blessed: map[string]string{}}
+   43 	data, err := os.ReadFile(Path(w))
+   44 	if os.IsNotExist(err) {
+   45 		return s, false, nil
+   46 	}
+   47 	if err != nil {
+   48 		return nil, false, err
+   49 	}
+   50 	if err := json.Unmarshal(data, s); err != nil {
+   51 		return nil, false, fmt.Errorf("parse %s: %w", Path(w), err)
+   52 	}
+   53 	if s.Blessed == nil {
+   54 		s.Blessed = map[string]string{}
+   55 	}
+   56 	return s, true, nil
+   57 }
+   58 
+   59 func (s *State) Save(w *config.Wiki) error {
+   60 	path := Path(w)
+   61 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+   62 		return err
+   63 	}
+   64 	data, err := json.MarshalIndent(s, "", "  ") // map keys sort — stable git diffs
+   65 	if err != nil {
+   66 		return err
+   67 	}
+   68 	return os.WriteFile(path, append(data, '\n'), 0o644)
+   69 }
+   70 
+   71 func HashBytes(b []byte) string {
+   72 	sum := sha256.Sum256(b)
+   73 	return hex.EncodeToString(sum[:])
+   74 }
+   75 
+   76 func hashFile(path string) (string, error) {
+   77 	b, err := os.ReadFile(path)
+   78 	if err != nil {
+RANGE 94-145
+   94 // gate is initialized (opt-in), and for empty effects.
+   95 func Record(w *config.Wiki, eff Effects) error {
+   96 	if len(eff.Written) == 0 && len(eff.Removed) == 0 {
+   97 		return nil
+   98 	}
+   99 	st, ok, err := Load(w)
+  100 	if err != nil || !ok {
+  101 		return err
+  102 	}
+  103 	for _, rel := range eff.Written {
+  104 		h, err := hashFile(filepath.Join(w.Root, rel))
+  105 		if err != nil {
+  106 			return fmt.Errorf("bless %s: %w", rel, err)
+  107 		}
+  108 		st.Blessed[rel] = h
+  109 	}
+  110 	for _, rel := range eff.Removed {
+  111 		delete(st.Blessed, rel)
+  112 	}
+  113 	return st.Save(w)
+  114 }
+  115 
+  116 // Candidate is one foreign change: page content the ledger has not judged.
+  117 type Candidate struct {
+  118 	RelPath string `json:"rel_path"`
+  119 	Kind    string `json:"kind"` // edited | new | deleted
+  120 }
+  121 
+  122 // pageFiles lists the schema-governed page files without parsing them —
+  123 // cheap enough for the every-command banner.
+  124 func pageFiles(w *config.Wiki) []string {
+  125 	cfg := w.Cfg
+  126 	if cfg == nil {
+  127 		cfg = config.Default()
+  128 	}
+  129 	var out []string
+  130 	for _, d := range cfg.Schema.PageDirs {
+  131 		filepath.WalkDir(filepath.Join(w.Root, d), func(p string, e fs.DirEntry, err error) error {
+  132 			if err != nil {
+  133 				return nil // dir may not exist yet
+  134 			}
+  135 			if !e.IsDir() && strings.HasSuffix(p, ".md") {
+  136 				if rel, err := filepath.Rel(w.Root, p); err == nil {
+  137 					out = append(out, rel)
+  138 				}
+  139 			}
+  140 			return nil
+  141 		})
+  142 	}
+  143 	sort.Strings(out)
+  144 	return out
+  145 }
+RANGE 210-234
+  210 			continue
+  211 		}
+  212 		return fmt.Errorf("nothing to bless at %s (no such file, no ledger entry)", rel)
+  213 	}
+  214 	return st.Save(w)
+  215 }
+  216 
+  217 // BlessAll baselines the gate: every current page is recorded as reviewed
+  218 // and stale ledger entries drop. First run initializes (opts in) the wiki.
+  219 func BlessAll(w *config.Wiki) (int, error) {
+  220 	st, _, err := Load(w)
+  221 	if err != nil {
+  222 		return 0, err
+  223 	}
+  224 	st.Blessed = map[string]string{}
+  225 	files := pageFiles(w)
+  226 	for _, rel := range files {
+  227 		h, err := hashFile(filepath.Join(w.Root, rel))
+  228 		if err != nil {
+  229 			return 0, err
+  230 		}
+  231 		st.Blessed[rel] = h
+  232 	}
+  233 	return len(files), st.Save(w)
+  234 }
+
+FILE internal/attention/events.go SHA256 2a8128c8ffd880e25c468415020f65f33b1f2aca81730b98f4a00dcc65d7f34f
+RANGE 68-113
+   68 	ts   TEXT NOT NULL,
+   69 	slug TEXT NOT NULL,
+   70 	door TEXT NOT NULL,
+   71 	kind TEXT NOT NULL,
+   72 	meta TEXT NOT NULL DEFAULT ''
+   73 );
+   74 CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug, ts);
+   75 CREATE INDEX IF NOT EXISTS idx_events_ts ON events(ts);
+   76 `
+   77 
+   78 // Events is an open handle on the machine-local event log.
+   79 type Events struct {
+   80 	db *sql.DB
+   81 }
+   82 
+   83 func Open(path string) (*Events, error) {
+   84 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+   85 		return nil, err
+   86 	}
+   87 	db, err := sql.Open("sqlite", "file:"+path+"?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)")
+   88 	if err != nil {
+   89 		return nil, err
+   90 	}
+   91 	if _, err := db.Exec(schema); err != nil {
+   92 		db.Close()
+   93 		return nil, fmt.Errorf("attention schema: %w", err)
+   94 	}
+   95 	var v int
+   96 	if err := db.QueryRow("PRAGMA user_version").Scan(&v); err == nil && v == 0 {
+   97 		db.Exec(fmt.Sprintf("PRAGMA user_version = %d", schemaVersion))
+   98 	}
+   99 	return &Events{db: db}, nil
+  100 }
+  101 
+  102 func (e *Events) Close() error { return e.db.Close() }
+  103 
+  104 // Log appends one access event. Slugs are stored lowercased so event
+  105 // queries join cleanly with the aggregates.
+  106 func (e *Events) Log(now time.Time, slug, door, kind, meta string) error {
+  107 	_, err := e.db.Exec(`INSERT INTO events(ts, slug, door, kind, meta) VALUES(?,?,?,?,?)`,
+  108 		now.Format(time.RFC3339), strings.ToLower(slug), door, kind, meta)
+  109 	return err
+  110 }
+  111 
+  112 // Event is one recorded access, for instruments and tests.
+  113 type Event struct {
+RANGE 139-180
+  139 	var args []any
+  140 	switch {
+  141 	case strings.HasSuffix(f.Kind, "*"):
+  142 		where = append(where, "kind LIKE ?")
+  143 		args = append(args, strings.TrimSuffix(f.Kind, "*")+"%")
+  144 	case f.Kind != "":
+  145 		where = append(where, "kind = ?")
+  146 		args = append(args, f.Kind)
+  147 	}
+  148 	if f.Slug != "" {
+  149 		where = append(where, "slug = ?")
+  150 		args = append(args, strings.ToLower(f.Slug))
+  151 	}
+  152 	if !f.Since.IsZero() {
+  153 		where = append(where, "ts >= ?")
+  154 		args = append(args, f.Since.Format(time.RFC3339))
+  155 	}
+  156 	if f.AttnOnly {
+  157 		where = append(where, "instr(kind, '.') = 0")
+  158 	}
+  159 	limit := f.Limit
+  160 	if limit <= 0 {
+  161 		limit = 200
+  162 	}
+  163 	args = append(args, limit)
+  164 	rows, err := e.db.Query(`SELECT ts, slug, door, kind, meta FROM events WHERE `+
+  165 		strings.Join(where, " AND ")+` ORDER BY ts DESC, id DESC LIMIT ?`, args...)
+  166 	if err != nil {
+  167 		return nil, err
+  168 	}
+  169 	defer rows.Close()
+  170 	return scanEvents(rows)
+  171 }
+  172 
+  173 // Prune deletes events older than the cutoff — the retention half of
+  174 // `canopy events gc`. Machine-local only; the wiki is never touched (N5).
+  175 func (e *Events) Prune(before time.Time) (int, error) {
+  176 	res, err := e.db.Exec(`DELETE FROM events WHERE ts < ?`, before.Format(time.RFC3339))
+  177 	if err != nil {
+  178 		return 0, err
+  179 	}
+  180 	n, _ := res.RowsAffected()
+RANGE 215-260
+  215 	Web   int    `json:"web_events"`
+  216 	Agent int    `json:"agent_events"`
+  217 }
+  218 
+  219 // TopConsumed ranks pages by access events since the cutoff. Search
+  220 // events carry no slug and are excluded — queries are demand, not
+  221 // consumption. Lifecycle events are excluded the same way (N3): a filed
+  222 // task is not a read.
+  223 func (e *Events) TopConsumed(since time.Time, n int) ([]Consumed, error) {
+  224 	rows, err := e.db.Query(`
+  225 		SELECT slug, COUNT(*),
+  226 		       SUM(door = 'web'), SUM(door = 'agent')
+  227 		FROM events
+  228 		WHERE ts >= ? AND slug <> '' AND instr(kind, '.') = 0
+  229 		GROUP BY slug
+  230 		ORDER BY COUNT(*) DESC, slug
+  231 		LIMIT ?`, since.Format(time.RFC3339), n)
+  232 	if err != nil {
+  233 		return nil, err
+  234 	}
+  235 	defer rows.Close()
+  236 	var out []Consumed
+  237 	for rows.Next() {
+  238 		var c Consumed
+  239 		if err := rows.Scan(&c.Slug, &c.Total, &c.Web, &c.Agent); err != nil {
+  240 			return nil, err
+  241 		}
+  242 		out = append(out, c)
+  243 	}
+  244 	return out, rows.Err()
+  245 }
+  246 
+  247 // WeeklyCounts buckets one page's events into per-week counts covering
+  248 // the last `weeks` weeks, oldest bucket first — the sparkline's data.
+  249 func (e *Events) WeeklyCounts(slug string, weeks int, now time.Time) ([]int, error) {
+  250 	cutoff := now.Add(-time.Duration(weeks) * 7 * 24 * time.Hour)
+  251 	rows, err := e.db.Query(`SELECT ts FROM events WHERE slug = ? AND ts >= ? AND instr(kind, '.') = 0`,
+  252 		strings.ToLower(slug), cutoff.Format(time.RFC3339))
+  253 	if err != nil {
+  254 		return nil, err
+  255 	}
+  256 	defer rows.Close()
+  257 	counts := make([]int, weeks)
+  258 	for rows.Next() {
+  259 		var ts string
+  260 		if err := rows.Scan(&ts); err != nil {
+
+FILE internal/attention/gaps.go SHA256 bd8f9bba6f3b28926bb63c0b33cac2bbf1c32cc7f84de20561334fd358736237
+RANGE 20-63
+   20 type Gap struct {
+   21 	Time    string  `json:"time"`
+   22 	Query   string  `json:"query"`
+   23 	Results int     `json:"results"`
+   24 	Top     float64 `json:"top_score"`
+   25 	Door    string  `json:"door,omitempty"`
+   26 }
+   27 
+   28 func GapsPath(w *config.Wiki) string {
+   29 	return filepath.Join(w.Root, "_meta", "webui", "search-gaps.jsonl")
+   30 }
+   31 
+   32 // LogGap appends one gap line. Append-only jsonl merges cleanly across
+   33 // devices, unlike the aggregate JSON files.
+   34 func LogGap(w *config.Wiki, door, query string, results int, top float64) error {
+   35 	g := Gap{Time: time.Now().Format(time.RFC3339), Query: query, Results: results, Top: top, Door: door}
+   36 	line, err := json.Marshal(g)
+   37 	if err != nil {
+   38 		return err
+   39 	}
+   40 	path := GapsPath(w)
+   41 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+   42 		return err
+   43 	}
+   44 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+   45 	if err != nil {
+   46 		return err
+   47 	}
+   48 	defer f.Close()
+   49 	_, err = f.Write(append(line, '\n'))
+   50 	return err
+   51 }
+   52 
+   53 // LogSearchEvent records that a query was asked (machine-local event
+   54 // log only — no page is marked, per H5). meta carries the query text
+   55 // so the /history timeline can show the search→read trail.
+   56 func LogSearchEvent(w *config.Wiki, door, query string) error {
+   57 	ev, err := Open(w.AttentionDBPath())
+   58 	if err != nil {
+   59 		return err
+   60 	}
+   61 	defer ev.Close()
+   62 	return ev.Log(time.Now(), "", door, KindSearch, query)
+   63 }
+
+FILE internal/webui/edit.go SHA256 2f6bab48541c0dd8f8964c9594a0b1ac12f8e9ca76bd97c283455959c3176bac
+RANGE 1-76
+    1 package webui
+    2 
+    3 import (
+    4 	"crypto/sha256"
+    5 	"encoding/hex"
+    6 	"net/http"
+    7 	"os"
+    8 	"path/filepath"
+    9 	"strings"
+   10 	"time"
+   11 
+   12 	"github.com/neutrospec/canopy/internal/tasks"
+   13 	"github.com/neutrospec/canopy/internal/wiki"
+   14 )
+   15 
+   16 // The web editor is a proposal door, not a write door (docs/agent-tasks.md
+   17 // "웹 편집 = 제안"; the 2026-07-24 위상 재평가 in web-ui-write-design.md,
+   18 // executed): saving files an edit task carrying the submitted body in
+   19 // full, and the agent judges and integrates it through the CLI pipeline.
+   20 // The page file is never touched here (invariant I2/T6) — which also
+   21 // dissolves the old optimistic-lock conflict handling: two proposals
+   22 // are just two tasks.
+   23 
+   24 func contentHash(b []byte) string {
+   25 	h := sha256.Sum256(b)
+   26 	return hex.EncodeToString(h[:])
+   27 }
+   28 
+   29 func (s *Server) handleEditForm(w http.ResponseWriter, r *http.Request) {
+   30 	scan, err := wiki.Scan(s.w)
+   31 	if err != nil {
+   32 		s.fail(w, err)
+   33 		return
+   34 	}
+   35 	p, ok := scan.BySlug[wiki.NormalizeLink(r.PathValue("slug"))]
+   36 	if !ok {
+   37 		http.NotFound(w, r)
+   38 		return
+   39 	}
+   40 	s.render(w, r, http.StatusOK, "edit.html", map[string]any{
+   41 		"Title": "edit: " + p.Title,
+   42 		"Page":  p,
+   43 		"Body":  p.Body,
+   44 	})
+   45 }
+   46 
+   47 func (s *Server) handleEditSave(w http.ResponseWriter, r *http.Request) {
+   48 	scan, err := wiki.Scan(s.w)
+   49 	if err != nil {
+   50 		s.fail(w, err)
+   51 		return
+   52 	}
+   53 	p, ok := scan.BySlug[wiki.NormalizeLink(r.PathValue("slug"))]
+   54 	if !ok {
+   55 		http.NotFound(w, r)
+   56 		return
+   57 	}
+   58 	// Browsers submit textarea content with CRLF line endings.
+   59 	body := strings.ReplaceAll(r.FormValue("body"), "\r\n", "\n")
+   60 	note := strings.TrimSpace(r.FormValue("note"))
+   61 	// An unchanged body with no note is a no-op, not a proposal.
+   62 	if strings.TrimSpace(body) == strings.TrimSpace(p.Body) && note == "" {
+   63 		http.Redirect(w, r, "/page/"+p.Slug, http.StatusSeeOther)
+   64 		return
+   65 	}
+   66 	raw, err := os.ReadFile(filepath.Join(s.w.Root, p.RelPath))
+   67 	if err != nil {
+   68 		s.fail(w, err)
+   69 		return
+   70 	}
+   71 	if _, err := tasks.FileEdit(s.w, p.Slug, note, body, contentHash(raw), "web", time.Now()); err != nil {
+   72 		s.fail(w, err)
+   73 		return
+   74 	}
+   75 	http.Redirect(w, r, "/page/"+p.Slug+"?tasked=1", http.StatusSeeOther)
+   76 }
+
+FILE internal/webui/speak.go SHA256 d44339d9e0013af16437f2e3f7866956f1d8247078fc3a5f72a1a043e2f80f31
+RANGE 36-117
+   36 	defer s.dailyMu.Unlock()
+   37 	today := time.Now().Format("2006-01-02")
+   38 	if s.daily.date == today {
+   39 		return s.daily.pick, s.daily.bridge
+   40 	}
+   41 	s.daily = daily{date: today}
+   42 	scan, err := wiki.Scan(s.w)
+   43 	if err != nil {
+   44 		return nil, nil
+   45 	}
+   46 	st, err := resurface.LoadState(s.w)
+   47 	if err != nil {
+   48 		return nil, nil
+   49 	}
+   50 	now := time.Now()
+   51 	rng := rand.New(rand.NewSource(now.UnixNano()))
+   52 	changed := false
+   53 	rd, err := reads.Load(s.w)
+   54 	if err != nil {
+   55 		rd = nil
+   56 	}
+   57 	if picks, err := resurface.PickPages(scan, st, rd, "auto", 1, now, rng); err == nil && len(picks) > 0 {
+   58 		s.daily.pick = &picks[0]
+   59 		st.MarkShown([]string{picks[0].Slug}, now)
+   60 		changed = true
+   61 	}
+   62 	if sdb, err := store.Open(s.w.DBPath()); err == nil {
+   63 		if vectors, err := sdb.PageVectors(); err == nil {
+   64 			if bridges := resurface.PickBridges(scan, vectors, st, 0.7, 1, false, now); len(bridges) > 0 {
+   65 				s.daily.bridge = &bridges[0]
+   66 				st.MarkPairShown(strings.ToLower(bridges[0].A.Slug), strings.ToLower(bridges[0].B.Slug), now)
+   67 				changed = true
+   68 			}
+   69 		}
+   70 		sdb.Close()
+   71 	}
+   72 	if changed {
+   73 		if err := st.Save(s.w); err != nil {
+   74 			log.Printf("resurface state save: %v", err)
+   75 		}
+   76 	}
+   77 	return s.daily.pick, s.daily.bridge
+   78 }
+   79 
+   80 // handleResurfaceFeedback wires 👍/👎/😴 to the shared resurface state
+   81 // so the web and the agent loop share cooldowns and votes.
+   82 func (s *Server) handleResurfaceFeedback(w http.ResponseWriter, r *http.Request) {
+   83 	slug := wiki.NormalizeLink(r.FormValue("slug"))
+   84 	action := r.FormValue("action")
+   85 	st, err := resurface.LoadState(s.w)
+   86 	if err != nil {
+   87 		s.fail(w, err)
+   88 		return
+   89 	}
+   90 	now := time.Now()
+   91 	switch action {
+   92 	case "up", "down":
+   93 		st.AddFeedback(slug, action, now)
+   94 	case "snooze":
+   95 		st.Snooze(slug, 7, now)
+   96 	default:
+   97 		http.Error(w, "unknown action", http.StatusBadRequest)
+   98 		return
+   99 	}
+  100 	if err := st.Save(s.w); err != nil {
+  101 		s.fail(w, err)
+  102 		return
+  103 	}
+  104 	// Card is consumed for today; a new one comes tomorrow.
+  105 	s.dailyMu.Lock()
+  106 	s.daily.pick = nil
+  107 	s.dailyMu.Unlock()
+  108 	http.Redirect(w, r, "/", http.StatusSeeOther)
+  109 }
+  110 
+  111 // --- search gap log ---
+  112 
+  113 // gapEntry mirrors attention.Gap for reading the jsonl; kept local so
+  114 // the 점검 page tolerates any line shape it has historically written.
+  115 type gapEntry struct {
+  116 	Time    string  `json:"time"`
+  117 	Query   string  `json:"query"`
+
+FILE internal/webui/discover.go SHA256 0d996c228288afe8a9891b8132ce2145b0e78a7852eee6da30b489c4911406c7
+RANGE 35-48
+   35 	if st, err := store.Open(s.w.DBPath()); err == nil {
+   36 		vectors, _ = st.PageVectors()
+   37 		st.Close()
+   38 	}
+   39 	var recentVecs [][]float32
+   40 	// Affinity blends both doors: recall citations are interest too.
+   41 	for _, slug := range rs.RecentAccessSlugs(affinityRecentK) {
+   42 		if v, ok := vectors[slug]; ok {
+   43 			recentVecs = append(recentVecs, v)
+   44 		}
+   45 	}
+   46 	backlinks := scan.Backlinks()
+   47 
+   48 	var out []discovery
+RANGE 92-134
+   92 
+   93 // --- handlers ---
+   94 
+   95 // handleReadMark is the explicit ✓ button (plain form POST — works
+   96 // without JS; the auto path is /api/read).
+   97 func (s *Server) handleReadMark(w http.ResponseWriter, r *http.Request) {
+   98 	s.mu.Lock()
+   99 	defer s.mu.Unlock()
+  100 	slug := wiki.NormalizeLink(r.PathValue("slug"))
+  101 	rs, err := reads.Load(s.w)
+  102 	if err != nil {
+  103 		s.fail(w, err)
+  104 		return
+  105 	}
+  106 	if r.FormValue("action") == "unread" {
+  107 		rs.Unmark(slug)
+  108 	} else {
+  109 		// A repeat mark is the "다시 읽음" affordance: count/last advance
+  110 		// and the event log keeps the distinction for instruments.
+  111 		if rs.IsRead(slug) {
+  112 			s.logEvent(slug, attention.KindReread, "")
+  113 		} else {
+  114 			s.logEvent(slug, attention.KindRead, "")
+  115 		}
+  116 		rs.Mark(slug, "explicit", time.Now())
+  117 	}
+  118 	if err := rs.Save(s.w); err != nil {
+  119 		s.fail(w, err)
+  120 		return
+  121 	}
+  122 	http.Redirect(w, r, "/page/"+slug, http.StatusSeeOther)
+  123 }
+  124 
+  125 // handleReadAuto records a dwell+scroll detected read. It never
+  126 // downgrades and never re-marks an already-read page.
+  127 func (s *Server) handleReadAuto(w http.ResponseWriter, r *http.Request) {
+  128 	s.mu.Lock()
+  129 	defer s.mu.Unlock()
+  130 	slug := wiki.NormalizeLink(r.PathValue("slug"))
+  131 	scan, err := wiki.Scan(s.w)
+  132 	if err != nil {
+  133 		s.fail(w, err)
+  134 		return
+
+FILE internal/config/config.go SHA256 17d7301594edb77d8225a207676f4b6c0f10cff1d7eaf110af91171894224817
+RANGE 155-237
+  155 	HasTOML bool
+  156 	// LegacyTags reports that canopy.toml declares the old single `tags`
+  157 	// list without the topic/form facets — read tolerantly (the list is
+  158 	// the whole taxonomy); `canopy tags --audit` recommends migrating.
+  159 	LegacyTags bool
+  160 }
+  161 
+  162 // DBPath keys the derived index cache by wiki path so multiple wikis
+  163 // coexist: $XDG_CACHE_HOME/canopy/index/<sha256[:12] of root>.db.
+  164 func (w *Wiki) DBPath() string {
+  165 	sum := sha256.Sum256([]byte(w.Root))
+  166 	return filepath.Join(CacheHome(), "index", hex.EncodeToString(sum[:])[:12]+".db")
+  167 }
+  168 
+  169 // AttentionDBPath is the machine-local access-event log for this wiki,
+  170 // keyed like DBPath but under state (it is history, not a rebuildable
+  171 // cache — see docs/web-ui-plan-4.md).
+  172 func (w *Wiki) AttentionDBPath() string {
+  173 	sum := sha256.Sum256([]byte(w.Root))
+  174 	return filepath.Join(StateHome(), "attention", hex.EncodeToString(sum[:])[:12]+".db")
+  175 }
+  176 
+  177 // CheckoutDir holds working copies materialized for agent editing —
+  178 // machine-local state OUTSIDE the wiki tree, so git and reconcile never
+  179 // see an edit in progress (invariant R2). Keyed like DBPath.
+  180 func (w *Wiki) CheckoutDir() string {
+  181 	sum := sha256.Sum256([]byte(w.Root))
+  182 	return filepath.Join(StateHome(), "checkout", hex.EncodeToString(sum[:])[:12])
+  183 }
+  184 
+  185 func (w *Wiki) TOMLPath() string    { return filepath.Join(w.Root, "canopy.toml") }
+  186 func (w *Wiki) LogsDir() string     { return filepath.Join(w.Root, "logs") }
+  187 func (w *Wiki) IndexMDPath() string { return filepath.Join(w.Root, "index.md") }
+  188 
+  189 type globalConfig struct {
+  190 	DefaultWiki string `toml:"default_wiki"`
+  191 }
+  192 
+  193 // AdoptAsDefaultWiki records root as the fallback wiki when no default
+  194 // is set yet. Without it, running canopy outside a wiki tree fails and
+  195 // agents learn to `cd` into the wiki — making the wiki their workspace,
+  196 // which is exactly what the checkout boundary exists to avoid. An
+  197 // existing default is never overwritten: a second wiki must not steal
+  198 // the first one's spot (pass --wiki or set CANOPY_WIKI for those).
+  199 // Reports whether it wrote.
+  200 func AdoptAsDefaultWiki(root string) (bool, error) {
+  201 	path := filepath.Join(ConfigHome(), "config.toml")
+  202 	gc := globalConfig{}
+  203 	if _, err := toml.DecodeFile(path, &gc); err == nil && gc.DefaultWiki != "" {
+  204 		return false, nil
+  205 	} else if err != nil && !os.IsNotExist(err) {
+  206 		// A config that exists but doesn't parse is the user's to fix;
+  207 		// silently rewriting it would lose whatever else is in there.
+  208 		return false, nil
+  209 	}
+  210 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+  211 		return false, err
+  212 	}
+  213 	body := fmt.Sprintf("default_wiki = %q\n", root)
+  214 	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+  215 		return false, err
+  216 	}
+  217 	return true, nil
+  218 }
+  219 
+  220 // Resolve finds the wiki root and loads its config.
+  221 func Resolve(explicit string) (*Wiki, error) {
+  222 	root, err := findRoot(explicit)
+  223 	if err != nil {
+  224 		return nil, err
+  225 	}
+  226 	root, err = filepath.Abs(root)
+  227 	if err != nil {
+  228 		return nil, err
+  229 	}
+  230 	if fi, err := os.Stat(root); err != nil || !fi.IsDir() {
+  231 		return nil, fmt.Errorf("wiki root is not a directory: %s", root)
+  232 	}
+  233 	w := &Wiki{Root: root, Cfg: Default()}
+  234 	tomlPath := w.TOMLPath()
+  235 	if _, err := os.Stat(tomlPath); err == nil {
+  236 		md, err := toml.DecodeFile(tomlPath, w.Cfg)
+  237 		if err != nil {
+
+FILE internal/migrate/migrate.go SHA256 33cadc6a09b65f07f0b5db81e7a89a668899dea671d569051ce243927a30b83e
+RANGE 74-111
+   74 func statePath(configHome string) string { return filepath.Join(configHome, "state.json") }
+   75 
+   76 func loadState(configHome string) (state, bool, error) {
+   77 	b, err := os.ReadFile(statePath(configHome))
+   78 	if os.IsNotExist(err) {
+   79 		return state{}, false, nil
+   80 	}
+   81 	if err != nil {
+   82 		return state{}, false, err
+   83 	}
+   84 	var s state
+   85 	if err := json.Unmarshal(b, &s); err != nil {
+   86 		return state{}, false, fmt.Errorf("parse %s: %w", statePath(configHome), err)
+   87 	}
+   88 	return s, true, nil
+   89 }
+   90 
+   91 // saveState writes the version atomically (temp + rename) so a crash mid-write
+   92 // cannot leave a truncated state.json.
+   93 func saveState(configHome, appVersion string, version int) error {
+   94 	if err := os.MkdirAll(configHome, 0o755); err != nil {
+   95 		return err
+   96 	}
+   97 	s := state{
+   98 		SchemaVersion: version,
+   99 		AppVersion:    appVersion,
+  100 		UpdatedAt:     time.Now().UTC().Format(time.RFC3339),
+  101 	}
+  102 	b, err := json.MarshalIndent(s, "", "  ")
+  103 	if err != nil {
+  104 		return err
+  105 	}
+  106 	b = append(b, '\n')
+  107 	tmp := statePath(configHome) + ".tmp"
+  108 	if err := os.WriteFile(tmp, b, 0o644); err != nil {
+  109 		return err
+  110 	}
+  111 	return os.Rename(tmp, statePath(configHome))
+RANGE 125-155
+  125 func Ensure(ctx *Context, appVersion string) (Result, error) {
+  126 	cur, fromFile, err := resolveCurrent(ctx)
+  127 	if err != nil {
+  128 		return Result{}, err
+  129 	}
+  130 	target := Target()
+  131 
+  132 	// Refuse to run against state written by a newer canopy: applying old
+  133 	// logic to newer data risks corruption. Upgrading the binary fixes it.
+  134 	if cur > target {
+  135 		return Result{From: cur, To: cur}, fmt.Errorf(
+  136 			"canopy is older (schema %d) than your data (schema %d) — upgrade canopy", target, cur)
+  137 	}
+  138 
+  139 	res := Result{From: cur, To: cur}
+  140 	if cur == target {
+  141 		// Already current. Stamp the baseline once so the version is on
+  142 		// record and `canopy version` can show it.
+  143 		if !fromFile {
+  144 			if err := saveState(ctx.ConfigHome, appVersion, target); err != nil {
+  145 				return res, err
+  146 			}
+  147 		}
+  148 		return res, nil
+  149 	}
+  150 
+  151 	for _, m := range ladder {
+  152 		if m.To <= cur {
+  153 			continue
+  154 		}
+  155 		if err := m.Run(ctx); err != nil {
+RANGE 190-201
+  190 // resolveCurrent reads the recorded rung, or infers a baseline when no state
+  191 // file exists yet.
+  192 func resolveCurrent(ctx *Context) (version int, fromFile bool, err error) {
+  193 	s, ok, err := loadState(ctx.ConfigHome)
+  194 	if err != nil {
+  195 		return 0, false, err
+  196 	}
+  197 	if ok {
+  198 		return s.SchemaVersion, true, nil
+  199 	}
+  200 	return detectBaseline(ctx), false, nil
+  201 }
+
+FILE internal/logops/logops.go SHA256 079895b1c70f7d1a870c4b074a8a4e8c98c2c3bf02a394911a9125b2ef2ea423
+RANGE 10-78
+   10 	"sort"
+   11 	"strings"
+   12 	"time"
+   13 
+   14 	"github.com/neutrospec/canopy/internal/config"
+   15 )
+   16 
+   17 type Entry struct {
+   18 	Timestamp string   `json:"timestamp"`
+   19 	Action    string   `json:"action"` // create|update|move|delete|archive|sync|lint
+   20 	File      string   `json:"file"`
+   21 	Related   []string `json:"related,omitempty"`
+   22 	Note      string   `json:"note,omitempty"`
+   23 	Auto      bool     `json:"auto"`
+   24 }
+   25 
+   26 func Append(w *config.Wiki, action, file string, related []string, note string) error {
+   27 	if err := os.MkdirAll(w.LogsDir(), 0o755); err != nil {
+   28 		return err
+   29 	}
+   30 	now := time.Now()
+   31 	e := Entry{
+   32 		Timestamp: now.Format("2006-01-02T15:04:05"),
+   33 		Action:    action,
+   34 		File:      file,
+   35 		Related:   related,
+   36 		Note:      note,
+   37 		Auto:      true,
+   38 	}
+   39 	line, err := json.Marshal(e)
+   40 	if err != nil {
+   41 		return err
+   42 	}
+   43 	path := filepath.Join(w.LogsDir(), now.Format("2006-01")+".jsonl")
+   44 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+   45 	if err != nil {
+   46 		return err
+   47 	}
+   48 	defer f.Close()
+   49 	_, err = f.Write(append(line, '\n'))
+   50 	return err
+   51 }
+   52 
+   53 // ReadRecent returns up to n log entries, newest first. Malformed
+   54 // lines (hand-edited logs) are skipped, not fatal.
+   55 func ReadRecent(w *config.Wiki, n int) ([]Entry, error) {
+   56 	months, err := filepath.Glob(filepath.Join(w.LogsDir(), "*.jsonl"))
+   57 	if err != nil {
+   58 		return nil, err
+   59 	}
+   60 	sort.Sort(sort.Reverse(sort.StringSlice(months))) // YYYY-MM sorts lexically
+   61 	var out []Entry
+   62 	for _, path := range months {
+   63 		data, err := os.ReadFile(path)
+   64 		if err != nil {
+   65 			continue
+   66 		}
+   67 		var file []Entry
+   68 		for _, l := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+   69 			var e Entry
+   70 			if json.Unmarshal([]byte(l), &e) == nil && e.Timestamp != "" {
+   71 				file = append(file, e)
+   72 			}
+   73 		}
+   74 		// Entries within a file are chronological; newest last.
+   75 		for i := len(file) - 1; i >= 0 && len(out) < n; i-- {
+   76 			out = append(out, file[i])
+   77 		}
+   78 		if len(out) >= n {
+
+FILE internal/digest/digest.go SHA256 74de54cc8813ea550195d6c037232ab30faada6a058ea5ca6e45878eff674235
+RANGE 74-114
+   74 	return time.Time{}, fmt.Errorf("bad --since %q (want 90d, 12w, 3m, or YYYY-MM-DD)", s)
+   75 }
+   76 
+   77 func Collect(scan *wiki.ScanResult, since time.Time) *Result {
+   78 	// Slices start non-nil so --json emits [] instead of null —
+   79 	// agents iterate results without null checks (G5 hygiene).
+   80 	res := &Result{
+   81 		Since:        since.Format("2006-01-02"),
+   82 		TagCounts:    map[string]int{},
+   83 		CreatedPages: []PageRef{},
+   84 		UpdatedPages: []PageRef{},
+   85 		Decisions:    []PageRef{},
+   86 		TopConsumed:  []Consumed{},
+   87 	}
+   88 	res.Stats.Total = len(scan.Pages)
+   89 	cutoff := since.Format("2006-01-02")
+   90 
+   91 	ref := func(p *wiki.Page) PageRef {
+   92 		return PageRef{Slug: p.Slug, RelPath: p.RelPath, Title: p.Title, Type: p.Type, Created: p.Created, Updated: p.Updated}
+   93 	}
+   94 	for _, p := range scan.Pages {
+   95 		// String compare works: dates are normalized YYYY-MM-DD.
+   96 		createdIn := p.Created >= cutoff && p.Created != ""
+   97 		updatedIn := p.Updated >= cutoff && p.Updated != ""
+   98 		switch {
+   99 		case createdIn:
+  100 			res.CreatedPages = append(res.CreatedPages, ref(p))
+  101 			for _, t := range p.Tags {
+  102 				res.TagCounts[t]++
+  103 			}
+  104 		case updatedIn:
+  105 			res.UpdatedPages = append(res.UpdatedPages, ref(p))
+  106 		}
+  107 		for _, t := range p.Tags {
+  108 			if t == "decision" {
+  109 				res.Decisions = append(res.Decisions, ref(p))
+  110 				break
+  111 			}
+  112 		}
+  113 	}
+  114 	byCreated := func(list []PageRef) {
+
+FILE internal/genindex/genindex.go SHA256 9cd74dcd61b239f7b4a1510d84128d5b6211453efe19a19e9bcef628805e1d34
+RANGE 10-30
+   10 	"path/filepath"
+   11 	"sort"
+   12 	"strings"
+   13 	"time"
+   14 
+   15 	"github.com/neutrospec/canopy/internal/config"
+   16 	"github.com/neutrospec/canopy/internal/wiki"
+   17 )
+   18 
+   19 const generatedMark = "<!-- generated by canopy — do not edit by hand; counts are measured from the filesystem -->"
+   20 
+   21 // Regenerate rewrites index.md and index/<category>.md.
+   22 func Regenerate(w *config.Wiki, scan *wiki.ScanResult) error {
+   23 	today := time.Now().Format("2006-01-02")
+   24 	byDir := map[string][]*wiki.Page{}
+   25 	for _, p := range scan.Pages {
+   26 		byDir[p.Dir] = append(byDir[p.Dir], p)
+   27 	}
+   28 
+   29 	indexDir := filepath.Join(w.Root, "index")
+   30 	if err := os.MkdirAll(indexDir, 0o755); err != nil {
+RANGE 78-96
+   78 tags: [tool]
+   79 sources: []
+   80 ---
+   81 
+   82 %s
+   83 
+   84 # Wiki Dashboard
+   85 
+   86 > 개인 지식 베이스 — **검색 중심** 탐색 허브.
+   87 >
+   88 > **Last updated**: %s | **Total pages**: %d
+   89 
+   90 ---
+   91 
+   92 ## 📊 Stats by Category
+   93 
+   94 | Category | Count | Last Added | Index |
+   95 |----------|-------|------------|-------|
+   96 `, today, generatedMark, today, len(scan.Pages))
+
+FILE docs/invariants.md SHA256 33eb7d57e8b0086a1b5d8f8a416173771ad9289875303bb9a9dd8559d344f3d3
+RANGE 193-214
+  193 | P4 | 검증 환경의 결함(JS 셔임 갭·미해결 promise)은 **fail-open** — 다이어그램 탓으로 돌리지 않는다 | `go test ./internal/mermaid/`의 에러 분류 테스트; env 갭은 lint에서 `mermaid-unchecked`(info)로 가시화, 쓰기는 통과 |
+  194 
+  195 ## R. 체크아웃 편집 ([checkout-design.md](checkout-design.md))
+  196 
+  197 > 수술적 편집은 에이전트의 네이티브 도구가 제일 잘한다 — canopy는 경쟁하는 대신
+  198 > **파일을 빌려주고**(checkout, 위키 밖 working copy) 되돌려받을 때 검증한다
+  199 > (checkin = 게이트 + base 대조). 위키 트리는 에이전트에게 읽기 전용이 될 수 있다.
+  200 
+  201 | # | 불변식 | 점검 |
+  202 |---|--------|------|
+  203 | R1 | checkout은 위키를 수정하지 않는다 (접근 기록만 남는다) | `canopy checkout <slug> $W` 전후 `git -C $W status --short` 동일 |
+  204 | R2 | working copy는 위키 밖 머신-로컬 — git·reconcile이 보지 못한다 (H8과 같은 규율) | 사본 경로가 `$XDG_STATE_HOME/canopy/checkout/` 아래, `git -C $W ls-files \| grep checkout` 빈 출력, 편집해도 `canopy reconcile --json` 후보 0건 |
+  205 | R3 | checkin은 쓰기 게이트를 전부 통과해야 반영된다 (A·P 재사용) | 사본에 깨진 mermaid/무효 태그를 넣고 `canopy checkin <slug>` → **에러** (exit != 0), 위키 파일 불변 |
+  206 | R4 | base 불일치는 거부 — 조용한 merge 없음 (T9의 base와 같은 개념) | checkout 후 위키 파일을 직접 바꾸고 checkin → 에러 + 재checkout 안내 |
+  207 | R5 | checkin·discard는 working copy를 회수한다 (rm 불필요) | checkin 성공 후 사본·메타 부재; `--discard`도 동일 |
+  208 | R6 | 열린 checkout은 노출된다 (T7과 같은 원칙) | 열린 상태에서 아무 canopy 명령 → 배너에 `✎ … N건`, `canopy status --json \| jq .checkouts_open` ≥ 1 |
+  209 | R7 | type·created 변경은 checkin이 거부한다 (type 이동은 `canopy mv`가 유일 경로) | 사본의 type을 바꿔 checkin → 에러 |
+  210 | R8 | 무변경 checkin은 no-op + 회수 | 편집 없이 checkin → 위키 파일 해시 동일, 사본 회수, exit 0 |
+  211 
+  212 ## S. 태그 taxonomy 거버넌스 ([taxonomy.md](taxonomy.md))
+  213 
+  214 > taxonomy는 실측 사용의 반영이지 희망사항 목록이 아니다. 태그는 주제(topic,
+
+FILE docs/philosophy.md SHA256 354316dbecd275809d6a79c0cd4ac847c6a13730a113412a0d89652df09f2935
+RANGE 202-225
+  202 
+  203 버전이 오르면 온디스크 상태도 바뀐다. 여기서도 원칙 3의 구분(원본/상태/캐시)이
+  204 방법을 가른다. **재현 불가 머신-로컬 상태**(전역 설정, 모델·XDG 레이아웃)는
+  205 append-only 정수 사다리로 **단계적으로** 이행한다 — 각 단계는 idempotent하고,
+  206 새 버전 첫 실행이 startup에서 기록된 지점부터 `Target`까지 간극을 밟아 올라간다.
+  207 반대로 **파생 캐시**(검색 인덱스 DB)는 **절대 이행하지 않는다**: 레이아웃이 바뀌면
+  208 버전을 올리고 통째로 버린 뒤 재구축하는 것이 올바른 "마이그레이션"이다. 던져버릴
+  209 것을 한 단계씩 이행하는 것은 낭비이고, 재구축이 안전하다는 보증(원칙 2·3, 불변식
+  210 C4)이 바로 그 낭비를 면제해 준다. 옛 바이너리가 더 새 데이터를 만나면 깨뜨리는 대신
+  211 거부한다 — 안전은 기본값의 성질이다(원칙 11과 같은 태도).
+  212 
+  213 git으로 기기 사이를 이동하는 `_meta/*` 파일은 파일 안의 `version`으로 진화한다.
+  214 머신-로컬 이행 기록만으로는 다른 기기에서 가져온 옛 위키의 형식을 판단할 수 없기
+  215 때문이다. Load는 옛 형식을 관용적으로 읽고, 변경은 기존 필드를 보존하며 추가한다.
+  216 구버전 저장으로 새 필드가 사라질 수 있으면 별도 파일에 둔다.
+  217 
+  218 - 점검: `go test ./internal/config/ ./internal/reads/ ./internal/tasks/`의 옛 형식 읽기·필드 보존 테스트.
+  219 
+  220 - 점검: invariants **J 섹션** (J1 세 버전 노출, J2 사다리 조밀·append-only,
+  221   J3 첫 실행 각인·재실행 no-op, J4 다운그레이드 거부, J5 캐시는 사다리 밖).
+  222 - 설계와 개발 규칙(언제 rung을 추가하나): [versioning.md](versioning.md),
+  223   [AGENTS.md](../AGENTS.md).
+  224 
+  225 ## 비-목표 (하지 않는 것)

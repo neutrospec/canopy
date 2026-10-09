@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+"""Run after final-runner in a fresh root; only its isolated env/binary are reused."""
+import json, os, pathlib, subprocess
+repo=pathlib.Path(os.environ['FINAL_SOURCE_REPO'])
+run=pathlib.Path(os.environ['FINAL_FIRST_RUN'])
+root=pathlib.Path(os.environ['FINAL_SUPPLEMENT_ROOT']); root.mkdir(exist_ok=False)
+initial=json.loads((run/'results.json').read_text())
+env=os.environ.copy(); env.update(initial['environment']); env.update(GOSUMDB='off',GOTOOLCHAIN='local',GIT_CONFIG_GLOBAL='/dev/null',GIT_CONFIG_NOSYSTEM='1',GIT_TERMINAL_PROMPT='0',TZ='UTC')
+records=[]
+def call(args,cwd=repo,check=True):
+ p=subprocess.run([str(a) for a in args],cwd=cwd,env=env,text=True,capture_output=True,timeout=240)
+ r={'argv':[str(a) for a in args],'cwd':str(cwd),'exit':p.returncode,'stdout':p.stdout,'stderr':p.stderr}; records.append(r)
+ if check and p.returncode: raise RuntimeError(json.dumps(r,ensure_ascii=False))
+ return r
+env['FINAL_API_ROOT']=str(root/'api')
+api=call(['go','run','-mod=readonly','./review_probes/final'])
+bare=root/'remote.git'; a=root/'A'; b=root/'B'; binary=run/'canopy-lite'
+call(['git','init','--bare','--initial-branch=main',bare])
+call(['git','clone',bare,a])
+def git(w,*args):return call(['git','-C',w,*args])
+for key,value in [('user.name','Canopy Fixture'),('user.email','fixture@invalid.local')]:git(a,'config',key,value)
+call([binary,'init','--wiki',a,'--json'])
+(a/'raw').mkdir(exist_ok=True); (a/'raw/final.txt').write_text('header\nbase value\nfooter\n')
+git(a,'add','-A'); git(a,'commit','-m','fixture base'); git(a,'push','-u','origin','main')
+call(['git','clone',bare,b])
+for key,value in [('user.name','Canopy Fixture'),('user.email','fixture@invalid.local')]:git(b,'config',key,value)
+(b/'raw/final.txt').write_text('header\nremote value\nfooter\n')
+git(b,'add','-A');git(b,'commit','-m','fixture remote edit');git(b,'push')
+remote_before=git(b,'rev-parse','HEAD')['stdout'].strip()
+(a/'raw/final.txt').write_text('header\nlocal dirty value\nfooter\n')
+sync=call([binary,'sync','--wiki',a,'--json'],check=False)
+published=call(['git','--git-dir',bare,'show','HEAD:raw/final.txt'])['stdout']
+stash=git(a,'show','refs/stash:raw/final.txt')['stdout']
+remote_original=git(a,'show',remote_before+':raw/final.txt')['stdout']
+status=git(a,'status','--porcelain')['stdout']
+result={'api':json.loads(api['stdout']),'git_conflict':{'sync_exit':sync['exit'],'sync_stdout':sync['stdout'],'published_text':published,'conflict_marker_published':'<<<<<<<' in published and '>>>>>>>' in published,'local_original_recoverable':stash=='header\nlocal dirty value\nfooter\n','remote_original_recoverable':remote_original=='header\nremote value\nfooter\n','status_after':status,'limit':'only two own local clones and own bare origin; proves wrong publication, not irrecoverable Git source loss'},'records':records}
+(root/'results.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({k:v for k,v in result.items() if k!='records'},ensure_ascii=False,indent=2))

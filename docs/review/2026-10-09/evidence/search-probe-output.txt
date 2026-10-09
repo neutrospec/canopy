@@ -1,0 +1,41 @@
+empty {"body":"","embed_calls":1,"hits":[{"slug":"alpha","rel_path":"concepts/alpha.md","title":"Alpha","seq":0,"score":1,"text":"Alpha\n\nOld factual claim."}],"reindex":{"pages":1,"embedded_pages":0,"pruned_pages":0,"total_chunks":1}}
+noengine {"hits":[{"slug":"alpha","rel_path":"concepts/alpha.md","title":"Alpha","seq":0,"score":1,"text":"Alpha\n\nOld factual claim."}],"reindex":{"pages":1,"embedded_pages":0,"pruned_pages":0,"total_chunks":0}}
+deleted {"joined_hits":0,"page_vectors":1}
+model {"hits":[{"slug":"alpha","rel_path":"concepts/alpha.md","title":"Alpha","seq":0,"score":0,"text":"Alpha\n\nSame text."}],"new_engine_calls":0,"reindex":{"pages":1,"embedded_pages":0,"pruned_pages":0,"total_chunks":1}}
+chunk_tokens_config {"configured":1,"new_engine_calls":0,"reindex":{"pages":1,"embedded_pages":0,"pruned_pages":0,"total_chunks":1}}
+verbatim {"body":"First paragraph.  \n\n    indented code\n\n\n\nLast paragraph.\n","chunks":1,"is_substring":false,"text":"First paragraph.\n\nindented code\n\nLast paragraph."}
+dimension {"error":null,"query_dim":2,"score":1,"stored_dim":3}
+nonunit {"score":2}
+mixed_dimension_panic "runtime error: index out of range [2] with length 2"
+nan {"is_nan":true,"marshal_error":"json: unsupported value: NaN"}
+chunk_k {"k":0,"returned":3}
+chunk_k {"k":-1,"returned":3}
+semantic_negative_panic "runtime error: slice bounds out of range [:-1]"
+tie_orders {"fuse":["a,b","b,a"],"semantic":["a,b,c","b,c,a","c,a,b"]}
+keyword {"query":"프로토콜","slugs":["ko"]}
+keyword {"query":"프로토콜을","slugs":[]}
+keyword {"query":"산업용 프로토콜","slugs":["ko"]}
+keyword {"query":"cache","slugs":["en"]}
+keyword {"query":"cach","slugs":["en"]}
+keyword {"query":"工业协议","slugs":["zh"]}
+keyword {"query":"协议","slugs":[]}
+keyword {"query":"C++","slugs":["en"]}
+keyword {"query":"C","slugs":["en"]}
+api_cold {"body":"{\"mode\":\"keyword\",\"query\":\"oldneedle\",\"results\":[]}\n","status":200}
+full_search {"status":200}
+api_warm {"body":"{\"mode\":\"keyword\",\"query\":\"oldneedle\",\"results\":[{\"Slug\":\"alpha\",\"Title\":\"Old title\",\"Score\":0.000001,\"Snippet\":\"»oldneedle« present\"}]}\n","status":200}
+api_after_edit_old {"body":"{\"mode\":\"keyword\",\"query\":\"oldneedle\",\"results\":[{\"Slug\":\"alpha\",\"Title\":\"Old title\",\"Score\":0.000001,\"Snippet\":\"»oldneedle« present\"}]}\n","status":200}
+api_after_edit_new {"body":"{\"mode\":\"keyword\",\"query\":\"newneedle\",\"results\":[]}\n","status":200}
+api_after_delete {"body":"{\"mode\":\"keyword\",\"query\":\"oldneedle\",\"results\":[{\"Slug\":\"alpha\",\"Title\":\"Old title\",\"Score\":0.000001,\"Snippet\":\"»oldneedle« present\"}]}\n","status":200}
+api_inference_failure {"body":"fixture inference failed\n","status":500}
+cancel_entered_engine true
+cancel_returned_before_release false
+bridge_control {"orders":["a|b,a|c,b|c"],"reverse_link_remaining":2,"unique":true}
+bridge_stale [{"a":{"slug":"a","rel_path":"concepts/a.md","title":"a","excerpt":"same"},"b":{"slug":"b","rel_path":"concepts/b.md","title":"b","excerpt":"Completely changed source text."},"similarity":1,"linked":false}]
+partial_failure {"chunks":[{"slug":"alpha","rel_path":"concepts/alpha.md","title":"New title","seq":0,"score":1,"text":"Old title\n\nold evidence"}],"error":"embed concepts/alpha.md: fixture inference failed"}
+control_initial {"pages":1,"embedded_pages":1,"pruned_pages":0,"total_chunks":1}
+control_unchanged {"pages":1,"embedded_pages":0,"pruned_pages":0,"total_chunks":1}
+control_title {"pages":1,"embedded_pages":1,"pruned_pages":0,"total_chunks":1}
+control_body {"pages":1,"embedded_pages":1,"pruned_pages":0,"total_chunks":1}
+control_deleted_with_engine {"pages":0,"embedded_pages":0,"pruned_pages":1,"total_chunks":0}
+control_schema_reset {"chunks":0,"pages":0}

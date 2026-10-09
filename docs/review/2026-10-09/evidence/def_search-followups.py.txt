@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import tempfile
+
+repo=Path(__file__).resolve().parents[4]
+out=repo/'docs/review/2026-10-09/evidence'
+root=Path(tempfile.mkdtemp(prefix='canopy-def-search-follow-',dir='/private/tmp'))
+env=os.environ.copy()
+for key,tail in [('HOME','home'),('XDG_CONFIG_HOME','config'),('XDG_CACHE_HOME','cache'),('XDG_DATA_HOME','data'),('XDG_STATE_HOME','state'),('TMPDIR','tmp')]:
+    p=root/tail;p.mkdir();env[key]=str(p)
+env.update(GOCACHE='/private/tmp/canopy-review/go-cache',GOMODCACHE='/Users/nobocop/go/pkg/mod',GOPROXY='off',GOTELEMETRY='off',GOTOOLCHAIN='local',CGO_ENABLED='0',GOFLAGS='',GOWORK='off',CANOPY_WIKI='')
+records=[]
+def run(label,argv,extra=None):
+    ee=env.copy();ee.update(extra or {})
+    r=subprocess.run([str(a) for a in argv],cwd=repo,env=ee,capture_output=True,text=True,timeout=180)
+    records.append(dict(label=label,argv=[str(a) for a in argv],exit=r.returncode,stdout=r.stdout,stderr=r.stderr,env={k:ee[k] for k in ['HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME','XDG_DATA_HOME','XDG_STATE_HOME','TMPDIR','GOCACHE','GOMODCACHE','GOPROXY','GOTELEMETRY']}))
+    print(label,r.returncode,flush=True)
+    if r.returncode: raise RuntimeError(r.stderr)
+    return r
+try:
+    run('mathjax-loader',['node',out/'def_search-mathjax.cjs.txt'])
+    binary=root/'canopy-lite';run('build-lite',['go','build','-o',binary,'./cmd/canopy'])
+    w=root/'tags';(w/'concepts').mkdir(parents=True)
+    raw='---\ntitle: one\ntype: concept\ncreated: 2026-10-09\nupdated: 2026-10-09\ntags: [tool, tool, tool]\n---\nOne page.'
+    (w/'concepts/one.md').write_text(raw)
+    run('one-page-three-tags',[binary,'tags','--audit','--json','--wiki',w])
+    (w/'concepts/one.md').write_text(raw.replace('[tool, tool, tool]','[tool]'))
+    (w/'concepts/two.md').write_text(raw.replace('[tool, tool, tool]','[tool]').replace('title: one','title: two'))
+    run('two-pages-control',[binary,'tags','--audit','--json','--wiki',w])
+    sentinel=root/'sentinel-web';sentinel.mkdir()
+    run('web-task-sentinel',['go','test','-count=1','./internal/webui','-run','^TestWebTaskFilingDoesNotEditPages$'],{'HOME':str(sentinel),'XDG_STATE_HOME':''})
+    records.append(dict(label='web-sentinel-files',files=[dict(path=str(p.relative_to(sentinel)),size=p.stat().st_size) for p in sentinel.rglob('*') if p.is_file()]))
+    sections={
+      'internal/indexer/indexer.go':[(20,90)], 'internal/embed/chunk.go':[(18,86)],
+      'internal/embed/engine.go':[(22,52)], 'internal/embed/engine_ort.go':[(58,92)],
+      'internal/store/vectors.go':[(33,55),(94,130),(145,185),(188,241),(261,281)],
+      'internal/store/store.go':[(26,51),(130,177)], 'internal/search/search.go':[(14,42)],
+      'internal/webui/server.go':[(452,506),(559,576)], 'internal/webui/render.go':[(46,114)],
+      'internal/webui/suggest.go':[(32,88)], 'internal/webui/discover.go':[(31,93)],
+      'internal/webui/browse.go':[(241,281)], 'internal/webui/speak.go':[(57,74)],
+      'internal/wiki/page.go':[(37,101),(138,157)], 'internal/lint/lint.go':[(83,117)],
+      'internal/lint/audit.go':[(36,79)], 'internal/resurface/pick.go':[(186,247)],
+      'cmd/canopy/main.go':[(54,74),(379,429),(467,522),(580,605)],
+      'cmd/canopy/reconcile.go':[(187,247)],'cmd/canopy/write.go':[(359,416)],
+      'internal/tasks/tasks_test.go':[(16,25)],'internal/webui/tasks_test.go':[(16,33)],
+      'Makefile':[(9,33),(53,57),(65,104)],'.github/workflows/ci.yml':[(1,52)],
+      '.github/workflows/release.yml':[(15,40)],'.goreleaser.yaml':[(13,38)],
+      'packaging/homebrew/canopy.rb':[(24,53),(99,104)],'scripts/quantize-model.py':[(1,30)],
+      'README.md':[(198,205)],
+      '/Users/nobocop/go/pkg/mod/github.com/knights-analytics/hugot@v0.7.5/pipelines/featureExtraction.go':[(119,138),(222,251)],
+      '/Users/nobocop/go/pkg/mod/github.com/knights-analytics/hugot@v0.7.5/backends/tokenizer_rust.go':[(62,90)],
+    }
+    evidence=[]
+    for name,ranges in sections.items():
+        p=repo/name;data=p.read_bytes();lines=data.decode().splitlines()
+        evidence.append(name+' SHA256='+hashlib.sha256(data).hexdigest())
+        for a,b in ranges:
+            evidence.extend(str(i)+': '+lines[i-1] for i in range(a,min(b,len(lines))+1))
+        evidence.append('')
+    for name in ['internal/webui/static/vendor/force-graph.min.js','internal/webui/static/vendor/tex-svg.js']:
+        data=(repo/name).read_bytes();low=data.lower()
+        evidence.append(name+' SHA256='+hashlib.sha256(data).hexdigest()+' bytes='+str(len(data))+' copyright_count='+str(low.count(b'copyright'))+' license_count='+str(low.count(b'license')))
+    (out/'def_search-static.txt').write_text('\n'.join(evidence)+'\n')
+finally:
+    shutil.rmtree(root)
+    records.append(dict(label='cleanup',fixture_removed=not root.exists()))
+    (out/'def_search-followups.jsonl.txt').write_text('\n'.join(json.dumps(r,ensure_ascii=False) for r in records)+'\n')

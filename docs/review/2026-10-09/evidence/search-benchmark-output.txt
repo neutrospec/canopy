@@ -1,0 +1,10 @@
+2026-10-09, macOS 27.0.1 arm64, Mac17,7 / Apple M5 Max / 36 GiB, Go 1.27.1.
+GOCACHE=/private/tmp/canopy-review/go-cache GOPROXY=off go run ./review_probes/search bench
+No model inference; synthetic normalized 1024-dimensional equal vectors; 5 chunks/page.
+The first paired scan is discarded, followed by 10 timed paired scans on warm caches.
+Allocated_MiB is runtime.MemStats.TotalAlloc delta, not RSS or peak live heap.
+
+bench_vector_pair {"chunks":1000,"dim":1024,"mean_allocated_MiB":24.135745239257812,"p50_ms":7.866,"p95_nearest_rank_ms":8.188,"pages":200,"timed_runs":10}
+bench_bridge_single {"allocated_MiB":13.858467102050781,"elapsed_ms":23.42,"pages":200,"pairs_above_threshold":19900}
+bench_vector_pair {"chunks":5000,"dim":1024,"mean_allocated_MiB":121.2146110534668,"p50_ms":37.471,"p95_nearest_rank_ms":38.732,"pages":1000,"timed_runs":10}
+bench_bridge_single {"allocated_MiB":449.83223724365234,"elapsed_ms":596.851,"pages":1000,"pairs_above_threshold":499500}

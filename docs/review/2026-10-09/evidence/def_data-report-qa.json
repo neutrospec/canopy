@@ -1,0 +1,191 @@
+{
+  "original_ids_covered": 33,
+  "new_ids": [
+    "DEF-A-01"
+  ],
+  "RED_new_numbered_ids": 0,
+  "matrix_rows": {
+    "DATA-01": [
+      "accept",
+      "narrow: add 전 상태 guard/공유 적용 경계 수용. literal marker scan·dirty pull 전면 금지는 reject; 네트워크 대기 전부의 장기 lock은 필수 아님.",
+      "P1, 정상 두 clone+겹친 dirty 변경. 영구 본문 소실 주장은 제외."
+    ],
+    "DATA-02": [
+      "accept",
+      "narrow: 준비 후 짧은 적용 lock·base 재확인·완전한 no-clobber 게시 수용. 장기 checkout/distributed lock reject. authoritative 단일 writer 제한은 별도 제품 선택(defer).",
+      "P1, 겹친 같은 위키의 CLI. checkin은 비싼 검증 사이 직접 수정; 발생 빈도 미측정."
+    ],
+    "DATA-03": [
+      "accept",
+      "narrow: 같은 filesystem 고유 temp·write/close 오류 확인·완전 게시 수용. fsync/backup은 durability/retention 선택(defer); rename만으로 multi-file 원자성 주장은 reject.",
+      "P1, 저장 중 오류+마지막 완전 원문이 미커밋/미백업."
+    ],
+    "DATA-04": [
+      "narrow",
+      "narrow: 적용 경로·단계·명시 repair 수용. 제한 manifest/보존본은 원문 복구 필요 구간에 한함; 무조건 rollback·모든 mutation 영속 operation ID는 필수 아님.",
+      "P2 확인. 원/RED의 부분 mutation P1 평가는 남는 이견: 본 probe는 요청한 rm/이동과 본문 존속을 보였으며 별도 복구 불능 소실은 입증하지 않았다."
+    ],
+    "DATA-05": [
+      "accept",
+      "accept: 충돌 시 적용 전 거부가 최소. 고유 suffix는 defer; 시간 suffix만으로 배타 확보 아님.",
+      "P1, 정상 slug 재사용; 첫 보관본 미커밋/미백업이면 복구 불가."
+    ],
+    "DATA-06": [
+      "accept",
+      "narrow: code 제외/지원 문법/target span/self 처리 수용. 전체 raw regex·외부 문법 일괄 금지 reject; 지원 못 한 표현의 선거부는 제한 대안.",
+      "P2, 지원 path 링크 또는 bare 코드 예제가 있는 페이지 이동/제거."
+    ],
+    "DATA-07": [
+      "accept",
+      "narrow: copy 선보존·문제 목록 수용. rescue는 선택 대안/정리 정책 필요; 자동 merge reject. atomic 기록만으로 해결이라는 처방 reject.",
+      "P1, 손상/부재/권한 오류 meta+유일 미반영 copy. 위키 원본은 불변."
+    ],
+    "DATA-08": [
+      "narrow",
+      "narrow: 선언한 구조 validator/출력 정합 수용. tags:[]와 key 부재 구별. body link 강제·baseline bless에 lint 전체 강제 reject; 의도적 느슨한 경로는 문서/미검증 표시를 함께 바꾸는 대안(defer).",
+      "P2, 기존/직접 수정 구조 이상을 본길로 재저장할 때."
+    ],
+    "DATA-09": [
+      "accept",
+      "narrow: scalar encode·정확한 value 범위/거부 수용. YAML 전체 Marshal·indent 한 줄만 보고 제거 reject.",
+      "P2, 합법 제목; block 날짜는 외부/기존 YAML 조건."
+    ],
+    "DATA-10": [
+      "accept",
+      "narrow: Load부터 mutation/게시까지 보호·no-clobber 완전 접수 수용. Save-only lock·mutex-only·정밀 timestamp-only reject. nonce+single state writer는 제한 대안; mandatory UUID/DB/idempotency 기능 reject.",
+      "제안 전문 P1, 집계/feedback P2. 동일 파일 RMW/동일 page-second 접수 경합."
+    ],
+    "DATA-11": [
+      "narrow",
+      "narrow: agent caller 보강+destination 보존 수용. live task/cooldown는 이관 또는 stale 안내 중 정책(defer). alias는 이름 재사용/chain 수명 필요; 역사 JSONL blanket rewrite·UUID 강제 reject.",
+      "P2, agent-only 접근 뒤 개명/살아 있는 제안 또는 잔류 destination 이력."
+    ],
+    "DATA-12": [
+      "narrow",
+      "narrow: 최종 생성물 정합·필수 단계 뒤 성공 출력 수용. 무조건 매회 Regenerate reject. eventual 정책은 C1/C2의 시점/치유 명령을 바꾸는 대안(defer).",
+      "P2 Markdown 정합성; 파생 cache 임시 상태는 본문 손실 아님. 외부 create/delete/move/pull."
+    ],
+    "DATA-13": [
+      "narrow",
+      "narrow: 실제 dst no-clobber/ambiguity 진단·단일 대상 mutation 거부 수용. flat-only nested lint는 지원 정책 명시 후; recursive search/cache identity 확대 defer, 자동 이동/삭제 reject.",
+      "충돌 원문 대체 P1(외부 duplicate+미커밋 목적지), nested 탐색/진단 P2. 정상 flat new에서는 전제 없음."
+    ],
+    "DATA-14": [
+      "narrow",
+      "narrow: unknown 값 patch 보존 **또는 알려진 필드 밖 정보 발견 시 사전 refusal** 수용. 읽기 관용과 쓰기 허용은 구별. file version>current guard만/새 파일이면 모두 해결이라는 처방 reject.",
+      "P2, 다른 tool/신버전 addon+실제 dirty 재저장. 오늘 모든 정상 상태 손상 주장은 제외."
+    ],
+    "DATA-15": [
+      "reject: 독립 버그로는 불성립, 제품 개선 제안임",
+      "narrow: 실제 보장 설명 수용. 영속 op ID·actor/이유·task pointer·skip 계수 기능은 defer. DATA-04의 사고 복구용 제한 manifest와 별개. 자동 commit/event sourcing/본문 이벤트 DB 복제 reject.",
+      "P3 선택 요구, DATA-02–04와 손실 중복 계수 없음."
+    ],
+    "STATE-01": [
+      "accept(상태), narrow(Ensure 도달성)",
+      "narrow: 고유 완전 게시+Load부터 RMW 보호 수용. Save-only/rename-only 불충분. unique tmp와 rung relocate 직렬화는 별개; 미래 다중 rung의 동시 실행 안정성은 defer. fsync는 별도 durability 선택.",
+      "집계/원장 P2, Ensure API P2. 제안 전문 P1은 STATE-03에서 계수. 정상 모든 CLI startup 실패 주장은 제외."
+    ],
+    "STATE-02": [
+      "accept",
+      "narrow: pair 동일성 gate 수용. 새 ID는 선택 개선으로 old payload lookup 포함; filename만 바꾸기/합법 `--` 금지는 reject. 기존 파일 일괄 재명명 불필요.",
+      "P2, 충돌하는 **정렬된** 합법 페어. 원 P1 본문 손실 등급은 낮춤."
+    ],
+    "STATE-03": [
+      "accept",
+      "narrow: exclusive **완전** 게시/collision retry 수용. nonce만·mutex만·timestamp 정밀화만 reject. 재시도 key는 defer; framework/DB는 불필요.",
+      "P1, 정상 동시 HTTP 접수. 실제 browser JS 전체 실행이나 분산 edit merge 결과를 주장하지 않는다."
+    ],
+    "STATE-04": [
+      "accept",
+      "narrow: 실제 열거 filename만 삭제·identity/path 검사·known closed status만 GC 수용. unknown type의 list/dismiss 유지(T5). 모든 record 자동 정정/삭제 reject.",
+      "P2, 손작성/손상/혼합 데이터 id mismatch 또는 unknown active status. 정상 writer 큐 일반 손실 아님."
+    ],
+    "STATE-05": [
+      "narrow",
+      "narrow: tasks RawMessage/정확 Number, state unknown patch/refusal, TOML 기존 key 보존 수용. future-version gate만으로 same-version addon 해결 못 함. 새 domain 분리는 유효하나 모든 필드 별도 파일 강제 reject.",
+      "P2, addon/신writer 데이터의 실제 재저장·비어 있는 default 자동 채택. force-init 의도적 덮기는 제외."
+    ],
+    "STATE-06": [
+      "accept",
+      "narrow: Load 의미 검증·fatal Stat 오류 즉시 반환·진단 수용. 존재하는 후보 이름 충돌만 suffix retry. 부분 Load API/표시를 함께 설계; 빈 상태로 자동 저장·전체 지식 열람 실패 처방 reject. 후보 숨김 대안 defer.",
+      "P2, 손상/비정상 durable 파일. 정상 모든 show가 panic이라는 주장은 제외."
+    ],
+    "STATE-07": [
+      "accept",
+      "narrow: 기존 copy 선보존·회수 결과 전달·orphan-aware 명시 cleanup 수용. 두 파일 완전 transaction/자동 merge는 필수 아님. standalone Discard 오류와 적용 후 cleanup 오류를 구분.",
+      "copy 소실 P1 조건부, 회수 잔류/성공 오인 P2."
+    ],
+    "STATE-08": [
+      "accept(누락), narrow(모든 참조 의무)",
+      "narrow: caller 수정+destination 정책 수용. task/snooze 이관/잔류 안내 선택은 DATA-11에 한함. Body/base/판단 ID/역사 이벤트 blanket rewrite·UUID 강제 reject.",
+      "P2, agent-only 접근 또는 삭제/보관된 destination 이력 후 개명."
+    ],
+    "STATE-09": [
+      "accept",
+      "narrow: old/new 모두 instant 비교 수용. new UTC만·cache drop reject. parse 조회/SQL 날짜/epoch는 대안이며 성능은 측정 전 보류. DB 형식/상태 변환을 택하면 새 rung+행/ID 보존; read-time 처리만이면 무조건 rung 추가할 이유 없음.",
+      "P2, 같은 머신 TZ 변경/다른 offset process의 합법 이력. wiki 집계 삭제 아님."
+    ],
+    "STATE-10": [
+      "narrow(원 기간/안내 공백); 신규 1일 즉시 무효는 DEF-A-01 defer",
+      "narrow: 상대기간 또는 명시 달력 선택 수용. 새 timestamp 자체는 필수 아님, 단 past deadline 문제는 설명만으로 해결 못 함. additive field면 구writer 탈락/별도파일+호환 지원 경계를 명시.",
+      "원 범위 P3. 즉시 억제 실패의 잠정 P2 상향은 **unvalidated DEF-A-01**이며 최종 독립심사 대상."
+    ],
+    "STATE-11": [
+      "narrow(설명/복원 가능성), reject(현 T2/T9 동작 버그)",
+      "narrow: 실제 verifier 하한/버전 정책 설명 수용. 모든 edit body-hash 강제 reject(title/tag 요청 배제). origin/base snapshot은 비용·retention·old-writer 보존 정한 뒤 defer. 알려진 future type의 안전성은 unknown-type 테스트로 대체 못 함.",
+      "P3 계약/제품 선택. 의미적 판단은 LLM 책임 유지."
+    ],
+    "STATE-12": [
+      "narrow",
+      "narrow: 유한 계약 설명 또는 dismissed-connect GC 제외 중 선택 수용. tombstone은 새reader만 읽으므로 oldreader 재접수까지 막는 대안은 아님. 영구 정책/철회-retention은 defer; machine rung/새 DB/CRDT reject.",
+      "P3, 사용자의 명시 GC 또는 별도 cron 이후."
+    ],
+    "STATE-13": [
+      "narrow(tie/문구); random 자체 버그 reject",
+      "narrow: instant+slug tie/입력·seed 범위 설명 수용. --seed·일별 seed는 defer, 전역 고정 seed·default random 제거 reject.",
+      "P3, 동일 timestamp 접근들이 K=10 경계에 걸림. 실제 affinity 품질 손상 주장은 미검증."
+    ],
+    "STATE-14": [
+      "accept(입력 조건 제한)",
+      "narrow: 파싱·진단/시간 범위 제외 수용. 원문 자동 날짜 수정/전체 page count 제외 reject. 미래 상한·decision 날짜 정책 확대는 defer.",
+      "P2, 직접/기존 비정상 날짜. 일반 CLI 생성 날짜 전체 결함 아님."
+    ],
+    "STATE-15": [
+      "narrow(문구), reject(수용된 conflict 자체를 독립 버그)",
+      "narrow: 성공/수동 판단 계약과 DATA-01 guard 수용. 기기별 gap은 H10/reader/ID 정책을 바꾸므로 defer. semantic merge는 event ID/중복/순서/tombstone/판단 우선순위 결정 뒤에만; blanket DB/CRDT reject.",
+      "P3 운용 계약. 미해결 발행 P1은 DATA-01에 한 번만 계수."
+    ],
+    "STATE-16": [
+      "reject(현 계약의 독립 버그)",
+      "defer: canonical identity/UUID·옛 checkout 탐색 기능은 제품 결정. namespace 설명은 수용. 변경 선택 시 명시 root mapping/fallback/중복 보존+필요 rung, startup rung 하나로 모든 root 발견은 reject.",
+      "P3 선택 요구, symlink/이동 경로. 본문/원copy 소실 없음."
+    ],
+    "STATE-17": [
+      "defer(실제 미래 손상); narrow(형태/guard 공백)",
+      "narrow: 존재 state 객체/필수 비음수 정수 검증 수용. DB gate 선택 시 WAL/DDL 포함 **첫 write 전** refusal, N2 원작업 성공 유지. 중앙 전제 설명 대안 가능. DB drop reject.",
+      "P3, 손상 version record 또는 중앙 record와 독립된 synthetic future DB. 정상 downgrade 버그 아님."
+    ],
+    "STATE-18": [
+      "accept(점검 전제 누락)",
+      "accept: 원문 hash와 허용 변경 집합으로 R1 점검 수정. agent 사전 마킹만으로 통과시키는 대안은 최초 접근 계약을 놓침.",
+      "P3 문서 점검; 첫 접근 조건. 허용 access 구현을 콘텐츠 버그로 세지 않음."
+    ],
+    "DEF-A-01": [
+      "**defer — unvalidated**, 독립 최종심사에서 수용 권고. 원 STATE-10의 “짧음만” 범위는 좁게 유지할 근거가 부족해짐.",
+      "**defer — unvalidated**, STATE-10 처방을 새 snooze deadline>now까지 강화하는 권고. 문구 변경만으로 즉시 무효를 해결했다는 acceptance는 reject 권고.",
+      "잠정 P2, 합법 CLI N=1+UTC에 비해 전날 늦은 현지시각인 음수 offset. 7일/default 웹7일·모든 timezone의 즉시 실패로 확대하지 않음."
+    ]
+  },
+  "tracked_changed": [],
+  "assigned_input_changed": [],
+  "head_unchanged": true,
+  "index_unchanged": true,
+  "probe_python_syntax": "ok",
+  "source_fixes": false,
+  "scratch_cleanup": true,
+  "fixture_cleanup": true,
+  "report_links": 19,
+  "broken_report_links": [],
+  "final_git_status": "?? docs/review/\n?? review_probes/\n",
+  "own_scratch_absent": true
+}

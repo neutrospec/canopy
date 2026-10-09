@@ -1,0 +1,120 @@
+package main
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/lint"
+	"github.com/neutrospec/canopy/internal/mermaid"
+	"github.com/neutrospec/canopy/internal/tasks"
+	"github.com/neutrospec/canopy/internal/webui"
+	"github.com/neutrospec/canopy/internal/wiki"
+)
+
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+func hash(b []byte) string {
+	h := sha256.Sum256(b)
+	return hex.EncodeToString(h[:])
+}
+func emit(label string, value any) {
+	b, err := json.Marshal(map[string]any{"probe": label, "result": value})
+	must(err)
+	fmt.Println(string(b))
+}
+func main() {
+	repo, base := os.Args[1], os.Args[2]
+	run, err := os.MkdirTemp(base, "harness-")
+	must(err)
+	for _, key := range []string{"HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME"} {
+		must(os.Setenv(key, filepath.Join(run, strings.ToLower(key))))
+	}
+	root := filepath.Join(run, "wiki")
+	must(os.MkdirAll(filepath.Join(root, "concepts"), 0o755))
+	w := &config.Wiki{Root: root, Cfg: config.Default()}
+	path := filepath.Join(root, "concepts", "alpha.md")
+	original := wiki.NewPageContent("Alpha", "concept", "2026-01-01", []string{"tool"}, nil, "Original body.\n")
+	must(os.WriteFile(path, []byte(original), 0o644))
+	s, err := webui.NewServer(w, nil)
+	must(err)
+	handler := s.Handler()
+	get := httptest.NewRecorder()
+	handler.ServeHTTP(get, httptest.NewRequest("GET", "/edit/alpha", nil))
+	current := wiki.ReplaceBody(original, "Concurrent revision.\n")
+	must(os.WriteFile(path, []byte(current), 0o644))
+	form := url.Values{"body": {"Original body with my proposed fix.\n"}, "note": {"my edit"}, "base": {hash([]byte(original))}}
+	req := httptest.NewRequest("POST", "/edit/alpha", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	post := httptest.NewRecorder()
+	handler.ServeHTTP(post, req)
+	after, err := os.ReadFile(path)
+	must(err)
+	list, err := tasks.Load(w)
+	must(err)
+	emit("web_stale_submission", map[string]any{"get_status": get.Code, "post_status": post.Code, "location": post.Header().Get("Location"), "page_unchanged": string(after) == current, "task_count": len(list), "task_base_is_current": list[0].Base == hash(after), "task_base_is_form_origin": list[0].Base == hash([]byte(original)), "task_body": list[0].Body})
+
+	t, err := tasks.FileEdit(w, "alpha", "Replace the body with corrected facts", "", hash(after), "cli", time.Now().Add(time.Second))
+	must(err)
+	metadataOnly := wiki.SetFrontmatterField(current, "title", "Metadata change only")
+	must(os.WriteFile(path, []byte(metadataOnly), 0o644))
+	scan, err := wiki.Scan(w)
+	must(err)
+	closed, err := tasks.Close(w, scan, t.ID, tasks.StatusDone, "metadata changed", "agent", time.Now().Add(2*time.Second))
+	bodySame := wiki.Parse("concepts/alpha.md", after).Body == wiki.Parse("concepts/alpha.md", []byte(metadataOnly)).Body
+	emit("edit_done_metadata_only", map[string]any{"body_same": bodySame, "close_error": fmt.Sprint(err), "closed": closed})
+
+	files := []string{"README.md", "README.en.md", "AGENTS.md", "CLAUDE.md"}
+	for _, pattern := range []string{"docs/*.md", "docs/en/*.md", "internal/skills/*.md"} {
+		matches, err := filepath.Glob(filepath.Join(repo, pattern))
+		must(err)
+		for _, match := range matches {
+			rel, err := filepath.Rel(repo, match)
+			must(err)
+			files = append(files, rel)
+		}
+	}
+	v := mermaid.NewValidator()
+	count := 0
+	var failures []map[string]any
+	for _, rel := range files {
+		data, err := os.ReadFile(filepath.Join(repo, rel))
+		must(err)
+		for _, b := range mermaid.Blocks(string(data)) {
+			count++
+			bad, err := v.Validate(b.Source)
+			if bad != nil || err != nil {
+				failures = append(failures, map[string]any{"path": rel, "line": b.Line, "syntax_error": fmt.Sprint(bad), "env_error": fmt.Sprint(err)})
+			}
+		}
+	}
+	emit("repository_mermaid", map[string]any{"documents": len(files), "blocks": count, "failures": failures})
+
+	broken := "---\ntitle: [not-closed\ncreated: 2026-01-01\nupdated: 2026-01-01\ntype: concept\ntags: []\n---\nBody\n"
+	must(os.WriteFile(path, []byte(broken), 0o644))
+	scan, err = wiki.Scan(w)
+	must(err)
+	rep := lint.Run(w, scan, mermaid.NewValidator())
+	emit("A3_bad_yaml", map[string]any{"counts": rep.Counts, "documented_condition_passes": rep.Counts["no-frontmatter"] == 0 && rep.Counts["frontmatter-fields"] == 0})
+
+	must(os.WriteFile(path, []byte(wiki.NewPageContent("Alpha", "concept", "2026-01-01", []string{"tool"}, nil, "```mermaid\nflowchart LR\nA --> B\n```\n")), 0o644))
+	scan, err = wiki.Scan(w)
+	must(err)
+	oldBundle := mermaid.Bundle
+	mermaid.Bundle = []byte("throw new Error('audit-injected validator environment failure');")
+	rep = lint.Run(w, scan, mermaid.NewValidator())
+	mermaid.Bundle = oldBundle
+	emit("P1_environment_fault", map[string]any{"fault_injected_in_memory_only": true, "counts": rep.Counts, "documented_condition_passes": rep.Counts["invalid-mermaid"] == 0})
+	emit("run", run)
+}

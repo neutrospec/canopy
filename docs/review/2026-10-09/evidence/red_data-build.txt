@@ -1,0 +1,3 @@
+$ ['go', 'build', '-mod=readonly', '-o', '/private/tmp/canopy-audit-20261009/red_data-ctx206f/canopy-lite', './cmd/canopy']
+
+EXIT 0

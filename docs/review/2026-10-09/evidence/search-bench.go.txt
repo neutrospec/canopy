@@ -1,0 +1,68 @@
+package main
+
+import (
+	"fmt"
+	"runtime"
+	"sort"
+	"time"
+
+	"github.com/neutrospec/canopy/internal/resurface"
+	"github.com/neutrospec/canopy/internal/wiki"
+)
+
+func measured(fn func()) map[string]any {
+	runtime.GC()
+	var before, after runtime.MemStats
+	runtime.ReadMemStats(&before)
+	start := time.Now()
+	fn()
+	ms := float64(time.Since(start).Microseconds()) / 1000
+	runtime.ReadMemStats(&after)
+	return map[string]any{"elapsed_ms": ms, "allocated_MiB": float64(after.TotalAlloc-before.TotalAlloc) / (1024 * 1024)}
+}
+
+func benchmark() {
+	for _, pages := range []int{200, 1000} {
+		w, st := fixture(fmt.Sprintf("bench-%d", pages))
+		for i := 0; i < pages; i++ {
+			page(w, fmt.Sprintf("p-%04d", i), "Fixture title", "Fixture body.")
+		}
+		scan, err := wiki.Scan(w)
+		must(err)
+		must(st.RebuildPages(scan.Pages))
+		v := make([]float32, 1024)
+		for i := range v {
+			v[i] = 1.0 / 32.0
+		}
+		for _, p := range scan.Pages {
+			chunk(st, p.Slug, v, v, v, v, v)
+		}
+		times := []float64{}
+		var allocation float64
+		for i := 0; i < 11; i++ {
+			r := measured(func() {
+				_, err := st.SearchSemantic(v, 8)
+				must(err)
+				_, err = st.SearchChunks(v, 16, 1)
+				must(err)
+			})
+			if i > 0 {
+				times = append(times, r["elapsed_ms"].(float64))
+				allocation += r["allocated_MiB"].(float64)
+			}
+		}
+		sort.Float64s(times)
+		emit("bench_vector_pair", map[string]any{"pages": pages, "chunks": pages * 5, "dim": 1024, "timed_runs": len(times), "p50_ms": times[len(times)/2], "p95_nearest_rank_ms": times[len(times)-1], "mean_allocated_MiB": allocation / float64(len(times))})
+		state, err := resurface.LoadState(w)
+		must(err)
+		vectors, err := st.PageVectors()
+		must(err)
+		r := measured(func() {
+			resurface.PickBridges(scan, vectors, state, 0.7, 5, false, time.Date(2026, 10, 9, 0, 0, 0, 0, time.UTC))
+		})
+		r["pages"] = pages
+		r["pairs_above_threshold"] = pages * (pages - 1) / 2
+		emit("bench_bridge_single", r)
+		must(st.Close())
+	}
+}

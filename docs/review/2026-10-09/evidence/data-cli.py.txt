@@ -1,0 +1,262 @@
+import errno
+import hashlib
+import json
+import os
+from pathlib import Path
+import resource
+import subprocess
+import time
+
+AUDIT_ROOT = Path('/private/tmp/canopy-audit-20261009/data')
+BASE = Path(os.environ.get('CANOPY_DATA_AUDIT_ROOT', str(AUDIT_ROOT)))
+assert BASE == AUDIT_ROOT or AUDIT_ROOT in BASE.parents, BASE
+BASE.mkdir(parents=True, exist_ok=True)
+for d in ['home', 'config', 'state', 'cache', 'share', 'tmp']:
+    (BASE/d).mkdir(exist_ok=True)
+BIN = AUDIT_ROOT / 'canopy-lite'
+ENV = dict(os.environ, HOME=str(BASE/'home'), XDG_CONFIG_HOME=str(BASE/'config'),
+           XDG_STATE_HOME=str(BASE/'state'), XDG_CACHE_HOME=str(BASE/'cache'),
+           XDG_DATA_HOME=str(BASE/'share'), TMPDIR=str(BASE/'tmp'),
+           GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL='/dev/null', GIT_TERMINAL_PROMPT='0')
+TRACE = (BASE/'cli-transcript.jsonl').open('w')
+
+def record(argv, cp):
+    TRACE.write(json.dumps(dict(argv=list(map(str, argv)), code=cp.returncode,
+                              stdout=cp.stdout, stderr=cp.stderr), ensure_ascii=False)+'\n')
+    TRACE.flush()
+    return cp
+
+def run(argv, **kw):
+    return record(argv, subprocess.run(list(map(str, argv)), env=ENV, text=True,
+                                      capture_output=True, timeout=30, **kw))
+
+def canopy(w, *args, **kw):
+    return run([BIN, '--wiki', w, *args], **kw)
+
+def good(w, *args):
+    cp = canopy(w, *args)
+    assert cp.returncode == 0, (args, cp.stdout, cp.stderr)
+    return cp
+
+def emit(name, **values):
+    print(json.dumps(dict(probe=name, **values), ensure_ascii=False), flush=True)
+
+def page(w, slug='alpha', body='BASE', extra=''):
+    p = w/'concepts'/f'{slug}.md'
+    p.write_text('---\ntitle: Alpha\ncreated: 2026-01-01\nupdated: 2026-01-01\n'
+                 'type: concept\ntags: [tool]\nsources: []\n'+extra+'---\n\n'+body+'\n')
+    return p
+
+def wiki(name, body='BASE'):
+    w = BASE/('case-'+name)
+    w.mkdir()
+    for d in ['concepts', 'entities', 'comparisons']:
+        (w/d).mkdir()
+    (w/'canopy.toml').write_text('[schema]\n')
+    page(w, body=body)
+    good(w, 'status', '--json') # warms only isolated migration state
+    return w
+
+def logcount(w):
+    return sum(len(p.read_text().splitlines()) for p in (w/'logs').glob('*.jsonl'))
+
+def bodyfile(w, name, text):
+    p = w/name
+    p.write_text(text)
+    return p
+
+def blocked(w, args):
+    fifo = w/'input.fifo'
+    os.mkfifo(fifo)
+    argv = [str(BIN), '--wiki', str(w), *args, '--body-file', str(fifo)]
+    proc = subprocess.Popen(argv, env=ENV, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    deadline = time.monotonic()+10
+    while True:
+        try:
+            fd = os.open(fifo, os.O_WRONLY | os.O_NONBLOCK)
+            return proc, fd, argv
+        except OSError as exc:
+            assert exc.errno == errno.ENXIO, exc
+            assert proc.poll() is None and time.monotonic()<deadline
+            time.sleep(0.01)
+
+def unblock(proc, fd, argv, text):
+    os.write(fd, text.encode())
+    os.close(fd)
+    out, err = proc.communicate(timeout=30)
+    return record(argv, subprocess.CompletedProcess(argv, proc.returncode, out, err))
+
+# A create waits after its existence scan. A second process creates the same slug.
+w = wiki('race-create')
+proc, fd, argv = blocked(w, ['new', 'First', '--type', 'concept', '--slug', 'race', '--json'])
+second = good(w, 'new', 'Second', '--type', 'concept', '--slug', 'race', '--json',
+              '--body-file', bodyfile(w, 'second.txt', 'SECOND-CREATED'))
+first = unblock(proc, fd, argv, 'FIRST-CREATED')
+emit('race-create', first=first.returncode, second=second.returncode,
+     second_lost='SECOND-CREATED' not in (w/'concepts/race.md').read_text(), log_count=logcount(w))
+
+# update waits after reading the original page. A direct edit changes independent metadata.
+w = wiki('race-update')
+proc, fd, argv = blocked(w, ['update', 'alpha', '--json'])
+p = w/'concepts/alpha.md'
+p.write_text(p.read_text().replace('title: Alpha', 'title: Newer-Metadata'))
+second = good(w, 'update', 'alpha', '--body-file', bodyfile(w, 'second.txt', 'SECOND-UPDATE'), '--json')
+first = unblock(proc, fd, argv, 'FIRST-UPDATE')
+emit('race-update', first=first.returncode, second=second.returncode,
+     newer_title_lost='Newer-Metadata' not in p.read_text(), second_body_lost='SECOND-UPDATE' not in p.read_text())
+
+# Whole-file write failure after O_TRUNC. No system-wide quotas or permissions changed.
+w = wiki('short-write', body='ORIGINAL-TAIL-'+('B'*2048))
+p = w/'concepts/alpha.md'
+before = p.read_bytes()
+replacement = bodyfile(w, 'replacement.txt', 'REPLACEMENT-'+('A'*4096))
+def small_limit():
+    resource.setrlimit(resource.RLIMIT_FSIZE, (256, 256))
+cp = canopy(w, 'update', 'alpha', '--body-file', replacement, '--json', preexec_fn=small_limit)
+emit('short-write', code=cp.returncode, old_bytes=len(before), new_bytes=p.stat().st_size,
+     old_tail_present=b'B'*512 in p.read_bytes(), stderr=cp.stderr.strip())
+
+# A post-mutation index failure: the original is changed and blessed without a write log.
+w = wiki('pipeline-failure')
+good(w, 'update', 'alpha', '--json')
+good(w, 'reconcile', 'bless', '--all', '--json')
+before_logs = logcount(w)
+(w/'index/entities.md').unlink()
+(w/'index/entities.md').mkdir()
+cp = canopy(w, 'update', 'alpha', '--body-file', bodyfile(w, 'replacement.txt', 'APPLIED-BUT-ERROR'), '--json')
+foreign = json.loads(good(w, 'reconcile', '--json').stdout)['foreign']
+emit('pipeline-failure', code=cp.returncode, changed='APPLIED-BUT-ERROR' in (w/'concepts/alpha.md').read_text(),
+     foreign=foreign, write_logs_added=logcount(w)-before_logs, stderr=cp.stderr.strip())
+
+# checkin erases its only working copy before the shared pipeline runs.
+w = wiki('checkin-pipeline-failure')
+good(w, 'update', 'alpha', '--json')
+info = json.loads(good(w, 'checkout', 'alpha', '--json').stdout)
+copy = Path(info['path'])
+copy.write_text(copy.read_text().replace('BASE', 'CHECKIN-APPLIED-BUT-ERROR'))
+(w/'index/entities.md').unlink()
+(w/'index/entities.md').mkdir()
+before_logs = logcount(w)
+cp = canopy(w, 'checkin', 'alpha', '--json')
+retry = canopy(w, 'checkin', 'alpha', '--json')
+emit('checkin-pipeline-failure', code=cp.returncode, copy_exists=copy.exists(),
+     changed='CHECKIN-APPLIED-BUT-ERROR' in (w/'concepts/alpha.md').read_text(),
+     write_logs_added=logcount(w)-before_logs, retry_code=retry.returncode, retry_stderr=retry.stderr.strip())
+
+# Link extraction accepts path/extension/whitespace, but rewrites use literal bare slug.
+w = wiki('rename-links', body='Self [[alpha#self]].')
+page(w, 'source', 'Bare [[alpha|A]]. Path [[concepts/alpha]]. Ext [[alpha.md]]. Space [[ alpha ]].\n'
+     'Code `[[alpha]]`.\n```text\n[[alpha]]\n```')
+good(w, 'mv', 'alpha', '--slug', 'beta', '--json')
+lint = canopy(w, 'lint', '--json')
+emit('rename-links', source=(w/'concepts/source.md').read_text().split('\n---',1)[1].strip(),
+     renamed=(w/'concepts/beta.md').read_text().split('\n---',1)[1].strip(), lint_code=lint.returncode,
+     counts=json.loads(lint.stdout)['counts'])
+w = wiki('archive-links')
+page(w, 'source', '[[concepts/alpha]] [[alpha.md]] [[ alpha ]]')
+good(w, 'archive', 'alpha', '--json')
+cp = canopy(w, 'lint', '--json')
+emit('archive-links', links_survived=(w/'concepts/source.md').read_text().split('\n---',1)[1].strip(),
+     counts=json.loads(cp.stdout)['counts'])
+
+# Archiving a re-used slug overwrites the previous archived page on Darwin/POSIX.
+w = wiki('archive-collision', body='FIRST-ARCHIVE-UNIQUE')
+good(w, 'archive', 'alpha', '--json')
+old = (w/'_archive/concepts/alpha.md').read_bytes()
+page(w, body='SECOND-ARCHIVE-UNIQUE')
+cp = good(w, 'archive', 'alpha', '--json')
+emit('archive-collision', code=cp.returncode,
+     first_preserved='FIRST-ARCHIVE-UNIQUE' in (w/'_archive/concepts/alpha.md').read_text(),
+     archived_files=len(list((w/'_archive').rglob('*.md'))), prior_hash=hashlib.sha256(old).hexdigest())
+
+# Existing user YAML block values are corrupted by a scalar regex replacement.
+w = wiki('yaml-block')
+p = w/'concepts/alpha.md'
+p.write_text(p.read_text().replace('updated: 2026-01-01', 'updated: |-\n  2026-01-01'))
+good(w, 'update', 'alpha', '--json')
+cp = canopy(w, 'lint', '--json')
+emit('yaml-block', code=cp.returncode, counts=json.loads(cp.stdout)['counts'],
+     fragment=p.read_text().split('created: ',1)[1].split('type:',1)[0].strip())
+
+# Invalid direct-edited schema is silently blessed by update; checkin also permits missing tags.
+w = wiki('schema-blessing')
+good(w, 'reconcile', 'bless', '--all', '--json')
+p = w/'concepts/alpha.md'
+p.write_text(p.read_text().replace('tags: [tool]', 'tags: [outside-taxonomy]').replace('type: concept', 'type: guide'))
+cp = good(w, 'update', 'alpha', '--json')
+foreign = json.loads(good(w, 'reconcile', '--json').stdout)['foreign']
+lint = canopy(w, 'lint', '--json')
+emit('schema-blessing', code=cp.returncode, foreign=foreign, counts=json.loads(lint.stdout)['counts'])
+w = wiki('checkin-tags')
+info = json.loads(good(w, 'checkout', 'alpha', '--json').stdout)
+copy = Path(info['path'])
+copy.write_text(copy.read_text().replace('tags: [tool]\n', ''))
+cp = good(w, 'checkin', 'alpha', '--json')
+lint = canopy(w, 'lint', '--json')
+emit('checkin-tags', code=cp.returncode, counts=json.loads(lint.stdout)['counts'])
+
+# A corrupt checkout meta is ignored and an edited copy is overwritten by a refresh.
+w = wiki('checkout-corrupt-meta')
+info = json.loads(good(w, 'checkout', 'alpha', '--json').stdout)
+copy = Path(info['path'])
+copy.write_text(copy.read_text().replace('BASE', 'ONLY-UNCOMMITTED-EDIT'))
+copy.with_suffix('.json').write_text('{')
+cp = good(w, 'checkout', 'alpha', '--json')
+emit('checkout-corrupt-meta', code=cp.returncode, edit_preserved='ONLY-UNCOMMITTED-EDIT' in copy.read_text())
+
+# Agent-only history stays keyed under a now-nonexistent slug due to an IsRead guard.
+w = wiki('rename-agent-history')
+good(w, 'show', 'alpha', '--json')
+good(w, 'mv', 'alpha', '--slug', 'beta', '--json')
+agent = json.loads((w/'_meta/attention/agent-reads.json').read_text())['agent']
+emit('rename-agent-history', agent_keys=sorted(agent))
+
+# sync can accept a git pull whose autostash conflicted but exited successfully.
+w = wiki('sync-conflict')
+origin = BASE/'sync-origin.git'
+peer = BASE/'sync-peer'
+def git(cwd, *args):
+    cp = run(['git', '-C', cwd, *args])
+    assert cp.returncode == 0, (args, cp.stdout, cp.stderr)
+    return cp
+git(w, 'init', '-b', 'main')
+git(w, 'config', 'user.name', 'Audit Fixture')
+git(w, 'config', 'user.email', 'fixture@example.invalid')
+git(w, 'add', '-A')
+git(w, 'commit', '-m', 'fixture baseline')
+run(['git', 'init', '--bare', '-b', 'main', origin])
+git(w, 'remote', 'add', 'origin', str(origin))
+git(w, 'push', '-u', 'origin', 'main')
+run(['git', 'clone', origin, peer])
+git(peer, 'config', 'user.name', 'Audit Peer')
+git(peer, 'config', 'user.email', 'peer@example.invalid')
+pp = peer/'concepts/alpha.md'
+pp.write_text(pp.read_text().replace('BASE', 'REMOTE-EDIT'))
+git(peer, 'add', '-A')
+git(peer, 'commit', '-m', 'fixture peer edit')
+git(peer, 'push')
+p = w/'concepts/alpha.md'
+p.write_text(p.read_text().replace('BASE', 'LOCAL-EDIT'))
+before = git(w, 'rev-parse', 'HEAD').stdout.strip()
+cp = canopy(w, 'sync', '--json')
+upstream = run(['git', '--git-dir', origin, 'show', 'main:concepts/alpha.md'])
+emit('sync-conflict', code=cp.returncode, stdout=cp.stdout.strip(), stderr=cp.stderr.strip(),
+     status=git(w, 'status', '--porcelain').stdout.strip(), commit_changed=git(w, 'rev-parse', 'HEAD').stdout.strip()!=before,
+     conflict_markers_local='<<<<<<<' in p.read_text(), conflict_markers_remote='<<<<<<<' in upstream.stdout,
+     stash=git(w, 'stash', 'list').stdout.strip())
+
+# A direct edit + sync leaves generated markdown counts stale even after successful commit/push.
+w = wiki('sync-index')
+good(w, 'update', 'alpha', '--json')
+git(w, 'init', '-b', 'main')
+git(w, 'config', 'user.name', 'Audit Fixture')
+git(w, 'config', 'user.email', 'fixture@example.invalid')
+git(w, 'add', '-A')
+git(w, 'commit', '-m', 'fixture baseline')
+page(w, 'second', 'DIRECT-NEW-PAGE')
+cp = canopy(w, 'sync', '--json')
+emit('sync-index', code=cp.returncode, pages=json.loads(good(w, 'status', '--json').stdout)['pages'],
+     dashboard=[line for line in (w/'index.md').read_text().splitlines() if 'Total pages' in line],
+     category_has_second='[[second]]' in (w/'index/concepts.md').read_text(),
+     status=git(w, 'status', '--porcelain').stdout.strip())
+TRACE.close()

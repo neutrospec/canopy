@@ -1,0 +1,661 @@
+{
+  "head": "ede67e302a8487aecbb4d59587a8686292018cf6",
+  "binary_sha256": "801b61843e865acfc41d9b29088c331cc2712b1524ca5142587a7c102db25a90",
+  "environment": {
+    "HOME": "/private/tmp/canopy-audit-20261009/final/independent/run/home",
+    "XDG_CONFIG_HOME": "/private/tmp/canopy-audit-20261009/final/independent/run/config",
+    "XDG_CACHE_HOME": "/private/tmp/canopy-audit-20261009/final/independent/run/cache",
+    "XDG_DATA_HOME": "/private/tmp/canopy-audit-20261009/final/independent/run/data",
+    "XDG_STATE_HOME": "/private/tmp/canopy-audit-20261009/final/independent/run/state",
+    "TMPDIR": "/private/tmp/canopy-audit-20261009/final/independent/run/tmp",
+    "GOCACHE": "/private/tmp/canopy-audit-20261009/final/independent/run/gocache",
+    "GOPROXY": "off",
+    "GOTELEMETRY": "off",
+    "GOENV": "off",
+    "GOMODCACHE": "/Users/nobocop/go/pkg/mod",
+    "CGO_ENABLED": "0"
+  },
+  "api": {
+    "A3": {
+      "bad-yaml": {
+        "counts": {
+          "bad-frontmatter": 1,
+          "orphan": 1
+        },
+        "literal_A3_green": true,
+        "parse_error": "yaml: line 5: did not find expected node content",
+        "tags": null
+      },
+      "empty-tags": {
+        "counts": {
+          "orphan": 1,
+          "stale": 1
+        },
+        "literal_A3_green": true,
+        "parse_error": "",
+        "tags": []
+      },
+      "missing-tags": {
+        "counts": {
+          "orphan": 1,
+          "stale": 1
+        },
+        "literal_A3_green": true,
+        "parse_error": "",
+        "tags": null
+      },
+      "scalar-tags": {
+        "counts": {
+          "orphan": 1,
+          "stale": 1
+        },
+        "literal_A3_green": true,
+        "parse_error": "",
+        "tags": [
+          "tool"
+        ]
+      }
+    },
+    "blank_body": {
+      "current_body": "",
+      "hits": [
+        {
+          "slug": "alpha",
+          "rel_path": "concepts/alpha.md",
+          "title": "Alpha",
+          "seq": 0,
+          "score": 1,
+          "text": "Alpha\n\nOld evidence."
+        }
+      ],
+      "result": {
+        "pages": 1,
+        "embedded_pages": 0,
+        "pruned_pages": 0,
+        "total_chunks": 1
+      }
+    },
+    "profile_and_unused_knobs": {
+      "configured_chunk_tokens": 1,
+      "configured_dimension": 3,
+      "engine_A_calls": 1,
+      "engine_B_calls": 0,
+      "first": {
+        "pages": 1,
+        "embedded_pages": 1,
+        "pruned_pages": 0,
+        "total_chunks": 1
+      },
+      "limit": "synthetic engine; no measured ORT or retrieval quality claim",
+      "second": {
+        "pages": 1,
+        "embedded_pages": 0,
+        "pruned_pages": 0,
+        "total_chunks": 1
+      }
+    },
+    "snooze_fixed_time": [
+      {
+        "days": 1,
+        "deadline": "2026-10-10T00:00:00Z",
+        "immediate_excluded": false,
+        "now": "2026-10-09T23:30:00-04:00",
+        "remaining_hours": -3.5,
+        "stored": "2026-10-10",
+        "zone": "minus04-late"
+      },
+      {
+        "days": 7,
+        "deadline": "2026-10-16T00:00:00Z",
+        "immediate_excluded": true,
+        "now": "2026-10-09T23:30:00-04:00",
+        "remaining_hours": 140.5,
+        "stored": "2026-10-16",
+        "zone": "minus04-late"
+      },
+      {
+        "days": 1,
+        "deadline": "2026-10-10T00:00:00Z",
+        "immediate_excluded": true,
+        "now": "2026-10-09T23:30:00Z",
+        "remaining_hours": 0.5,
+        "stored": "2026-10-10",
+        "zone": "UTC-late"
+      },
+      {
+        "days": 7,
+        "deadline": "2026-10-16T00:00:00Z",
+        "immediate_excluded": true,
+        "now": "2026-10-09T23:30:00Z",
+        "remaining_hours": 144.5,
+        "stored": "2026-10-16",
+        "zone": "UTC-late"
+      },
+      {
+        "days": 1,
+        "deadline": "2026-10-10T00:00:00Z",
+        "immediate_excluded": true,
+        "now": "2026-10-09T23:30:00+09:00",
+        "remaining_hours": 9.5,
+        "stored": "2026-10-10",
+        "zone": "KST-late"
+      },
+      {
+        "days": 7,
+        "deadline": "2026-10-16T00:00:00Z",
+        "immediate_excluded": true,
+        "now": "2026-10-09T23:30:00+09:00",
+        "remaining_hours": 153.5,
+        "stored": "2026-10-16",
+        "zone": "KST-late"
+      },
+      {
+        "days": 1,
+        "deadline": "2026-10-10T00:00:00Z",
+        "immediate_excluded": true,
+        "now": "2026-10-09T01:30:00+14:00",
+        "remaining_hours": 36.5,
+        "stored": "2026-10-10",
+        "zone": "plus14-early"
+      },
+      {
+        "days": 7,
+        "deadline": "2026-10-16T00:00:00Z",
+        "immediate_excluded": true,
+        "now": "2026-10-09T01:30:00+14:00",
+        "remaining_hours": 180.5,
+        "stored": "2026-10-16",
+        "zone": "plus14-early"
+      }
+    ],
+    "task_unknown_number_after_close": {
+      "addon": {
+        "exact": 9007199254740992,
+        "text": "keep"
+      },
+      "closed": "2026-10-09T00:00:00Z",
+      "created": "2026-01-01T00:00:00Z",
+      "id": "unknown-number",
+      "note": "bounded probe",
+      "status": "dismissed",
+      "type": "future-kind",
+      "version": 1
+    }
+  },
+  "stdout_framing": {
+    "new_sync": {
+      "exit": 0,
+      "single_JSON": false,
+      "JSON_values": [
+        {
+          "committed": true,
+          "message": "canopy: update 4 file(s)",
+          "pushed": true
+        },
+        {
+          "created": "concepts/alpha.md",
+          "related": []
+        }
+      ],
+      "JSONL": false
+    },
+    "update_sync": {
+      "exit": 0,
+      "single_JSON": true,
+      "JSON_values": [
+        {
+          "committed": true,
+          "message": "canopy: alpha",
+          "pushed": true
+        }
+      ],
+      "JSONL": false
+    },
+    "update_plain": {
+      "exit": 0,
+      "single_JSON": false,
+      "JSON_values": [],
+      "JSONL": false
+    }
+  },
+  "partial_apply": {
+    "update_exit": 1,
+    "update_stdout": "",
+    "page_contains_intended": true,
+    "external_body_exists": true,
+    "checkin_exit": 1,
+    "checkin_stdout": "",
+    "checkin_copy_exists": false,
+    "checkin_backup_exists": true,
+    "checkin_page_contains_intended": true
+  },
+  "snooze_CLI": {
+    "utc": "2026-10-09T06:28:50.962273+00:00",
+    "TZ": "Etc/GMT+12",
+    "one_state": {
+      "version": 1,
+      "shown": {},
+      "shown_pairs": {},
+      "snoozed": {
+        "alpha": "2026-10-09"
+      },
+      "feedback": null
+    },
+    "one_response": {
+      "recorded": true,
+      "slug": "alpha"
+    },
+    "before": {
+      "picks": [
+        {
+          "slug": "alpha",
+          "rel_path": "concepts/alpha.md",
+          "title": "Alpha",
+          "strategy": "random-forgotten",
+          "days_stale": 2473,
+          "excerpt": "Old fixture page.",
+          "explanation": "2473일간 열람·갱신이 없던 페이지"
+        }
+      ],
+      "state_updated": false
+    },
+    "one_after": {
+      "picks": [
+        {
+          "slug": "alpha",
+          "rel_path": "concepts/alpha.md",
+          "title": "Alpha",
+          "strategy": "random-forgotten",
+          "days_stale": 2473,
+          "excerpt": "Old fixture page.",
+          "explanation": "2473일간 열람·갱신이 없던 페이지"
+        }
+      ],
+      "state_updated": false
+    },
+    "seven_state": {
+      "version": 1,
+      "shown": {},
+      "shown_pairs": {},
+      "snoozed": {
+        "alpha": "2026-10-15"
+      },
+      "feedback": null
+    },
+    "seven_response": {
+      "recorded": true,
+      "slug": "alpha"
+    },
+    "seven_after": {
+      "picks": [],
+      "state_updated": false
+    },
+    "wall_clock_condition": true
+  },
+  "records": [
+    {
+      "argv": [
+        "go",
+        "build",
+        "-mod=readonly",
+        "-o",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "./cmd/canopy"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "go",
+        "run",
+        "-mod=readonly",
+        "./review_probes/final"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "{\n  \"A3\": {\n    \"bad-yaml\": {\n      \"counts\": {\n        \"bad-frontmatter\": 1,\n        \"orphan\": 1\n      },\n      \"literal_A3_green\": true,\n      \"parse_error\": \"yaml: line 5: did not find expected node content\",\n      \"tags\": null\n    },\n    \"empty-tags\": {\n      \"counts\": {\n        \"orphan\": 1,\n        \"stale\": 1\n      },\n      \"literal_A3_green\": true,\n      \"parse_error\": \"\",\n      \"tags\": []\n    },\n    \"missing-tags\": {\n      \"counts\": {\n        \"orphan\": 1,\n        \"stale\": 1\n      },\n      \"literal_A3_green\": true,\n      \"parse_error\": \"\",\n      \"tags\": null\n    },\n    \"scalar-tags\": {\n      \"counts\": {\n        \"orphan\": 1,\n        \"stale\": 1\n      },\n      \"literal_A3_green\": true,\n      \"parse_error\": \"\",\n      \"tags\": [\n        \"tool\"\n      ]\n    }\n  },\n  \"blank_body\": {\n    \"current_body\": \"\",\n    \"hits\": [\n      {\n        \"slug\": \"alpha\",\n        \"rel_path\": \"concepts/alpha.md\",\n        \"title\": \"Alpha\",\n        \"seq\": 0,\n        \"score\": 1,\n        \"text\": \"Alpha\\n\\nOld evidence.\"\n      }\n    ],\n    \"result\": {\n      \"pages\": 1,\n      \"embedded_pages\": 0,\n      \"pruned_pages\": 0,\n      \"total_chunks\": 1\n    }\n  },\n  \"profile_and_unused_knobs\": {\n    \"configured_chunk_tokens\": 1,\n    \"configured_dimension\": 3,\n    \"engine_A_calls\": 1,\n    \"engine_B_calls\": 0,\n    \"first\": {\n      \"pages\": 1,\n      \"embedded_pages\": 1,\n      \"pruned_pages\": 0,\n      \"total_chunks\": 1\n    },\n    \"limit\": \"synthetic engine; no measured ORT or retrieval quality claim\",\n    \"second\": {\n      \"pages\": 1,\n      \"embedded_pages\": 0,\n      \"pruned_pages\": 0,\n      \"total_chunks\": 1\n    }\n  },\n  \"snooze_fixed_time\": [\n    {\n      \"days\": 1,\n      \"deadline\": \"2026-10-10T00:00:00Z\",\n      \"immediate_excluded\": false,\n      \"now\": \"2026-10-09T23:30:00-04:00\",\n      \"remaining_hours\": -3.5,\n      \"stored\": \"2026-10-10\",\n      \"zone\": \"minus04-late\"\n    },\n    {\n      \"days\": 7,\n      \"deadline\": \"2026-10-16T00:00:00Z\",\n      \"immediate_excluded\": true,\n      \"now\": \"2026-10-09T23:30:00-04:00\",\n      \"remaining_hours\": 140.5,\n      \"stored\": \"2026-10-16\",\n      \"zone\": \"minus04-late\"\n    },\n    {\n      \"days\": 1,\n      \"deadline\": \"2026-10-10T00:00:00Z\",\n      \"immediate_excluded\": true,\n      \"now\": \"2026-10-09T23:30:00Z\",\n      \"remaining_hours\": 0.5,\n      \"stored\": \"2026-10-10\",\n      \"zone\": \"UTC-late\"\n    },\n    {\n      \"days\": 7,\n      \"deadline\": \"2026-10-16T00:00:00Z\",\n      \"immediate_excluded\": true,\n      \"now\": \"2026-10-09T23:30:00Z\",\n      \"remaining_hours\": 144.5,\n      \"stored\": \"2026-10-16\",\n      \"zone\": \"UTC-late\"\n    },\n    {\n      \"days\": 1,\n      \"deadline\": \"2026-10-10T00:00:00Z\",\n      \"immediate_excluded\": true,\n      \"now\": \"2026-10-09T23:30:00+09:00\",\n      \"remaining_hours\": 9.5,\n      \"stored\": \"2026-10-10\",\n      \"zone\": \"KST-late\"\n    },\n    {\n      \"days\": 7,\n      \"deadline\": \"2026-10-16T00:00:00Z\",\n      \"immediate_excluded\": true,\n      \"now\": \"2026-10-09T23:30:00+09:00\",\n      \"remaining_hours\": 153.5,\n      \"stored\": \"2026-10-16\",\n      \"zone\": \"KST-late\"\n    },\n    {\n      \"days\": 1,\n      \"deadline\": \"2026-10-10T00:00:00Z\",\n      \"immediate_excluded\": true,\n      \"now\": \"2026-10-09T01:30:00+14:00\",\n      \"remaining_hours\": 36.5,\n      \"stored\": \"2026-10-10\",\n      \"zone\": \"plus14-early\"\n    },\n    {\n      \"days\": 7,\n      \"deadline\": \"2026-10-16T00:00:00Z\",\n      \"immediate_excluded\": true,\n      \"now\": \"2026-10-09T01:30:00+14:00\",\n      \"remaining_hours\": 180.5,\n      \"stored\": \"2026-10-16\",\n      \"zone\": \"plus14-early\"\n    }\n  ],\n  \"task_unknown_number_after_close\": {\n    \"addon\": {\n      \"exact\": 9007199254740992,\n      \"text\": \"keep\"\n    },\n    \"closed\": \"2026-10-09T00:00:00Z\",\n    \"created\": \"2026-01-01T00:00:00Z\",\n    \"id\": \"unknown-number\",\n    \"note\": \"bounded probe\",\n    \"status\": \"dismissed\",\n    \"type\": \"future-kind\",\n    \"version\": 1\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "init",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/json wiki",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/final/independent/run/cache/canopy/index/7a6e8ecd4279.db\",\n  \"default_wiki_set\": true,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/final/independent/run/json wiki\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/json wiki",
+        "init",
+        "--initial-branch=main"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "Initialized empty Git repository in /private/tmp/canopy-audit-20261009/final/independent/run/json wiki/.git/\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/json wiki",
+        "config",
+        "user.name",
+        "Canopy Fixture"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/json wiki",
+        "config",
+        "user.email",
+        "fixture@invalid.local"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "init",
+        "--bare",
+        "--initial-branch=main",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/remote.git"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "Initialized empty Git repository in /private/tmp/canopy-audit-20261009/final/independent/run/remote.git/\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/json wiki",
+        "add",
+        "-A"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/json wiki",
+        "commit",
+        "-m",
+        "fixture baseline"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "[main (root-commit) 330a898] fixture baseline\n 1 file changed, 20 insertions(+)\n create mode 100644 canopy.toml\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/json wiki",
+        "remote",
+        "add",
+        "origin",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/remote.git"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/json wiki",
+        "push",
+        "-u",
+        "origin",
+        "main"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "branch 'main' set up to track 'origin/main'.\n",
+      "stderr": "To /private/tmp/canopy-audit-20261009/final/independent/run/remote.git\n * [new branch]      main -> main\n"
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "new",
+        "Alpha",
+        "--slug",
+        "alpha",
+        "--type",
+        "concept",
+        "--body-file",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/body.md",
+        "--sync",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/json wiki",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "{\n  \"committed\": true,\n  \"message\": \"canopy: update 4 file(s)\",\n  \"pushed\": true\n}\n{\n  \"created\": \"concepts/alpha.md\",\n  \"related\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "update",
+        "alpha",
+        "--body-file",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/body.md",
+        "--sync",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/json wiki",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "{\n  \"committed\": true,\n  \"message\": \"canopy: alpha\",\n  \"pushed\": true\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "update",
+        "alpha",
+        "--body-file",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/body.md",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/json wiki",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "update",
+        "alpha",
+        "--body-file",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/body.md",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/json wiki",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: open /private/tmp/canopy-audit-20261009/final/independent/run/json wiki/index/entities.md: is a directory\n"
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "update",
+        "alpha",
+        "--body-file",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/body.md",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/json wiki",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "checkout",
+        "alpha",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/json wiki",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "{\n  \"slug\": \"alpha\",\n  \"rel_path\": \"concepts/alpha.md\",\n  \"path\": \"/private/tmp/canopy-audit-20261009/final/independent/run/state/canopy/checkout/7a6e8ecd4279/alpha.md\",\n  \"base\": \"c55a6735745e31be2a2e609e42416c8be8604fca0f73d97a4a4fb3ef9617ffd8\",\n  \"opened_at\": \"2026-10-09T06:28:50Z\",\n  \"modified\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "checkin",
+        "alpha",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/json wiki",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: open /private/tmp/canopy-audit-20261009/final/independent/run/json wiki/index/entities.md: is a directory\n"
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "init",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/snooze wiki",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/final/independent/run/cache/canopy/index/1eb0959199e9.db\",\n  \"default_wiki_set\": false,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/final/independent/run/snooze wiki\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "resurface",
+        "--strategy",
+        "random",
+        "--peek",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/snooze wiki",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "{\n  \"picks\": [\n    {\n      \"slug\": \"alpha\",\n      \"rel_path\": \"concepts/alpha.md\",\n      \"title\": \"Alpha\",\n      \"strategy\": \"random-forgotten\",\n      \"days_stale\": 2473,\n      \"excerpt\": \"Old fixture page.\",\n      \"explanation\": \"2473일간 열람·갱신이 없던 페이지\"\n    }\n  ],\n  \"state_updated\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "resurface",
+        "feedback",
+        "alpha",
+        "--snooze",
+        "1",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/snooze wiki",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "{\n  \"recorded\": true,\n  \"slug\": \"alpha\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "resurface",
+        "--strategy",
+        "random",
+        "--peek",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/snooze wiki",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "{\n  \"picks\": [\n    {\n      \"slug\": \"alpha\",\n      \"rel_path\": \"concepts/alpha.md\",\n      \"title\": \"Alpha\",\n      \"strategy\": \"random-forgotten\",\n      \"days_stale\": 2473,\n      \"excerpt\": \"Old fixture page.\",\n      \"explanation\": \"2473일간 열람·갱신이 없던 페이지\"\n    }\n  ],\n  \"state_updated\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "resurface",
+        "feedback",
+        "alpha",
+        "--snooze",
+        "7",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/snooze wiki",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "{\n  \"recorded\": true,\n  \"slug\": \"alpha\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "resurface",
+        "--strategy",
+        "random",
+        "--peek",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/independent/run/snooze wiki",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "{\n  \"picks\": [],\n  \"state_updated\": false\n}\n",
+      "stderr": ""
+    }
+  ],
+  "limits": [
+    "No browser, ORT inference, model download, installed asset changes, production performance, or user wiki access.",
+    "Synthetic engines establish local cache behavior, not retrieval quality.",
+    "Current wall-clock snooze CLI reproduces only when its stated TZ condition holds."
+  ]
+}

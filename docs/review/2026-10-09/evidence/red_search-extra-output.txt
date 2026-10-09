@@ -1,0 +1,18 @@
+blank_full_http {"contains_old_claim":true,"engine_calls":2,"status":200}
+literal_query {"query":"C++","slugs":["c-only","cpp-only","latin"]}
+literal_query {"query":"C","slugs":["c-only","cpp-only","latin"]}
+literal_query {"query":"프로토콜","slugs":["ko"]}
+literal_query {"query":"프로토콜은","slugs":[]}
+literal_query {"query":"缓存","slugs":[]}
+literal_query {"query":"分布","slugs":["zh"]}
+literal_query {"query":"café","slugs":["latin"]}
+literal_query {"query":"\"\"","slugs":[]}
+literal_query {"query":"*","slugs":[]}
+http_limits {"k":"-1","returned":8,"status":200}
+http_limits {"k":"0","returned":8,"status":200}
+http_limits {"k":"3","returned":3,"status":200}
+http_limits {"k":"51","returned":8,"status":200}
+http_limits {"k":"9999999999999999999999999","returned":8,"status":200}
+p4_boot_fault {"diagram_error":null,"environment_error":"mermaid sandbox init: Error: independent initialization fault at \u003ceval\u003e:1:7(2)","lint_counts":{"mermaid-unchecked":1,"orphan":1}}
+deleted_bridge_control {"bridge_pairs":0,"current_pages":1,"raw_vector_pages":2}
+reconcile_seed "/private/tmp/canopy-audit-20261009/red_search-x75u1a2t/fixtures/cli_reconcile"

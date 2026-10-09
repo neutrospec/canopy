@@ -1,0 +1,60 @@
+{
+  "stage": "complete",
+  "captured_utc": "2026-10-09T06:58:54.553208+00:00",
+  "product_changes": false,
+  "head": "ede67e302a8487aecbb4d59587a8686292018cf6",
+  "tracked_files": 161,
+  "checks": {
+    "head_unchanged": true,
+    "index_unchanged": true,
+    "tracked_contents_unchanged": true,
+    "tracked_status_clean": true,
+    "immutable_audit_inputs_unchanged": true,
+    "final_challenge_unchanged": true,
+    "all_13_tasks_settled": true,
+    "no_reclaimable_owned_workers": true,
+    "complete_ledger": true,
+    "coverage_pass": true,
+    "coverage_inputs_current": true,
+    "probe_files_absent": true,
+    "document_qa_pass": true,
+    "document_qa_current": true
+  },
+  "changed_tracked_files": [],
+  "changed_coordinator_inputs": [
+    "README.md",
+    "adjudication.json",
+    "decisions.md",
+    "evidence/check-review.py",
+    "plan.md"
+  ],
+  "changed_immutable_inputs": [],
+  "probe_files": [],
+  "worker_counts": {
+    "retained": 7,
+    "released": 6
+  },
+  "document_qa": {
+    "files": 18,
+    "mermaid_blocks": 7
+  },
+  "coverage_counts": {
+    "DATA": 15,
+    "STATE": 18,
+    "RED-A": 0,
+    "DEF-A": 1,
+    "SEARCH": 13,
+    "OPS": 11,
+    "RED-B": 1,
+    "DEF-B": 0,
+    "WEB": 13,
+    "DOC": 20,
+    "RED-C": 3,
+    "DEF-C": 0,
+    "adjudicated": 95,
+    "final_objections": 12,
+    "adjudicated_final_objections": 12
+  },
+  "scope": "Source/index and fixed audit inputs, ID presence, artifact QA, recorded Task/resource settlement; no browser/retrieval/production guarantee.",
+  "ok": true
+}

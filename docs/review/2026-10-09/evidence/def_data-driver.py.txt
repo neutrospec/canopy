@@ -1,0 +1,44 @@
+from pathlib import Path
+import os, sys, subprocess, json, shutil, time
+
+REPO = Path('/Users/nobocop/play/canopy')
+SCRATCH = REPO/'review_probes/def_data'
+ROOT = Path(os.environ['DEF_DATA_ROOT']) if 'DEF_DATA_ROOT' in os.environ else Path((SCRATCH/'fixture_root.txt').read_text().strip())
+assert ROOT.is_absolute() and str(ROOT).startswith('/private/tmp/'), ROOT
+EVID = Path(os.environ.get('DEF_DATA_EVIDENCE_DIR',str(REPO/'docs/review/2026-10-09/evidence')))
+EVID.mkdir(parents=True,exist_ok=True)
+for name in ['home','config','state','cache','share','tmp','fixtures','inputs']:
+    (ROOT/name).mkdir(parents=True,exist_ok=True)
+ENV = dict(os.environ)
+ENV.update(HOME=str(ROOT/'home'), XDG_CONFIG_HOME=str(ROOT/'config'),
+           XDG_STATE_HOME=str(ROOT/'state'), XDG_CACHE_HOME=str(ROOT/'cache'),
+           XDG_DATA_HOME=str(ROOT/'share'), TMPDIR=str(ROOT/'tmp'),
+           GOCACHE='/private/tmp/canopy-review/go-cache',
+           GOMODCACHE='/Users/nobocop/go/pkg/mod', GOPROXY='off', GOSUMDB='off',
+           GOTOOLCHAIN='local', GOENV='off', GOTELEMETRY='off', CGO_ENABLED='0',
+           GOFLAGS='-mod=readonly', CANOPY_WIKI='', GIT_CONFIG_GLOBAL='/dev/null',
+           GIT_CONFIG_NOSYSTEM='1', GIT_TERMINAL_PROMPT='0', TZ='Asia/Seoul',
+           DEF_DATA_ROOT=str(ROOT), DEF_DATA_BIN=str(ROOT/'canopy-lite'))
+
+def command(argv, suffix, timeout=240):
+    cp=subprocess.run(argv,cwd=REPO,env=ENV,text=True,capture_output=True,timeout=timeout)
+    (EVID/('def_data-'+suffix+'.txt')).write_text('$ '+repr(argv)+'\n'+cp.stdout+cp.stderr+'\nEXIT '+str(cp.returncode)+'\n')
+    print(suffix, 'exit', cp.returncode, flush=True)
+    if cp.returncode: print(cp.stdout[-4000:]+cp.stderr[-4000:],flush=True)
+    return cp.returncode
+
+mode=sys.argv[1]
+if mode=='build':
+    command(['go','version'],'go-version')
+    raise SystemExit(command(['go','build','-o',str(ROOT/'canopy-lite'),'./cmd/canopy'],'build'))
+if mode=='cli': raise SystemExit(command(['python3',str(SCRATCH/'cli.py')],'cli-output'))
+if mode=='extra':
+    trial=ROOT/('extra-'+str(time.time_ns())); (trial/'fixtures').mkdir(parents=True)
+    ENV['DEF_DATA_ROOT']=str(trial)
+    raise SystemExit(command(['python3',str(SCRATCH/'extra.py')],'extra-output'))
+if mode=='go': raise SystemExit(command(['go','test','-count=1','-v','./review_probes/def_data'],'go-output'))
+if mode=='window': raise SystemExit(command(['go','test','-count=1','-v','-run','^TestG12','./review_probes/def_data'],'cli-window-output'))
+if mode=='ties': raise SystemExit(command(['go','test','-count=1','-v','-run','^TestG07','./review_probes/def_data'],'actual-K-output'))
+if mode=='existing': raise SystemExit(command(['go','test','-count=1','./internal/...','./cmd/canopy'],'existing-tests'))
+if mode=='format': raise SystemExit(command(['gofmt','-w',str(SCRATCH/'probe_test.go')],'probe-format'))
+raise SystemExit('build/cli/go/existing/format')

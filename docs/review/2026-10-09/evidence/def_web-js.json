@@ -1,0 +1,14 @@
+[
+  {
+    "argv": [
+      "node",
+      "review_probes/def_web/response.cjs",
+      "/Users/nobocop/play/canopy"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "seconds": 0.1,
+    "stdout": "{\"label\":\"login HTML after redirect follow\",\"status\":200,\"contentType\":\"text/html\",\"requests\":1,\"jsonCalls\":0,\"successDisplayed\":true}\n{\"label\":\"JSON read false\",\"status\":200,\"contentType\":\"application/json\",\"requests\":1,\"jsonCalls\":0,\"successDisplayed\":true}\n{\"label\":\"JSON malformed\",\"status\":200,\"contentType\":\"application/json\",\"requests\":1,\"jsonCalls\":0,\"successDisplayed\":true}\n{\"label\":\"JSON read true positive\",\"status\":200,\"contentType\":\"application/json\",\"requests\":1,\"jsonCalls\":0,\"successDisplayed\":true}\n{\"label\":\"401 negative\",\"status\":401,\"contentType\":\"application/json\",\"requests\":1,\"jsonCalls\":0,\"successDisplayed\":false}\n{\"label\":\"network negative\",\"requests\":1,\"jsonCalls\":0,\"successDisplayed\":false}\n",
+    "stderr": ""
+  }
+]

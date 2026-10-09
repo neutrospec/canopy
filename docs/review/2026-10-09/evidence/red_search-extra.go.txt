@@ -1,0 +1,105 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/url"
+	"os"
+	"strings"
+
+	"github.com/neutrospec/canopy/internal/lint"
+	"github.com/neutrospec/canopy/internal/mermaid"
+	"github.com/neutrospec/canopy/internal/resurface"
+	"github.com/neutrospec/canopy/internal/webui"
+	"github.com/neutrospec/canopy/internal/wiki"
+	"time"
+)
+
+func main() {
+	root = os.Getenv("RED_SEARCH_FIXTURES")
+	if !strings.HasPrefix(root, "/private/tmp/canopy-audit-20261009/red_search-") {
+		panic("unsafe fixture path")
+	}
+	w := makeWiki("blank_http")
+	write(w, "fuse", "Fuse", "Fuse current limit was 3 amps.")
+	st := open(w)
+	e := &engine{vector: []float32{1, 0}}
+	refresh(w, st, e)
+	write(w, "fuse", "Fuse", "")
+	must(st.Close())
+	srv, err := webui.NewServer(w, e)
+	must(err)
+	rr := request(srv.Handler(), "/search?q=amps")
+	emit("blank_full_http", map[string]any{"status": rr["status"], "contains_old_claim": strings.Contains(rr["body"].(string), "Fuse current limit was 3 amps."), "engine_calls": e.calls})
+
+	w = makeWiki("literal")
+	for s, b := range map[string]string{"cpp-only": "C++ templates.", "c-only": "C pointers.", "ko": "프로토콜을 검증한다.", "zh": "分布式缓存技术。", "latin": "café compilation."} {
+		write(w, s, s, b)
+	}
+	st = open(w)
+	refresh(w, st, nil)
+	for _, q := range []string{"C++", "C", "프로토콜", "프로토콜은", "缓存", "分布", "cafe\u0301", "\"\"", "*"} {
+		h, err := st.SearchKeyword(q, 10)
+		must(err)
+		sl := []string{}
+		for _, p := range h {
+			sl = append(sl, p.Slug)
+		}
+		emit("literal_query", map[string]any{"query": q, "slugs": sl})
+	}
+	must(st.Close())
+
+	w = makeWiki("http_limits")
+	for i := 0; i < 12; i++ {
+		s := fmt.Sprintf("meter-%02d", i)
+		write(w, s, s, "Independent limitword evidence.")
+	}
+	st = open(w)
+	refresh(w, st, nil)
+	must(st.Close())
+	srv, err = webui.NewServer(w, nil)
+	must(err)
+	for _, k := range []string{"-1", "0", "3", "51", "9999999999999999999999999"} {
+		r := request(srv.Handler(), "/api/search?q="+url.QueryEscape("limitword")+"&k="+k)
+		var obj struct{ Results []any }
+		must(json.Unmarshal([]byte(r["body"].(string)), &obj))
+		emit("http_limits", map[string]any{"k": k, "status": r["status"], "returned": len(obj.Results)})
+	}
+
+	w = makeWiki("p4")
+	write(w, "fenced", "Fenced", "```mermaid\nflowchart TD\n R --> T\n```\n")
+	scan, err := wiki.Scan(w)
+	must(err)
+	original := mermaid.Bundle
+	mermaid.Bundle = []byte("throw new Error('independent initialization fault')")
+	v := mermaid.NewValidator()
+	bad, env := v.Validate("flowchart TD\n R --> T\n")
+	report := lint.Run(w, scan, v)
+	mermaid.Bundle = original
+	emit("p4_boot_fault", map[string]any{"diagram_error": bad, "environment_error": fmt.Sprint(env), "lint_counts": report.Counts})
+
+	w = makeWiki("deleted_bridge")
+	write(w, "still", "Still", "Still live.")
+	write(w, "gone", "Gone", "Previously live.")
+	st = open(w)
+	refresh(w, st, &engine{vector: []float32{1, 0}})
+	must(os.Remove(w.Root + "/concepts/gone.md"))
+	refresh(w, st, nil)
+	scan, err = wiki.Scan(w)
+	must(err)
+	vs, err := st.PageVectors()
+	must(err)
+	state, err := resurface.LoadState(w)
+	must(err)
+	bs := resurface.PickBridges(scan, vs, state, .7, 5, false, time.Now())
+	emit("deleted_bridge_control", map[string]any{"raw_vector_pages": len(vs), "current_pages": len(scan.Pages), "bridge_pairs": len(bs)})
+	must(st.Close())
+
+	w = makeWiki("cli_reconcile")
+	write(w, "present", "Present", "Original common instruction.")
+	write(w, "removed", "Removed", "Original common instruction.")
+	st = open(w)
+	refresh(w, st, &engine{vector: []float32{1, 0}})
+	must(st.Close())
+	emit("reconcile_seed", w.Root)
+}

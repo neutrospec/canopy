@@ -1,0 +1,90 @@
+{
+  "source_checks": [
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "exit": 0,
+      "stdout": "ede67e302a8487aecbb4d59587a8686292018cf6\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--no-ext-diff",
+        "--exit-code"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--cached",
+        "--no-ext-diff",
+        "--exit-code"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "index_sha256": "511e2031f26b1522974ee30466faad7e89979058c5e6f53faaec0bb6d029c51a",
+  "prior_run_preservation": {
+    "label": "source-preserved",
+    "head_unchanged": true,
+    "index_tree_unchanged": true,
+    "tracked_changed": [],
+    "scratch_removed": true
+  },
+  "scratch_exists": false,
+  "id_rows": [
+    "SEARCH-01",
+    "SEARCH-02",
+    "SEARCH-03",
+    "SEARCH-04",
+    "SEARCH-05",
+    "SEARCH-06",
+    "SEARCH-07",
+    "SEARCH-08",
+    "SEARCH-09",
+    "SEARCH-10",
+    "SEARCH-11",
+    "SEARCH-12",
+    "SEARCH-13",
+    "OPS-01",
+    "OPS-02",
+    "OPS-03",
+    "OPS-04",
+    "OPS-05",
+    "OPS-06",
+    "OPS-07",
+    "OPS-08",
+    "OPS-09",
+    "OPS-10",
+    "OPS-11"
+  ],
+  "id_rows_match": true,
+  "missing_links": [],
+  "bad_id_table_cell_counts": [],
+  "own_files": [
+    "docs/review/2026-10-09/evidence/red_search-extra-output.txt",
+    "docs/review/2026-10-09/evidence/red_search-extra.go.txt",
+    "docs/review/2026-10-09/evidence/red_search-final-check.json.txt",
+    "docs/review/2026-10-09/evidence/red_search-followups.jsonl.txt",
+    "docs/review/2026-10-09/evidence/red_search-followups.py.txt",
+    "docs/review/2026-10-09/evidence/red_search-main.go.txt",
+    "docs/review/2026-10-09/evidence/red_search-mathjax.cjs.txt",
+    "docs/review/2026-10-09/evidence/red_search-probe-output.txt",
+    "docs/review/2026-10-09/evidence/red_search-run.jsonl.txt",
+    "docs/review/2026-10-09/evidence/red_search-run.py.txt",
+    "docs/review/2026-10-09/evidence/red_search-static.txt"
+  ],
+  "limitations": "Final source check compares tracked worktree and index with the target commit; the first runner separately compared initial/final index bytes. This is a read-only Git check, not another Go/canopy run.",
+  "report_sha256": "97e3a922fdf09d6b8f93a9ed51f0340f3c6a223c8200b77a46e8a5965fcaa270"
+}

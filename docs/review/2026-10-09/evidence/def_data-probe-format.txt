@@ -1,0 +1,3 @@
+$ ['gofmt', '-w', '/Users/nobocop/play/canopy/review_probes/def_data/probe_test.go']
+
+EXIT 0

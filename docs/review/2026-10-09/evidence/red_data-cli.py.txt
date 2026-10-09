@@ -1,0 +1,217 @@
+"""Independent CLI counterexamples; only the RED_DATA_ROOT fixture is touched."""
+from pathlib import Path
+import os, json, subprocess, hashlib, errno, time, resource, signal, sqlite3
+from datetime import datetime, timedelta, timezone
+
+ROOT=Path(os.environ['RED_DATA_ROOT'])
+BIN=Path(os.environ['RED_DATA_BIN'])
+EVID=Path('docs/review/2026-10-09/evidence')
+TRACE=(EVID/'red_data-cli-transcript.jsonl').open('w')
+ENV=dict(os.environ)
+
+def execute(argv, **kw):
+    argv=list(map(str,argv))
+    cp=subprocess.run(argv,env=ENV,text=True,capture_output=True,timeout=kw.pop('timeout',25),**kw)
+    TRACE.write(json.dumps(dict(argv=argv,exit=cp.returncode,stdout=cp.stdout,stderr=cp.stderr),ensure_ascii=False)+'\n');TRACE.flush()
+    return cp
+def cli(w,*args,**kw):return execute([BIN,'--wiki',w,*args],**kw)
+def ok(w,*args,**kw):
+    r=cli(w,*args,**kw);assert r.returncode==0,(args,r.stdout,r.stderr);return r
+def j(w,*args):return json.loads(ok(w,*args,'--json').stdout)
+def emit(case,**obs):print(json.dumps(dict(case=case,**obs),ensure_ascii=False),flush=True)
+def write(p,s):p.parent.mkdir(parents=True,exist_ok=True);p.write_text(s);return p
+def page(w,slug='reed',body='INITIAL-UNIQUE',typ='concept',dir='concepts'):
+    return write(w/dir/(slug+'.md'),f'---\ntitle: {slug}\ncreated: 2026-02-11\nupdated: 2026-02-11\ntype: {typ}\ntags: [tool]\nsources: []\n---\n\n{body}\n')
+def fresh(name,body='INITIAL-UNIQUE'):
+    w=ROOT/'fixtures'/name;w.mkdir()
+    write(w/'canopy.toml','[schema]\n');page(w,body=body);ok(w,'status','--json');return w
+def bodyfile(name,text):return write(ROOT/'inputs'/name,text)
+def logs(w):return sum(len(p.read_text().splitlines()) for p in (w/'logs').glob('*.jsonl'))
+def git(w,*args):
+    r=execute(['git','-C',w,*args]);assert r.returncode==0,(args,r.stderr);return r.stdout.strip()
+def initgit(w):
+    git(w,'init','-b','main');git(w,'config','user.name','Red Data Fixture');git(w,'config','user.email','red-data@example.invalid')
+    git(w,'add','-A');git(w,'commit','-m','fixture baseline')
+def peers(name):
+    w=fresh(name);ok(w,'update','reed','--json');initgit(w)
+    origin=ROOT/'fixtures'/(name+'-origin.git');peer=ROOT/'fixtures'/(name+'-peer')
+    r=execute(['git','init','--bare','-b','main',origin]);assert not r.returncode
+    git(w,'remote','add','origin',origin);git(w,'push','-u','origin','main')
+    r=execute(['git','clone',origin,peer]);assert not r.returncode
+    git(peer,'config','user.name','Other Fixture');git(peer,'config','user.email','peer@example.invalid')
+    return w,origin,peer
+def blocked(w,verb,*args):
+    fifo=ROOT/'inputs'/(w.name+'-fifo');os.mkfifo(fifo)
+    argv=list(map(str,[BIN,'--wiki',w,verb,*args,'--body-file',fifo,'--json']))
+    p=subprocess.Popen(argv,env=ENV,text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    deadline=time.monotonic()+10
+    while time.monotonic()<deadline:
+        try:return p,os.open(fifo,os.O_WRONLY|os.O_NONBLOCK),argv
+        except OSError as e:
+            assert e.errno==errno.ENXIO and p.poll() is None
+            time.sleep(.005)
+    p.kill();p.communicate();raise AssertionError('reader never reached body input')
+def release(p,fd,argv,text):
+    os.write(fd,text.encode());os.close(fd);out,err=p.communicate(timeout=25)
+    TRACE.write(json.dumps(dict(argv=argv,exit=p.returncode,stdout=out,stderr=err))+'\n');TRACE.flush()
+    return p.returncode
+
+# P01/P02: the conflict is produced by real Git, and a non-conflicting
+# autostash is kept as a control for a proposed unconditional dirty-pull ban.
+w,origin,peer=peers('git-conflict')
+pp=peer/'concepts/reed.md';pp.write_text(pp.read_text().replace('INITIAL-UNIQUE','UPSTREAM-SENTENCE'))
+git(peer,'add','-A');git(peer,'commit','-m','peer replacement');git(peer,'push')
+p=w/'concepts/reed.md';p.write_text(p.read_text().replace('INITIAL-UNIQUE','LOCAL-SENTENCE'))
+remote_before=git(origin,'rev-parse','main');r=cli(w,'sync','--json')
+remote_page=git(origin,'show','main:concepts/reed.md')
+emit('P01-sync-conflict',exit=r.returncode,result=r.stdout.strip(),markers_remote='<<<<<<<' in remote_page,
+     dirty=git(w,'status','--porcelain'),unmerged=git(w,'ls-files','-u'),stash=git(w,'stash','list'),
+     remote_advanced=remote_before!=git(origin,'rev-parse','main'),both_texts_retained='UPSTREAM-SENTENCE' in remote_page and 'LOCAL-SENTENCE' in remote_page)
+w,origin,peer=peers('git-clean-control')
+page(peer,'remote-reed','REMOTE-ADDITION');git(peer,'add','-A');git(peer,'commit','-m','peer different path');git(peer,'push')
+p=w/'concepts/reed.md';p.write_text(p.read_text().replace('INITIAL-UNIQUE','LOCAL-NONCONFLICT'))
+emit('P02-sync-nonconflict',exit=cli(w,'sync','--json').returncode,local_survives='LOCAL-NONCONFLICT' in p.read_text(),remote_survives=(w/'concepts/remote-reed.md').exists())
+
+# P03/P04: FIFO rendezvous proves the first CLI passed its stale checks.
+w=fresh('create-interleaving');p,fd,argv=blocked(w,'new','North','--slug','north','--type','concept')
+r=ok(w,'new','South','--slug','north','--type','concept','--body-file',bodyfile('create-second','SECOND-WRITER'),'--json')
+first=release(p,fd,argv,'FIRST-WRITER');b=(w/'concepts/north.md').read_bytes()
+hash_before=hashlib.sha256(b).hexdigest();serial=cli(w,'new','Third','--slug','north','--type','concept','--json')
+emit('P03-create-interleaving',first=first,second=r.returncode,second_text_retained=b'SECOND-WRITER' in b,serial_duplicate_exit=serial.returncode,serial_preserves_hash=hash_before==hashlib.sha256((w/'concepts/north.md').read_bytes()).hexdigest())
+w=fresh('update-interleaving');p,fd,argv=blocked(w,'update','reed')
+wp=w/'concepts/reed.md';wp.write_text(wp.read_text().replace('title: reed','title: NEW-METADATA'))
+second=ok(w,'update','reed','--body-file',bodyfile('update-second','SECOND-UPDATE'),'--json')
+first=release(p,fd,argv,'FIRST-UPDATE')
+emit('P04-update-interleaving',first=first,second=second.returncode,second_body_retained='SECOND-UPDATE' in wp.read_text(),metadata_retained='NEW-METADATA' in wp.read_text())
+
+# P05: scoped RLIMIT failure, no global disk or quota manipulation.
+w=fresh('partial-write','OLD-TAIL-'+('q'*3072));wp=w/'concepts/reed.md';old=wp.read_bytes()
+def limited():
+    signal.signal(signal.SIGXFSZ,signal.SIG_IGN);resource.setrlimit(resource.RLIMIT_FSIZE,(384,384))
+r=cli(w,'update','reed','--body-file',bodyfile('limit-body','new-'+('r'*5000)),'--json',preexec_fn=limited)
+emit('P05-update-write-failure',exit=r.returncode,old_bytes=len(old),new_bytes=wp.stat().st_size,old_tail_retained=b'q'*1024 in wp.read_bytes(),error=r.stderr.strip())
+
+for verb in ['update','checkin']:
+    w=fresh('pipeline-'+verb);ok(w,'update','reed','--json');ok(w,'reconcile','bless','--all','--json');wp=w/'concepts/reed.md'
+    if verb=='checkin':
+        info=j(w,'checkout','reed');copy=Path(info['path']);copy.write_text(copy.read_text().replace('INITIAL-UNIQUE','APPLIED-TEXT'))
+    broken=w/'index/entities.md';broken.unlink();broken.mkdir();n=logs(w)
+    args=['update','reed','--body-file',bodyfile('pipeline-update','APPLIED-TEXT')] if verb=='update' else ['checkin','reed']
+    r=cli(w,*args,'--json');retry=cli(w,*args,'--json') if verb=='checkin' else None
+    emit('P06-pipeline-'+verb,exit=r.returncode,text_in_wiki='APPLIED-TEXT' in wp.read_text(),foreign=j(w,'reconcile')['foreign'],added_logs=logs(w)-n,
+         copy_exists=copy.exists() if verb=='checkin' else None,retry_exit=retry.returncode if retry else None)
+    broken.rmdir();ok(w,'update','reed','--json')
+    emit('P06-repair-'+verb,text_still_present='APPLIED-TEXT' in wp.read_text(),added_logs=logs(w)-n)
+
+for verb,args in [('mv',['mv','reed','--slug','rush']),('rm',['rm','reed','--force']),('archive',['archive','reed'])]:
+    w=fresh('partial-'+verb);src=page(w,'witness','REAL [[reed]]');ok(w,'update','reed','--json');src.chmod(0o444);n=logs(w)
+    try:
+        r=cli(w,*args,'--json')
+        emit('P07-partial-'+verb,exit=r.returncode,source_exists=(w/'concepts/reed.md').exists(),new_exists=(w/'concepts/rush.md').exists(),archive_exists=(w/'_archive/concepts/reed.md').exists(),old_link_retained='[[reed]]' in src.read_text(),added_logs=logs(w)-n)
+    finally:src.chmod(0o644)
+
+w=fresh('archive-reuse','FIRST-ARCHIVE');ok(w,'archive','reed','--json')
+ok(w,'new','Second Reed','--slug','reed','--type','concept','--body-file',bodyfile('archive-second','SECOND-ARCHIVE'),'--json')
+r=cli(w,'archive','reed','--json');archive=w/'_archive/concepts/reed.md'
+emit('P08-archive-reuse',exit=r.returncode,first_retained='FIRST-ARCHIVE' in archive.read_text(),archive_files=len(list((w/'_archive').rglob('*.md'))))
+
+for damage in ['normal','missing','truncated','unreadable']:
+    w=fresh('checkout-'+damage);wp=w/'concepts/reed.md';before=wp.read_bytes();info=j(w,'checkout','reed');copy=Path(info['path']);meta=copy.with_suffix('.json')
+    copy.write_text(copy.read_text().replace('INITIAL-UNIQUE','SOLE-EDIT-'+damage));h=hashlib.sha256(copy.read_bytes()).hexdigest()
+    if damage=='missing':meta.unlink()
+    elif damage=='truncated':meta.write_text('{')
+    elif damage=='unreadable':meta.chmod(0)
+    try:
+        listed=j(w,'checkout','--list');r=cli(w,'checkout','reed','--json')
+        emit('P09-checkout-'+damage,exit=r.returncode,list_count=len(listed['checkouts'] or []),copy_preserved=h==hashlib.sha256(copy.read_bytes()).hexdigest(),wiki_preserved=before==wp.read_bytes())
+    finally:
+        if meta.exists():meta.chmod(0o644)
+w=fresh('discard-failure');info=j(w,'checkout','reed');copy=Path(info['path']);d=copy.parent;d.chmod(0o555)
+try:
+    r=cli(w,'checkin','reed','--discard','--json');emit('P10-discard-failure',exit=r.returncode,copy_exists=copy.exists(),meta_exists=copy.with_suffix('.json').exists())
+finally:d.chmod(0o755)
+
+w=fresh('rename-link-grammar','SELF [[reed#part]]');src=page(w,'witness','PATH [[concepts/reed|label]] EXT [[reed.md]] SPACE [[ reed ]] BARE [[reed#p|alias]] CODE `[[reed]]`\n```text\n[[reed]]\n```')
+ok(w,'mv','reed','--slug','rush','--json')
+emit('P11-rename-grammar',source=src.read_text(),self=(w/'concepts/rush.md').read_text(),lint=j(w,'lint')['counts'])
+w=fresh('remove-link-grammar');src=page(w,'witness','PATH [[concepts/reed]] EXT [[reed.md]] SPACE [[ reed ]] REAL [[reed]] CODE `[[reed]]`')
+ok(w,'rm','reed','--force','--json');emit('P11-force-rm-grammar',source=src.read_text(),lint=j(w,'lint')['counts'])
+
+w=fresh('invalid-update');ok(w,'reconcile','bless','--all','--json');wp=w/'concepts/reed.md'
+wp.write_text(wp.read_text().replace('type: concept','type: guide').replace('tags: [tool]','tags: [invalid-topic]'))
+r=cli(w,'update','reed','--json');emit('P12-invalid-update',exit=r.returncode,foreign=j(w,'reconcile')['foreign'],lint=j(w,'lint')['counts'])
+for change in ['missing-tags','invalid-tag']:
+    w=fresh('checkin-schema-'+change);info=j(w,'checkout','reed');copy=Path(info['path']);before=(w/'concepts/reed.md').read_bytes()
+    copy.write_text(copy.read_text().replace('tags: [tool]\n','' if change=='missing-tags' else 'tags: [invalid-topic]\n'))
+    r=cli(w,'checkin','reed','--json');emit('P12-checkin-'+change,exit=r.returncode,wiki_preserved=before==(w/'concepts/reed.md').read_bytes())
+w=fresh('body-vs-flag');r=cli(w,'new','Body Link','--slug','body-link','--type','concept','--body-file',bodyfile('body-link','[[missing-target]]'),'--json')
+flag=cli(w,'new','Flag Link','--slug','flag-link','--type','concept','--links','missing-target','--json')
+emit('P12-body-vs-flag',body_exit=r.returncode,flag_exit=flag.returncode,lint=j(w,'lint')['counts'])
+for slug,title in [('bad-title',r'C:\Review\artifact'),('escaped-title',r'C:\new\tool')]:
+    w=fresh(slug);r=cli(w,'new',title,'--slug',slug,'--type','concept','--json');emit('P13-'+slug,exit=r.returncode,lint=j(w,'lint')['counts'])
+w=fresh('block-date');wp=w/'concepts/reed.md';wp.write_text(wp.read_text().replace('updated: 2026-02-11','updated: |-\n  2026-02-11'))
+r=cli(w,'update','reed','--json');emit('P13-block-date',exit=r.returncode,raw=wp.read_text(),lint=j(w,'lint')['counts'])
+
+for human in [False,True]:
+    w=fresh('rename-history-'+str(human));ok(w,'show','reed','--json')
+    if human:write(w/'_meta/webui/reads.json','{"version":1,"reads":{"reed":{"first":"2026-02-11T00:00:00Z","last":"2026-02-11T00:00:00Z","count":1,"source":"explicit"}}}')
+    task=j(w,'tasks','add','edit','reed','--request','Revise semantic claim')['task'];ok(w,'resurface','feedback','reed','--snooze','7','--json')
+    ok(w,'mv','reed','--slug','rush','--json');r=cli(w,'tasks','done',task['id'],'--json')
+    emit('P14-rename-'+str(human),agent_keys=sorted(json.loads((w/'_meta/attention/agent-reads.json').read_text())['agent']),task_done_exit=r.returncode,task_pages=j(w,'tasks','list')['tasks'][0]['pages'])
+
+w,origin,peer=peers('remote-index')
+page(peer,'new-reed','DIRECT-REMOTE-PAGE');git(peer,'add','-A');git(peer,'commit','-m','direct page import');git(peer,'push');r=cli(w,'sync','--json')
+emit('P15-remote-index',exit=r.returncode,pages=j(w,'status')['pages'],dashboard=[s for s in (w/'index.md').read_text().splitlines() if 'Total pages' in s],category_has_new='[[new-reed]]' in (w/'index/concepts.md').read_text(),dirty=git(w,'status','--porcelain'))
+ok(w,'update','reed','--json');emit('P15-next-write-control',category_has_new='[[new-reed]]' in (w/'index/concepts.md').read_text())
+w=fresh('duplicate-destination','CONCEPT-ONLY');ep=page(w,'reed','ENTITY-ONLY','entity','entities');old_entity=ep.read_bytes()
+before=j(w,'lint')['counts'];selection=j(w,'show','entities/reed.md');r=cli(w,'mv','entities/reed.md','--type','entity','--json')
+emit('P16-duplicate-destination',exit=r.returncode,lint_before=before,entity_preserved=old_entity==ep.read_bytes(),concept_exists=(w/'concepts/reed.md').exists(),explicit_show=selection)
+
+w=fresh('delimiter-collision')
+for s in ['elm','pine--willow','elm--pine','willow','lake','shore--bank','lake--shore','bank']:page(w,s,'fixture')
+first=j(w,'tasks','add','connect','elm','pine--willow');second=j(w,'tasks','add','connect','elm--pine','willow')
+ok(w,'tasks','dismiss',first['task']['id'],'--json');third=j(w,'tasks','add','connect','elm--pine','willow')
+emit('P17-connect-collision',first=first,second=second,after_other_pair_dismissed=third)
+left=j(w,'tasks','add','connect','lake','shore--bank');right=j(w,'tasks','add','connect','lake--shore','bank')
+emit('P17-sorted-pair-control',different_ids=left['task']['id']!=right['task']['id'])
+w=fresh('gc-mismatched-id');task=j(w,'tasks','add','edit','reed','--request','KEEP-PENDING')['task'];tid=task['id']
+write(w/'_meta/tasks/closed-alias.json',json.dumps(dict(version=1,id=tid,type='edit',status='done',created='2026-01-01T00:00:00Z',closed='2026-01-02T00:00:00Z')))
+r=cli(w,'tasks','gc','--days','0','--json');emit('P18-gc-mismatch',exit=r.returncode,pending_exists=(w/'_meta/tasks'/(tid+'.json')).exists(),alias_exists=(w/'_meta/tasks/closed-alias.json').exists())
+w=fresh('gc-dismissal');page(w,'rush');first=j(w,'tasks','add','connect','reed','rush')['task'];ok(w,'tasks','dismiss',first['id'],'--json')
+before=j(w,'tasks','add','connect','reed','rush');removed=j(w,'tasks','gc','--days','0');after=j(w,'tasks','add','connect','reed','rush')
+emit('P19-dismissal-after-explicit-gc',before_created=before['created'],removed=removed,after_created=after['created'])
+w=fresh('malformed-status');write(w/'_meta/tasks/bad.json','{');write(w/'_meta/reconcile/state.json','{')
+emit('P20-malformed-status',status=j(w,'status'),tasks_list_exit=cli(w,'tasks','list','--json').returncode,reconcile_exit=cli(w,'reconcile','--json').returncode)
+w=fresh('null-agent');write(w/'_meta/attention/agent-reads.json','{"version":1,"agent":{"reed":null}}')
+r=cli(w,'show','reed','--json');emit('P20-null-agent-show',exit=r.returncode,panic='panic:' in r.stderr)
+w=fresh('directory-file');write(w/'_meta/tasks','file blocks directory')
+try:
+    r=cli(w,'tasks','add','edit','reed','--request','TASK','--json',timeout=1.5);emit('P20-task-stat-error',hang=False,exit=r.returncode)
+except subprocess.TimeoutExpired:emit('P20-task-stat-error',hang=True,timeout_seconds=1.5)
+w=fresh('degraded-resurface');ok(w,'show','reed','--json');write(w/'_meta/webui/reads.json','{')
+emit('P20-degraded-resurface',picks=j(w,'resurface','--strategy','random','--peek','-n','3')['picks'])
+w=fresh('invalid-digest');wp=w/'concepts/reed.md';wp.write_text(wp.read_text().replace('created: 2026-02-11','created: "zz-invalid-date"'))
+emit('P21-invalid-digest',digest=j(w,'digest','--since','2026-10-01'))
+
+w=fresh('offset-retention');ok(w,'show','reed','--json')
+key=hashlib.sha256(str(w).encode()).hexdigest()[:12];db=Path(ENV['XDG_STATE_HOME'])/'canopy/attention'/(key+'.db')
+cut=datetime.now(timezone(timedelta(hours=9)))-timedelta(days=90)
+old=cut-timedelta(hours=1);new=cut+timedelta(hours=1)
+with sqlite3.connect(db) as conn:
+    conn.execute('DELETE FROM events')
+    for at,slug in [(old,'old'),(new.astimezone(timezone.utc),'recent')]:
+        conn.execute('INSERT INTO events(ts,slug,door,kind,meta) VALUES(?,?,?,?,?)',(at.isoformat(timespec='seconds').replace('+00:00','Z'),slug,'agent','show','fixture'))
+before=j(w,'events');prune=j(w,'events','gc','--days','90');after=j(w,'events')
+emit('P22-cli-offset-retention',cutoff_approx=cut.isoformat(),old=old.isoformat(),recent=new.isoformat(),before=before,prune=prune,after=after)
+
+w=fresh('metadata-noop');write(w/'_meta/attention/agent-reads.json','{"version":8,"agent":{},"extension":{"retain":true}}')
+ok(w,'show','reed','--json');emit('P23-future-agent-cli',json=json.loads((w/'_meta/attention/agent-reads.json').read_text()))
+write(w/'_meta/tasks/future.json','{"version":1,"id":"future","type":"future-kind","status":"pending","created":"2026-01-01T00:00:00Z","extension":9007199254740995}')
+ok(w,'tasks','dismiss','future','--json');emit('P23-unknown-number-cli',json=json.loads((w/'_meta/tasks/future.json').read_text()))
+config=Path(ENV['XDG_CONFIG_HOME'])/'canopy/config.toml';write(config,'default_wiki = ""\naddon_setting = "KEEP"\n')
+empty=ROOT/'fixtures/init-adopt-empty';empty.mkdir()
+ok(empty,'init','--json');emit('P23-config-adopt-cli',addon_preserved='addon_setting' in config.read_text())
+
+w=fresh('r1-precise-control');initgit(w);before=git(w,'status','--porcelain');original=(w/'concepts/reed.md').read_bytes();j(w,'checkout','reed');first=git(w,'status','--porcelain');j(w,'checkout','reed');repeat=git(w,'status','--porcelain')
+emit('P24-checkout-r1',first_changed=before!=first,first_status=first,page_preserved=original==(w/'concepts/reed.md').read_bytes(),repeat_status_unchanged=repeat==first)
+TRACE.close()

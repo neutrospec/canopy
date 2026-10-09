@@ -1,0 +1,393 @@
+package main
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"html"
+	"math"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"regexp"
+	"runtime"
+	"sort"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/embed"
+	"github.com/neutrospec/canopy/internal/indexer"
+	"github.com/neutrospec/canopy/internal/mermaid"
+	"github.com/neutrospec/canopy/internal/resurface"
+	"github.com/neutrospec/canopy/internal/search"
+	"github.com/neutrospec/canopy/internal/store"
+	"github.com/neutrospec/canopy/internal/webui"
+	"github.com/neutrospec/canopy/internal/wiki"
+)
+
+var root string
+
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+func emit(label string, value any) {
+	b, err := json.Marshal(value)
+	must(err)
+	fmt.Println(label, string(b))
+}
+func makeWiki(label string) *config.Wiki {
+	w := &config.Wiki{Root: filepath.Join(root, label), Cfg: config.Default()}
+	must(os.MkdirAll(filepath.Join(w.Root, "concepts"), 0755))
+	must(w.WriteTOML())
+	return w
+}
+func write(w *config.Wiki, slug, title, body string) {
+	text := "---\ntitle: " + title + "\ntype: concept\ncreated: 2026-10-08\nupdated: 2026-10-09\ntags: []\n---\n" + body
+	must(os.WriteFile(filepath.Join(w.Root, "concepts", slug+".md"), []byte(text), 0644))
+}
+func open(w *config.Wiki) *store.Store { st, err := store.Open(w.DBPath()); must(err); return st }
+
+type engine struct {
+	vector []float32
+	fail   bool
+	calls  int
+}
+
+func (e *engine) Embed(texts []string) ([][]float32, error) {
+	e.calls++
+	if e.fail {
+		return nil, fmt.Errorf("independent inference failure")
+	}
+	out := make([][]float32, len(texts))
+	for i := range out {
+		out[i] = append([]float32{}, e.vector...)
+	}
+	return out, nil
+}
+func (e *engine) Close() error { return nil }
+func refresh(w *config.Wiki, st *store.Store, e embed.Engine) *indexer.Result {
+	r, err := indexer.Reindex(w, st, nil, e, nil)
+	must(err)
+	return r
+}
+func panicOf(f func()) (message string) {
+	defer func() {
+		if p := recover(); p != nil {
+			message = fmt.Sprint(p)
+		}
+	}()
+	f()
+	return ""
+}
+func count(st *store.Store) int { n, err := st.ChunkCount(); must(err); return n }
+func hits(st *store.Store, v []float32) []store.ChunkHit {
+	h, err := st.SearchChunks(v, 10, 2)
+	must(err)
+	return h
+}
+func indexTransitions() {
+	w := makeWiki("empty")
+	st := open(w)
+	defer st.Close()
+	a := &engine{vector: []float32{0.6, 0.8}}
+	write(w, "relay", "Relay", "The relay rating was 12 volts.\n")
+	emit("initial", refresh(w, st, a))
+	emit("unchanged", refresh(w, st, a))
+	write(w, "relay", "Relay", " \t\n\n")
+	r := refresh(w, st, a)
+	emit("empty", map[string]any{"result": r, "actual_chunks": count(st), "current_body": " \t\n\n", "returned": hits(st, a.vector)})
+	write(w, "relay", "Relay", "The relay rating is now 24 volts.\n")
+	emit("nonempty_control", refresh(w, st, a))
+	emit("nonempty_hits", hits(st, a.vector))
+	must(os.Remove(filepath.Join(w.Root, "concepts/relay.md")))
+	emit("delete_control", refresh(w, st, a))
+
+	w = makeWiki("keyword_refresh")
+	st2 := open(w)
+	defer st2.Close()
+	write(w, "memo", "Memo", "The old paper was blue.\n")
+	refresh(w, st2, a)
+	write(w, "memo", "Memo revision", "The new paper is yellow.\n")
+	r = refresh(w, st2, nil)
+	emit("nil_refresh", map[string]any{"result": r, "actual_chunks": count(st2), "returned": hits(st2, a.vector)})
+	must(os.Remove(filepath.Join(w.Root, "concepts/memo.md")))
+	refresh(w, st2, nil)
+	v, err := st2.PageVectors()
+	must(err)
+	emit("nil_deleted", map[string]any{"joined_chunks": len(hits(st2, a.vector)), "raw_vector_pages": len(v)})
+
+	w = makeWiki("profiles")
+	st3 := open(w)
+	defer st3.Close()
+	write(w, "bearing", "Bearing", "A bearing has a fixed bearing.\n")
+	refresh(w, st3, a)
+	w.Cfg.Embedding.Model = "independent-profile-b"
+	w.Cfg.Embedding.Dimension = 2
+	w.Cfg.Embedding.ChunkTokens = 1
+	b := &engine{vector: []float32{-0.8, 0.6}}
+	emit("profile_switch", map[string]any{"result": refresh(w, st3, b), "calls": b.calls, "returned": hits(st3, b.vector)})
+	write(w, "bearing", "Bearing updated", "A bearing has a fixed bearing.\n")
+	emit("profile_title_control", map[string]any{"result": refresh(w, st3, b), "calls": b.calls, "returned": hits(st3, b.vector)})
+	write(w, "bearing", "Rejected revision", "New text should not be labeled as successful.\n")
+	_, err = indexer.Reindex(w, st3, nil, &engine{fail: true}, nil)
+	emit("failed_refresh", map[string]any{"error": fmt.Sprint(err), "returned": hits(st3, b.vector)})
+}
+func vectorsAndBounds() {
+	w := makeWiki("vectors")
+	st := open(w)
+	defer st.Close()
+	for _, s := range []string{"violet", "ochre", "sienna"} {
+		write(w, s, s, "Paint sample.\n")
+	}
+	refresh(w, st, &engine{vector: []float32{1, 0, 0}})
+	for _, k := range []int{-1, 0, 1} {
+		c, err := st.SearchChunks([]float32{1, 0, 0}, k, 1)
+		must(err)
+		kw, err := st.SearchKeyword("Paint", k)
+		must(err)
+		var sn int
+		p := panicOf(func() { h, e := st.SearchSemantic([]float32{1, 0, 0}, k); must(e); sn = len(h) })
+		emit("k", map[string]any{"k": k, "chunks": len(c), "keyword": len(kw), "semantic": sn, "panic": p})
+	}
+	emit("dimension", hits(st, []float32{1, 0}))
+	must(st.ReplaceChunks("violet", []int{0}, []string{"n"}, []string{"Paint sample."}, [][]float32{{2, 0}}))
+	emit("nonunit", hits(st, []float32{1, 0}))
+	must(st.ReplaceChunks("violet", []int{0, 1}, []string{"a", "b"}, []string{"Paint sample.", "Paint sample."}, [][]float32{{1, 0}, {1, 0, 0}}))
+	emit("mixed_panic", panicOf(func() { _, e := st.PageVectors(); must(e) }))
+	must(st.ReplaceChunks("violet", []int{0}, []string{"nan"}, []string{"Paint sample."}, [][]float32{{float32(math.NaN()), 0}}))
+	c := hits(st, []float32{1, 0})
+	_, err := json.Marshal(c)
+	emit("nan", map[string]any{"json_error": fmt.Sprint(err)})
+	db, err := sql.Open("sqlite", w.DBPath())
+	must(err)
+	_, err = db.Exec("UPDATE chunks SET vector=x'0102' WHERE slug='violet'")
+	must(err)
+	must(db.Close())
+	_, err = st.SearchChunks([]float32{1, 0}, 3, 1)
+	emit("malformed_blob_control", fmt.Sprint(err))
+}
+func sourceAndTies() {
+	for label, body := range map[string]string{
+		"canonical":        "First block.\n\nSecond block.",
+		"indent_hardbreak": "First block.  \n\n    fmt.Println(1)\n\n\nLast block.\n",
+		"crlf":             "First block.\r\n\r\nSecond block.\r\n",
+		"unicode_long":     strings.Repeat("각é🌳", 700),
+	} {
+		chunks := embed.Split("Independent title", body)
+		ok := true
+		var texts []string
+		for _, c := range chunks {
+			s := strings.TrimPrefix(c.Text, "Independent title\n\n")
+			texts = append(texts, s)
+			ok = ok && strings.Contains(body, s)
+		}
+		emit("substring_"+label, map[string]any{"ok": ok, "chunks": len(chunks), "texts": texts})
+	}
+	w := makeWiki("ties")
+	st := open(w)
+	defer st.Close()
+	for _, s := range []string{"amber", "jade", "pearl"} {
+		write(w, s, s, "Equal evidence.")
+	}
+	refresh(w, st, &engine{vector: []float32{1, 0}})
+	semOrders, rrfOrders := map[string]bool{}, map[string]bool{}
+	for i := 0; i < 240; i++ {
+		h, err := st.SearchSemantic([]float32{1, 0}, 1)
+		must(err)
+		semOrders[h[0].Slug] = true
+		h = search.Fuse(1, []store.Hit{{Slug: "amber"}, {Slug: "jade"}}, []store.Hit{{Slug: "jade"}, {Slug: "amber"}})
+		rrfOrders[h[0].Slug] = true
+	}
+	keys := func(m map[string]bool) []string {
+		out := []string{}
+		for k := range m {
+			out = append(out, k)
+		}
+		sort.Strings(out)
+		return out
+	}
+	emit("tie_k1", map[string]any{"semantic_selected": keys(semOrders), "rrf_selected": keys(rrfOrders)})
+}
+func request(h http.Handler, target string) map[string]any {
+	r := httptest.NewRequest("GET", target, nil)
+	r.Host = "localhost"
+	rw := httptest.NewRecorder()
+	h.ServeHTTP(rw, r)
+	return map[string]any{"status": rw.Code, "body": rw.Body.String(), "location": rw.Header().Get("Location")}
+}
+func api() {
+	w := makeWiki("api")
+	write(w, "pump", "Pump old", "oldink solvent is present.")
+	srv, err := webui.NewServer(w, nil)
+	must(err)
+	h := srv.Handler()
+	emit("cold", request(h, "/api/search?q=oldink"))
+	emit("exact_redirect", request(h, "/search?q=pump"))
+	emit("after_redirect", request(h, "/api/search?q=oldink"))
+	full := request(h, "/search?q=oldink")
+	emit("full_refresh", map[string]any{"status": full["status"]})
+	emit("warm", request(h, "/api/search?q=oldink"))
+	write(w, "pump", "Pump revised", "newink pigment replaces solvent.")
+	emit("edited_old", request(h, "/api/search?q=oldink"))
+	emit("edited_new", request(h, "/api/search?q=newink"))
+	request(h, "/search?q=newink")
+	emit("full_healed_old", request(h, "/api/search?q=oldink"))
+	emit("full_healed_new", request(h, "/api/search?q=newink"))
+	must(os.Remove(filepath.Join(w.Root, "concepts/pump.md")))
+	emit("deleted", request(h, "/api/search?q=newink"))
+	request(h, "/search?q=newink")
+	emit("delete_healed", request(h, "/api/search?q=newink"))
+	for _, k := range []string{"-1", "0", "51", "9999999999999999999999999"} {
+		emit("http_k_"+k, request(h, "/api/search?q=newink&k="+k))
+	}
+	for _, path := range []string{"/static/vendor/tex-svg.js", "/static/vendor/input/tex/extensions/color.js", "/static/vendor/input/tex/extensions/physics.js"} {
+		rr := request(h, path)
+		emit("static_route", map[string]any{"path": path, "status": rr["status"]})
+	}
+	w = makeWiki("api_failure")
+	write(w, "glass", "Glass", "baseline glass is clear.")
+	st := open(w)
+	refresh(w, st, nil)
+	must(st.Close())
+	srv, err = webui.NewServer(w, &engine{fail: true})
+	must(err)
+	emit("inference_failure", request(srv.Handler(), "/api/search?q=baseline"))
+}
+
+type blockingEngine struct {
+	mu               sync.Mutex
+	calls            int
+	entered, release chan struct{}
+}
+
+func (b *blockingEngine) Embed(texts []string) ([][]float32, error) {
+	b.mu.Lock()
+	b.calls++
+	n := b.calls
+	b.mu.Unlock()
+	if n == 1 {
+		close(b.entered)
+		<-b.release
+	}
+	return [][]float32{{1, 0}}, nil
+}
+func (b *blockingEngine) Close() error { return nil }
+func cancelledQueue() {
+	w := makeWiki("cancelled_queue")
+	write(w, "queue", "Queue", "Queued baseline.")
+	st := open(w)
+	refresh(w, st, nil)
+	must(st.Close())
+	eng := &blockingEngine{entered: make(chan struct{}), release: make(chan struct{})}
+	srv, err := webui.NewServer(w, eng)
+	must(err)
+	firstDone, secondDone := make(chan int), make(chan int)
+	go func() {
+		rw := httptest.NewRecorder()
+		srv.Handler().ServeHTTP(rw, httptest.NewRequest("GET", "/api/search?q=Queued", nil))
+		firstDone <- rw.Code
+	}()
+	select {
+	case <-eng.entered:
+	case <-time.After(5 * time.Second):
+		panic("first request never entered")
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	go func() {
+		rw := httptest.NewRecorder()
+		r := httptest.NewRequest("GET", "/api/search?q=cancelled", nil).WithContext(ctx)
+		srv.Handler().ServeHTTP(rw, r)
+		secondDone <- rw.Code
+	}()
+	early := false
+	select {
+	case <-secondDone:
+		early = true
+	case <-time.After(30 * time.Millisecond):
+	}
+	close(eng.release)
+	one := <-firstDone
+	two := -1
+	if !early {
+		two = <-secondDone
+	}
+	eng.mu.Lock()
+	calls := eng.calls
+	eng.mu.Unlock()
+	emit("cancelled_queue", map[string]any{"returned_while_first_locked": early, "engine_calls": calls, "first_status": one, "cancelled_status": two})
+}
+func renderParity() {
+	v := mermaid.NewValidator()
+	re := regexp.MustCompile(`(?s)<pre class="mermaid">(.*?)</pre>`)
+	cases := map[string]string{"ticks3": "```mermaid\nflowchart TD\n  R[[widget]] --> T[\"Done\"]\n```\n", "ticks4": "````mermaid\nflowchart TD\n  R[[widget]] --> T[\"Done\"]\n````\n", "tilde": "~~~mermaid\nflowchart TD\n  R[[widget]] --> T[\"Done\"]\n~~~\n", "quote": "> ~~~mermaid\n> flowchart TD\n>   R[[widget]] --> T[\"Done\"]\n> ~~~\n"}
+	for label, body := range cases {
+		blocks := mermaid.Blocks(body)
+		out, err := webui.RenderPage(body, func(string) bool { return true })
+		must(err)
+		m := re.FindStringSubmatch(string(out))
+		if len(blocks) != 1 || len(m) != 2 {
+			panic("cannot extract " + label)
+		}
+		rendered := html.UnescapeString(m[1])
+		bad1, env1 := v.Validate(blocks[0].Source)
+		bad2, env2 := v.Validate(rendered)
+		emit("mermaid_"+label, map[string]any{"source": blocks[0].Source, "rendered": rendered, "exact": blocks[0].Source == rendered, "links": wiki.ExtractLinks(body), "original_bad": bad1, "original_env": fmt.Sprint(env1), "rendered_bad": bad2, "rendered_env": fmt.Sprint(env2)})
+	}
+}
+func seedBridge() {
+	w := makeWiki("cli_bridge")
+	write(w, "maple", "Maple", "Original chart statement.")
+	write(w, "willow", "Willow", "Original chart statement.")
+	st := open(w)
+	refresh(w, st, &engine{vector: []float32{1, 0}})
+	must(st.Close())
+	write(w, "willow", "Willow current", "Unrelated battery regulation is now recorded.")
+	emit("bridge_fixture", w.Root)
+}
+func allocations() {
+	for _, n := range []int{300, 1000} {
+		scan := &wiki.ScanResult{BySlug: map[string]*wiki.Page{}}
+		vs := map[string][]float32{}
+		for i := 0; i < n; i++ {
+			s := fmt.Sprintf("p-%04d", i)
+			p := &wiki.Page{Slug: s, Title: s, RelPath: "concepts/" + s + ".md", Body: "Independent source for pair memory."}
+			scan.Pages = append(scan.Pages, p)
+			scan.BySlug[s] = p
+			vs[s] = []float32{1, 0, 0}
+		}
+		st, err := resurface.LoadState(makeWiki(fmt.Sprintf("bench-%d", n)))
+		must(err)
+		for _, threshold := range []float64{0.9, 1.1} {
+			runtime.GC()
+			var before, after runtime.MemStats
+			runtime.ReadMemStats(&before)
+			start := time.Now()
+			b := resurface.PickBridges(scan, vs, st, threshold, 5, false, time.Unix(0, 0))
+			elapsed := time.Since(start)
+			runtime.ReadMemStats(&after)
+			emit("bridge_alloc", map[string]any{"pages": n, "dimension": 3, "threshold": threshold, "returned": len(b), "elapsed_ms": float64(elapsed.Microseconds()) / 1000, "total_alloc_MiB": float64(after.TotalAlloc-before.TotalAlloc) / (1 << 20)})
+		}
+	}
+}
+func main() {
+	root = os.Getenv("RED_SEARCH_FIXTURES")
+	if !strings.HasPrefix(root, "/private/tmp/canopy-audit-20261009/red_search-") {
+		panic("unsafe fixture path")
+	}
+	must(os.MkdirAll(root, 0755))
+	indexTransitions()
+	vectorsAndBounds()
+	sourceAndTies()
+	api()
+	cancelledQueue()
+	renderParity()
+	seedBridge()
+	allocations()
+}

@@ -1,0 +1,317 @@
+{
+  "data-cli-transcript.jsonl": {
+    "sha256": "95f747aea9b5b3ccb858ab8d9ee7b788e60418d5de22c3b13c654806c621a8db",
+    "rows": 76,
+    "selected_records": [
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/final-verify/case-checkin-pipeline-failure",
+          "checkin",
+          "alpha",
+          "--json"
+        ],
+        "code": 1,
+        "stdout": "",
+        "stderr": "error: open /private/tmp/canopy-audit-20261009/data/final-verify/case-checkin-pipeline-failure/index/entities.md: is a directory\n"
+      },
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/final-verify/case-checkin-pipeline-failure",
+          "checkin",
+          "alpha",
+          "--json"
+        ],
+        "code": 1,
+        "stdout": "",
+        "stderr": "error: not checked out: alpha (run `canopy checkout alpha` first)\n"
+      },
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/final-verify/case-rename-links",
+          "mv",
+          "alpha",
+          "--slug",
+          "beta",
+          "--json"
+        ],
+        "code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/final-verify/case-archive-links",
+          "archive",
+          "alpha",
+          "--json"
+        ],
+        "code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/final-verify/case-archive-collision",
+          "archive",
+          "alpha",
+          "--json"
+        ],
+        "code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/final-verify/case-archive-collision",
+          "archive",
+          "alpha",
+          "--json"
+        ],
+        "code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/final-verify/case-checkin-tags",
+          "checkin",
+          "alpha",
+          "--json"
+        ],
+        "code": 0,
+        "stdout": "{\n  \"rel_path\": \"concepts/alpha.md\",\n  \"unchanged\": false,\n  \"old_lines\": 11,\n  \"new_lines\": 10\n}\n",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/final-verify/case-rename-agent-history",
+          "mv",
+          "alpha",
+          "--slug",
+          "beta",
+          "--json"
+        ],
+        "code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/final-verify/case-sync-conflict",
+          "sync",
+          "--json"
+        ],
+        "code": 0,
+        "stdout": "{\n  \"committed\": true,\n  \"message\": \"canopy: alpha\",\n  \"pushed\": true\n}\n",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/final-verify/case-sync-index",
+          "sync",
+          "--json"
+        ],
+        "code": 0,
+        "stdout": "{\n  \"committed\": true,\n  \"message\": \"canopy: second\",\n  \"pushed\": false\n}\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "data-extra-transcript.jsonl": {
+    "sha256": "0d53696860d5a5669f1660abee6bc70dddad896ad839146bbe1eba20ab745629",
+    "rows": 26,
+    "selected_records": [
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/extra2/case-duplicate-move",
+          "mv",
+          "alpha",
+          "--type",
+          "entity",
+          "--json"
+        ],
+        "code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/extra2/case-rename-task",
+          "tasks",
+          "add",
+          "edit",
+          "alpha",
+          "--request",
+          "Revise this page",
+          "--json"
+        ],
+        "code": 0,
+        "stdout": "{\n  \"created\": true,\n  \"task\": {\n    \"version\": 1,\n    \"id\": \"edit-alpha-20261009-131117\",\n    \"type\": \"edit\",\n    \"status\": \"pending\",\n    \"door\": \"cli\",\n    \"created\": \"2026-10-09T13:11:17+09:00\",\n    \"pages\": [\n      \"alpha\"\n    ],\n    \"request\": \"Revise this page\",\n    \"base\": \"54f994a869ce997b6e7e4aa1e516b2cc47fe410ba259c559032ce8ee34f70d4d\"\n  }\n}\n",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/extra2/case-rename-task",
+          "mv",
+          "alpha",
+          "--slug",
+          "beta",
+          "--json"
+        ],
+        "code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/extra2/case-rename-task",
+          "tasks",
+          "done",
+          "edit-alpha-20261009-131117",
+          "--json"
+        ],
+        "code": 1,
+        "stdout": "",
+        "stderr": "error: done rejected (edit): page not found: alpha (dismiss if removing it was the judgment)\n"
+      },
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/extra2/case-partial-mv",
+          "mv",
+          "alpha",
+          "--slug",
+          "beta",
+          "--json"
+        ],
+        "code": 1,
+        "stdout": "",
+        "stderr": "error: open /private/tmp/canopy-audit-20261009/data/extra2/case-partial-mv/concepts/source.md: permission denied\n"
+      },
+      {
+        "argv": [
+          "/private/tmp/canopy-audit-20261009/data/canopy-lite",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/data/extra2/case-partial-archive",
+          "archive",
+          "alpha",
+          "--json"
+        ],
+        "code": 1,
+        "stdout": "",
+        "stderr": "error: open /private/tmp/canopy-audit-20261009/data/extra2/case-partial-archive/concepts/source.md: permission denied\n"
+      }
+    ]
+  },
+  "data-existing-tests.txt": {
+    "sha256": "21239e257bed8dc803750cc179d4ba0375c89c52ce8bafab7a5f2bd5abcfa40d",
+    "lines": 204,
+    "package_summaries": [
+      "ok  \tgithub.com/neutrospec/canopy/internal/wiki\t0.304s",
+      "?   \tgithub.com/neutrospec/canopy/internal/writeops\t[no test files]",
+      "ok  \tgithub.com/neutrospec/canopy/internal/checkout\t0.649s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/reconcile\t0.247s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/genindex\t0.568s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/logops\t0.572s",
+      "?   \tgithub.com/neutrospec/canopy/internal/gitops\t[no test files]",
+      "ok  \tgithub.com/neutrospec/canopy/internal/reads\t0.567s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/webui\t1.664s"
+    ],
+    "cases": []
+  },
+  "data-all-tests.txt": {
+    "sha256": "f60ef1aac83d54b35a2020290323427c81ccb03d4623563e31ed738b9a25358d",
+    "lines": 24,
+    "package_summaries": [
+      "ok  \tgithub.com/neutrospec/canopy/internal/attention\t0.280s",
+      "?   \tgithub.com/neutrospec/canopy/internal/buildinfo\t[no test files]",
+      "ok  \tgithub.com/neutrospec/canopy/internal/checkout\t0.997s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/config\t0.572s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/digest\t0.570s",
+      "?   \tgithub.com/neutrospec/canopy/internal/embed\t[no test files]",
+      "ok  \tgithub.com/neutrospec/canopy/internal/genindex\t0.574s",
+      "?   \tgithub.com/neutrospec/canopy/internal/gitops\t[no test files]",
+      "?   \tgithub.com/neutrospec/canopy/internal/indexer\t[no test files]",
+      "ok  \tgithub.com/neutrospec/canopy/internal/lint\t1.063s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/logops\t0.581s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/mermaid\t2.808s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/migrate\t0.233s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/reads\t0.572s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/reconcile\t0.576s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/resurface\t0.589s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/search\t0.589s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/skills\t0.581s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/store\t0.614s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/tasks\t0.637s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/webui\t1.676s",
+      "ok  \tgithub.com/neutrospec/canopy/internal/wiki\t0.245s",
+      "?   \tgithub.com/neutrospec/canopy/internal/writeops\t[no test files]",
+      "?   \tgithub.com/neutrospec/canopy/cmd/canopy\t[no test files]"
+    ],
+    "cases": []
+  },
+  "data-go-probes.txt": {
+    "sha256": "5731fff17401b07efaa62e69e0c7655a5f87dbfb687a27130455658da0460345",
+    "lines": 28,
+    "package_summaries": [
+      "ok  \tgithub.com/neutrospec/canopy/review_probes/data\t1.095s"
+    ],
+    "cases": []
+  },
+  "state-output.txt": {
+    "sha256": "74c49c633069c689166b96af75a43bad2015ed1b591b1b7f1020ba05d03262ae",
+    "lines": 131,
+    "package_summaries": [],
+    "cases": [
+      "CASE atomic-failure",
+      "CASE checkout-git",
+      "CASE checkout-meta",
+      "CASE compatibility",
+      "CASE completion",
+      "CASE concurrent-edits",
+      "CASE connect-id",
+      "CASE determinism",
+      "CASE gc-dismissal",
+      "CASE gc-id",
+      "CASE lost-updates",
+      "CASE malformed",
+      "CASE merge",
+      "CASE migration",
+      "CASE migration-interruption",
+      "CASE offsets",
+      "CASE path-identity",
+      "CASE positive-boundaries",
+      "CASE rename",
+      "CASE snooze"
+    ]
+  }
+}

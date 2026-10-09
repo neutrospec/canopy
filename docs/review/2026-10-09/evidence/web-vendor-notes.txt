@@ -1,0 +1,5 @@
+force-graph.min.js header identifies version 1.51.4; bytes=177599.
+tex-svg.js bytes=2108580, SHA256=d4295dc33744836935c1399feece5159577b34c5c8ffb9f1c6324cd82e03a882.
+tex-svg.js includes literal https://cdn.jsdelivr.net/npm/speech-rule-engine@ and a mathjaxVersion="3.2.1" SRE setting at byte offset 1800677. This is not runtime version or outbound-network proof.
+internal/mermaid/mermaid.min.js bytes=3565102, SHA256=74d7c46dabca328c2294733910a8aa1ed0c37451776e8d5295da38a2b758fb9b.
+Review is limited to integrations, bundle headers, hashes, and URL literals; not a complete dependency source or CVE audit.

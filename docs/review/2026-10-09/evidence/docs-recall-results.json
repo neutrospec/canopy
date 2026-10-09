@@ -1,0 +1,73 @@
+{
+  "run": "/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss",
+  "records": [
+    {
+      "argv": [
+        "init",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss/wiki",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss/cache/canopy/index/3818d4107124.db\",\n  \"default_wiki_set\": true,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss/wiki\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "new",
+        "Evidence",
+        "--slug",
+        "evidence",
+        "--type",
+        "concept",
+        "--body-file",
+        "-",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss/wiki",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"created\": \"concepts/evidence.md\",\n  \"related\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "recall",
+        "evidence",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss/wiki",
+        "--json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: recall needs the embedding stack: this canopy binary was built without embedding support (rebuild with -tags ORT)\n"
+    },
+    {
+      "argv": [
+        "search",
+        "evidence",
+        "--mode",
+        "keyword",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss/wiki",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"hits\": [\n    {\n      \"slug\": \"evidence\",\n      \"rel_path\": \"concepts/evidence.md\",\n      \"title\": \"Evidence\",\n      \"score\": 0.000002054945054945055,\n      \"snippet\": \"# »Evidence«\\n\\nLocal wiki »evidence«.\\n\"\n    }\n  ],\n  \"mode\": \"keyword\",\n  \"query\": \"evidence\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "show",
+        "evidence",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss/wiki",
+        "--json",
+        "--no-mark"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"content\": \"---\\ntitle: \\\"Evidence\\\"\\ncreated: 2026-10-09\\nupdated: 2026-10-09\\ntype: concept\\ntags: []\\nsources: []\\n---\\n\\n# Evidence\\n\\nLocal wiki evidence.\\n\",\n  \"rel_path\": \"concepts/evidence.md\"\n}\n",
+      "stderr": ""
+    }
+  ]
+}

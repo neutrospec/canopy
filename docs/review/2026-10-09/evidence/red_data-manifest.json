@@ -1,0 +1,194 @@
+{
+  "task_id": "task_e91a48a3f04c",
+  "dispatch_id": "ctx_206f7ebab86a",
+  "reviewer": "red_data",
+  "group": "A",
+  "target_head": "ede67e302a8487aecbb4d59587a8686292018cf6",
+  "scope": [
+    "DATA-01..15",
+    "STATE-01..18"
+  ],
+  "report": "docs/review/2026-10-09/07-red-data.md",
+  "original_reports": {
+    "01-data.md": {
+      "sha256": "8c57447dd951555541b4176d05ab6386c0e2c746dc820f74d01566aab7becd98",
+      "unchanged": true
+    },
+    "04-state.md": {
+      "sha256": "224ef4f97293a633e697c730a0a74afd4108f16b2a5dc3d0bbf6fbf37678dc15",
+      "unchanged": true
+    }
+  },
+  "environment": {
+    "platform": "darwin/arm64",
+    "go_version": "go1.27.1",
+    "CGO_ENABLED": "0",
+    "HOME": "/private/tmp/canopy-audit-20261009/red_data-ctx206f/home",
+    "XDG_CONFIG_HOME": "/private/tmp/canopy-audit-20261009/red_data-ctx206f/config",
+    "XDG_STATE_HOME": "/private/tmp/canopy-audit-20261009/red_data-ctx206f/state",
+    "XDG_CACHE_HOME": "/private/tmp/canopy-audit-20261009/red_data-ctx206f/cache",
+    "XDG_DATA_HOME": "/private/tmp/canopy-audit-20261009/red_data-ctx206f/share",
+    "TMPDIR": "/private/tmp/canopy-audit-20261009/red_data-ctx206f/tmp",
+    "GOCACHE": "/private/tmp/canopy-review/go-cache",
+    "GOMODCACHE": "/Users/nobocop/go/pkg/mod",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "GOTELEMETRY": "off",
+    "GOENV": "off",
+    "GOTOOLCHAIN": "local",
+    "GIT_CONFIG_GLOBAL": "/dev/null",
+    "GIT_CONFIG_NOSYSTEM": "1",
+    "TZ": "Asia/Seoul",
+    "GO_MODULE_MUTATIONS": "-mod=readonly"
+  },
+  "environment_limits": "The child env is explicit for every Go/gofmt/canopy invocation. Read-only source Git inspection, Orca control, skill reads, and parent Python launchers inherit the session environment; this is not a blanket zero-user-HOME-writes assertion for all tooling.",
+  "fixture_base": "/private/tmp/canopy-audit-20261009/red_data-ctx206f",
+  "cli_fixture_final": "/private/tmp/canopy-audit-20261009/red_data-ctx206f/cli-1791523099112329000",
+  "own_fixture_directories": [
+    "/private/tmp/canopy-audit-20261009/red_data-ctx206f/cli-1791522897618773000",
+    "/private/tmp/canopy-audit-20261009/red_data-ctx206f/cli-1791523099112329000",
+    "/private/tmp/canopy-audit-20261009/red_data-ctx206f/extra-1791523413311134000",
+    "/private/tmp/canopy-audit-20261009/red_data-ctx206f/fixtures"
+  ],
+  "binary": {
+    "path": "/private/tmp/canopy-audit-20261009/red_data-ctx206f/canopy-lite",
+    "sha256": "801b61843e865acfc41d9b29088c331cc2712b1524ca5142587a7c102db25a90"
+  },
+  "executions": [
+    {
+      "output": "red_data-go-version.txt",
+      "recorded_command": "$ ['go', 'version']",
+      "exit": 0
+    },
+    {
+      "output": "red_data-build.txt",
+      "recorded_command": "$ ['go', 'build', '-mod=readonly', '-o', '/private/tmp/canopy-audit-20261009/red_data-ctx206f/canopy-lite', './cmd/canopy']",
+      "exit": 0
+    },
+    {
+      "output": "red_data-existing-tests.txt",
+      "recorded_command": "$ ['go', 'test', '-mod=readonly', '-count=1', '-v', './internal/...', './cmd/canopy']",
+      "exit": 0
+    },
+    {
+      "output": "red_data-cli-output.txt",
+      "recorded_command": "$ ['python3', 'review_probes/red_data/cli.py']",
+      "exit": 0
+    },
+    {
+      "output": "red_data-go-output.txt",
+      "recorded_command": "$ ['go', 'test', '-mod=readonly', '-count=1', '-v', './review_probes/red_data']",
+      "exit": 0
+    },
+    {
+      "output": "red_data-cli-extra-output.txt",
+      "recorded_command": "$ ['python3', 'review_probes/red_data/extras.py']",
+      "exit": 0
+    },
+    {
+      "output": "red_data-go-extra-output.txt",
+      "recorded_command": "$ ['go', 'test', '-mod=readonly', '-count=1', '-v', '-run', '^TestQ1[12]', './review_probes/red_data']",
+      "exit": 0
+    }
+  ],
+  "existing_test_limit": "No -race, ORT, model/native install, power-loss, Windows, or real remote upstream was exercised.",
+  "cleanup": {
+    "scratch_path": "review_probes/red_data",
+    "removed": true,
+    "temporary_fixtures_preserved": true
+  },
+  "repository_preservation": {
+    "head_unchanged": true,
+    "tracked_diff_stat": "",
+    "index_diff_stat": "",
+    "source_commits_created": 0
+  },
+  "independent_artifacts": [
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-build.txt",
+      "bytes": 132,
+      "sha256": "8fc05c574b89468dbfb9b36eea4e9eb04007c195f0ce3f420fa2a9e2ffee17bc"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-cli-extra-output.txt",
+      "bytes": 443,
+      "sha256": "763f5a430f0e97200dbd0ea3ba515331b98cccd797a3e85830deb65df893ac0e"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-cli-output.txt",
+      "bytes": 7978,
+      "sha256": "f9e11ccf6237f24138739714441f1796c43bfb147f1016678c3ce825ca13a0e2"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-cli-transcript.jsonl",
+      "bytes": 97292,
+      "sha256": "b076d3947a70022a06575103ad9cbf17a9bc87355bead2ff8a02ebe016b34fe4"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-cli.py.txt",
+      "bytes": 18546,
+      "sha256": "0b4909d15c137d41c06b608267a5ae4ca1c3345271e5ee9b1bba205e2591c58a"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-driver.py.txt",
+      "bytes": 2831,
+      "sha256": "b04a15ec2d2c3d420673f56d03bea173d3b18742b17933d0d61801b18fbb87b4"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-existing-tests.txt",
+      "bytes": 13351,
+      "sha256": "bdf2558545848b738cd74a57644af49664d7a86aa2a8bfb5d384cb05d11bf6c1"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-extra-transcript.jsonl",
+      "bytes": 33215,
+      "sha256": "babe8dc527350983ba0103e974f5baeb4da9654d99ca2e18af6a3ee6febcaa2e"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-extras.py.txt",
+      "bytes": 3951,
+      "sha256": "9a5e40140f3116efe5ea966e26305bfb4e9ca0ee703e012bec91e777334b56dc"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-go-extra-output.txt",
+      "bytes": 1187,
+      "sha256": "63499317088318392df584dfed131f07eb187858a4bfa75e8f126c87d1a4f629"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-go-output.txt",
+      "bytes": 6214,
+      "sha256": "df394c7a1d14cbe9a88853d03a6ffbd0b329f09cae1a3376ffee75480dd11044"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-go-version.txt",
+      "bytes": 61,
+      "sha256": "b575970de7f0149928da16476b7112e16b0fd2dad9625ff68e818cd7de93c958"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-inventory.json",
+      "bytes": 1006,
+      "sha256": "7e1a8560377786e977dccf9fb8a202fe49b5954c3087e25f4bbe91badebb90d2"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-lines.txt",
+      "bytes": 97204,
+      "sha256": "cc5c66664ec3c8e22539c0e96bcf54d7552471224e9ed2d3392ac06d3ef6949b"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-original-evidence-check.json",
+      "bytes": 10830,
+      "sha256": "78016c38c5f052e186fd4dd16a9055097c2666d3a3708bc4661058d474c28d53"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_data-probe_test.go.txt",
+      "bytes": 20274,
+      "sha256": "50d0569653c76e7c0baad9ae134f269018789fa2880a25154d43e11196c5e647"
+    },
+    {
+      "path": "docs/review/2026-10-09/07-red-data.md",
+      "bytes": 54803,
+      "sha256": "9f32c070f1f727cd372cbae76e1f353f86a4c0919f4b08e86e34bb77b8b94942"
+    }
+  ],
+  "hash_note": "Manifest self-hash is intentionally omitted. Source copies are non-build .txt evidence and execution outputs record exact commands."
+}

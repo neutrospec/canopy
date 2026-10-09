@@ -1,0 +1,36 @@
+[
+  {
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-ort",
+      "search",
+      "MQTT",
+      "--mode",
+      "semantic",
+      "-k=-1",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/wiki",
+      "--json",
+      "--no-mark"
+    ],
+    "exit": 2,
+    "stdout": "",
+    "stderr": "panic: runtime error: slice bounds out of range [:-1]\n\ngoroutine 1 [running]:\ngithub.com/neutrospec/canopy/internal/store.(*Store).SearchSemantic(0x10?, {0x3cd0e49d6000, 0x400, 0x103c2b7e8?}, 0xffffffffffffffff)\n\t/Users/nobocop/play/canopy/internal/store/vectors.go:127 +0x660\nmain.cmdSearch.func1(0x3cd0e4ad1000?, {0x3cd0e4e32800?, 0x4?, 0x10337e284?})\n\t/Users/nobocop/play/canopy/cmd/canopy/main.go:419 +0x43c\ngithub.com/spf13/cobra.(*Command).execute(0x3cd0e4b11808, {0x3cd0e4e32780, 0x8, 0x8})\n\t/Users/nobocop/go/pkg/mod/github.com/spf13/cobra@v1.10.2/command.go:1015 +0x82c\ngithub.com/spf13/cobra.(*Command).ExecuteC(0x3cd0e4b10c08)\n\t/Users/nobocop/go/pkg/mod/github.com/spf13/cobra@v1.10.2/command.go:1148 +0x340\ngithub.com/spf13/cobra.(*Command).Execute(...)\n\t/Users/nobocop/go/pkg/mod/github.com/spf13/cobra@v1.10.2/command.go:1071\nmain.main()\n\t/Users/nobocop/play/canopy/cmd/canopy/main.go:71 +0x39c\n"
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-ort",
+      "search",
+      "MQTT",
+      "--mode",
+      "hybrid",
+      "-k=-1",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/wiki",
+      "--json",
+      "--no-mark"
+    ],
+    "exit": 2,
+    "stdout": "",
+    "stderr": "panic: runtime error: slice bounds out of range [:-1]\n\ngoroutine 1 [running]:\ngithub.com/neutrospec/canopy/internal/store.(*Store).SearchSemantic(0x10?, {0x1c3c88260000, 0x400, 0xffffffffffffffff?}, 0xffffffffffffffff)\n\t/Users/nobocop/play/canopy/internal/store/vectors.go:127 +0x660\nmain.cmdSearch.func1(0x1c3c88211000?, {0x1c3c88671000?, 0x4?, 0x101d56284?})\n\t/Users/nobocop/play/canopy/cmd/canopy/main.go:419 +0x43c\ngithub.com/spf13/cobra.(*Command).execute(0x1c3c8831b808, {0x1c3c88670f80, 0x8, 0x8})\n\t/Users/nobocop/go/pkg/mod/github.com/spf13/cobra@v1.10.2/command.go:1015 +0x82c\ngithub.com/spf13/cobra.(*Command).ExecuteC(0x1c3c8831ac08)\n\t/Users/nobocop/go/pkg/mod/github.com/spf13/cobra@v1.10.2/command.go:1148 +0x340\ngithub.com/spf13/cobra.(*Command).Execute(...)\n\t/Users/nobocop/go/pkg/mod/github.com/spf13/cobra@v1.10.2/command.go:1071\nmain.main()\n\t/Users/nobocop/play/canopy/cmd/canopy/main.go:71 +0x39c\n"
+  }
+]

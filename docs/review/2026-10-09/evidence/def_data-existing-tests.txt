@@ -1,0 +1,27 @@
+$ ['go', 'test', '-count=1', './internal/...', './cmd/canopy']
+ok  	github.com/neutrospec/canopy/internal/attention	0.339s
+?   	github.com/neutrospec/canopy/internal/buildinfo	[no test files]
+ok  	github.com/neutrospec/canopy/internal/checkout	0.507s
+ok  	github.com/neutrospec/canopy/internal/config	0.092s
+ok  	github.com/neutrospec/canopy/internal/digest	0.238s
+?   	github.com/neutrospec/canopy/internal/embed	[no test files]
+ok  	github.com/neutrospec/canopy/internal/genindex	0.249s
+?   	github.com/neutrospec/canopy/internal/gitops	[no test files]
+?   	github.com/neutrospec/canopy/internal/indexer	[no test files]
+ok  	github.com/neutrospec/canopy/internal/lint	0.586s
+ok  	github.com/neutrospec/canopy/internal/logops	0.250s
+ok  	github.com/neutrospec/canopy/internal/mermaid	2.320s
+ok  	github.com/neutrospec/canopy/internal/migrate	0.240s
+ok  	github.com/neutrospec/canopy/internal/reads	0.093s
+ok  	github.com/neutrospec/canopy/internal/reconcile	0.259s
+ok  	github.com/neutrospec/canopy/internal/resurface	0.273s
+ok  	github.com/neutrospec/canopy/internal/search	0.272s
+ok  	github.com/neutrospec/canopy/internal/skills	0.096s
+ok  	github.com/neutrospec/canopy/internal/store	0.284s
+ok  	github.com/neutrospec/canopy/internal/tasks	0.156s
+ok  	github.com/neutrospec/canopy/internal/webui	1.492s
+ok  	github.com/neutrospec/canopy/internal/wiki	0.233s
+?   	github.com/neutrospec/canopy/internal/writeops	[no test files]
+?   	github.com/neutrospec/canopy/cmd/canopy	[no test files]
+
+EXIT 0

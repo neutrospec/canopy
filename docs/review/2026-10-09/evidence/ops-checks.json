@@ -1,0 +1,394 @@
+[
+  {
+    "label": "lite-version",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-lite",
+      "version",
+      "--json"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 593,
+    "stdout": "{\n  \"cache_schema\": \"2\",\n  \"commit\": \"ede67e3\",\n  \"date\": \"audit\",\n  \"go\": \"go1.27.1\",\n  \"schema_target\": 1,\n  \"schema_version\": 1,\n  \"semantic\": false,\n  \"version\": \"v0.10.0\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "label": "lite-init",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-lite",
+      "init",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/wiki",
+      "--json"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 19,
+    "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/ops-term398/cache/canopy/index/3b99cd496cb1.db\",\n  \"default_wiki_set\": true,\n  \"pages\": 2,\n  \"root\": \"/private/tmp/canopy-audit-20261009/ops-term398/fixtures/wiki\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "label": "lite-hybrid-F2",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-lite",
+      "search",
+      "MQTT",
+      "--mode",
+      "hybrid",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/wiki",
+      "--json",
+      "--no-mark"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 14,
+    "stdout": "{\n  \"hits\": [\n    {\n      \"slug\": \"protocol\",\n      \"rel_path\": \"concepts/protocol.md\",\n      \"title\": \"산업용 프로토콜\",\n      \"score\": 9.789227166276348e-7,\n      \"snippet\": \"산업용 프로토콜 OPC-UA와 »MQTT« 비교. [[lunch]]\\n\"\n    }\n  ],\n  \"mode\": \"keyword\",\n  \"query\": \"MQTT\"\n}\n",
+    "stderr": "hybrid → keyword only (this canopy binary was built without embedding support (rebuild with -tags ORT))\n"
+  },
+  {
+    "label": "lite-semantic-refusal",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-lite",
+      "search",
+      "MQTT",
+      "--mode",
+      "semantic",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/wiki",
+      "--json",
+      "--no-mark"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 1,
+    "elapsed_ms": 11,
+    "stdout": "",
+    "stderr": "error: this canopy binary was built without embedding support (rebuild with -tags ORT)\n"
+  },
+  {
+    "label": "adopted-wiki-other-cwd-F4",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-lite",
+      "status",
+      "--json"
+    ],
+    "cwd": "/private/tmp/canopy-audit-20261009/ops-term398/tmp",
+    "exit": 0,
+    "elapsed_ms": 111,
+    "stdout": "{\n  \"checkouts_open\": 0,\n  \"git\": {\n    \"is_repo\": false,\n    \"branch\": \"\",\n    \"dirty\": 0,\n    \"ahead\": 0,\n    \"behind\": 0\n  },\n  \"initialized\": true,\n  \"pages\": 2,\n  \"root\": \"/private/tmp/canopy-audit-20261009/ops-term398/fixtures/wiki\",\n  \"stray_root\": null,\n  \"tasks_pending\": 0\n}\n",
+    "stderr": ""
+  },
+  {
+    "label": "ort-version",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-ort",
+      "version",
+      "--json"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 824,
+    "stdout": "{\n  \"cache_schema\": \"2\",\n  \"commit\": \"ede67e3\",\n  \"date\": \"audit\",\n  \"go\": \"go1.27.1\",\n  \"schema_target\": 1,\n  \"schema_version\": 1,\n  \"semantic\": true,\n  \"version\": \"v0.10.0\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "label": "native-smoke",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/ops-probe",
+      "embed-smoke"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 1453,
+    "stdout": "{\"dimension\":1024,\"inference_ms\":37,\"load_ms\":707,\"model_path\":\"/private/tmp/canopy-audit-20261009/ops-term398/data/canopy/models/bge-m3\",\"norms\":[0.9999999687605096,1.0000000294733675,1.0000000140976237],\"sim_protocol_ko_en\":0.9624386555810288,\"sim_protocol_lunch\":0.5843185327109671}\n",
+    "stderr": ""
+  },
+  {
+    "label": "ort-reindex-first",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-ort",
+      "reindex",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/wiki",
+      "--json"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 569,
+    "stdout": "{\n  \"pages\": 2,\n  \"embedded_pages\": 2,\n  \"pruned_pages\": 0,\n  \"total_chunks\": 2\n}\n",
+    "stderr": ""
+  },
+  {
+    "label": "ort-semantic-smoke",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-ort",
+      "search",
+      "산업용 프로토콜 비교",
+      "--mode",
+      "semantic",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/wiki",
+      "--json",
+      "--no-mark"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 552,
+    "stdout": "{\n  \"hits\": [\n    {\n      \"slug\": \"protocol\",\n      \"rel_path\": \"concepts/protocol.md\",\n      \"title\": \"산업용 프로토콜\",\n      \"score\": 0.8291408675930309,\n      \"snippet\": \"산업용 프로토콜 OPC-UA와 MQTT 비교. [[lunch]]\"\n    },\n    {\n      \"slug\": \"lunch\",\n      \"rel_path\": \"concepts/lunch.md\",\n      \"title\": \"점심 메뉴\",\n      \"score\": 0.6498221528841723,\n      \"snippet\": \"오늘 점심 메뉴로 김치찌개를 먹었다. [[protocol]]\"\n    }\n  ],\n  \"mode\": \"semantic\",\n  \"query\": \"산업용 프로토콜 비교\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "label": "ort-reindex-unchanged",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-ort",
+      "reindex",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/wiki",
+      "--json"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 564,
+    "stdout": "{\n  \"pages\": 2,\n  \"embedded_pages\": 0,\n  \"pruned_pages\": 0,\n  \"total_chunks\": 2\n}\n",
+    "stderr": ""
+  },
+  {
+    "label": "zero-byte-model-status",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-ort",
+      "model",
+      "status",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/wiki",
+      "--json"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 11,
+    "stdout": "{\n  \"model_available\": true,\n  \"model_path\": \"/private/tmp/canopy-audit-20261009/ops-term398/fixtures/bad-data/canopy/models/bge-m3\",\n  \"ort_available\": true\n}\n",
+    "stderr": ""
+  },
+  {
+    "label": "zero-byte-model-pull-all-cached",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-ort",
+      "model",
+      "pull"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 11,
+    "stdout": "  model.onnx (cached)\n  model.onnx.data (cached)\n  config.json (cached)\n  tokenizer.json (cached)\n  tokenizer_config.json (cached)\n  special_tokens_map.json (cached)\n✓ model ready: /private/tmp/canopy-audit-20261009/ops-term398/fixtures/bad-data/canopy/models/bge-m3\n",
+    "stderr": ""
+  },
+  {
+    "label": "zero-byte-model-semantic",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-ort",
+      "search",
+      "MQTT",
+      "--mode",
+      "semantic",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/wiki",
+      "--json",
+      "--no-mark"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 1,
+    "elapsed_ms": 67,
+    "stdout": "",
+    "stderr": "error: unexpected end of JSON input\n"
+  },
+  {
+    "label": "zero-byte-model-hybrid-degrade",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-ort",
+      "search",
+      "MQTT",
+      "--mode",
+      "hybrid",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/wiki",
+      "--json",
+      "--no-mark"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 69,
+    "stdout": "{\n  \"hits\": [\n    {\n      \"slug\": \"protocol\",\n      \"rel_path\": \"concepts/protocol.md\",\n      \"title\": \"산업용 프로토콜\",\n      \"score\": 9.789227166276348e-7,\n      \"snippet\": \"산업용 프로토콜 OPC-UA와 »MQTT« 비교. [[lunch]]\\n\"\n    }\n  ],\n  \"mode\": \"keyword\",\n  \"query\": \"MQTT\"\n}\n",
+    "stderr": "hybrid → keyword only (unexpected end of JSON input)\n"
+  },
+  {
+    "label": "lint-A3-missing-tags-invalid-dates",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-lite",
+      "lint",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/lint-wiki",
+      "--json"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 11,
+    "stdout": "{\n  \"total_pages\": 1,\n  \"findings\": [\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/bad-fields.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"orphan\": 1\n  }\n}\n",
+    "stderr": ""
+  },
+  {
+    "label": "taxonomy-duplicate-tags",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/canopy-lite",
+      "tags",
+      "--audit",
+      "--wiki",
+      "/private/tmp/canopy-audit-20261009/ops-term398/fixtures/lint-wiki",
+      "--json"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 11,
+    "stdout": "{\n  \"total_pages\": 1,\n  \"legacy\": false,\n  \"topics\": [\n    {\n      \"tag\": \"tool\",\n      \"count\": 3,\n      \"pct\": 300\n    }\n  ],\n  \"forms\": [],\n  \"unused_topics\": null,\n  \"overbroad_topics\": [\n    {\n      \"tag\": \"tool\",\n      \"count\": 3,\n      \"pct\": 300\n    }\n  ],\n  \"broad_topic_pct\": 25,\n  \"unknown_tags\": []\n}\n",
+    "stderr": ""
+  },
+  {
+    "label": "mermaid-render-parity",
+    "argv": [
+      "/private/tmp/canopy-audit-20261009/ops-term398/bin/ops-probe",
+      "render-parity"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 741,
+    "stdout": "{\"fence\":\"```\",\"original_bad\":null,\"original_env\":null,\"original_source\":\"flowchart LR\\n  A[[foo]] --\\u003e B[\\\"끝\\\"]\\n\",\"render_error\":null,\"rendered_bad\":null,\"rendered_env\":null,\"rendered_source\":\"flowchart LR\\n  A[[foo]] --\\u003e B[\\\"끝\\\"]\\n\"}\n{\"fence\":\"~~~\",\"original_bad\":null,\"original_env\":null,\"original_source\":\"flowchart LR\\n  A[[foo]] --\\u003e B[\\\"끝\\\"]\\n\",\"render_error\":null,\"rendered_bad\":{\"Message\":\"Parse error on line 2:\\nflowchart LR  A\\u003ca class='wikilink' \\n---------------^\\nExpecting 'SEMI', 'NEWLINE', 'SPACE', 'EOF', 'SQS', 'SHAPE_DATA', 'AMP', 'STYLE_SEPARATOR', 'DOUBLECIRCLESTART', 'PS', '(-', 'STADIUMSTART', 'SUBROUTINESTART', 'VERTEX_WITH_PROPS_START', 'COLON', 'CYLINDERSTART', 'DIAMOND_START', 'TAGEND', 'TRAPSTART', 'INVTRAPSTART', 'START_LINK', 'LINK', 'LINK_ID', 'DOWN', 'DEFAULT', 'NUM', 'COMMA', 'NODE_STRING', 'BRKT', 'MINUS', 'MULT', 'UNICODE_TEXT', got 'TAGSTART'\"},\"rendered_env\":null,\"rendered_source\":\"flowchart LR\\n  A\\u003ca class=\\\"wikilink\\\" href=\\\"/page/foo\\\" data-slug=\\\"foo\\\"\\u003efoo\\u003c/a\\u003e --\\u003e B[\\\"끝\\\"]\\n\"}\n{\"fence\":\"````\",\"original_bad\":null,\"original_env\":null,\"original_source\":\"flowchart LR\\n  A[[foo]] --\\u003e B[\\\"끝\\\"]\\n\",\"render_error\":null,\"rendered_bad\":{\"Message\":\"Parse error on line 2:\\nflowchart LR  A\\u003ca class='wikilink' \\n---------------^\\nExpecting 'SEMI', 'NEWLINE', 'SPACE', 'EOF', 'SQS', 'SHAPE_DATA', 'AMP', 'STYLE_SEPARATOR', 'DOUBLECIRCLESTART', 'PS', '(-', 'STADIUMSTART', 'SUBROUTINESTART', 'VERTEX_WITH_PROPS_START', 'COLON', 'CYLINDERSTART', 'DIAMOND_START', 'TAGEND', 'TRAPSTART', 'INVTRAPSTART', 'START_LINK', 'LINK', 'LINK_ID', 'DOWN', 'DEFAULT', 'NUM', 'COMMA', 'NODE_STRING', 'BRKT', 'MINUS', 'MULT', 'UNICODE_TEXT', got 'TAGSTART'\"},\"rendered_env\":null,\"rendered_source\":\"flowchart LR\\n  A\\u003ca class=\\\"wikilink\\\" href=\\\"/page/foo\\\" data-slug=\\\"foo\\\"\\u003efoo\\u003c/a\\u003e --\\u003e B[\\\"끝\\\"]\\n\"}\n",
+    "stderr": ""
+  },
+  {
+    "label": "cmd-test-inventory",
+    "argv": [
+      "go",
+      "test",
+      "./cmd/canopy"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 145,
+    "stdout": "?   \tgithub.com/neutrospec/canopy/cmd/canopy\t[no test files]\n",
+    "stderr": ""
+  },
+  {
+    "label": "focused-lint-mermaid-skills",
+    "argv": [
+      "go",
+      "test",
+      "-count=1",
+      "-coverprofile=/private/tmp/canopy-audit-20261009/ops-term398/logs/focused.cover",
+      "./internal/lint",
+      "./internal/mermaid",
+      "./internal/skills"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 2798,
+    "stdout": "ok  \tgithub.com/neutrospec/canopy/internal/lint\t0.735s\tcoverage: 89.6% of statements\nok  \tgithub.com/neutrospec/canopy/internal/mermaid\t2.473s\tcoverage: 83.1% of statements\nok  \tgithub.com/neutrospec/canopy/internal/skills\t0.260s\tcoverage: 74.7% of statements\n",
+    "stderr": ""
+  },
+  {
+    "label": "client-tests",
+    "argv": [
+      "node",
+      "--test",
+      "internal/webui/uitest/app.test.cjs"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 146,
+    "stdout": "TAP version 13\n# Subtest: a cleared query cannot be reopened by a late response\nok 1 - a cleared query cannot be reopened by a late response\n  ---\n  duration_ms: 4.547416\n  type: 'test'\n  ...\n# Subtest: responses from before the current debounce stay hidden\nok 2 - responses from before the current debounce stay hidden\n  ---\n  duration_ms: 0.740667\n  type: 'test'\n  ...\n# Subtest: out-of-order search responses never replace current results\nok 3 - out-of-order search responses never replace current results\n  ---\n  duration_ms: 0.49275\n  type: 'test'\n  ...\n# Subtest: Escape cancels pending results and keyboard selection\nok 4 - Escape cancels pending results and keyboard selection\n  ---\n  duration_ms: 0.535333\n  type: 'test'\n  ...\n# Subtest: IME composition defers search and prevents suggestion navigation\nok 5 - IME composition defers search and prevents suggestion navigation\n  ---\n  duration_ms: 0.648417\n  type: 'test'\n  ...\n# Subtest: keyboard selection is exposed to assistive technology and opens the selected page\nok 6 - keyboard selection is exposed to assistive technology and opens the selected page\n  ---\n  duration_ms: 2.685291\n  type: 'test'\n  ...\n# Subtest: failed search responses leave the ordinary form available\nok 7 - failed search responses leave the ordinary form available\n  ---\n  duration_ms: 1.184458\n  type: 'test'\n  ...\n# Subtest: mobile navigation opens, closes with Escape, and adapts to desktop\nok 8 - mobile navigation opens, closes with Escape, and adapts to desktop\n  ---\n  duration_ms: 0.392667\n  type: 'test'\n  ...\n# Subtest: search shortcuts respect typing, while Ctrl K can focus search from an editor\nok 9 - search shortcuts respect typing, while Ctrl K can focus search from an editor\n  ---\n  duration_ms: 0.720042\n  type: 'test'\n  ...\n# Subtest: code copy preserves literal source text and displays localized success\nok 10 - code copy preserves literal source text and displays localized success\n  ---\n  duration_ms: 0.592875\n  type: 'test'\n  ...\n# Subtest: clipboard failure never displays a success state\nok 11 - clipboard failure never displays a success state\n  ---\n  duration_ms: 0.482083\n  type: 'test'\n  ...\n# Subtest: the page outline uses real heading targets without including the anchor marker\nok 12 - the page outline uses real heading targets without including the anchor marker\n  ---\n  duration_ms: 0.23325\n  type: 'test'\n  ...\n# Subtest: only an exact duplicate body title is collapsed, with its source preserved\nok 13 - only an exact duplicate body title is collapsed, with its source preserved\n  ---\n  duration_ms: 0.33275\n  type: 'test'\n  ...\n# Subtest: auto read requires visible dwell and scroll progress\nok 14 - auto read requires visible dwell and scroll progress\n  ---\n  duration_ms: 0.31075\n  type: 'test'\n  ...\n# Subtest: dwell without sufficient scroll does not mark a long page read\nok 15 - dwell without sufficient scroll does not mark a long page read\n  ---\n  duration_ms: 0.186042\n  type: 'test'\n  ...\n# Subtest: HTTP failure keeps explicit read controls without showing auto success\nok 16 - HTTP failure keeps explicit read controls without showing auto success\n  ---\n  duration_ms: 0.238708\n  type: 'test'\n  ...\n# Subtest: network failure keeps explicit read controls without showing auto success\nok 17 - network failure keeps explicit read controls without showing auto success\n  ---\n  duration_ms: 0.275375\n  type: 'test'\n  ...\n# Subtest: read shortcut respects editable content and key repeats\nok 18 - read shortcut respects editable content and key repeats\n  ---\n  duration_ms: 0.210041\n  type: 'test'\n  ...\n1..18\n# tests 18\n# suites 0\n# pass 18\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 58.734541\n",
+    "stderr": ""
+  },
+  {
+    "label": "i18n-current",
+    "argv": [
+      "make",
+      "i18n-check"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 142,
+    "stdout": "scripts/i18n-check.sh\n✓ i18n: 4 translation(s) current\n",
+    "stderr": ""
+  },
+  {
+    "label": "gofmt",
+    "argv": [
+      "gofmt",
+      "-l",
+      "cmd",
+      "internal",
+      "spike",
+      "review_probes/ops"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 13,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "goreleaser-config",
+    "argv": [
+      "goreleaser",
+      "check",
+      "--config",
+      ".goreleaser.yaml"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 536,
+    "stdout": "",
+    "stderr": "  • checking                                  path=.goreleaser.yaml\n  • 1 configuration file(s) validated\n  • thanks for using GoReleaser!\n"
+  },
+  {
+    "label": "formula-ruby-syntax",
+    "argv": [
+      "ruby",
+      "-c",
+      "packaging/homebrew/canopy.rb"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 75,
+    "stdout": "Syntax OK\n",
+    "stderr": ""
+  },
+  {
+    "label": "scripts-shell-syntax",
+    "argv": [
+      "bash",
+      "-n",
+      "scripts/brew-sha256.sh",
+      "scripts/i18n-check.sh",
+      "scripts/release-lineage-check.sh"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 3,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "task-test-default-state-side-effect",
+    "argv": [
+      "go",
+      "test",
+      "-count=1",
+      "./internal/tasks",
+      "-run",
+      "^TestConnectDoneRequiresMutualLinks$"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "elapsed_ms": 480,
+    "stdout": "ok  \tgithub.com/neutrospec/canopy/internal/tasks\t0.295s\n",
+    "stderr": ""
+  }
+]

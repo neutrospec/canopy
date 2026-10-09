@@ -1,0 +1,3 @@
+$ ['go', 'build', '-o', '/private/tmp/canopy-review/def_data-pjuwdqcl/canopy-lite', './cmd/canopy']
+
+EXIT 0

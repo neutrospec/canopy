@@ -1,0 +1,432 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"math"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"sync/atomic"
+	"time"
+
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/embed"
+	"github.com/neutrospec/canopy/internal/indexer"
+	"github.com/neutrospec/canopy/internal/resurface"
+	"github.com/neutrospec/canopy/internal/search"
+	"github.com/neutrospec/canopy/internal/store"
+	"github.com/neutrospec/canopy/internal/webui"
+	"github.com/neutrospec/canopy/internal/wiki"
+)
+
+const base = "/private/tmp/canopy-audit-20261009/search"
+
+type engine struct {
+	vec   []float32
+	fail  bool
+	calls int
+}
+
+func (e *engine) Embed(texts []string) ([][]float32, error) {
+	e.calls++
+	if e.fail {
+		return nil, fmt.Errorf("fixture inference failed")
+	}
+	out := make([][]float32, len(texts))
+	for i := range out {
+		out[i] = append([]float32{}, e.vec...)
+	}
+	return out, nil
+}
+func (e *engine) Close() error { return nil }
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+func emit(name string, value any) {
+	b, err := json.Marshal(value)
+	must(err)
+	fmt.Printf("%s %s\n", name, b)
+}
+func fixture(name string) (*config.Wiki, *store.Store) {
+	root := filepath.Join(base, name)
+	must(os.RemoveAll(root))
+	must(os.MkdirAll(filepath.Join(root, "concepts"), 0755))
+	w := &config.Wiki{Root: root, Cfg: config.Default()}
+	st, err := store.Open(filepath.Join(root, "index.db"))
+	must(err)
+	return w, st
+}
+func page(w *config.Wiki, slug, title, body string) {
+	raw := fmt.Sprintf("---\ntitle: %s\ntype: concept\ncreated: 2026-01-01\nupdated: 2026-01-01\ntags: []\n---\n%s", title, body)
+	must(os.WriteFile(filepath.Join(w.Root, "concepts", slug+".md"), []byte(raw), 0644))
+}
+func refresh(w *config.Wiki, st *store.Store, e embed.Engine) *indexer.Result {
+	r, err := indexer.Reindex(w, st, nil, e, nil)
+	must(err)
+	return r
+}
+func chunk(st *store.Store, slug string, vectors ...[]float32) {
+	seq := make([]int, len(vectors))
+	hashes := make([]string, len(vectors))
+	texts := make([]string, len(vectors))
+	for i := range vectors {
+		seq[i] = i
+		hashes[i] = fmt.Sprint(i)
+		texts[i] = "fixture evidence"
+	}
+	must(st.ReplaceChunks(slug, seq, hashes, texts, vectors))
+}
+func panics(f func()) (message string) {
+	defer func() {
+		if r := recover(); r != nil {
+			message = fmt.Sprint(r)
+		}
+	}()
+	f()
+	return ""
+}
+
+func stale() {
+	w, st := fixture("empty")
+	defer st.Close()
+	e := &engine{vec: []float32{1, 0}}
+	page(w, "alpha", "Alpha", "Old factual claim.")
+	refresh(w, st, e)
+	refresh(w, st, e)
+	page(w, "alpha", "Alpha", "")
+	r := refresh(w, st, e)
+	hits, err := st.SearchChunks([]float32{1, 0}, 5, 2)
+	must(err)
+	scan, err := wiki.Scan(w)
+	must(err)
+	emit("empty", map[string]any{"reindex": r, "body": scan.BySlug["alpha"].Body, "hits": hits, "embed_calls": e.calls})
+
+	w2, st2 := fixture("noengine")
+	defer st2.Close()
+	page(w2, "alpha", "Alpha", "Old factual claim.")
+	refresh(w2, st2, e)
+	page(w2, "alpha", "Alpha", "New factual claim.")
+	r = refresh(w2, st2, nil)
+	hits, err = st2.SearchChunks([]float32{1, 0}, 5, 2)
+	must(err)
+	emit("noengine", map[string]any{"reindex": r, "hits": hits})
+	must(os.Remove(filepath.Join(w2.Root, "concepts/alpha.md")))
+	refresh(w2, st2, nil)
+	v, err := st2.PageVectors()
+	must(err)
+	hits, err = st2.SearchChunks([]float32{1, 0}, 5, 2)
+	must(err)
+	emit("deleted", map[string]any{"page_vectors": len(v), "joined_hits": len(hits)})
+}
+
+func model() {
+	w, st := fixture("model")
+	defer st.Close()
+	a := &engine{vec: []float32{1, 0}}
+	b := &engine{vec: []float32{0, 1}}
+	page(w, "alpha", "Alpha", "Same text.")
+	refresh(w, st, a)
+	w.Cfg.Embedding.Model = "fixture-model-b"
+	r := refresh(w, st, b)
+	hits, err := st.SearchChunks([]float32{0, 1}, 5, 2)
+	must(err)
+	emit("model", map[string]any{"reindex": r, "new_engine_calls": b.calls, "hits": hits})
+	w.Cfg.Embedding.ChunkTokens = 1
+	r = refresh(w, st, b)
+	emit("chunk_tokens_config", map[string]any{"configured": 1, "new_engine_calls": b.calls, "reindex": r})
+}
+
+func verbatim() {
+	body := "First paragraph.  \n\n    indented code\n\n\n\nLast paragraph.\n"
+	c := embed.Split("Title", body)
+	text := strings.TrimPrefix(c[0].Text, "Title\n\n")
+	emit("verbatim", map[string]any{"body": body, "text": text, "is_substring": strings.Contains(body, text), "chunks": len(c)})
+}
+
+func vectors() {
+	w, st := fixture("vectors")
+	defer st.Close()
+	page(w, "alpha", "Alpha", "body")
+	refresh(w, st, nil)
+	chunk(st, "alpha", []float32{1, 0, 0})
+	h, err := st.SearchChunks([]float32{1, 0}, 1, 1)
+	must(err)
+	emit("dimension", map[string]any{"query_dim": 2, "stored_dim": 3, "score": h[0].Score, "error": nil})
+	chunk(st, "alpha", []float32{2, 0})
+	h, err = st.SearchChunks([]float32{1, 0}, 1, 1)
+	must(err)
+	emit("nonunit", map[string]any{"score": h[0].Score})
+	chunk(st, "alpha", []float32{1, 0}, []float32{1, 0, 0})
+	emit("mixed_dimension_panic", panics(func() { _, err := st.PageVectors(); must(err) }))
+	chunk(st, "alpha", []float32{float32(math.NaN()), 0})
+	h, err = st.SearchChunks([]float32{1, 0}, 1, 1)
+	must(err)
+	_, jerr := json.Marshal(h)
+	emit("nan", map[string]any{"is_nan": math.IsNaN(h[0].Score), "marshal_error": fmt.Sprint(jerr)})
+}
+
+func boundsAndTies() {
+	w, st := fixture("bounds")
+	defer st.Close()
+	for _, s := range []string{"a", "b", "c"} {
+		page(w, s, s, "body")
+	}
+	refresh(w, st, nil)
+	for _, s := range []string{"a", "b", "c"} {
+		chunk(st, s, []float32{1, 0})
+	}
+	for _, k := range []int{0, -1} {
+		h, err := st.SearchChunks([]float32{1, 0}, k, 1)
+		must(err)
+		emit("chunk_k", map[string]any{"k": k, "returned": len(h)})
+	}
+	emit("semantic_negative_panic", panics(func() { _, _ = st.SearchSemantic([]float32{1, 0}, -1) }))
+	semanticOrders := map[string]bool{}
+	fusionOrders := map[string]bool{}
+	for i := 0; i < 200; i++ {
+		h, err := st.SearchSemantic([]float32{1, 0}, 3)
+		must(err)
+		ss := []string{}
+		for _, x := range h {
+			ss = append(ss, x.Slug)
+		}
+		semanticOrders[strings.Join(ss, ",")] = true
+		f := search.Fuse(2, []store.Hit{{Slug: "a"}}, []store.Hit{{Slug: "b"}})
+		ss = nil
+		for _, x := range f {
+			ss = append(ss, x.Slug)
+		}
+		fusionOrders[strings.Join(ss, ",")] = true
+	}
+	emit("tie_orders", map[string]any{"semantic": keys(semanticOrders), "fuse": keys(fusionOrders)})
+}
+func keys(m map[string]bool) []string {
+	a := []string{}
+	for k := range m {
+		a = append(a, k)
+	}
+	sort.Strings(a)
+	return a
+}
+
+func keywords() {
+	w, st := fixture("keywords")
+	defer st.Close()
+	page(w, "ko", "한국어", "프로토콜은 산업용 통신 규칙이다.")
+	page(w, "zh", "中文", "工业协议用于通信。")
+	page(w, "en", "English", "cache caching; C++ and C languages.")
+	refresh(w, st, nil)
+	for _, q := range []string{"프로토콜", "프로토콜을", "산업용 프로토콜", "cache", "cach", "工业协议", "协议", "C++", "C"} {
+		h, err := st.SearchKeyword(q, 10)
+		must(err)
+		sl := []string{}
+		for _, x := range h {
+			sl = append(sl, x.Slug)
+		}
+		emit("keyword", map[string]any{"query": q, "slugs": sl})
+	}
+}
+
+func httpProbe() {
+	w, st := fixture("http")
+	must(st.Close())
+	_ = os.Remove(w.DBPath())
+	page(w, "alpha", "Old title", "oldneedle present")
+	srv, err := webui.NewServer(w, nil)
+	must(err)
+	handler := srv.Handler()
+	get := func(path string) *httptest.ResponseRecorder {
+		r := httptest.NewRequest("GET", path, nil)
+		rr := httptest.NewRecorder()
+		handler.ServeHTTP(rr, r)
+		return rr
+	}
+	rr := get("/api/search?q=oldneedle")
+	emit("api_cold", map[string]any{"status": rr.Code, "body": rr.Body.String()})
+	rr = get("/search?q=oldneedle")
+	emit("full_search", map[string]any{"status": rr.Code})
+	rr = get("/api/search?q=oldneedle")
+	emit("api_warm", map[string]any{"status": rr.Code, "body": rr.Body.String()})
+	page(w, "alpha", "New title", "newneedle present")
+	rr = get("/api/search?q=oldneedle")
+	emit("api_after_edit_old", map[string]any{"status": rr.Code, "body": rr.Body.String()})
+	rr = get("/api/search?q=newneedle")
+	emit("api_after_edit_new", map[string]any{"status": rr.Code, "body": rr.Body.String()})
+	must(os.Remove(filepath.Join(w.Root, "concepts/alpha.md")))
+	rr = get("/api/search?q=oldneedle")
+	emit("api_after_delete", map[string]any{"status": rr.Code, "body": rr.Body.String()})
+	page(w, "alpha", "Alpha", "oldneedle present")
+	e := &engine{fail: true}
+	failing, err := webui.NewServer(w, e)
+	must(err)
+	rr = httptest.NewRecorder()
+	failing.Handler().ServeHTTP(rr, httptest.NewRequest("GET", "/api/search?q=oldneedle", nil))
+	emit("api_inference_failure", map[string]any{"status": rr.Code, "body": rr.Body.String()})
+}
+
+type blockingEngine struct {
+	entered chan struct{}
+	release chan struct{}
+	calls   atomic.Int32
+}
+
+func (e *blockingEngine) Embed(texts []string) ([][]float32, error) {
+	e.calls.Add(1)
+	e.entered <- struct{}{}
+	<-e.release
+	out := make([][]float32, len(texts))
+	for i := range out {
+		out[i] = []float32{1, 0}
+	}
+	return out, nil
+}
+func (e *blockingEngine) Close() error { return nil }
+func cancellation() {
+	w, st := fixture("cancel")
+	must(st.Close())
+	page(w, "alpha", "Alpha", "needle")
+	e := &blockingEngine{entered: make(chan struct{}, 2), release: make(chan struct{})}
+	srv, err := webui.NewServer(w, e)
+	must(err)
+	h := srv.Handler()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	r := httptest.NewRequest("GET", "/api/search?q=needle", nil).WithContext(ctx)
+	done := make(chan struct{})
+	go func() { h.ServeHTTP(httptest.NewRecorder(), r); close(done) }()
+	select {
+	case <-e.entered:
+		emit("cancel_entered_engine", true)
+	case <-time.After(time.Second):
+		panic("no engine call")
+	}
+	select {
+	case <-done:
+		emit("cancel_returned_before_release", true)
+	case <-time.After(50 * time.Millisecond):
+		emit("cancel_returned_before_release", false)
+	}
+	close(e.release)
+	<-done
+}
+
+func bridges() {
+	w, st := fixture("bridge")
+	defer st.Close()
+	for _, s := range []string{"a", "b", "c"} {
+		page(w, s, s, "same")
+	}
+	scan, err := wiki.Scan(w)
+	must(err)
+	v := map[string][]float32{"a": {1, 0}, "b": {1, 0}, "c": {1, 0}}
+	state, err := resurface.LoadState(w)
+	must(err)
+	now := time.Date(2026, 10, 9, 0, 0, 0, 0, time.UTC)
+	orders := map[string]bool{}
+	unique := true
+	for i := 0; i < 100; i++ {
+		bs := resurface.PickBridges(scan, v, state, 0.7, 10, false, now)
+		pairs := []string{}
+		seen := map[string]bool{}
+		for _, b := range bs {
+			pair := b.A.Slug + "|" + b.B.Slug
+			if seen[pair] || b.A.Slug == b.B.Slug {
+				unique = false
+			}
+			seen[pair] = true
+			pairs = append(pairs, pair)
+		}
+		orders[strings.Join(pairs, ",")] = true
+	}
+	scan.BySlug["b"].Links = []string{"a"}
+	bs := resurface.PickBridges(scan, v, state, 0.7, 10, false, now)
+	emit("bridge_control", map[string]any{"orders": keys(orders), "unique": unique, "reverse_link_remaining": len(bs)})
+	// Cache vectors from an old scan, then change the source file.
+	refresh(w, st, &engine{vec: []float32{1, 0}})
+	page(w, "b", "b", "Completely changed source text.")
+	scan, err = wiki.Scan(w)
+	must(err)
+	v, err = st.PageVectors()
+	must(err)
+	bs = resurface.PickBridges(scan, v, state, 0.7, 1, false, now)
+	emit("bridge_stale", bs)
+}
+
+func partialFailure() {
+	w, st := fixture("failure")
+	defer st.Close()
+	page(w, "alpha", "Old title", "old evidence")
+	refresh(w, st, &engine{vec: []float32{1, 0}})
+	page(w, "alpha", "New title", "new evidence")
+	_, err := indexer.Reindex(w, st, nil, &engine{fail: true}, nil)
+	h, _ := st.SearchChunks([]float32{1, 0}, 1, 1)
+	emit("partial_failure", map[string]any{"error": fmt.Sprint(err), "chunks": h})
+}
+
+func controls() {
+	w, st := fixture("controls")
+	e := &engine{vec: []float32{1, 0}}
+	page(w, "alpha", "Alpha", "first body")
+	r := refresh(w, st, e)
+	emit("control_initial", r)
+	r = refresh(w, st, e)
+	emit("control_unchanged", r)
+	page(w, "alpha", "Renamed title", "first body")
+	r = refresh(w, st, e)
+	emit("control_title", r)
+	page(w, "alpha", "Renamed title", "changed body")
+	r = refresh(w, st, e)
+	emit("control_body", r)
+	must(os.Remove(filepath.Join(w.Root, "concepts/alpha.md")))
+	r = refresh(w, st, e)
+	emit("control_deleted_with_engine", r)
+	page(w, "alpha", "Alpha", "first body")
+	refresh(w, st, e)
+	must(st.SetMeta("schema_version", "fixture-old"))
+	must(st.Close())
+	st, err := store.Open(filepath.Join(w.Root, "index.db"))
+	must(err)
+	defer st.Close()
+	n, err := st.PageCount()
+	must(err)
+	c, err := st.ChunkCount()
+	must(err)
+	emit("control_schema_reset", map[string]any{"pages": n, "chunks": c})
+}
+
+func seedBridge() {
+	w, st := fixture("cli-bridge")
+	must(st.Close())
+	_ = os.Remove(w.DBPath())
+	st, err := store.Open(w.DBPath())
+	must(err)
+	defer st.Close()
+	page(w, "a", "A", "Old common material.")
+	page(w, "b", "B", "Old common material.")
+	refresh(w, st, &engine{vec: []float32{1, 0}})
+	page(w, "b", "B", "Changed independent current material.")
+	emit("seed_bridge", map[string]any{"wiki": w.Root, "db": w.DBPath()})
+}
+
+func main() {
+	for k, d := range map[string]string{"XDG_CONFIG_HOME": "config", "XDG_CACHE_HOME": "cache", "XDG_DATA_HOME": "data", "XDG_STATE_HOME": "state"} {
+		must(os.Setenv(k, filepath.Join(base, d)))
+	}
+	if len(os.Args) > 1 && os.Args[1] == "seed-bridge" {
+		seedBridge()
+		return
+	}
+	if len(os.Args) > 1 && os.Args[1] == "bench" {
+		benchmark()
+		return
+	}
+	for _, fn := range []func(){stale, model, verbatim, vectors, boundsAndTies, keywords, httpProbe, cancellation, bridges, partialFailure, controls} {
+		fn()
+	}
+}

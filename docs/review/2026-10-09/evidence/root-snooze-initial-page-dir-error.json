@@ -1,0 +1,23 @@
+{
+  "fixture": "/private/tmp/canopy-audit-20261009/root-snooze-hvk2dloj",
+  "utc_start": "2026-10-09T06:20:21.726602+00:00",
+  "tz": "America/Los_Angeles",
+  "binary_sha256": "801b61843e865acfc41d9b29088c331cc2712b1524ca5142587a7c102db25a90",
+  "limit": "Wall-clock/TZ conditional CLI example, not a seven-day E4 failure.",
+  "records": [
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/canopy-lite",
+        "init",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/root-snooze-hvk2dloj/wiki",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/root-snooze-hvk2dloj/cache/canopy/index/b86ef259a87c.db\",\n  \"default_wiki_set\": true,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/root-snooze-hvk2dloj/wiki\"\n}\n",
+      "stderr": ""
+    }
+  ],
+  "error": "[Errno 2] No such file or directory: '/private/tmp/canopy-audit-20261009/root-snooze-hvk2dloj/wiki/concepts/alpha.md'",
+  "fixture_removed": true
+}

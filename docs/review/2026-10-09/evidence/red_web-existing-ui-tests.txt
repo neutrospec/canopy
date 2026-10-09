@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: a cleared query cannot be reopened by a late response
+ok 1 - a cleared query cannot be reopened by a late response
+  ---
+  duration_ms: 3.453459
+  type: 'test'
+  ...
+# Subtest: responses from before the current debounce stay hidden
+ok 2 - responses from before the current debounce stay hidden
+  ---
+  duration_ms: 0.575084
+  type: 'test'
+  ...
+# Subtest: out-of-order search responses never replace current results
+ok 3 - out-of-order search responses never replace current results
+  ---
+  duration_ms: 0.438583
+  type: 'test'
+  ...
+# Subtest: Escape cancels pending results and keyboard selection
+ok 4 - Escape cancels pending results and keyboard selection
+  ---
+  duration_ms: 0.368917
+  type: 'test'
+  ...
+# Subtest: IME composition defers search and prevents suggestion navigation
+ok 5 - IME composition defers search and prevents suggestion navigation
+  ---
+  duration_ms: 0.569166
+  type: 'test'
+  ...
+# Subtest: keyboard selection is exposed to assistive technology and opens the selected page
+ok 6 - keyboard selection is exposed to assistive technology and opens the selected page
+  ---
+  duration_ms: 2.712833
+  type: 'test'
+  ...
+# Subtest: failed search responses leave the ordinary form available
+ok 7 - failed search responses leave the ordinary form available
+  ---
+  duration_ms: 1.213125
+  type: 'test'
+  ...
+# Subtest: mobile navigation opens, closes with Escape, and adapts to desktop
+ok 8 - mobile navigation opens, closes with Escape, and adapts to desktop
+  ---
+  duration_ms: 0.419375
+  type: 'test'
+  ...
+# Subtest: search shortcuts respect typing, while Ctrl K can focus search from an editor
+ok 9 - search shortcuts respect typing, while Ctrl K can focus search from an editor
+  ---
+  duration_ms: 0.784459
+  type: 'test'
+  ...
+# Subtest: code copy preserves literal source text and displays localized success
+ok 10 - code copy preserves literal source text and displays localized success
+  ---
+  duration_ms: 0.617959
+  type: 'test'
+  ...
+# Subtest: clipboard failure never displays a success state
+ok 11 - clipboard failure never displays a success state
+  ---
+  duration_ms: 0.313209
+  type: 'test'
+  ...
+# Subtest: the page outline uses real heading targets without including the anchor marker
+ok 12 - the page outline uses real heading targets without including the anchor marker
+  ---
+  duration_ms: 0.218875
+  type: 'test'
+  ...
+# Subtest: only an exact duplicate body title is collapsed, with its source preserved
+ok 13 - only an exact duplicate body title is collapsed, with its source preserved
+  ---
+  duration_ms: 0.33425
+  type: 'test'
+  ...
+# Subtest: auto read requires visible dwell and scroll progress
+ok 14 - auto read requires visible dwell and scroll progress
+  ---
+  duration_ms: 0.276167
+  type: 'test'
+  ...
+# Subtest: dwell without sufficient scroll does not mark a long page read
+ok 15 - dwell without sufficient scroll does not mark a long page read
+  ---
+  duration_ms: 0.183333
+  type: 'test'
+  ...
+# Subtest: HTTP failure keeps explicit read controls without showing auto success
+ok 16 - HTTP failure keeps explicit read controls without showing auto success
+  ---
+  duration_ms: 0.268625
+  type: 'test'
+  ...
+# Subtest: network failure keeps explicit read controls without showing auto success
+ok 17 - network failure keeps explicit read controls without showing auto success
+  ---
+  duration_ms: 0.197833
+  type: 'test'
+  ...
+# Subtest: read shortcut respects editable content and key repeats
+ok 18 - read shortcut respects editable content and key repeats
+  ---
+  duration_ms: 0.184417
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 46.589167

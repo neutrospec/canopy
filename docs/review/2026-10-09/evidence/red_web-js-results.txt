@@ -1,0 +1,4 @@
+{"probe":"independent-auto-read","name":"login-html","status":200,"type":"text/html","requests":1,"jsonCalls":0,"showsSuccess":true,"preservesControls":false,"limit":"VM and real Response object, without native DOM/browser navigation"}
+{"probe":"independent-auto-read","name":"json-false","status":200,"type":"application/json","requests":1,"jsonCalls":0,"showsSuccess":true,"preservesControls":false,"limit":"VM and real Response object, without native DOM/browser navigation"}
+{"probe":"independent-auto-read","name":"unauthorized","status":401,"type":"application/json","requests":1,"jsonCalls":0,"showsSuccess":false,"preservesControls":true,"limit":"VM and real Response object, without native DOM/browser navigation"}
+{"probe":"independent-auto-read","name":"stored-read","status":200,"type":"application/json","requests":1,"jsonCalls":0,"showsSuccess":true,"preservesControls":false,"limit":"VM and real Response object, without native DOM/browser navigation"}

@@ -1,0 +1,333 @@
+[
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "init",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/supplement-correctness"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.015,
+    "stdout": "{\n  \"db\": \"/private/tmp/canopy-review-def-web-duv7b75v/cache/canopy/index/a1561b4ccc7b.db\",\n  \"default_wiki_set\": false,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-review-def-web-duv7b75v/supplement-correctness\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "new",
+      "metadata-probe",
+      "--slug",
+      "metadata-probe",
+      "--type",
+      "concept",
+      "--tags",
+      "tool",
+      "--body-file",
+      "-",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/supplement-correctness"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.013,
+    "stdout": "{\n  \"created\": \"concepts/metadata-probe.md\",\n  \"related\": []\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "tasks",
+      "add",
+      "edit",
+      "metadata-probe",
+      "--request",
+      "Replace the body with corrected facts",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/supplement-correctness"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.012,
+    "stdout": "{\n  \"created\": true,\n  \"task\": {\n    \"version\": 1,\n    \"id\": \"edit-metadata-probe-20261009-144942\",\n    \"type\": \"edit\",\n    \"status\": \"pending\",\n    \"door\": \"cli\",\n    \"created\": \"2026-10-09T14:49:42+09:00\",\n    \"pages\": [\n      \"metadata-probe\"\n    ],\n    \"request\": \"Replace the body with corrected facts\",\n    \"base\": \"f903ec465fea717be3c8c7a0ec02314ce0a85df4f5732ab9ac865fe9a1a09a5c\"\n  }\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "tasks",
+      "done",
+      "edit-metadata-probe-20261009-144942",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/supplement-correctness"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 1,
+    "seconds": 0.012,
+    "stdout": "",
+    "stderr": "error: done rejected (edit): metadata-probe is unchanged since the request was filed\n"
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "tasks",
+      "done",
+      "edit-metadata-probe-20261009-144942",
+      "--note",
+      "claims corrected body",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/supplement-correctness"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.012,
+    "stdout": "{\n  \"task\": {\n    \"version\": 1,\n    \"id\": \"edit-metadata-probe-20261009-144942\",\n    \"type\": \"edit\",\n    \"status\": \"done\",\n    \"door\": \"cli\",\n    \"created\": \"2026-10-09T14:49:42+09:00\",\n    \"closed\": \"2026-10-09T14:49:42+09:00\",\n    \"note\": \"claims corrected body\",\n    \"pages\": [\n      \"metadata-probe\"\n    ],\n    \"request\": \"Replace the body with corrected facts\",\n    \"base\": \"f903ec465fea717be3c8c7a0ec02314ce0a85df4f5732ab9ac865fe9a1a09a5c\"\n  }\n}\n",
+    "stderr": ""
+  },
+  {
+    "observation": "done-metadata-only-verified",
+    "unchanged_exit": 1,
+    "changed_file": true,
+    "body_same": true,
+    "done_status": "done"
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "--help"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.01,
+    "stdout": "Manage an LLM wiki: schema-enforced writes, hybrid search, sync\n\nUsage:\n  canopy [command]\n\nAvailable Commands:\n  archive     Move a superseded page to _archive/ (inbound wikilinks become plain text)\n  backlinks   Show pages linking to a page, or list orphans with --orphans\n  bridge      Find similar page pairs: unlinked = connection candidates; --include-linked adds merge/contradiction candidates\n  checkin     Validate the working copy (schema, mermaid, base conflict) and write it into the wiki\n  checkout    Materialize a working copy for native editing (outside the wiki; checkin brings it back)\n  completion  Generate the autocompletion script for the specified shell\n  digest      Collect review material for a window: created/updated pages, tags, decision timeline\n  events      Query the machine-local event log (attention + task/sync/reconcile lifecycle)\n  grep        Regexp search with line numbers (slug:line: text) — across the wiki or inside one page\n  help        Help about any command\n  init        Adopt a wiki: write canopy.toml (schema) and build the index cache\n  lint        Check schema compliance, links, staleness (report only for now)\n  list        List all pages (slug, type, title), filterable by --type / --tag\n  migrate     Apply pending data-state migrations (also runs automatically on first use)\n  model       Manage the local embedding model\n  mv          Move a page between categories and/or rename it (rewrites inbound wikilinks)\n  new         Create a schema-validated page (index/log/embedding handled automatically)\n  recall      Chunk-level evidence for a question (agent memory: verbatim chunks + source slugs)\n  reconcile   Report back-door changes the blessed ledger doesn't know (read-only)\n  reindex     Rebuild the derived index (pages, FTS, and embeddings)\n  resurface   Pick forgotten/stale-hub pages to re-encounter (records pick history)\n  rm          Delete a page (refuses when backlinks exist, unless --force)\n  search      Search the wiki (hybrid = BM25 keyword + semantic vectors)\n  serve       Serve the wiki as a website (search, browsing, and edit proposals)\n  show        Print a page — whole, --lines N-M, or --section \"heading\" (path header on stderr)\n  skills      Manage the agent skill set for this wiki (hermes, Claude Code, …)\n  status      Wiki health at a glance: pages, git state, index freshness\n  sync        pull --rebase → commit all wiki changes → push → refresh index\n  tags        Show the valid types and tag taxonomy; --audit measures usage\n  tasks       Delegated task queue (web → agent): list, add, done (verified), dismiss\n  update      Record an edit: bump updated date, optionally replace the body, reindex + log\n  version     Print version, build metadata, and the data-schema version\n\nFlags:\n  -h, --help          help for canopy\n      --json          machine-readable JSON output\n  -v, --version       version for canopy\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n\nUse \"canopy [command] --help\" for more information about a command.\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "init",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/ko-starter"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.013,
+    "stdout": "{\n  \"db\": \"/private/tmp/canopy-review-def-web-duv7b75v/cache/canopy/index/e9f4799ec53e.db\",\n  \"default_wiki_set\": false,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-review-def-web-duv7b75v/ko-starter\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "new",
+      "첫 페이지",
+      "--slug",
+      "first-page",
+      "--type",
+      "concept",
+      "--tags",
+      "tool",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/ko-starter"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.013,
+    "stdout": "{\n  \"created\": \"concepts/first-page.md\",\n  \"related\": []\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "search",
+      "첫",
+      "--mode",
+      "keyword",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/ko-starter"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.013,
+    "stdout": "{\n  \"hits\": [\n    {\n      \"slug\": \"first-page\",\n      \"rel_path\": \"concepts/first-page.md\",\n      \"title\": \"첫 페이지\",\n      \"score\": 0.0000018333333333333335,\n      \"snippet\": \"# »첫« 페이지\\n\"\n    }\n  ],\n  \"mode\": \"keyword\",\n  \"query\": \"첫\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "show",
+      "first-page",
+      "--no-mark",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/ko-starter"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.011,
+    "stdout": "{\n  \"content\": \"---\\ntitle: \\\"첫 페이지\\\"\\ncreated: 2026-10-09\\nupdated: 2026-10-09\\ntype: concept\\ntags: [tool]\\nsources: []\\n---\\n\\n# 첫 페이지\\n\",\n  \"rel_path\": \"concepts/first-page.md\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "observation": "exact-starter-ko-starter",
+    "query": "첫",
+    "result": {
+      "hits": [
+        {
+          "slug": "first-page",
+          "rel_path": "concepts/first-page.md",
+          "title": "첫 페이지",
+          "score": 1.8333333333333335e-06,
+          "snippet": "# »첫« 페이지\n"
+        }
+      ],
+      "mode": "keyword",
+      "query": "첫"
+    }
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "init",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/en-starter"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.014,
+    "stdout": "{\n  \"db\": \"/private/tmp/canopy-review-def-web-duv7b75v/cache/canopy/index/b06e6345e77c.db\",\n  \"default_wiki_set\": false,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-review-def-web-duv7b75v/en-starter\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "new",
+      "First page",
+      "--slug",
+      "first-page",
+      "--type",
+      "concept",
+      "--tags",
+      "tool",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/en-starter"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.013,
+    "stdout": "{\n  \"created\": \"concepts/first-page.md\",\n  \"related\": []\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "search",
+      "First",
+      "--mode",
+      "keyword",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/en-starter"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.014,
+    "stdout": "{\n  \"hits\": [\n    {\n      \"slug\": \"first-page\",\n      \"rel_path\": \"concepts/first-page.md\",\n      \"title\": \"First page\",\n      \"score\": 0.0000020465116279069768,\n      \"snippet\": \"# »First« page\\n\"\n    }\n  ],\n  \"mode\": \"keyword\",\n  \"query\": \"First\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "show",
+      "first-page",
+      "--no-mark",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/en-starter"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.011,
+    "stdout": "{\n  \"content\": \"---\\ntitle: \\\"First page\\\"\\ncreated: 2026-10-09\\nupdated: 2026-10-09\\ntype: concept\\ntags: [tool]\\nsources: []\\n---\\n\\n# First page\\n\",\n  \"rel_path\": \"concepts/first-page.md\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "observation": "exact-starter-en-starter",
+    "query": "First",
+    "result": {
+      "hits": [
+        {
+          "slug": "first-page",
+          "rel_path": "concepts/first-page.md",
+          "title": "First page",
+          "score": 2.0465116279069768e-06,
+          "snippet": "# »First« page\n"
+        }
+      ],
+      "mode": "keyword",
+      "query": "First"
+    }
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "init",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/cli-A3-malformed"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.014,
+    "stdout": "{\n  \"db\": \"/private/tmp/canopy-review-def-web-duv7b75v/cache/canopy/index/653c96d08329.db\",\n  \"default_wiki_set\": false,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-review-def-web-duv7b75v/cli-A3-malformed\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "lint",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/cli-A3-malformed"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.011,
+    "stdout": "{\n  \"total_pages\": 1,\n  \"findings\": [\n    {\n      \"severity\": \"critical\",\n      \"kind\": \"bad-frontmatter\",\n      \"page\": \"concepts/predicate.md\",\n      \"message\": \"frontmatter parse error: yaml: line 1: did not find expected ',' or ']'\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/predicate.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"bad-frontmatter\": 1,\n    \"orphan\": 1\n  }\n}\n",
+    "stderr": ""
+  },
+  {
+    "observation": "A3-actual-cli",
+    "counts": {
+      "bad-frontmatter": 1,
+      "orphan": 1
+    },
+    "old_predicate": true
+  },
+  {
+    "argv": [
+      "go",
+      "test",
+      "-mod=readonly",
+      "-count=1",
+      "-v",
+      "-run",
+      "TestEmptyMessageControls",
+      "./review_probes/def_web"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "seconds": 0.955,
+    "stdout": "=== RUN   TestEmptyMessageControls\n    probe_test.go:190: empty-message-control {\"case\":\"empty\",\"discover_all_read\":true,\"home_all_read\":false,\"human_reads_file_present\":false,\"unread_one\":false}\n    probe_test.go:190: empty-message-control {\"case\":\"agent-only\",\"discover_all_read\":true,\"home_all_read\":true,\"human_reads_file_present\":false,\"unread_one\":true}\n    probe_test.go:190: empty-message-control {\"case\":\"all-human-read\",\"discover_all_read\":true,\"home_all_read\":true,\"human_reads_file_present\":true,\"unread_one\":false}\n--- PASS: TestEmptyMessageControls (0.04s)\nPASS\nok  \tgithub.com/neutrospec/canopy/review_probes/def_web\t0.494s\n",
+    "stderr": ""
+  }
+]

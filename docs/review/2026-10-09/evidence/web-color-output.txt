@@ -1,0 +1,3 @@
+sRGB relative luminance ratio; specified CSS colors, not a browser screenshot or computed-style audit.
+light comment #999988 / pre --chip #edf1ed = 2.533
+dark comment #007f7f / pre --chip #242d27 = 2.935

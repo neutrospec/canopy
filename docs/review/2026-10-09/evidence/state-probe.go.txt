@@ -1,0 +1,738 @@
+// Independent state contract observations for canopy ede67e3.
+// This disposable harness is preserved as state-probe.go.txt, then removed.
+package main
+
+import (
+	"bytes"
+	"context"
+	"database/sql"
+	"encoding/json"
+	"flag"
+	"fmt"
+	"io"
+	"log"
+	"math/rand"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"os/exec"
+	"os/signal"
+	"path/filepath"
+	"sort"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
+
+	"github.com/neutrospec/canopy/internal/attention"
+	"github.com/neutrospec/canopy/internal/checkout"
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/digest"
+	"github.com/neutrospec/canopy/internal/migrate"
+	"github.com/neutrospec/canopy/internal/reads"
+	"github.com/neutrospec/canopy/internal/reconcile"
+	"github.com/neutrospec/canopy/internal/resurface"
+	"github.com/neutrospec/canopy/internal/tasks"
+	"github.com/neutrospec/canopy/internal/webui"
+	"github.com/neutrospec/canopy/internal/wiki"
+)
+
+var fixtureRoot string
+var cli string
+var fixedNow = time.Date(2026, 10, 9, 12, 0, 0, 0, time.UTC)
+
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func write(path, body string) {
+	must(os.MkdirAll(filepath.Dir(path), 0o755))
+	must(os.WriteFile(path, []byte(body), 0o644))
+}
+
+func read(path string) string {
+	b, err := os.ReadFile(path)
+	must(err)
+	return string(b)
+}
+
+func fresh(label string) *config.Wiki {
+	root, err := os.MkdirTemp(fixtureRoot, label+"-")
+	must(err)
+	return &config.Wiki{Root: root, Cfg: config.Default()}
+}
+
+func page(w *config.Wiki, slug, body string) string {
+	rel := "concepts/" + slug + ".md"
+	write(filepath.Join(w.Root, rel), fmt.Sprintf("---\ntitle: %s\ncreated: 2026-01-01\nupdated: 2026-01-01\ntype: concept\ntags: [tool]\n---\n\n%s\n", slug, body))
+	return rel
+}
+
+func scan(w *config.Wiki) *wiki.ScanResult {
+	s, err := wiki.Scan(w)
+	must(err)
+	return s
+}
+
+func state(w *config.Wiki) *reads.State {
+	s, err := reads.Load(w)
+	must(err)
+	return s
+}
+
+func rs(w *config.Wiki) *resurface.State {
+	s, err := resurface.LoadState(w)
+	must(err)
+	return s
+}
+
+func jsonField(path, field string) string {
+	var m map[string]json.RawMessage
+	must(json.Unmarshal([]byte(read(path)), &m))
+	if len(m[field]) == 0 {
+		return "<missing>"
+	}
+	return string(m[field])
+}
+
+func command(w *config.Wiki, args ...string) (string, int) {
+	cmd := exec.Command(cli, append(args, "--wiki", w.Root)...)
+	b, err := cmd.CombinedOutput()
+	if err == nil {
+		return string(b), 0
+	}
+	if e, ok := err.(*exec.ExitError); ok {
+		return string(b), e.ExitCode()
+	}
+	panic(err)
+}
+
+func lostUpdates() {
+	w := fresh("lost-updates")
+	a, b := state(w), state(w) // Two independent processes can read this snapshot.
+	a.Mark("alpha", "explicit", fixedNow)
+	b.Mark("beta", "explicit", fixedNow)
+	must(a.Save(w))
+	must(b.Save(w))
+	final := state(w)
+	fmt.Printf("human saves=2 alpha=%v beta=%v\n", final.IsRead("alpha"), final.IsRead("beta"))
+	a, b = state(w), state(w)
+	a.MarkAgent("agent-alpha", fixedNow)
+	b.MarkAgent("agent-beta", fixedNow)
+	must(a.Save(w))
+	must(b.Save(w))
+	fmt.Printf("agent saves=2 alpha=%v beta=%v\n", state(w).Agent["agent-alpha"] != nil, state(w).Agent["agent-beta"] != nil)
+	sa, sb := rs(w), rs(w)
+	sa.Snooze("alpha", 7, fixedNow)
+	sb.DismissPair("alpha", "beta")
+	must(sa.Save(w))
+	must(sb.Save(w))
+	fmt.Printf("resurface saves=2 snooze_alpha=%q dismissed_pair=%q\n", rs(w).Snoozed["alpha"], rs(w).ShownPairs["alpha|beta"])
+	page(w, "alpha", "a")
+	page(w, "beta", "b")
+	_, err := reconcile.BlessAll(w)
+	must(err)
+	ra, _, err := reconcile.Load(w)
+	must(err)
+	rb, _, err := reconcile.Load(w)
+	must(err)
+	delete(ra.Blessed, "concepts/alpha.md")
+	delete(rb.Blessed, "concepts/beta.md")
+	must(ra.Save(w))
+	must(rb.Save(w))
+	rf, _, err := reconcile.Load(w)
+	must(err)
+	fmt.Printf("ledger saves=2 deleted_alpha_persisted=%v deleted_beta_persisted=%v\n", rf.Blessed["concepts/alpha.md"] == "", rf.Blessed["concepts/beta.md"] == "")
+}
+
+func atomicChild(root string) {
+	w := &config.Wiki{Root: root, Cfg: config.Default()}
+	s := state(w)
+	s.Mark("beta", "explicit", fixedNow)
+	var lim syscall.Rlimit
+	must(syscall.Getrlimit(syscall.RLIMIT_FSIZE, &lim))
+	old := lim
+	lim.Cur = 128
+	signal.Ignore(syscall.SIGXFSZ)
+	must(syscall.Setrlimit(syscall.RLIMIT_FSIZE, &lim))
+	err := s.Save(w)
+	must(syscall.Setrlimit(syscall.RLIMIT_FSIZE, &old))
+	_, loadErr := reads.Load(w)
+	st, statErr := os.Stat(reads.Path(w))
+	must(statErr)
+	fmt.Printf("faulted Save=%v bytes=%d subsequent Load=%v\n", err, st.Size(), loadErr)
+}
+
+func atomicFailure() {
+	w := fresh("atomic-failure")
+	s := state(w)
+	s.Mark("alpha", "explicit", fixedNow)
+	must(s.Save(w))
+	before := reconcile.HashBytes([]byte(read(reads.Path(w))))
+	exe, err := os.Executable()
+	must(err)
+	cmd := exec.Command(exe, "-child", "atomic", "-root", w.Root)
+	b, err := cmd.CombinedOutput()
+	must(err)
+	fmt.Print(string(b))
+	fmt.Printf("prior_complete_file_preserved=%v\n", before == reconcile.HashBytes([]byte(read(reads.Path(w)))))
+}
+
+func connectCollision() {
+	w := fresh("connect-collision")
+	for _, slug := range []string{"a", "b--c", "a--b", "c"} {
+		page(w, slug, "body")
+		fmt.Printf("valid_filename(%s)=%v\n", slug, wiki.ValidFilename(slug+".md"))
+	}
+	first, created1, err := tasks.FileConnect(w, "a", "b--c", 0, "cli", fixedNow)
+	must(err)
+	second, created2, err := tasks.FileConnect(w, "a--b", "c", 0, "cli", fixedNow)
+	must(err)
+	fmt.Printf("requested_pairs=[a b--c],[a--b c] first_id=%s second_id=%s created=%v,%v stored_second_pages=%v\n", first.ID, second.ID, created1, created2, second.Pages)
+}
+
+func concurrentEdits() {
+	w := fresh("web-edit-concurrent")
+	page(w, "topic", "original")
+	server, err := webui.NewServer(w, nil)
+	must(err)
+	handler := server.Handler()
+	const n = 48
+	start := make(chan struct{})
+	status := make(chan int, n)
+	var wg sync.WaitGroup
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			<-start
+			values := url.Values{"body": {fmt.Sprintf("unique-proposed-body-%03d", i)}}
+			r := httptest.NewRequest("POST", "/edit/topic", strings.NewReader(values.Encode()))
+			r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			rw := httptest.NewRecorder()
+			handler.ServeHTTP(rw, r)
+			status <- rw.Code
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+	close(status)
+	codes := map[int]int{}
+	for code := range status {
+		codes[code]++
+	}
+	entries, err := os.ReadDir(tasks.Dir(w))
+	must(err)
+	valid, bodies, corrupt := 0, map[string]bool{}, 0
+	for _, e := range entries {
+		var task tasks.Task
+		if json.Unmarshal([]byte(read(filepath.Join(tasks.Dir(w), e.Name()))), &task) != nil {
+			corrupt++
+			continue
+		}
+		valid++
+		bodies[task.Body] = true
+	}
+	fmt.Printf("web_requests=%d HTTP=%v task_files=%d valid_files=%d distinct_preserved_bodies=%d corrupt=%d\n", n, codes, len(entries), valid, len(bodies), corrupt)
+	left, right := fresh("device-a"), fresh("device-b")
+	l, err := tasks.FileEdit(left, "topic", "", "proposal A", "base", "web", fixedNow)
+	must(err)
+	r, err := tasks.FileEdit(right, "topic", "", "proposal B", "base", "web", fixedNow)
+	must(err)
+	fmt.Printf("independent_device_ids_equal=%v id=%s\n", l.ID == r.ID, l.ID)
+}
+
+func invalidTaskGC() {
+	w := fresh("gc-id")
+	pending, err := tasks.FileEdit(w, "topic", "preserve this request", "", "", "cli", fixedNow)
+	must(err)
+	write(filepath.Join(tasks.Dir(w), "alias.json"), fmt.Sprintf(`{"version":1,"id":%q,"type":"edit","status":"done","created":"2026-01-01T00:00:00Z","closed":"2026-01-02T00:00:00Z"}`, pending.ID))
+	n, err := tasks.GC(w, 0, fixedNow)
+	must(err)
+	_, getErr := tasks.Get(w, pending.ID)
+	_, aliasErr := os.Stat(filepath.Join(tasks.Dir(w), "alias.json"))
+	fmt.Printf("gc removed=%d actual_pending_file_missing=%v closed_alias_survives=%v\n", n, os.IsNotExist(getErr), aliasErr == nil)
+}
+
+func compatibility() {
+	w := fresh("compatibility")
+	write(reads.Path(w), `{"version":9,"future_top":{"keep":"human"},"reads":{"alpha":{"first":"2026-01-01T00:00:00Z","last":"2026-01-01T00:00:00Z","count":1,"source":"explicit","future_nested":123}}}`)
+	s := state(w)
+	s.Mark("beta", "explicit", fixedNow)
+	must(s.Save(w))
+	fmt.Printf("human version=%s unknown_top=%s nested_preserved=%v\n", jsonField(reads.Path(w), "version"), jsonField(reads.Path(w), "future_top"), strings.Contains(read(reads.Path(w)), "future_nested"))
+	write(reads.AgentPath(w), `{"version":9,"future_top":"agent","agent":{"alpha":{"first":"2026-01-01T00:00:00Z","last":"2026-01-01T00:00:00Z","days":1,"future_nested":123}}}`)
+	s = state(w)
+	s.MarkAgent("beta", fixedNow)
+	must(s.Save(w))
+	fmt.Printf("agent version=%s unknown_top=%s nested_preserved=%v\n", jsonField(reads.AgentPath(w), "version"), jsonField(reads.AgentPath(w), "future_top"), strings.Contains(read(reads.AgentPath(w)), "future_nested"))
+	write(resurface.StatePath(w), `{"version":9,"shown":{},"shown_pairs":{},"snoozed":{},"future_top":"resurface"}`)
+	r := rs(w)
+	r.AddFeedback("alpha", "up", fixedNow)
+	must(r.Save(w))
+	fmt.Printf("resurface version=%s unknown_top=%s\n", jsonField(resurface.StatePath(w), "version"), jsonField(resurface.StatePath(w), "future_top"))
+	page(w, "alpha", "body")
+	write(reconcile.Path(w), `{"version":9,"blessed":{},"future_top":"ledger"}`)
+	must(reconcile.BlessPaths(w, []string{"concepts/alpha.md"}))
+	fmt.Printf("ledger version=%s unknown_top=%s\n", jsonField(reconcile.Path(w), "version"), jsonField(reconcile.Path(w), "future_top"))
+	write(filepath.Join(tasks.Dir(w), "future.json"), `{"version":9,"id":"future","type":"future-type","status":"pending","created":"2026-01-01T00:00:00Z","future_number":9007199254740993,"future_string":"keep"}`)
+	_, err := tasks.Close(w, nil, "future", tasks.StatusDismissed, "", "agent", fixedNow)
+	must(err)
+	fmt.Printf("task future_number_before=9007199254740993 after=%s string_after=%s\n", jsonField(filepath.Join(tasks.Dir(w), "future.json"), "future_number"), jsonField(filepath.Join(tasks.Dir(w), "future.json"), "future_string"))
+	path := filepath.Join(config.ConfigHome(), "config.toml")
+	write(path, "future_setting = \"preserve me\"\ndefault_wiki = \"\"\n")
+	adopted, err := config.AdoptAsDefaultWiki(w.Root)
+	must(err)
+	fmt.Printf("config adopted=%v future_setting_preserved=%v\n", adopted, strings.Contains(read(path), "future_setting"))
+}
+
+func panicOf(fn func()) (p any) {
+	defer func() { p = recover() }()
+	fn()
+	return nil
+}
+
+func malformed() {
+	w := fresh("malformed")
+	write(reads.Path(w), `{"version":1,"reads":{"alpha":null}}`)
+	s, err := reads.Load(w)
+	fmt.Printf("human null-entry Load=%v\n", err)
+	fmt.Printf("human null-entry Mark panic=%v\n", panicOf(func() { s.Mark("alpha", "explicit", fixedNow) }))
+	write(reads.Path(w), `{"version":1,"reads":{}}`)
+	write(reads.AgentPath(w), `{"version":1,"agent":{"alpha":null}}`)
+	s, err = reads.Load(w)
+	fmt.Printf("agent null-entry Load=%v MarkAgent panic=%v\n", err, panicOf(func() { s.MarkAgent("alpha", fixedNow) }))
+	write(filepath.Join(tasks.Dir(w), "null.json"), "null")
+	taskList, err := tasks.Load(w)
+	n, countErr := tasks.PendingCount(w)
+	fmt.Printf("task null Load=%v len=%d pending=%d count_error=%v\n", err, len(taskList), n, countErr)
+	write(filepath.Join(tasks.Dir(w), "null.json"), "{")
+	_, err = tasks.Load(w)
+	fmt.Printf("task truncated Load=%v\n", err)
+	out, code := command(w, "status", "--json")
+	fmt.Printf("status exit=%d says_pending_zero=%v output=%s\n", code, strings.Contains(out, `"tasks_pending": 0`), strings.TrimSpace(out))
+	write(reconcile.Path(w), "{")
+	out, code = command(w, "status", "--json")
+	fmt.Printf("corrupt-ledger status exit=%d exposes_ledger_error=%v\n", code, strings.Contains(out, "parse"))
+	// A malformed aggregate silently drops the healthy other door in resurface.
+	page(w, "alpha", "body")
+	write(reads.Path(w), "{")
+	write(reads.AgentPath(w), fmt.Sprintf(`{"version":1,"agent":{"alpha":{"first":%q,"last":%q,"days":1}}}`, time.Now().Format(time.RFC3339), time.Now().Format(time.RFC3339)))
+	out, code = command(w, "resurface", "--strategy", "random", "--peek", "--json")
+	fmt.Printf("resurface healthy_agent_today+corrupt_human exit=%d picks_alpha=%v\n", code, strings.Contains(out, `"slug": "alpha"`))
+	blocked := fresh("task-dir-blocked")
+	page(blocked, "alpha", "body")
+	write(tasks.Dir(blocked), "not a directory")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, cli, "tasks", "add", "edit", "alpha", "--request", "request", "--wiki", blocked.Root, "--json")
+	_, commandErr := cmd.CombinedOutput()
+	fmt.Printf("task_dir_is_file filing_hung_until_timeout=%v command_error=%v\n", ctx.Err() == context.DeadlineExceeded, commandErr)
+}
+
+func checkoutMetaLoss() {
+	w := fresh("checkout-meta")
+	rel := page(w, "alpha", "original")
+	before := read(filepath.Join(w.Root, rel))
+	i, err := checkout.Checkout(w, scan(w), "alpha")
+	must(err)
+	write(i.Path, strings.Replace(before, "original", "uncommitted-only-copy", 1))
+	metaPath := strings.TrimSuffix(i.Path, ".md") + ".json"
+	write(metaPath, "{")
+	open, err := checkout.Open(w)
+	must(err)
+	info, err := checkout.Checkout(w, scan(w), "alpha")
+	must(err)
+	fmt.Printf("corrupt-meta open_count=%d Checkout_error=nil Modified=%v edited_copy_preserved=%v wiki_unchanged=%v\n", len(open), info.Modified, strings.Contains(read(i.Path), "uncommitted-only-copy"), read(filepath.Join(w.Root, rel)) == before)
+	// A missing meta has the same overwrite route.
+	write(i.Path, strings.Replace(before, "original", "second-only-copy", 1))
+	must(os.Remove(metaPath))
+	_, err = checkout.Checkout(w, scan(w), "alpha")
+	must(err)
+	fmt.Printf("missing-meta edited_copy_preserved=%v\n", strings.Contains(read(i.Path), "second-only-copy"))
+	must(os.Chmod(w.CheckoutDir(), 0o555))
+	discardErr := checkout.Discard(w, "alpha")
+	_, copyErr := os.Stat(i.Path)
+	_, metaErr := os.Stat(metaPath)
+	must(os.Chmod(w.CheckoutDir(), 0o755))
+	fmt.Printf("unwritable_checkout_dir Discard_error=%v copy_still_exists=%v meta_still_exists=%v\n", discardErr, copyErr == nil, metaErr == nil)
+}
+
+func renameAgentOnly() {
+	w := fresh("rename-agent")
+	page(w, "alpha", "original")
+	s := state(w)
+	s.MarkAgent("alpha", time.Now())
+	must(s.Save(w))
+	t, err := tasks.FileEdit(w, "alpha", "edit after rename", "", "", "cli", fixedNow)
+	must(err)
+	r := rs(w)
+	r.Snooze("alpha", 7, fixedNow)
+	must(r.Save(w))
+	out, code := command(w, "mv", "alpha", "--slug", "beta", "--json")
+	f := state(w)
+	fmt.Printf("mv exit=%d agent_old=%v agent_new=%v output=%s\n", code, f.Agent["alpha"] != nil, f.Agent["beta"] != nil, strings.TrimSpace(out))
+	queued, err := tasks.Get(w, t.ID)
+	must(err)
+	fmt.Printf("after mv task_pages=%v snooze_old=%q snooze_new=%q\n", queued.Pages, rs(w).Snoozed["alpha"], rs(w).Snoozed["beta"])
+	// A second page provides the promised positive human+agent path.
+	page(w, "gamma", "body")
+	s = state(w)
+	s.MarkAgent("gamma", time.Now())
+	s.Mark("gamma", "explicit", time.Now())
+	must(s.Save(w))
+	_, code = command(w, "mv", "gamma", "--slug", "delta", "--json")
+	f = state(w)
+	fmt.Printf("human+agent mv exit=%d human_new=%v agent_new=%v\n", code, f.IsRead("delta"), f.Agent["delta"] != nil)
+}
+
+func mixedOffsets() {
+	w := fresh("offsets")
+	e, err := attention.Open(w.AttentionDBPath())
+	must(err)
+	defer e.Close()
+	kst := time.FixedZone("KST", 9*3600)
+	older := time.Date(2026, 10, 9, 9, 0, 0, 0, kst) // 00:00Z
+	newer := time.Date(2026, 10, 9, 5, 0, 0, 0, time.UTC)
+	must(e.Log(older, "older", "agent", "show", ""))
+	must(e.Log(newer, "newer", "agent", "show", ""))
+	q, err := e.Query(attention.Filter{Since: time.Date(2026, 10, 9, 4, 0, 0, 0, time.UTC)})
+	must(err)
+	var slugs []string
+	for _, event := range q {
+		slugs = append(slugs, event.Slug)
+	}
+	fmt.Printf("since=2026-10-09T04:00:00Z expected=[newer] actual=%v\n", slugs)
+	n, err := e.Prune(time.Date(2026, 10, 9, 10, 0, 0, 0, kst)) // 01:00Z
+	must(err)
+	q, err = e.Recent(10)
+	must(err)
+	slugs = nil
+	for _, event := range q {
+		slugs = append(slugs, event.Slug)
+	}
+	fmt.Printf("prune_before=2026-10-09T10:00:00+09:00 removed=%d expected_remaining=[newer] actual=%v\n", n, slugs)
+	s := state(w)
+	s.Mark("older", "explicit", older)
+	s.MarkAgent("newer", newer)
+	fmt.Printf("RecentAccessSlugs expected=[newer older] actual=%v\n", s.RecentAccessSlugs(2))
+}
+
+func snoozeDays() {
+	w := fresh("snooze")
+	page(w, "alpha", "body")
+	now := time.Date(2026, 10, 9, 23, 0, 0, 0, time.FixedZone("KST", 9*3600))
+	r := rs(w)
+	r.Snooze("alpha", 1, now)
+	for _, hours := range []int{9, 10, 24} {
+		p, err := resurface.PickPages(scan(w), r, nil, "random", 1, now.Add(time.Duration(hours)*time.Hour), rand.New(rand.NewSource(1)))
+		must(err)
+		fmt.Printf("snooze=1 now=%s until=%s elapsed=%dh eligible=%v\n", now.Format(time.RFC3339), r.Snoozed["alpha"], hours, len(p) > 0)
+	}
+}
+
+func weakCompletion() {
+	w := fresh("completion")
+	rel := page(w, "alpha", "original")
+	before := read(filepath.Join(w.Root, rel))
+	t, err := tasks.FileEdit(w, "alpha", "add requested comparison table", "original\n\n| requested | table |", reconcile.HashBytes([]byte(before)), "web", fixedNow)
+	must(err)
+	write(filepath.Join(w.Root, rel), strings.Replace(before, "updated: 2026-01-01", "updated: 2026-10-09", 1))
+	_, err = tasks.Close(w, scan(w), t.ID, tasks.StatusDone, "", "agent", fixedNow)
+	fmt.Printf("edit request_unfulfilled=true body_unchanged=true frontmatter_only_change done_error=%v\n", err)
+	page(w, "linked-a", "see [[linked-b]]")
+	page(w, "linked-b", "see [[linked-a]]")
+	write(filepath.Join(tasks.Dir(w), "future-known.json"), `{"version":99,"id":"future-known","type":"connect","status":"pending","pages":["linked-a","linked-b"],"created":"2026-01-01T00:00:00Z","future_verification_rule":"unhandled"}`)
+	_, err = tasks.Close(w, scan(w), "future-known", tasks.StatusDone, "", "agent", fixedNow)
+	fmt.Printf("future-version=99 known-type=connect done_error=%v\n", err)
+	// A SHA is not a retained baseline: post-form edits are associated with the POST's current hash.
+	server, err := webui.NewServer(w, nil)
+	must(err)
+	rw := httptest.NewRecorder()
+	server.Handler().ServeHTTP(rw, httptest.NewRequest("GET", "/edit/alpha", nil))
+	originalHash := reconcile.HashBytes([]byte(read(filepath.Join(w.Root, rel))))
+	write(filepath.Join(w.Root, rel), strings.Replace(read(filepath.Join(w.Root, rel)), "original", "new content while browser is open", 1))
+	postHash := reconcile.HashBytes([]byte(read(filepath.Join(w.Root, rel))))
+	values := url.Values{"body": {"proposal based on old form"}}
+	r := httptest.NewRequest("POST", "/edit/alpha", strings.NewReader(values.Encode()))
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rw = httptest.NewRecorder()
+	server.Handler().ServeHTTP(rw, r)
+	list, err := tasks.Load(w)
+	must(err)
+	var base string
+	for _, t := range list {
+		if t.Body == "proposal based on old form" {
+			base = t.Base
+		}
+	}
+	fmt.Printf("stale-form POST=%d base_matches_form=%v base_matches_post=%v\n", rw.Code, base == originalHash, base == postHash)
+}
+
+func gcDismissal() {
+	w := fresh("dismissal-gc")
+	t, _, err := tasks.FileConnect(w, "alpha", "beta", 0, "cli", fixedNow.Add(-100*24*time.Hour))
+	must(err)
+	_, err = tasks.Close(w, nil, t.ID, tasks.StatusDismissed, "not relevant", "agent", fixedNow.Add(-99*24*time.Hour))
+	must(err)
+	_, created, err := tasks.FileConnect(w, "alpha", "beta", 0, "cli", fixedNow)
+	must(err)
+	fmt.Printf("dismissed before_gc refiling_created=%v\n", created)
+	n, err := tasks.GC(w, 90*24*time.Hour, fixedNow)
+	must(err)
+	t, created, err = tasks.FileConnect(w, "alpha", "beta", 0, "cli", fixedNow)
+	must(err)
+	fmt.Printf("gc removed=%d refiling_created=%v status=%s\n", n, created, t.Status)
+}
+
+func determinism() {
+	w := fresh("tie-order")
+	s := state(w)
+	for i := 0; i < 20; i++ {
+		s.MarkAgent(fmt.Sprintf("page-%02d", i), fixedNow)
+	}
+	orders := map[string]bool{}
+	for i := 0; i < 100; i++ {
+		orders[strings.Join(s.RecentAccessSlugs(10), ",")] = true
+	}
+	fmt.Printf("unchanged attention state iterations=100 distinct_top10_orders=%d\n", len(orders))
+	for i := 0; i < 8; i++ {
+		page(w, fmt.Sprintf("old-%d", i), "body")
+	}
+	r := rs(w)
+	pool := map[string]bool{}
+	for seed := int64(1); seed <= 100; seed++ {
+		p, err := resurface.PickPages(scan(w), r, nil, "auto", 1, fixedNow, rand.New(rand.NewSource(seed)))
+		must(err)
+		if len(p) > 0 {
+			pool[p[0].Slug] = true
+		}
+	}
+	fmt.Printf("same state+same_now auto rng_seeds=100 distinct_first_picks=%d\n", len(pool))
+	// Date filters treat unparsed and future metadata as history in-window.
+	page(w, "bad-date", "body")
+	write(filepath.Join(w.Root, "concepts/bad-date.md"), strings.Replace(read(filepath.Join(w.Root, "concepts/bad-date.md")), "created: 2026-01-01", "created: z-not-a-date", 1))
+	d := digest.Collect(scan(w), fixedNow.AddDate(0, 0, -30))
+	fmt.Printf("digest non-date created=%q counted=%d\n", d.CreatedPages[0].Created, d.Stats.Created)
+	page(w, "bad-updated", "body")
+	write(filepath.Join(w.Root, "concepts/bad-updated.md"), strings.Replace(read(filepath.Join(w.Root, "concepts/bad-updated.md")), "updated: 2026-01-01", "updated: z-not-a-date", 1))
+	d = digest.Collect(scan(w), fixedNow.AddDate(0, 0, -30))
+	fmt.Printf("digest non-date updated=%q counted=%d\n", d.UpdatedPages[0].Updated, d.Stats.Updated)
+}
+
+func migrationsAndDB() {
+	for _, input := range []string{"missing", `{"schema_version":99}`, "{", "null", `{"schema_version":-1}`} {
+		w := fresh("migrate")
+		ctx := &migrate.Context{ConfigHome: filepath.Join(w.Root, "config"), CacheHome: filepath.Join(w.Root, "cache"), DataHome: filepath.Join(w.Root, "data")}
+		if input != "missing" {
+			write(filepath.Join(ctx.ConfigHome, "state.json"), input)
+		}
+		result, err := migrate.Ensure(ctx, "audit")
+		second, secondErr := migrate.Ensure(ctx, "audit")
+		fmt.Printf("migrate input=%s result=%+v error=%v second=%+v second_error=%v\n", input, result, err, second, secondErr)
+	}
+	w := fresh("migrate-concurrent")
+	ctx := &migrate.Context{ConfigHome: filepath.Join(w.Root, "config"), CacheHome: filepath.Join(w.Root, "cache"), DataHome: filepath.Join(w.Root, "data")}
+	const n = 32
+	errs := make(chan error, n)
+	start := make(chan struct{})
+	for i := 0; i < n; i++ {
+		go func() { <-start; _, err := migrate.Ensure(ctx, "audit"); errs <- err }()
+	}
+	close(start)
+	fails := 0
+	var example error
+	for i := 0; i < n; i++ {
+		if err := <-errs; err != nil {
+			fails++
+			example = err
+		}
+	}
+	fmt.Printf("fresh concurrent Ensure calls=%d failed=%d example=%v\n", n, fails, example)
+	// Open touches a database before looking at its local schema version.
+	futurePath := filepath.Join(w.Root, "future.db")
+	db, err := sql.Open("sqlite", futurePath)
+	must(err)
+	_, err = db.Exec("PRAGMA user_version = 99")
+	must(err)
+	must(db.Close())
+	ev, err := attention.Open(futurePath)
+	fmt.Printf("future attention DB user_version=99 Open_error=%v\n", err)
+	if err == nil {
+		fmt.Printf("future attention DB Log_error=%v\n", ev.Log(fixedNow, "alpha", "agent", "show", ""))
+		must(ev.Close())
+	}
+	db, err = sql.Open("sqlite", futurePath)
+	must(err)
+	defer db.Close()
+	var v, tables int
+	must(db.QueryRow("PRAGMA user_version").Scan(&v))
+	must(db.QueryRow("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='events'").Scan(&tables))
+	fmt.Printf("future attention DB after Open version=%d events_table_created=%v\n", v, tables == 1)
+}
+
+func migrationInterruption() {
+	w := fresh("migrate-interruption")
+	h := filepath.Join(w.Root, "home")
+	oldHome := os.Getenv("HOME")
+	must(os.Setenv("HOME", h))
+	defer os.Setenv("HOME", oldHome)
+	write(filepath.Join(h, ".canopy", "models", "marker"), "fixture model bytes")
+	write(filepath.Join(h, ".canopy", "config.toml"), "default_wiki = \"/fixture/wiki\"\n")
+	write(filepath.Join(h, ".canopy", "webauth.json"), `{"fixture":"synthetic secret"}`)
+	blocked := filepath.Join(w.Root, "config")
+	must(os.MkdirAll(blocked, 0o755))
+	must(os.Chmod(blocked, 0o555))
+	defer os.Chmod(blocked, 0o755)
+	ctx := &migrate.Context{ConfigHome: blocked, CacheHome: filepath.Join(w.Root, "cache"), DataHome: filepath.Join(w.Root, "data")}
+	first, err := migrate.Ensure(ctx, "audit")
+	_, modelErr := os.Stat(filepath.Join(ctx.DataHome, "models", "marker"))
+	_, configErr := os.Stat(filepath.Join(h, ".canopy", "config.toml"))
+	fmt.Printf("partial migration To=%d failed=%v already_moved_model_preserved=%v remaining_legacy_config_preserved=%v\n", first.To, err != nil, modelErr == nil, configErr == nil)
+	must(os.Chmod(blocked, 0o755))
+	second, err := migrate.Ensure(ctx, "audit")
+	must(err)
+	configBefore := read(filepath.Join(ctx.ConfigHome, "config.toml"))
+	third, err := migrate.Ensure(ctx, "audit")
+	must(err)
+	fmt.Printf("retry migration To=%d model_preserved=%v auth_preserved=%v rerun_applied=%d config_unchanged=%v\n", second.To, read(filepath.Join(ctx.DataHome, "models", "marker")) == "fixture model bytes", read(filepath.Join(ctx.ConfigHome, "webauth.json")) == `{"fixture":"synthetic secret"}`, len(third.Applied), read(filepath.Join(ctx.ConfigHome, "config.toml")) == configBefore)
+}
+
+func positiveBoundaries() {
+	w := fresh("positive-boundaries")
+	rel := page(w, "alpha", "original")
+	page(w, "beta", "body")
+	before := read(filepath.Join(w.Root, rel))
+	server, err := webui.NewServer(w, nil)
+	must(err)
+	rw := httptest.NewRecorder()
+	server.Handler().ServeHTTP(rw, httptest.NewRequest("POST", "/api/read/alpha", nil))
+	s := state(w)
+	s.Mark("alpha", "explicit", fixedNow)
+	s.Mark("alpha", "auto", fixedNow.Add(time.Hour))
+	must(s.Save(w))
+	fmt.Printf("human API=%d explicit_not_downgraded=%v\n", rw.Code, state(w).Get("alpha").Source == "explicit")
+	first, err := tasks.FileEdit(w, "alpha", "request", "", reconcile.HashBytes([]byte(before)), "web", fixedNow)
+	must(err)
+	_, doneErr := tasks.Close(w, scan(w), first.ID, tasks.StatusDone, "", "agent", fixedNow)
+	fmt.Printf("edit unchanged_done_rejected=%v filing_page_unchanged=%v\n", doneErr != nil, read(filepath.Join(w.Root, rel)) == before)
+	// Event DB deletion must not delete the authoritative queue or aggregates.
+	queueBefore := read(filepath.Join(tasks.Dir(w), first.ID+".json"))
+	readsBefore := read(reads.Path(w))
+	must(os.Remove(w.AttentionDBPath()))
+	fmt.Printf("event_DB_delete queue_unchanged=%v human_unchanged=%v\n", read(filepath.Join(tasks.Dir(w), first.ID+".json")) == queueBefore, read(reads.Path(w)) == readsBefore)
+	c, err := checkout.Checkout(w, scan(w), "alpha")
+	must(err)
+	write(c.Path, strings.Replace(before, "original", "editing", 1))
+	write(filepath.Join(w.Root, rel), strings.Replace(before, "original", "other writer", 1))
+	_, err = checkout.Checkin(w, scan(w), "alpha", nil)
+	fmt.Printf("checkout sequential_base_conflict_rejected=%v copy_retained=%v\n", err != nil, strings.Contains(read(c.Path), "editing"))
+	must(checkout.Discard(w, "alpha"))
+	_, err = os.Stat(c.Path)
+	fmt.Printf("discard copy_removed=%v wiki_other_writer_preserved=%v\n", os.IsNotExist(err), strings.Contains(read(filepath.Join(w.Root, rel)), "other writer"))
+	r := rs(w)
+	r.MarkShown([]string{"alpha"}, fixedNow)
+	picks, err := resurface.PickPages(scan(w), r, nil, "random", 20, fixedNow, rand.New(rand.NewSource(1)))
+	must(err)
+	shownIncluded := false
+	for _, p := range picks {
+		shownIncluded = shownIncluded || p.Slug == "alpha"
+	}
+	fmt.Printf("resurface recent_shown_excluded=%v\n", !shownIncluded)
+	out, code := command(w, "search", "original", "--mode", "hybrid")
+	fmt.Printf("lite hybrid search exit=%d keyword_fallback_warning=%v\n", code, strings.Contains(out, "keyword"))
+}
+
+func pathIdentity() {
+	w := fresh("path-identity")
+	page(w, "alpha", "original")
+	alias := w.Root + "-alias"
+	must(os.Symlink(w.Root, alias))
+	a, err := config.Resolve(alias)
+	must(err)
+	_, err = checkout.Checkout(w, scan(w), "alpha")
+	must(err)
+	actual, err := checkout.Open(a)
+	must(err)
+	fmt.Printf("same_wiki_via_symlink root_equal=%v event_DB_equal=%v checkout_dir_equal=%v open_checkout_visible_via_alias=%d\n", w.Root == a.Root, w.AttentionDBPath() == a.AttentionDBPath(), w.CheckoutDir() == a.CheckoutDir(), len(actual))
+}
+
+func checkoutGitContract() {
+	w := fresh("checkout-git")
+	rel := page(w, "alpha", "original")
+	cmd := exec.Command("git", "init", "-q", w.Root)
+	_, err := cmd.CombinedOutput()
+	must(err)
+	gitStatus := func() string {
+		cmd := exec.Command("git", "-C", w.Root, "status", "--short")
+		out, err := cmd.CombinedOutput()
+		must(err)
+		return string(out)
+	}
+	beforeStatus := gitStatus()
+	beforePage := read(filepath.Join(w.Root, rel))
+	_, code := command(w, "checkout", "alpha", "--json")
+	fmt.Printf("CLI checkout exit=%d git_status_identical=%v page_identical=%v agent_record_created=%v\n", code, gitStatus() == beforeStatus, read(filepath.Join(w.Root, rel)) == beforePage, state(w).Agent["alpha"] != nil)
+}
+
+func mergeMetadata() {
+	w := fresh("merge")
+	base := filepath.Join(w.Root, "base")
+	ours := filepath.Join(w.Root, "ours")
+	theirs := filepath.Join(w.Root, "theirs")
+	write(base, "{\"query\":\"base\"}\n")
+	write(ours, read(base)+"{\"query\":\"device-a\"}\n")
+	write(theirs, read(base)+"{\"query\":\"device-b\"}\n")
+	cmd := exec.Command("git", "merge-file", "-p", ours, base, theirs)
+	b, err := cmd.CombinedOutput()
+	exitCode := 0
+	if err != nil {
+		if e, ok := err.(*exec.ExitError); ok {
+			exitCode = e.ExitCode()
+		} else {
+			panic(err)
+		}
+	}
+	fmt.Printf("two JSONL appends merge-file exit=%d conflict_markers=%v\n%s", exitCode, bytes.Contains(b, []byte("<<<<<<<")), b)
+}
+
+func main() {
+	root := flag.String("root", "/private/tmp/canopy-audit-20261009/state-fb76b/fixtures", "owned fixture root")
+	commandPath := flag.String("cli", "/private/tmp/canopy-audit-20261009/state-fb76b/canopy", "lite binary")
+	child := flag.String("child", "", "isolated fault child")
+	only := flag.String("case", "all", "observation name")
+	flag.Parse()
+	fixtureRoot, cli = *root, *commandPath
+	if *child == "atomic" {
+		atomicChild(*root)
+		return
+	}
+	if !strings.HasPrefix(fixtureRoot, "/private/tmp/canopy-audit-20261009/state-fb76b/") {
+		panic("fixture path must belong to this audit")
+	}
+	must(os.MkdirAll(fixtureRoot, 0o755))
+	log.SetOutput(io.Discard)
+	cases := map[string]func(){
+		"lost-updates": lostUpdates, "atomic-failure": atomicFailure, "connect-id": connectCollision,
+		"concurrent-edits": concurrentEdits, "gc-id": invalidTaskGC, "compatibility": compatibility,
+		"malformed": malformed, "checkout-meta": checkoutMetaLoss, "rename": renameAgentOnly,
+		"offsets": mixedOffsets, "snooze": snoozeDays, "completion": weakCompletion,
+		"gc-dismissal": gcDismissal, "determinism": determinism, "migration": migrationsAndDB,
+		"path-identity": pathIdentity, "merge": mergeMetadata,
+		"migration-interruption": migrationInterruption, "positive-boundaries": positiveBoundaries,
+		"checkout-git": checkoutGitContract,
+	}
+	var names []string
+	for name := range cases {
+		if *only == "all" || *only == name {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		fmt.Printf("\nCASE %s\n", name)
+		cases[name]()
+	}
+}

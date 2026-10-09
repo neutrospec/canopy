@@ -1,0 +1,14 @@
+$ ['go', 'test', '-count=1', '-v', '-run', '^TestG12', './review_probes/def_data']
+=== RUN   TestG12CLIHashWriteWindow
+    probe_test.go:585: G12 actual_CLI concurrent=false elapsed=13.87875ms err=exit status 1 direct_writer_preserved=true copy_present=true output=error: page changed since checkout (another machine, web edit, or direct write) — re-checkout alpha and re-apply your edits; `--discard` drops this copy
+    probe_test.go:585: G12 actual_CLI concurrent=true elapsed=2.308596291s err=<nil> direct_writer_preserved=false copy_present=false output={
+          "rel_path": "concepts/alpha.md",
+          "unchanged": false,
+          "old_lines": 13,
+          "new_lines": 133
+        }
+--- PASS: TestG12CLIHashWriteWindow (2.36s)
+PASS
+ok  	github.com/neutrospec/canopy/review_probes/def_data	2.857s
+
+EXIT 0

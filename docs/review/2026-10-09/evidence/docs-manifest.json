@@ -1,0 +1,165 @@
+{
+  "target_commit": "ede67e302a8487aecbb4d59587a8686292018cf6",
+  "head": "ede67e302a8487aecbb4d59587a8686292018cf6",
+  "markdown_documents": 30,
+  "markdown_lines": 4438,
+  "documents": [
+    {
+      "path": "README.md",
+      "lines": 265,
+      "sha256": "f9a023ffab5415b91012d669401cf5365331190190d6f8eb8e1c7fbefb467bdf"
+    },
+    {
+      "path": "README.en.md",
+      "lines": 283,
+      "sha256": "600280de64e6aeab21527f69eff9a0d04287d1f89593d97da3a0571ba0d98ccb"
+    },
+    {
+      "path": "AGENTS.md",
+      "lines": 114,
+      "sha256": "1c2b2174178714532a9b02f8d0c23d0569dbdf96438180b30096f85752cfd175"
+    },
+    {
+      "path": "CLAUDE.md",
+      "lines": 7,
+      "sha256": "c6448152cd785aeb40ab77b568a85b65ba6d6ee90056f4b73da280334b9d9ee2"
+    },
+    {
+      "path": "docs/agent-tasks.md",
+      "lines": 139,
+      "sha256": "cf49f420e744bc697a4484b6ad006646865d2419653cb0318af5a318c7c99116"
+    },
+    {
+      "path": "docs/checkout-design.md",
+      "lines": 94,
+      "sha256": "9aedae7f18d8c57645dd630cc973eb03f8e22d18d142209779098828364831b5"
+    },
+    {
+      "path": "docs/events.md",
+      "lines": 75,
+      "sha256": "c08cb1a7cf37123490f9436d41b4b96437c4d1174f8a7a91c929319811f58afa"
+    },
+    {
+      "path": "docs/getting-started.md",
+      "lines": 237,
+      "sha256": "24124d2308411d9c62e13fcc427be33cb77097e0de46c35bc00725a4adeac37e"
+    },
+    {
+      "path": "docs/homebrew-guide.md",
+      "lines": 273,
+      "sha256": "bf2356e1f54e85ebf49360510877d449c3b941bd5263b9e986187863d1665e13"
+    },
+    {
+      "path": "docs/i18n.md",
+      "lines": 76,
+      "sha256": "aede2e88501f000cf2bdf761a95586ea75a6c70ed91202e3f067dd082522becb"
+    },
+    {
+      "path": "docs/invariants.md",
+      "lines": 281,
+      "sha256": "33eb7d57e8b0086a1b5d8f8a416173771ad9289875303bb9a9dd8559d344f3d3"
+    },
+    {
+      "path": "docs/philosophy.md",
+      "lines": 236,
+      "sha256": "354316dbecd275809d6a79c0cd4ac847c6a13730a113412a0d89652df09f2935"
+    },
+    {
+      "path": "docs/reconcile-design.md",
+      "lines": 150,
+      "sha256": "3695fdf339f31c70eca37e1884eb61873e9bd13a84a49382c5ad5e927eaa72a4"
+    },
+    {
+      "path": "docs/second-brain.md",
+      "lines": 134,
+      "sha256": "a208669f6d96219c326e3bcc9d593baeb2e4cc09e14455afc326a67078d75723"
+    },
+    {
+      "path": "docs/taxonomy.md",
+      "lines": 65,
+      "sha256": "a26cd538672780bbb50ead289b62b7b08009d92da58510988f997e03db7940c6"
+    },
+    {
+      "path": "docs/troubleshooting.md",
+      "lines": 68,
+      "sha256": "eaca666507473b6afaa9717e0944ee51e7b2ef686ae778cc5b9f100ec450a226"
+    },
+    {
+      "path": "docs/upgrading.md",
+      "lines": 121,
+      "sha256": "f5bf7ede6b9a5214ddab16f9263c8ef65840a273eb289723f28d6ca35c58d441"
+    },
+    {
+      "path": "docs/versioning.md",
+      "lines": 202,
+      "sha256": "1ed5c6bfadd4430a7c8e100dcd65834bc60a05e95b2b9d16a569d26f9b1acad8"
+    },
+    {
+      "path": "docs/web-ui-board.md",
+      "lines": 180,
+      "sha256": "2ba1bf6f3d02145a87611b980e2c65bc370a4368e28732cf5094fc90a8bc6791"
+    },
+    {
+      "path": "docs/web-ui-i18n.md",
+      "lines": 110,
+      "sha256": "4b026571a7ffdc1d77ac35075acf0f5be080b73c204970929cf58d901a91d51c"
+    },
+    {
+      "path": "docs/web-ui-plan-2.md",
+      "lines": 148,
+      "sha256": "a0c7d213eb0589b06879360887cb425d7ea6afa3c71ccbcd7d1282dcc37e1c6b"
+    },
+    {
+      "path": "docs/web-ui-plan-3.md",
+      "lines": 96,
+      "sha256": "646c4157eb6be7a8f15f02f16e86ead588922e067bd4b107d7836259cdda68b0"
+    },
+    {
+      "path": "docs/web-ui-plan-4.md",
+      "lines": 120,
+      "sha256": "abc81a9cb1471d3f7327bd4aab542fcdf80f1eae52eacc48f5655885b82b5064"
+    },
+    {
+      "path": "docs/web-ui-plan.md",
+      "lines": 125,
+      "sha256": "3680b29e3fe802770f700c8b0fc84b16f3bdc19bdc0dae9a283d87a9efade0d7"
+    },
+    {
+      "path": "docs/web-ui-write-design.md",
+      "lines": 66,
+      "sha256": "4ce8c41a90c96f427eb1ed9d31f102e572527832c650e7171830db0e568dff0e"
+    },
+    {
+      "path": "docs/en/getting-started.md",
+      "lines": 253,
+      "sha256": "1e61b19053a0f72b0e044c90467c9a7792cdc58634ef2a511ae046df163b9b73"
+    },
+    {
+      "path": "docs/en/troubleshooting.md",
+      "lines": 73,
+      "sha256": "57ff0b8c6f72fc13f7239b74deb722ef9b09cb697b640907a5ff9bdd5cab9ed2"
+    },
+    {
+      "path": "docs/en/upgrading.md",
+      "lines": 132,
+      "sha256": "02efabd2cf2707499cb811fbc5b8486736fa20f6e832508ba457972e3d62eae3"
+    },
+    {
+      "path": "internal/skills/canopy_ingest.md",
+      "lines": 73,
+      "sha256": "e142875eec879e41b6d7ca01f72627e6f0a39b456b607b77a3abee3161890193"
+    },
+    {
+      "path": "internal/skills/canopy_wiki.md",
+      "lines": 242,
+      "sha256": "e5ba724f7b09e87ac8ff3f6e1a07b28bf6157da13596d1dca131a3ec9229fa9b"
+    }
+  ],
+  "skills_go": {
+    "path": "internal/skills/skills.go",
+    "lines": 206,
+    "sha256": "a4313a66aed3769db0061993dbc7c12be14c9d79c7dd4dbaffada98583ae6981"
+  },
+  "binary_sha256": "9f83781fbbf738f1f688e661003f2b1ef7b9603005cd3412ab3e97f4634546a6",
+  "help_surfaces": 50
+}

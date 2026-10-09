@@ -1,0 +1,458 @@
+{
+  "scope": "DOC-01..08 final spacing pass; DOC-09..20 and subsidiary/RED rows already polished",
+  "whitespace_only": true,
+  "before_sha256": "dc7da804728dcfe4b1934e70a73936c06ff07ecc890b661fb2bc05574233dccf",
+  "after_sha256": "c23cece4c51484db7af5ab5a33d9a5b30f0be1f165c1716dad470fa928403531",
+  "changes": [
+    {
+      "id": "DOC-01",
+      "before": "page불변",
+      "after": "page 불변",
+      "count": 1
+    },
+    {
+      "id": "DOC-01",
+      "before": "agent검토",
+      "after": "agent 검토",
+      "count": 1
+    },
+    {
+      "id": "DOC-01",
+      "before": "결과확인",
+      "after": "결과 확인",
+      "count": 1
+    },
+    {
+      "id": "DOC-01",
+      "before": "페이지불변",
+      "after": "페이지 불변",
+      "count": 1
+    },
+    {
+      "id": "DOC-01",
+      "before": "처리loop",
+      "after": "처리 loop",
+      "count": 1
+    },
+    {
+      "id": "DOC-01",
+      "before": "반영 후show",
+      "after": "반영 후 show",
+      "count": 1
+    },
+    {
+      "id": "DOC-02",
+      "before": "페이지불변",
+      "after": "페이지 불변",
+      "count": 1
+    },
+    {
+      "id": "DOC-02",
+      "before": "사후lint",
+      "after": "사후 lint",
+      "count": 1
+    },
+    {
+      "id": "DOC-02",
+      "before": "copy보존",
+      "after": "copy 보존",
+      "count": 1
+    },
+    {
+      "id": "DOC-02",
+      "before": "실패시험",
+      "after": "실패 시험",
+      "count": 1
+    },
+    {
+      "id": "DOC-03",
+      "before": "기본4개",
+      "after": "기본 4개",
+      "count": 2
+    },
+    {
+      "id": "DOC-03",
+      "before": "new는2개",
+      "after": "new는 2개",
+      "count": 1
+    },
+    {
+      "id": "DOC-03",
+      "before": "stderr빈값",
+      "after": "stderr 빈 값",
+      "count": 1
+    },
+    {
+      "id": "DOC-03",
+      "before": "단일JSON",
+      "after": "단일 JSON",
+      "count": 2
+    },
+    {
+      "id": "DOC-03",
+      "before": "성공1value",
+      "after": "성공 1value",
+      "count": 1
+    },
+    {
+      "id": "DOC-03",
+      "before": "부분실패",
+      "after": "부분 실패",
+      "count": 1
+    },
+    {
+      "id": "DOC-03",
+      "before": "무조건포장",
+      "after": "무조건 포장",
+      "count": 1
+    },
+    {
+      "id": "DOC-04",
+      "before": "기존config",
+      "after": "기존 config",
+      "count": 2
+    },
+    {
+      "id": "DOC-04",
+      "before": "explicitwiki",
+      "after": "explicit wiki",
+      "count": 1
+    },
+    {
+      "id": "DOC-04",
+      "before": "첫성공",
+      "after": "첫 성공",
+      "count": 1
+    },
+    {
+      "id": "DOC-04",
+      "before": "로컬commit",
+      "after": "로컬 commit",
+      "count": 1
+    },
+    {
+      "id": "DOC-04",
+      "before": "공백path",
+      "after": "공백 path",
+      "count": 1
+    },
+    {
+      "id": "DOC-04",
+      "before": "자기bare",
+      "after": "자기 bare",
+      "count": 1
+    },
+    {
+      "id": "DOC-04",
+      "before": "신원 자동생성",
+      "after": "신원 자동 생성",
+      "count": 1
+    },
+    {
+      "id": "DOC-04",
+      "before": "full경로",
+      "after": "full 경로",
+      "count": 1
+    },
+    {
+      "id": "DOC-04",
+      "before": "HEAD없음",
+      "after": "HEAD 없음",
+      "count": 1
+    },
+    {
+      "id": "DOC-05",
+      "before": "파일byte",
+      "after": "파일 byte",
+      "count": 1
+    },
+    {
+      "id": "DOC-05",
+      "before": "영속registry",
+      "after": "영속 registry",
+      "count": 1
+    },
+    {
+      "id": "DOC-05",
+      "before": "머신state",
+      "after": "머신 state",
+      "count": 1
+    },
+    {
+      "id": "DOC-05",
+      "before": "삭제경로",
+      "after": "삭제 경로",
+      "count": 1
+    },
+    {
+      "id": "DOC-06",
+      "before": "explicitwiki",
+      "after": "explicit wiki",
+      "count": 1
+    },
+    {
+      "id": "DOC-06",
+      "before": "root유지",
+      "after": "root 유지",
+      "count": 1
+    },
+    {
+      "id": "DOC-07",
+      "before": "정상task",
+      "after": "정상 task",
+      "count": 1
+    },
+    {
+      "id": "DOC-07",
+      "before": "양성평가",
+      "after": "양성 평가",
+      "count": 1
+    },
+    {
+      "id": "DOC-07",
+      "before": "권한모델",
+      "after": "권한 모델",
+      "count": 1
+    },
+    {
+      "id": "DOC-07",
+      "before": "공격도구",
+      "after": "공격 도구",
+      "count": 1
+    },
+    {
+      "id": "DOC-07",
+      "before": "보안효과",
+      "after": "보안 효과",
+      "count": 1
+    },
+    {
+      "id": "DOC-07",
+      "before": "코드강제",
+      "after": "코드 강제",
+      "count": 1
+    },
+    {
+      "id": "DOC-07",
+      "before": "보안불변식",
+      "after": "보안 불변식",
+      "count": 1
+    },
+    {
+      "id": "DOC-07",
+      "before": "정상edit",
+      "after": "정상 edit",
+      "count": 1
+    },
+    {
+      "id": "DOC-07",
+      "before": "외부전송",
+      "after": "외부 전송",
+      "count": 1
+    },
+    {
+      "id": "DOC-07",
+      "before": "다른wiki삭제",
+      "after": "다른 wiki 삭제",
+      "count": 1
+    },
+    {
+      "id": "DOC-07",
+      "before": "효과수락",
+      "after": "효과 수락",
+      "count": 1
+    },
+    {
+      "id": "DOC-07",
+      "before": "모든task",
+      "after": "모든 task",
+      "count": 1
+    },
+    {
+      "id": "DOC-07",
+      "before": "원문scrub",
+      "after": "원문 scrub",
+      "count": 1
+    },
+    {
+      "id": "DOC-07",
+      "before": "매번승인",
+      "after": "매번 승인",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "무조건실행",
+      "after": "무조건 실행",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "내용확인",
+      "after": "내용 확인",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "뒤cleanup",
+      "after": "뒤 cleanup",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "존재확인",
+      "after": "존재 확인",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "내용일치",
+      "after": "내용 일치",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "항상남음",
+      "after": "항상 남음",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "기존show",
+      "after": "기존 show",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "body없음",
+      "after": "body 없음",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "newbody미저장",
+      "after": "new body 미저장",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "guarded대조",
+      "after": "guarded 대조",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "body보존",
+      "after": "body 보존",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "logs장애",
+      "after": "logs 장애",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "index있음",
+      "after": "index 있음",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "copy없음",
+      "after": "copy 없음",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "별도backup있음",
+      "after": "별도 backup 있음",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "임시본문",
+      "after": "임시 본문",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "복구원본",
+      "after": "복구 원본",
+      "count": 2
+    },
+    {
+      "id": "DOC-08",
+      "before": "정상생성",
+      "after": "정상 생성",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "뒤만rm",
+      "after": "뒤만 rm",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "실패nonzero",
+      "after": "실패 nonzero",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "사전backup",
+      "after": "사전 backup",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "후처리단계",
+      "after": "후처리 단계",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "post-writeIO",
+      "after": "post-write IO",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "반영여부",
+      "after": "반영 여부",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "각각검사",
+      "after": "각각 검사",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "무조건retry",
+      "after": "무조건 retry",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "모든IO",
+      "after": "모든 IO",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "실패시",
+      "after": "실패 시",
+      "count": 1
+    },
+    {
+      "id": "DOC-08",
+      "before": "항상존재",
+      "after": "항상 존재",
+      "count": 1
+    }
+  ]
+}

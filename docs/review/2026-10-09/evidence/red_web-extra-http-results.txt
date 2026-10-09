@@ -1,0 +1,8 @@
+=== RUN   TestSupplementUnauthSpooling
+    probe_test.go:97: OBS unauth-spool-real-net-http {"disk_backed_during_handler":true,"parsed_file_bytes":34603008,"response_status":400,"supplied_bytes":34603008,"task_load_error":"\u003cnil\u003e","tasks":0,"temp_removed_by_net_http":true}
+--- PASS: TestSupplementUnauthSpooling (0.05s)
+=== RUN   TestSupplementEmptyProposal
+    probe_test.go:97: OBS empty-body-proposal-not-yet-defended {"empty_with_note_status":303,"empty_without_note_error":"edit task needs a request or a proposed body\n","empty_without_note_status":500,"page_unchanged":true,"serialized_body_key":false,"task_count":1}
+--- PASS: TestSupplementEmptyProposal (0.01s)
+PASS
+ok  	github.com/neutrospec/canopy/review_probes/red_web	0.576s

@@ -1,0 +1,10 @@
+[
+  "Library/Application Support/go/telemetry/local/upload.token",
+  "Library/Application Support/go/telemetry/local/vet@go1.27.1-go1.27.1-darwin-arm64-2026-10-09.v1.count",
+  "Library/Application Support/go/telemetry/local/compile@go1.27.1-go1.27.1-darwin-arm64-2026-10-09.v1.count",
+  "Library/Application Support/go/telemetry/local/go@go1.27.1-go1.27.1-darwin-arm64-2026-10-09.v1.count",
+  "Library/Application Support/go/telemetry/local/asm@go1.27.1-go1.27.1-darwin-arm64-2026-10-09.v1.count",
+  "Library/Application Support/go/telemetry/local/link@go1.27.1-go1.27.1-darwin-arm64-2026-10-09.v1.count",
+  "Library/Application Support/go/telemetry/local/weekends",
+  ".local/state/canopy/attention/08a800f0b008.db"
+]

@@ -1,0 +1,193 @@
+package defweb
+
+import (
+ "bytes"
+ "crypto/sha256"
+ "encoding/hex"
+ "encoding/json"
+ "fmt"
+ "io"
+ "log"
+ "mime/multipart"
+ "net/http"
+ "net/http/httptest"
+ "net/url"
+ "os"
+ "os/exec"
+ "path/filepath"
+ "runtime"
+ "strings"
+ "sync"
+ "testing"
+ "time"
+
+ "github.com/neutrospec/canopy/internal/config"
+ "github.com/neutrospec/canopy/internal/lint"
+ "github.com/neutrospec/canopy/internal/mermaid"
+ "github.com/neutrospec/canopy/internal/reads"
+ "github.com/neutrospec/canopy/internal/resurface"
+ "github.com/neutrospec/canopy/internal/tasks"
+ "github.com/neutrospec/canopy/internal/webui"
+ "github.com/neutrospec/canopy/internal/wiki"
+)
+
+func init() { log.SetOutput(io.Discard) }
+func note(t *testing.T, name string, v any) { t.Helper(); b, _ := json.Marshal(v); t.Logf("%s %s",name,b) }
+func write(t *testing.T, path, content string) { t.Helper(); if err:=os.MkdirAll(filepath.Dir(path),0755);err!=nil{t.Fatal(err)};if err:=os.WriteFile(path,[]byte(content),0644);err!=nil{t.Fatal(err)} }
+func raw(t *testing.T,path string) []byte {t.Helper();b,e:=os.ReadFile(path);if e!=nil{t.Fatal(e)};return b}
+func hash(b []byte)string{h:=sha256.Sum256(b);return hex.EncodeToString(h[:])}
+func optionalHash(path string)string{b,e:=os.ReadFile(path);if e!=nil{return "absent"};return hash(b)}
+func page(t *testing.T,w *config.Wiki,slug,body string){t.Helper();write(t,filepath.Join(w.Root,"concepts",slug+".md"),"---\ntitle: 독립 방어 표제\ntype: concept\ncreated: 2020-01-01\nupdated: 2020-01-01\ntags: [tool]\n---\n"+body)}
+func fixture(t *testing.T,n int)(*config.Wiki,*webui.Server){
+ t.Helper();root:=t.TempDir();w:=&config.Wiki{Root:root,Cfg:config.Default(),HasTOML:true};if e:=w.WriteTOML();e!=nil{t.Fatal(e)}
+ for i:=0;i<n;i++{page(t,w,fmt.Sprintf("cedar-%d",i),fmt.Sprintf("Defense canary %d, cedarquartz factual paragraph.\n",i))}
+ s,e:=webui.NewServer(w,nil);if e!=nil{t.Fatal(e)};return w,s
+}
+type response struct{Code int;Body string;Header http.Header;FinalPath string}
+func call(t *testing.T,c *http.Client,method,target string,body io.Reader,headers map[string]string) response{
+ t.Helper();req,e:=http.NewRequest(method,target,body);if e!=nil{t.Fatal(e)}
+ for k,v:=range headers{if k=="Host"{req.Host=v}else{req.Header.Set(k,v)}}
+ res,e:=c.Do(req);if e!=nil{t.Fatal(e)};defer res.Body.Close();b,e:=io.ReadAll(res.Body);if e!=nil{t.Fatal(e)};return response{res.StatusCode,string(b),res.Header,res.Request.URL.Path}
+}
+func nofollow()*http.Client{return &http.Client{Timeout:30*time.Second,CheckRedirect:func(*http.Request,[]*http.Request)error{return http.ErrUseLastResponse}}}
+func form(t *testing.T,c *http.Client,target string,values url.Values,headers map[string]string)response{t.Helper();h:=map[string]string{"Content-Type":"application/x-www-form-urlencoded"};for k,v:=range headers{h[k]=v};return call(t,c,"POST",target,strings.NewReader(values.Encode()),h)}
+
+func TestTrustAndAuth(t *testing.T){
+ w,s:=fixture(t,1);body:=`DEF PRIVATE CANARY
+<script>window.defMarker=true</script>
+<img src="/def-missing" onerror="window.defEvent=true">
+[unsafe](javascript:alert%281%29)
+![remote](https://pixel.invalid/def-image)
+[[cedar-0|<img src=x onerror=defAlias()>]]
+`;page(t,w,"cedar-0",body)
+ ts:=httptest.NewServer(s.Handler());defer ts.Close();c:=nofollow()
+ get:=call(t,c,"GET",ts.URL+"/page/cedar-0",nil,map[string]string{"Host":"foreign.def.test:8801"})
+ preview:=call(t,c,"GET",ts.URL+"/api/preview/cedar-0",nil,map[string]string{"Host":"foreign.def.test:8801"})
+ same:=form(t,c,ts.URL+"/edit/cedar-0",url.Values{"body":{"same authority proposal"}},map[string]string{"Host":"foreign.def.test:8801","Origin":"http://foreign.def.test:8801"})
+ cross:=form(t,c,ts.URL+"/edit/cedar-0",url.Values{"body":{"must reject"}},map[string]string{"Host":"foreign.def.test:8801","Origin":"https://elsewhere.def.test"})
+ null:=form(t,c,ts.URL+"/edit/cedar-0",url.Values{"body":{"must reject null"}},map[string]string{"Origin":"null"})
+ note(t,"trust-boundary",map[string]any{"get":get.Code,"private":strings.Contains(get.Body,"DEF PRIVATE CANARY"),"preview":preview.Code,"same_host_post":same.Code,"cross_origin":cross.Code,"null_origin":null.Code,"script_retained":strings.Contains(get.Body,"<script>window.defMarker"),"event_retained":strings.Contains(get.Body,"onerror=\"window.defEvent"),"javascript_retained":strings.Contains(get.Body,"javascript:alert"),"remote_image_retained":strings.Contains(get.Body,"https://pixel.invalid"),"alias_escaped":strings.Contains(get.Body,"&lt;img src=x onerror=defAlias()&gt;")})
+ // Auth setup touches only this test's disposable config, not any installed asset.
+ t.Setenv("XDG_CONFIG_HOME",t.TempDir());aw,as:=fixture(t,1);code,e:=as.EnableAuth();if e!=nil{t.Fatal(e)}
+ ats:=httptest.NewServer(as.Handler());defer ats.Close();authClient:=nofollow()
+ pre:=form(t,authClient,ats.URL+"/api/read/cedar-0",nil,nil)
+ bad:=form(t,authClient,ats.URL+"/setup",url.Values{"code":{"wrong"},"id":{"owner-def"},"password":{"fixture-password"}},nil)
+ setup:=form(t,authClient,ats.URL+"/setup",url.Values{"code":{code},"id":{"owner-def"},"password":{"fixture-password"}},nil)
+ cookies:=(&http.Response{Header:setup.Header}).Cookies();if len(cookies)==0{t.Fatal("no setup cookie")};cookie:=cookies[0]
+ follow:=&http.Client{Timeout:10*time.Second}
+ missing:=form(t,follow,ats.URL+"/api/read/cedar-0",nil,nil)
+ beforeRead:=optionalHash(reads.Path(aw));valid:=form(t,authClient,ats.URL+"/api/read/cedar-0",nil,map[string]string{"Cookie":cookie.String()})
+ wrongStart:=time.Now();wrong:=form(t,authClient,ats.URL+"/login",url.Values{"id":{"other-def"},"password":{"wrong"}},nil);wrongElapsed:=time.Since(wrongStart)
+ goodStart:=time.Now();good:=form(t,authClient,ats.URL+"/login",url.Values{"id":{"owner-def"},"password":{"fixture-password"}},nil);goodElapsed:=time.Since(goodStart)
+ logout:=form(t,authClient,ats.URL+"/logout",nil,map[string]string{"Cookie":cookie.String()})
+ afterLogout:=form(t,authClient,ats.URL+"/api/read/cedar-0",nil,map[string]string{"Cookie":cookie.String()})
+ // Loading the same credential file into a fresh server simulates a restart's new in-memory sessions.
+ fresh,e:=webui.NewServer(aw,nil);if e!=nil{t.Fatal(e)};if _,e=fresh.EnableAuth();e!=nil{t.Fatal(e)}
+ restarted:=httptest.NewServer(fresh.Handler());defer restarted.Close()
+ newCookies:=(&http.Response{Header:good.Header}).Cookies();restartResult:=call(t,authClient,"GET",restarted.URL+"/api/graph",nil,map[string]string{"Cookie":newCookies[0].String()})
+ accountPath:=filepath.Join(config.ConfigHome(),"webauth.json");mode,e:=os.Stat(accountPath);if e!=nil{t.Fatal(e)}
+ note(t,"auth-contract",map[string]any{"pre_setup_api":pre.Code,"wrong_setup":bad.Code,"setup":setup.Code,"cookie_http_only":cookie.HttpOnly,"cookie_secure":cookie.Secure,"same_site":cookie.SameSite,"max_age":cookie.MaxAge,"credential_mode":fmt.Sprintf("%04o",mode.Mode().Perm()),"missing_session_final":missing.Code,"missing_final_path":missing.FinalPath,"missing_content_type":missing.Header.Get("Content-Type"),"no_record_before_valid":beforeRead=="absent","valid_status":valid.Code,"valid_payload":valid.Body,"wrong_login":wrong.Code,"wrong_ms":wrongElapsed.Milliseconds(),"good_login":good.Code,"good_after_failure_ms":goodElapsed.Milliseconds(),"logout":logout.Code,"old_session_after_logout":afterLogout.Code,"new_server_old_session":restartResult.Code})
+}
+
+func TestProposalRetention(t *testing.T){
+ w,s:=fixture(t,2);before:=optionalHash(filepath.Join(w.Root,"concepts/cedar-0.md"));ts:=httptest.NewServer(s.Handler());defer ts.Close();c:=nofollow()
+ // Sequential positive control and repeated two-tab workload use distinct bodies.
+ sequential:=[]int{}
+ for i:=0;i<2;i++{r:=form(t,c,ts.URL+"/edit/cedar-0",url.Values{"body":{fmt.Sprintf("def-sequential-%d",i)}},nil);sequential=append(sequential,r.Code)}
+ successful:=map[string]bool{};codes:=map[int]int{};var mu sync.Mutex
+ submit:=func(body string){r:=form(t,c,ts.URL+"/edit/cedar-0",url.Values{"body":{body}},nil);mu.Lock();defer mu.Unlock();codes[r.Code]++;if r.Code==303{successful[body]=true}}
+ for round:=0;round<30;round++{start:=make(chan struct{});var wg sync.WaitGroup;for i:=0;i<2;i++{wg.Add(1);go func(i int){defer wg.Done();<-start;submit(fmt.Sprintf("def-two-tab-%d-%d",round,i))}(i)};close(start);wg.Wait()}
+ list,e:=tasks.Load(w);if e!=nil{t.Fatal(e)};preserved:=map[string]bool{};for _,x:=range list{preserved[x.Body]=true};missing:=[]string{};for b:=range successful{if !preserved[b]{missing=append(missing,b)}}
+ note(t,"two-tab-retention",map[string]any{"sequential_codes":sequential,"statuses":codes,"successful_distinct":len(successful),"retained_successful":len(successful)-len(missing),"lost_successful":len(missing),"all_task_files":len(list),"json_valid":true,"page_unchanged":before==optionalHash(filepath.Join(w.Root,"concepts/cedar-0.md"))})
+ // Real CLI processes share the same file allocator as the web handler.
+ bw,bs:=fixture(t,1);bts:=httptest.NewServer(bs.Handler());defer bts.Close();successWeb:=map[string]bool{};successCLI:=map[string]bool{}
+ for round:=0;round<12;round++{start:=make(chan struct{});var wg sync.WaitGroup;wg.Add(2)
+  go func(){defer wg.Done();<-start;b:=fmt.Sprintf("def-web-cli-body-%d",round);r:=form(t,c,bts.URL+"/edit/cedar-0",url.Values{"body":{b}},nil);if r.Code==303{successWeb[b]=true}}()
+  go func(){defer wg.Done();<-start;request:=fmt.Sprintf("def-web-cli-request-%d",round);cmd:=exec.Command(os.Getenv("DEF_WEB_BIN"),"tasks","add","edit","cedar-0","--request",request,"--json","--wiki",bw.Root);out,e:=cmd.CombinedOutput();if e!=nil{t.Errorf("cli add: %s %v",out,e);return};successCLI[request]=true}()
+  close(start);wg.Wait()
+ }
+ list,e=tasks.Load(bw);if e!=nil{t.Fatal(e)};keptB,keptR:=map[string]bool{},map[string]bool{};for _,x:=range list{keptB[x.Body]=true;keptR[x.Request]=true};lostB,lostR:=0,0;for k:=range successWeb{if !keptB[k]{lostB++}};for k:=range successCLI{if !keptR[k]{lostR++}}
+ note(t,"web-cli-retention",map[string]any{"web_success":len(successWeb),"cli_success":len(successCLI),"lost_web":lostB,"lost_cli":lostR,"task_files":len(list)})
+ scan,e:=wiki.Scan(w);if e!=nil{t.Fatal(e)};connect,created,e:=tasks.FileConnect(w,"cedar-0","cedar-1",0,"probe",time.Now());if e!=nil{t.Fatal(e)};_,e=tasks.Close(w,scan,connect.ID,tasks.StatusDismissed,"def decision","probe",time.Now());if e!=nil{t.Fatal(e)};repeat,recreated,e:=tasks.FileConnect(w,"cedar-1","cedar-0",0,"probe",time.Now());if e!=nil{t.Fatal(e)}
+ note(t,"connect-dedup-control",map[string]any{"first_created":created,"repeat_created":recreated,"same_id":repeat.ID==connect.ID,"repeat_status":repeat.Status,"scope":"package API positive control, not concurrency"})
+}
+
+func TestStateConsistency(t *testing.T){
+ w,s:=fixture(t,48);ts:=httptest.NewServer(s.Handler());defer ts.Close();c:=nofollow();var mu sync.Mutex;success:=map[string]bool{};codes:=map[int]int{};start:=make(chan struct{});var wg sync.WaitGroup
+ for i:=0;i<48;i++{wg.Add(1);go func(i int){defer wg.Done();<-start;slug:=fmt.Sprintf("cedar-%d",i);r:=form(t,c,ts.URL+"/resurface/feedback",url.Values{"slug":{slug},"action":{"up"}},nil);mu.Lock();defer mu.Unlock();codes[r.Code]++;if r.Code==303{success[slug]=true}}(i)};close(start);wg.Wait()
+ state,e:=resurface.LoadState(w);if e!=nil{t.Fatal(e)};kept:=map[string]bool{};for _,f:=range state.Feedback{kept[f.Slug]=true};lost:=0;for slug:=range success{if !kept[slug]{lost++}}
+ note(t,"feedback-retention",map[string]any{"statuses":codes,"successful":len(success),"saved":len(state.Feedback),"lost_successful":lost})
+ rw,rsrv:=fixture(t,64);seed,e:=reads.Load(rw);if e!=nil{t.Fatal(e)};for i:=0;i<64;i++{seed.Mark(fmt.Sprintf("cedar-%d",i),"explicit",time.Now())};if e=seed.Save(rw);e!=nil{t.Fatal(e)}
+ rts:=httptest.NewServer(rsrv.Handler());defer rts.Close();counts:=map[int]int{};posts:=map[int]int{};start=make(chan struct{});wg=sync.WaitGroup{}
+ for j:=0;j<4;j++{wg.Add(1);go func(){defer wg.Done();<-start;for i:=0;i<60;i++{r:=call(t,c,"GET",rts.URL+"/api/graph",nil,nil);mu.Lock();counts[r.Code]++;mu.Unlock()}}()}
+ wg.Add(1);go func(){defer wg.Done();<-start;for i:=0;i<180;i++{r:=form(t,c,rts.URL+"/read/cedar-0",url.Values{"action":{"read"}},nil);mu.Lock();posts[r.Code]++;mu.Unlock()}}();close(start);wg.Wait()
+ final,e:=reads.Load(rw);if e!=nil{t.Fatal(e)};auto:=form(t,c,rts.URL+"/api/read/cedar-0",nil,nil);after,e:=reads.Load(rw);if e!=nil{t.Fatal(e)}
+ note(t,"read-graph-visibility",map[string]any{"get_statuses":counts,"post_statuses":posts,"final_count":final.Get("cedar-0").Count,"auto_status":auto.Code,"explicit_preserved":after.Get("cedar-0").Source=="explicit","auto_no_increment":after.Get("cedar-0").Count==final.Get("cedar-0").Count,"agent_file_absent":optionalHash(reads.AgentPath(rw))=="absent"})
+}
+
+func TestSemanticStates(t *testing.T){
+ w,s:=fixture(t,1);ts:=httptest.NewServer(s.Handler());defer ts.Close();c:=nofollow();before:=optionalHash(resurface.StatePath(w));head:=call(t,c,"HEAD",ts.URL+"/",nil,map[string]string{"Origin":"https://foreign.def.test"});afterHead:=optionalHash(resurface.StatePath(w));home:=call(t,c,"GET",ts.URL+"/",nil,map[string]string{"Accept-Language":"ko"});afterGet:=optionalHash(resurface.StatePath(w));discover:=call(t,c,"GET",ts.URL+"/special/discover",nil,map[string]string{"Accept-Language":"en"})
+ note(t,"head-and-empty-recommendation",map[string]any{"head_status":head.Code,"head_bytes":len(head.Body),"head_changed_resurface":before!=afterHead,"same_day_get_changed":afterHead!=afterGet,"human_reads_absent":optionalHash(reads.Path(w))=="absent","home_unread_one":strings.Contains(home.Body,`id="stat-unread">1<`),"home_all_read":strings.Contains(home.Body,"전부 읽으셨습니다"),"discover_all_read":strings.Contains(discover.Body,"all read")||strings.Contains(discover.Body,"read everything")||strings.Contains(discover.Body,"read them all"),"discover_excerpt":extractEmpty(discover.Body)})
+ phantom:=form(t,c,ts.URL+"/read/phantom-def",url.Values{"action":{"read"}},nil);auto:=form(t,c,ts.URL+"/api/read/phantom-def",nil,nil);feedback:=form(t,c,ts.URL+"/resurface/feedback",url.Values{"slug":{"phantom-def"},"action":{"up"}},nil);snooze:=form(t,c,ts.URL+"/resurface/feedback",url.Values{"slug":{"phantom-def"},"action":{"snooze"}},nil)
+ rd,e:=reads.Load(w);if e!=nil{t.Fatal(e)};st,e:=resurface.LoadState(w);if e!=nil{t.Fatal(e)};recorded:=rd.IsRead("phantom-def");undo:=form(t,c,ts.URL+"/read/phantom-def",url.Values{"action":{"unread"}},nil);rd,e=reads.Load(w);if e!=nil{t.Fatal(e)}
+ note(t,"unknown-slug",map[string]any{"explicit":phantom.Code,"auto":auto.Code,"feedback":feedback.Code,"snooze":snooze.Code,"phantom_was_read":recorded,"feedback_rows":len(st.Feedback),"snoozed":st.Snoozed["phantom-def"]!="","undo":undo.Code,"undo_removed":!rd.IsRead("phantom-def")})
+ // Stale full-body proposal and blank proposals are observed through the real HTTP form route.
+ sw,ss:=fixture(t,1);sts:=httptest.NewServer(ss.Handler());defer sts.Close();path:=filepath.Join(sw.Root,"concepts/cedar-0.md");old:=raw(t,path);get:=call(t,c,"GET",sts.URL+"/edit/cedar-0",nil,nil);changed:=strings.Replace(string(old),"Defense canary 0","Concurrent independent fact 0",1);write(t,path,changed)
+ proposal:="Defense canary 0, cedarquartz factual paragraph with typo corrected.\n";post:=form(t,c,sts.URL+"/edit/cedar-0",url.Values{"body":{proposal}},nil);list,e:=tasks.Load(sw);if e!=nil||len(list)!=1{t.Fatalf("tasks %d %v",len(list),e)}
+ note(t,"stale-proposal",map[string]any{"form_old":strings.Contains(get.Body,"Defense canary 0"),"post":post.Code,"body_preserved":list[0].Body==proposal,"base_matches_submission":list[0].Base==hash([]byte(changed)),"base_matches_viewed":list[0].Base==hash(old),"page_unchanged_by_post":optionalHash(path)==hash([]byte(changed))})
+ blank:=form(t,c,sts.URL+"/edit/cedar-0",url.Values{"body":{""}},nil);withNote:=form(t,c,sts.URL+"/edit/cedar-0",url.Values{"body":{""},"note":{"Please remove every paragraph"}},nil);list,e=tasks.Load(sw);if e!=nil{t.Fatal(e)};noteOnly:=false;bodyKey:=false
+ for _,x:=range list{if x.Request=="Please remove every paragraph"{noteOnly=true;var stored map[string]any;if e=json.Unmarshal(raw(t,filepath.Join(tasks.Dir(sw),x.ID+".json")),&stored);e!=nil{t.Fatal(e)};_,bodyKey=stored["body"]}}
+ note(t,"blank-proposal",map[string]any{"without_note":blank.Code,"without_note_error":strings.Contains(blank.Body,"edit task needs a request or a proposed body"),"with_note":withNote.Code,"request_saved":noteOnly,"body_key_present":bodyKey,"page_unchanged":optionalHash(path)==hash([]byte(changed))})
+}
+func extractEmpty(s string)string{for _,line:=range strings.Split(s,"\n"){if strings.Contains(line,"🎉"){return strings.TrimSpace(line)}};return "no celebratory line"}
+
+func TestInputBudgets(t *testing.T){
+ w,s:=fixture(t,1);ts:=httptest.NewServer(s.Handler());defer ts.Close();c:=nofollow();small:=form(t,c,ts.URL+"/edit/cedar-0",url.Values{"body":{strings.Repeat("s",1024*1024)}},nil);large:=form(t,c,ts.URL+"/edit/cedar-0",url.Values{"body":{strings.Repeat("L",11*1024*1024)}},nil)
+ var multi bytes.Buffer;mw:=multipart.NewWriter(&multi);if e:=mw.WriteField("body",strings.Repeat("M",11*1024*1024));e!=nil{t.Fatal(e)};mw.Close();mr:=call(t,c,"POST",ts.URL+"/edit/cedar-0",&multi,map[string]string{"Content-Type":mw.FormDataContentType()});list,e:=tasks.Load(w);if e!=nil{t.Fatal(e)};sizes:=[]int{};for _,x:=range list{sizes=append(sizes,len(x.Body))}
+ note(t,"body-budgets",map[string]any{"urlencoded_1MiB":small.Code,"urlencoded_11MiB":large.Code,"large_parse_becomes_empty_error":strings.Contains(large.Body,"edit task needs a request"),"multipart_11MiB":mr.Code,"stored_body_bytes":sizes})
+ t.Setenv("XDG_CONFIG_HOME",t.TempDir());_,as:=fixture(t,1);if _,e=as.EnableAuth();e!=nil{t.Fatal(e)}
+ var record struct{Size int64;Disk bool;TempName string};var recordMu sync.Mutex
+ ah:=as.Handler();wrapped:=http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){ah.ServeHTTP(w,r);if r.MultipartForm!=nil{for _,fs:=range r.MultipartForm.File{for _,fh:=range fs{f,e:=fh.Open();if e!=nil{continue};recordMu.Lock();record.Size=fh.Size;if file,ok:=f.(*os.File);ok{record.Disk=true;record.TempName=file.Name()};recordMu.Unlock();f.Close()}}}})
+ ats:=httptest.NewServer(wrapped);defer ats.Close();var buf bytes.Buffer;builder:=multipart.NewWriter(&buf);file,e:=builder.CreateFormFile("unused-file","def-fixture.bin");if e!=nil{t.Fatal(e)};if _,e=io.CopyN(file,strings.NewReader(strings.Repeat("Z",34*1024*1024)),34*1024*1024);e!=nil{t.Fatal(e)};builder.Close()
+ result:=call(t,c,"POST",ats.URL+"/setup",&buf,map[string]string{"Content-Type":builder.FormDataContentType()});recordMu.Lock();snapshot:=record;recordMu.Unlock();removed:=false
+ for i:=0;i<100;i++{if _,e=os.Stat(snapshot.TempName);os.IsNotExist(e){removed=true;break};time.Sleep(time.Millisecond*10)}
+ note(t,"preauth-spool",map[string]any{"status":result.Code,"parsed_file_bytes":snapshot.Size,"spooled_to_disk":snapshot.Disk,"net_http_removed_temp":removed,"no_setup_code_sent":true})
+}
+
+func TestColdSearchAndScale(t *testing.T){
+ w,s:=fixture(t,1);ts:=httptest.NewServer(s.Handler());defer ts.Close();c:=nofollow();query:="cedarquartz";cold:=call(t,c,"GET",ts.URL+"/api/search?q="+query,nil,nil);exact:=call(t,c,"GET",ts.URL+"/search?q=cedar-0",nil,nil);afterSlug:=call(t,c,"GET",ts.URL+"/api/search?q="+query,nil,nil);title:=call(t,c,"GET",ts.URL+"/search?q="+url.QueryEscape("독립 방어 표제"),nil,nil);warm:=call(t,c,"GET",ts.URL+"/api/search?q="+query,nil,nil)
+ note(t,"cold-search",map[string]any{"cold":cold.Body,"exact_slug_status":exact.Code,"exact_slug_location":exact.Header.Get("Location"),"after_slug":afterSlug.Body,"exact_title_status":title.Code,"exact_title_location":title.Header.Get("Location"),"warm":warm.Body,"db_exists":optionalHash(w.DBPath())!="absent"})
+ // Per-request allocation, not RSS or production latency. Bodies and response are fixed.
+ for _,n:=range []int{40,400}{w,s:=fixture(t,n);h:=s.Handler();target:="/api/preview/cedar-0";runtime.GC();var before,after runtime.MemStats;runtime.ReadMemStats(&before);start:=time.Now();rec:=httptest.NewRecorder();h.ServeHTTP(rec,httptest.NewRequest("GET",target,nil));elapsed:=time.Since(start);runtime.ReadMemStats(&after);note(t,"preview-scale",map[string]any{"pages":n,"request":target,"status":rec.Code,"response_bytes":rec.Body.Len(),"total_alloc_bytes":after.TotalAlloc-before.TotalAlloc,"microseconds":elapsed.Microseconds(),"wiki":w.Root})}
+}
+
+func TestAuditPredicates(t *testing.T){
+ cases:=map[string]string{
+ "malformed-yaml":"---\ntitle: [unclosed\ntype: concept\ncreated: 2020-01-01\nupdated: 2020-01-01\ntags: []\n---\ntext\n",
+ "missing-tags":"---\ntitle: Valid\ntype: concept\ncreated: 2020-01-01\nupdated: 2020-01-01\n---\ntext\n",
+ "empty-tags":"---\ntitle: Valid\ntype: concept\ncreated: 2020-01-01\nupdated: 2020-01-01\ntags: []\n---\ntext\n",
+ "no-frontmatter":"text\n",
+ }
+ for name,content:=range cases{w,_:=fixture(t,0);write(t,filepath.Join(w.Root,"concepts","predicate.md"),content);scan,e:=wiki.Scan(w);if e!=nil{t.Fatal(e)};r:=lint.Run(w,scan,mermaid.NewValidator());note(t,"A3-"+name,map[string]any{"counts":r.Counts,"old_predicate":r.Counts["no-frontmatter"]==0&&r.Counts["frontmatter-fields"]==0,"plus_bad_frontmatter":r.Counts["no-frontmatter"]==0&&r.Counts["frontmatter-fields"]==0&&r.Counts["bad-frontmatter"]==0})}
+ w,_:=fixture(t,1);page(t,w,"cedar-0","```mermaid\nflowchart LR\n A[\"valid\"] --> B[\"valid\"]\n```\n");scan,e:=wiki.Scan(w);if e!=nil{t.Fatal(e)};normal:=lint.Run(w,scan,mermaid.NewValidator())
+ saved:=append([]byte(nil),mermaid.Bundle...);defer func(){mermaid.Bundle=saved}();mermaid.Bundle=[]byte("throw new Error('DEF synthetic init failure')")
+ injected:=lint.Run(w,scan,mermaid.NewValidator());note(t,"P1-internal-only",map[string]any{"normal_counts":normal.Counts,"injected_counts":injected.Counts,"old_predicate":injected.Counts["invalid-mermaid"]==0,"complete_predicate":injected.Counts["invalid-mermaid"]==0&&injected.Counts["mermaid-unchecked"]==0,"reachability":"process-memory injection only; no CLI/browser failure proved"})
+}
+
+func TestLogoutModes(t *testing.T){
+ _,s:=fixture(t,1);var errors bytes.Buffer;ts:=httptest.NewUnstartedServer(s.Handler());ts.Config.ErrorLog=log.New(&errors,"",0);ts.Start();defer ts.Close();c:=nofollow()
+ noCookie:=form(t,c,ts.URL+"/logout",nil,nil);req,e:=http.NewRequest("POST",ts.URL+"/logout",nil);if e!=nil{t.Fatal(e)};req.AddCookie(&http.Cookie{Name:"canopy_session",Value:"arbitrary-old-cookie"});res,err:=c.Do(req);if res!=nil{res.Body.Close()};after:=call(t,c,"GET",ts.URL+"/api/preview/cedar-0",nil,nil)
+ note(t,"logout-noauth",map[string]any{"without_cookie":noCookie.Code,"deletes_cookie":strings.Contains(noCookie.Header.Get("Set-Cookie"),"Max-Age=0"),"cookie_request_error":fmt.Sprint(err),"panic_logged":strings.Contains(errors.String(),"invalid memory address"),"subsequent_request":after.Code,"whole_process_crash":false})
+}
+
+func TestEmptyMessageControls(t *testing.T){
+ c:=nofollow()
+ for _,kind:=range []string{"empty","agent-only","all-human-read"}{
+  n:=1;if kind=="empty"{n=0};w,s:=fixture(t,n)
+  if n>0{rd,e:=reads.Load(w);if e!=nil{t.Fatal(e)};if kind=="agent-only"{rd.MarkAgent("cedar-0",time.Now())}else{rd.Mark("cedar-0","explicit",time.Now())};if e=rd.Save(w);e!=nil{t.Fatal(e)}}
+  ts:=httptest.NewServer(s.Handler())
+  home:=call(t,c,"GET",ts.URL+"/",nil,map[string]string{"Accept-Language":"ko"});discover:=call(t,c,"GET",ts.URL+"/special/discover",nil,map[string]string{"Accept-Language":"ko"})
+  note(t,"empty-message-control",map[string]any{"case":kind,"home_all_read":strings.Contains(home.Body,"전부 읽으셨습니다"),"discover_all_read":strings.Contains(discover.Body,"전부 읽으셨습니다"),"unread_one":strings.Contains(home.Body,`id="stat-unread">1<`),"human_reads_file_present":optionalHash(reads.Path(w))!="absent"})
+  ts.Close()
+ }
+}

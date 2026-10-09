@@ -1,0 +1,10 @@
+=== RUN   TestTwoTabAndBurst
+    probe_test.go:97: OBS concurrent-proposals {"accepted":48,"codes":{"303":48},"files":31,"load_error":"\u003cnil\u003e","lost_bodies":17,"page_unchanged":true,"per_round":2,"rounds":24,"rounds_with_loss":17,"unique_bodies":31}
+    probe_test.go:97: OBS concurrent-proposals {"accepted":72,"codes":{"303":72},"files":35,"load_error":"\u003cnil\u003e","lost_bodies":37,"page_unchanged":true,"per_round":24,"rounds":3,"rounds_with_loss":3,"unique_bodies":35}
+--- PASS: TestTwoTabAndBurst (0.48s)
+=== RUN   TestStateConcurrency
+    probe_test.go:97: OBS feedback-concurrency {"accepted":25,"accepted_but_absent":19,"codes":{"303":25,"500":15},"load_error":"\u003cnil\u003e","persisted":6}
+    probe_test.go:97: OBS read-graph-concurrency {"failed_get":1,"failed_post":0,"final_count":121,"get_requests":360,"load_error":"\u003cnil\u003e","post_requests":120}
+--- PASS: TestStateConcurrency (1.01s)
+PASS
+ok  	github.com/neutrospec/canopy/review_probes/red_web	3.045s

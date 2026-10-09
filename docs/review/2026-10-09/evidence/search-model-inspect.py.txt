@@ -1,0 +1,60 @@
+"""Read only the local ONNX graph metadata, not its external weight files.
+
+No third-party package or inference is used. The tiny protobuf reader covers
+wire types 0/1/2/5 present in these graph metadata files.
+"""
+from pathlib import Path
+import collections
+import hashlib
+
+def fields(data):
+    pos = 0
+    def varint():
+        nonlocal pos
+        value = shift = 0
+        while True:
+            byte = data[pos]
+            pos += 1
+            value |= (byte & 127) << shift
+            if byte < 128:
+                return value
+            shift += 7
+    while pos < len(data):
+        tag = varint()
+        field, wire = tag >> 3, tag & 7
+        if wire == 0:
+            value = varint()
+        elif wire == 2:
+            length = varint()
+            value = data[pos:pos+length]
+            pos += length
+        elif wire in (1, 5):
+            length = 8 if wire == 1 else 4
+            value = data[pos:pos+length]
+            pos += length
+        else:
+            raise ValueError(wire)
+        yield field, value
+
+root = Path('/Users/nobocop/.local/share/canopy/models')
+for directory in ['bge-m3', 'bge-m3-fp32.bak']:
+    path = root / directory / 'model.onnx'
+    raw = path.read_bytes()
+    graph = next(value for field, value in fields(raw) if field == 7)
+    outputs = []
+    ops = collections.Counter()
+    for field, value in fields(graph):
+        if field == 1:
+            op = next((v.decode() for f, v in fields(value) if f == 4), '')
+            ops[op] += 1
+        if field == 12:
+            info = dict(fields(value))
+            tensor = dict(fields(info[2]))[1]
+            shape = dict(fields(tensor))[2]
+            dims = []
+            for _, dim in fields(shape):
+                values = dict(fields(dim))
+                dims.append(values.get(1) or values.get(2, b'?').decode())
+            outputs.append((info[1].decode(), dims))
+    print(directory, 'sha256=', hashlib.sha256(raw).hexdigest(), 'outputs=', outputs,
+          'quantized_nodes=', {k: v for k, v in ops.items() if 'Integer' in k or 'Quant' in k})

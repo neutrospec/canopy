@@ -1,0 +1,35 @@
+// Only loader/configuration modules are exercised. No browser or typesetting.
+const fs = require('node:fs');
+const vm = require('node:vm');
+const bundle = fs.readFileSync('internal/webui/static/vendor/tex-svg.js', 'utf8');
+const marker = 'var __webpack_exports__={};';
+if (bundle.split(marker).length !== 2) throw Error('unexpected bundle format');
+const instrumented = bundle.replace(marker,
+  'globalThis.redRequire=__webpack_require__;globalThis.redModules=__webpack_modules__;return;' + marker);
+const c = {
+  document: {currentScript: {src: 'http://fixture.invalid/static/vendor/tex-svg.js'}},
+  MathJax: {tex: {inlineMath: [['$', '$']]}, svg: {fontCache: 'global'}},
+  console,
+};
+vm.runInNewContext(instrumented, c);
+const loader = c.redRequire(235);
+const candidates = Object.entries(c.redModules).filter(([_, f]) => {
+  const text = f.toString();
+  return text.includes('color') && text.includes('autoload');
+});
+console.log(JSON.stringify({version: c.redRequire(3282).VERSION,
+  configurationModules: candidates.map(([id]) => id)}));
+for (const name of ['color', 'physics']) {
+  console.log(JSON.stringify({extension: name,
+    url: loader.Package.resolvePath('[mathjax]/input/tex/extensions/' + name)}));
+}
+for (const [id] of candidates) {
+  try {
+    const mod = c.redRequire(Number(id));
+    const config = mod.AutoloadConfiguration || mod.RequireConfiguration;
+    console.log(JSON.stringify({module: id, exports: Object.keys(mod),
+      configuration: config && {name: config.name, options: config.options}}));
+  } catch (e) {
+    console.log(JSON.stringify({module: id, error: String(e)}));
+  }
+}

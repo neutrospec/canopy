@@ -1,0 +1,139 @@
+#!/usr/bin/env python3
+"""Independent defense reproduction. Never contacts a model/native download host."""
+import ast
+import hashlib
+import io
+import json
+import os
+from pathlib import Path
+import shlex
+import shutil
+import subprocess
+import sys
+import tarfile
+import tempfile
+
+repo = Path(__file__).resolve().parents[4]
+out = repo / 'docs/review/2026-10-09/evidence'
+scratch = repo / 'review_probes/def_search'
+fixture = Path(tempfile.mkdtemp(prefix='canopy-def-search-', dir='/private/tmp'))
+env = os.environ.copy()
+for key, tail in [('HOME','home'),('XDG_CONFIG_HOME','config'),('XDG_CACHE_HOME','cache'),
+                  ('XDG_DATA_HOME','data'),('XDG_STATE_HOME','state'),('TMPDIR','tmp')]:
+    path = fixture / tail
+    path.mkdir()
+    env[key] = str(path)
+env.update(GOCACHE='/private/tmp/canopy-review/go-cache', GOPROXY='off', GOTELEMETRY='off',
+           GOMODCACHE='/Users/nobocop/go/pkg/mod', GOTOOLCHAIN='local', CGO_ENABLED='0',
+           CANOPY_WIKI='', GOFLAGS='', GOWORK='off')
+records = []
+def record(label, value):
+    entry = dict(label=label, **value)
+    records.append(entry)
+    with (out/'def_search-run.jsonl.txt').open('a') as f:
+        f.write(json.dumps(entry, ensure_ascii=False)+'\n')
+def run(label, argv, extra=None, cwd=repo, expected=None):
+    ee = env.copy()
+    if extra: ee.update(extra)
+    p = subprocess.run([str(a) for a in argv], cwd=cwd, env=ee, text=True,
+                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=180)
+    record(label, dict(argv=[str(a) for a in argv], cwd=str(cwd), exit=p.returncode,
+                      stdout=p.stdout, stderr=p.stderr,
+                      env={k:ee.get(k) for k in ['HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME',
+                           'XDG_DATA_HOME','XDG_STATE_HOME','TMPDIR','GOCACHE','GOMODCACHE',
+                           'GOPROXY','GOTELEMETRY','GOTOOLCHAIN','CGO_ENABLED']}))
+    print(label, 'exit='+str(p.returncode), flush=True)
+    if expected is not None and p.returncode not in expected:
+        raise RuntimeError(label+': '+p.stderr[-3000:])
+    return p
+def sha(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+def snapshot():
+    return dict(head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,env=env,text=True).strip(),
+                index_sha256=sha(repo/'.git/index'),
+                tracked_diff=subprocess.check_output(['git','diff','--name-only','HEAD'],cwd=repo,env=env,text=True),
+                originals={str(p.relative_to(repo)):sha(p) for p in [repo/'docs/review/2026-10-09'/x for x in ['02-search.md','06-ops.md','08-red-search.md']]})
+
+if scratch.exists():
+    shutil.rmtree(fixture)
+    raise SystemExit('Own scratch already exists; refusing to overwrite')
+(out/'def_search-run.jsonl.txt').write_text('')
+before = snapshot()
+record('baseline', dict(snapshot=before, fixture=str(fixture)))
+try:
+    scratch.mkdir(parents=True)
+    shutil.copyfile(out/'def_search-main.go.txt', scratch/'main.go')
+    run('gofmt-probe',['gofmt','-w',scratch/'main.go'],expected={0})
+    shutil.copyfile(scratch/'main.go',out/'def_search-main.go.txt')
+    run('toolchain',['go','version'],expected={0})
+    if '--skip-baseline' not in sys.argv:
+        run('tests',['go','test','-count=1','./internal/...','./cmd/canopy'],expected={0})
+        run('ui-tests',['node','--test','internal/webui/uitest/app.test.cjs'],expected={0})
+    binary=fixture/'canopy-lite'; probe=fixture/'probe'
+    run('build-lite',['go','build','-o',binary,'./cmd/canopy'],expected={0})
+    run('build-probe',['go','build','-o',probe,'./review_probes/def_search'],expected={0})
+    p=run('main-probe',[probe,fixture],expected={0})
+    (out/'def_search-probe-output.txt').write_text(p.stdout)
+    (out/'def_search-probe-stderr.txt').write_text(p.stderr)
+    bridge=fixture/'bridge'; rec=fixture/'reconcile'
+    run('bridge-current-excerpt',[binary,'bridge','--peek','--json','--wiki',bridge],expected={0})
+    run('bridge-negative',[binary,'bridge','--peek','--json','--wiki',bridge,'-n=-1'],expected={2})
+    run('bless-all',[binary,'reconcile','bless','--all','--json','--wiki',rec],expected={0})
+    (rec/'concepts/maple.md').unlink()
+    f=rec/'concepts/cedar.md'; f.write_text(f.read_text().replace('Shared old photosynthesis sentence.','Current cedar mechanical maintenance.'))
+    run('reconcile-deleted-duplicate',[binary,'reconcile','--json','--wiki',rec],expected={0})
+    for mode in ['keyword','hybrid','semantic']:
+        for k in ['-1','0','1']:
+            run('cli-count-'+mode+'-'+k,[binary,'search','Shared','--wiki',bridge,'--mode',mode,'-k='+k,'--json','--no-mark'],expected={0} if mode!='semantic' else {1})
+    body=fixture/'empty-body.md';body.write_text('')
+    run('cli-empty-update',[binary,'update','cedar','--body-file',body,'--wiki',bridge,'--json'],expected={0})
+    record('empty-update-file',dict(content=(bridge/'concepts/cedar.md').read_text()))
+    w=fixture/'cli-ops';(w/'concepts').mkdir(parents=True)
+    missing='---\ntitle: Missing\ntype: concept\ncreated: 2026-10-09\nupdated: 2026-10-09\n---\nBody.'
+    (w/'concepts/missing.md').write_text(missing)
+    run('cli-missing-tags',[binary,'lint','--json','--wiki',w],expected={0})
+    run('cli-duplicate-new',[binary,'new','Twin','--slug','twin','--type','concept','--tags','tool,tool','--wiki',w,'--json'],expected={0})
+    run('cli-duplicate-audit',[binary,'tags','--audit','--json','--wiki',w],expected={0})
+    for tags in ['tags: []\n','tags: tool\n','tags: [tool, tool, tool]\n']:
+        (w/'concepts/missing.md').write_text(missing.replace('---\nBody.',tags+'---\nBody.'))
+        run('cli-tags-'+tags.strip(),[binary,'lint','--json','--wiki',w],expected={0})
+    tiny=fixture/'tilde-body.md'; tiny.write_text('~~~mermaid\nflowchart LR\n A[[twin]] --> B[Done]\n~~~\n')
+    run('cli-tilde-new',[binary,'new','Tilde','--slug','tilde','--type','concept','--body-file',tiny,'--wiki',w,'--json'],expected={0})
+    run('cli-tilde-lint',[binary,'lint','--json','--wiki',w],expected={0})
+    for kind in ['empty','directory']:
+        data=fixture/('models-'+kind); model=data/'canopy/models/bge-m3';model.mkdir(parents=True)
+        for name in ['model.onnx','model.onnx.data','config.json','tokenizer.json','tokenizer_config.json','special_tokens_map.json']:
+            path=model/name
+            if kind=='empty': path.write_bytes(b'')
+            else: path.mkdir()
+        override={'XDG_DATA_HOME':str(data)}
+        run('model-status-'+kind,[binary,'model','status','--json'],override,expected={0})
+        run('model-pull-cached-'+kind,[binary,'model','pull'],override,expected={0})
+    sentinel=fixture/'sentinel-home';sentinel.mkdir()
+    run('task-sentinel',['go','test','-count=1','./internal/tasks','-run','^TestConnectDoneRequiresMutualLinks$'],{'HOME':str(sentinel),'XDG_STATE_HOME':''},expected={0})
+    record('sentinel-files',dict(files=[dict(path=str(p.relative_to(sentinel)),size=p.stat().st_size) for p in sentinel.rglob('*') if p.is_file()]))
+    # Execute path assignments only; no ONNX import, weights, conversion, or install.
+    tree=ast.parse((repo/'scripts/quantize-model.py').read_text()); assignments=[n for n in tree.body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id in ['src_dir','dst_dir'] for t in n.targets)]
+    ns={'os':os};original_home=os.environ.get('HOME');os.environ['HOME']=env['HOME']
+    try: exec(compile(ast.Module(body=assignments,type_ignores=[]),'<path-assignments>','exec'),ns)
+    finally:
+        if original_home is None: del os.environ['HOME']
+        else: os.environ['HOME']=original_home
+    record('quantize-path',dict(src=ns['src_dir'],dst=ns['dst_dir'],expected_data_root=env['XDG_DATA_HOME']))
+    for system,arch in [('linux','amd64'),('darwin','amd64')]:
+        run('deps-dry-'+system+'-'+arch,['make','-Bn','deps','GOOS='+system,'GOARCH='+arch,'VERSION=defense','COMMIT=ede67e3','DATE=2026-10-09'],expected={0})
+    # Only a toy archive and a fake curl are used. No installed native assets.
+    toy=fixture/'toy.tar.gz'
+    with tarfile.open(toy,'w:gz') as tar:
+        blob=b'DEFENSE TOY ARCHIVE NOT A NATIVE LIBRARY\n';ti=tarfile.TarInfo('libtokenizers.a');ti.size=len(blob);tar.addfile(ti,io.BytesIO(blob))
+    fakebin=fixture/'fakebin';fakebin.mkdir();curl=fakebin/'curl';curl.write_text('#!/bin/sh\ncat '+shlex.quote(str(toy))+'\nexit 7\n');curl.chmod(0o755)
+    toydata=fixture/'toy-data';toyenv={'PATH':str(fakebin)+os.pathsep+env['PATH'],'XDG_DATA_HOME':str(toydata)}
+    args=['make','-f',repo/'Makefile','deps','VERSION=defense','COMMIT=ede67e3','DATE=2026-10-09']
+    run('failed-curl-complete-tar',args,toyenv,cwd=fixture,expected={0})
+    record('toy-artifact',dict(content=(toydata/'canopy/lib/libtokenizers.a').read_text(),archive_sha256=sha(toy)))
+    run('next-deps-attempt',args[:3]+['-n']+args[3:],toyenv,cwd=fixture,expected={0})
+finally:
+    if scratch.exists(): shutil.rmtree(scratch)
+    after=snapshot()
+    record('final',dict(snapshot=after,same_snapshot=before==after,scratch_removed=not scratch.exists(),fixture=str(fixture)))
+    shutil.rmtree(fixture)
+    record('cleanup',dict(fixture_removed=not fixture.exists()))

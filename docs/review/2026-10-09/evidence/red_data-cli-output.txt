@@ -1,0 +1,49 @@
+$ ['python3', 'review_probes/red_data/cli.py']
+{"case": "P01-sync-conflict", "exit": 0, "result": "{\n  \"committed\": true,\n  \"message\": \"canopy: reed\",\n  \"pushed\": true\n}", "markers_remote": true, "dirty": "", "unmerged": "", "stash": "stash@{0}: autostash", "remote_advanced": true, "both_texts_retained": true}
+{"case": "P02-sync-nonconflict", "exit": 0, "local_survives": true, "remote_survives": true}
+{"case": "P03-create-interleaving", "first": 0, "second": 0, "second_text_retained": false, "serial_duplicate_exit": 1, "serial_preserves_hash": true}
+{"case": "P04-update-interleaving", "first": 0, "second": 0, "second_body_retained": false, "metadata_retained": false}
+{"case": "P05-update-write-failure", "exit": 1, "old_bytes": 3182, "new_bytes": 384, "old_tail_retained": false, "error": "error: write /private/tmp/canopy-audit-20261009/red_data-ctx206f/cli-1791523099112329000/fixtures/partial-write/concepts/reed.md: file too large"}
+{"case": "P06-pipeline-update", "exit": 1, "text_in_wiki": true, "foreign": [], "added_logs": 0, "copy_exists": null, "retry_exit": null}
+{"case": "P06-repair-update", "text_still_present": true, "added_logs": 1}
+{"case": "P06-pipeline-checkin", "exit": 1, "text_in_wiki": true, "foreign": [], "added_logs": 0, "copy_exists": false, "retry_exit": 1}
+{"case": "P06-repair-checkin", "text_still_present": true, "added_logs": 1}
+{"case": "P07-partial-mv", "exit": 1, "source_exists": false, "new_exists": true, "archive_exists": false, "old_link_retained": true, "added_logs": 0}
+{"case": "P07-partial-rm", "exit": 1, "source_exists": false, "new_exists": false, "archive_exists": false, "old_link_retained": true, "added_logs": 0}
+{"case": "P07-partial-archive", "exit": 1, "source_exists": false, "new_exists": false, "archive_exists": true, "old_link_retained": true, "added_logs": 0}
+{"case": "P08-archive-reuse", "exit": 0, "first_retained": false, "archive_files": 1}
+{"case": "P09-checkout-normal", "exit": 0, "list_count": 1, "copy_preserved": true, "wiki_preserved": true}
+{"case": "P09-checkout-missing", "exit": 0, "list_count": 0, "copy_preserved": false, "wiki_preserved": true}
+{"case": "P09-checkout-truncated", "exit": 0, "list_count": 0, "copy_preserved": false, "wiki_preserved": true}
+{"case": "P09-checkout-unreadable", "exit": 1, "list_count": 0, "copy_preserved": false, "wiki_preserved": true}
+{"case": "P10-discard-failure", "exit": 0, "copy_exists": true, "meta_exists": true}
+{"case": "P11-rename-grammar", "source": "---\ntitle: witness\ncreated: 2026-02-11\nupdated: 2026-02-11\ntype: concept\ntags: [tool]\nsources: []\n---\n\nPATH [[concepts/reed|label]] EXT [[reed.md]] SPACE [[ reed ]] BARE [[rush#p|alias]] CODE `[[rush]]`\n```text\n[[rush]]\n```\n", "self": "---\ntitle: reed\ncreated: 2026-02-11\nupdated: 2026-10-09\ntype: concept\ntags: [tool]\nsources: []\n---\nSELF [[reed#part]]\n", "lint": {"broken-link": 2, "orphan": 1, "stale": 1}}
+{"case": "P11-force-rm-grammar", "source": "---\ntitle: witness\ncreated: 2026-02-11\nupdated: 2026-02-11\ntype: concept\ntags: [tool]\nsources: []\n---\n\nPATH [[concepts/reed]] EXT [[reed.md]] SPACE [[ reed ]] REAL reed CODE `reed`\n", "lint": {"broken-link": 1, "orphan": 1, "stale": 1}}
+{"case": "P12-invalid-update", "exit": 0, "foreign": [], "lint": {"invalid-tag": 1, "invalid-type": 1, "orphan": 1}}
+{"case": "P12-checkin-missing-tags", "exit": 0, "wiki_preserved": false}
+{"case": "P12-checkin-invalid-tag", "exit": 1, "wiki_preserved": true}
+{"case": "P12-body-vs-flag", "body_exit": 0, "flag_exit": 1, "lint": {"broken-link": 1, "island": 1, "orphan": 2, "stale": 1}}
+{"case": "P13-bad-title", "exit": 0, "lint": {"bad-frontmatter": 1, "island": 1, "orphan": 2, "stale": 1}}
+{"case": "P13-escaped-title", "exit": 0, "lint": {"island": 1, "orphan": 2, "stale": 1}}
+{"case": "P13-block-date", "exit": 0, "raw": "---\ntitle: reed\ncreated: 2026-02-11\nupdated: 2026-10-09\n  2026-02-11\ntype: concept\ntags: [tool]\nsources: []\n---\nINITIAL-UNIQUE\n", "lint": {"orphan": 1}}
+{"case": "P14-rename-False", "agent_keys": ["reed"], "task_done_exit": 1, "task_pages": ["reed"]}
+{"case": "P14-rename-True", "agent_keys": ["rush"], "task_done_exit": 1, "task_pages": ["reed"]}
+{"case": "P15-remote-index", "exit": 0, "pages": 2, "dashboard": ["> **Last updated**: 2026-10-09 | **Total pages**: 1"], "category_has_new": false, "dirty": ""}
+{"case": "P15-next-write-control", "category_has_new": true}
+{"case": "P16-duplicate-destination", "exit": 0, "lint_before": {"orphan": 2, "stale": 2}, "entity_preserved": false, "concept_exists": false, "explicit_show": {"content": "---\ntitle: reed\ncreated: 2026-02-11\nupdated: 2026-02-11\ntype: concept\ntags: [tool]\nsources: []\n---\n\nCONCEPT-ONLY\n", "rel_path": "concepts/reed.md"}}
+{"case": "P17-connect-collision", "first": {"created": true, "task": {"version": 1, "id": "connect-elm--pine--willow", "type": "connect", "status": "pending", "door": "cli", "created": "2026-10-09T14:18:21+09:00", "pages": ["elm", "pine--willow"]}}, "second": {"created": false, "task": {"version": 1, "id": "connect-elm--pine--willow", "type": "connect", "status": "pending", "door": "cli", "created": "2026-10-09T14:18:21+09:00", "pages": ["elm", "pine--willow"]}}, "after_other_pair_dismissed": {"created": false, "task": {"version": 1, "id": "connect-elm--pine--willow", "type": "connect", "status": "dismissed", "door": "cli", "created": "2026-10-09T14:18:21+09:00", "closed": "2026-10-09T14:18:21+09:00", "pages": ["elm", "pine--willow"]}}}
+{"case": "P17-sorted-pair-control", "different_ids": true}
+{"case": "P18-gc-mismatch", "exit": 0, "pending_exists": false, "alias_exists": true}
+{"case": "P19-dismissal-after-explicit-gc", "before_created": false, "removed": {"removed": 1}, "after_created": true}
+{"case": "P20-malformed-status", "status": {"checkouts_open": 0, "git": {"is_repo": false, "branch": "", "dirty": 0, "ahead": 0, "behind": 0}, "initialized": true, "pages": 1, "root": "/private/tmp/canopy-audit-20261009/red_data-ctx206f/cli-1791523099112329000/fixtures/malformed-status", "stray_root": null, "tasks_pending": 0}, "tasks_list_exit": 1, "reconcile_exit": 1}
+{"case": "P20-null-agent-show", "exit": 2, "panic": true}
+{"case": "P20-task-stat-error", "hang": true, "timeout_seconds": 1.5}
+{"case": "P20-degraded-resurface", "picks": [{"slug": "reed", "rel_path": "concepts/reed.md", "title": "reed", "strategy": "random-forgotten", "days_stale": 240, "excerpt": "INITIAL-UNIQUE", "explanation": "240일간 열람·갱신이 없던 페이지"}]}
+{"case": "P21-invalid-digest", "digest": {"since": "2026-10-01", "created_pages": [{"slug": "reed", "rel_path": "concepts/reed.md", "title": "reed", "type": "concept", "created": "zz-invalid-date", "updated": "2026-02-11"}], "updated_pages": [], "tag_counts": {"tool": 1}, "decisions": [], "stats": {"created": 1, "updated": 0, "total_pages": 1}, "top_consumed": []}}
+{"case": "P22-cli-offset-retention", "cutoff_approx": "2026-07-11T14:18:23.842309+09:00", "old": "2026-07-11T13:18:23.842309+09:00", "recent": "2026-07-11T15:18:23.842309+09:00", "before": {"count": 2, "events": [{"ts": "2026-07-11T13:18:23+09:00", "slug": "old", "door": "agent", "kind": "show", "meta": "fixture"}, {"ts": "2026-07-11T06:18:23Z", "slug": "recent", "door": "agent", "kind": "show", "meta": "fixture"}]}, "prune": {"removed": 2}, "after": {"count": 0, "events": []}}
+{"case": "P23-future-agent-cli", "json": {"version": 1, "agent": {"reed": {"first": "2026-10-09T14:18:23+09:00", "last": "2026-10-09T14:18:23+09:00", "days": 1}}}}
+{"case": "P23-unknown-number-cli", "json": {"closed": "2026-10-09T14:18:23+09:00", "created": "2026-01-01T00:00:00Z", "extension": 9007199254740996, "id": "future", "status": "dismissed", "type": "future-kind", "version": 1}}
+{"case": "P23-config-adopt-cli", "addon_preserved": false}
+{"case": "P24-checkout-r1", "first_changed": true, "first_status": "?? _meta/", "page_preserved": true, "repeat_status_unchanged": true}
+
+EXIT 0

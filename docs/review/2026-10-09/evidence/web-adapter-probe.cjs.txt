@@ -1,0 +1,21 @@
+const fs = require('node:fs');
+const vm = require('node:vm');
+const path = require('node:path');
+const source = fs.readFileSync(path.resolve(__dirname, '../../internal/webui/uitest/app.test.cjs'), 'utf8');
+const context = {
+  require: (id) => id === 'node:test' ? { test: () => {} } : require(id),
+  __dirname: path.resolve(__dirname, '../../internal/webui/uitest'),
+  AbortController, setImmediate, console,
+};
+vm.runInNewContext(source + `
+  (async () => {
+    const env = harness({ article: true, search: false });
+    await env.tick();
+    console.log(JSON.stringify({
+      model: 'existing fake DOM, HTTP 200 with no JSON body supplied',
+      readRequests: env.requests.length,
+      autoSuccess: env.readform.innerHTML.includes('readmark'),
+      fetchResponseValidatedAsJSON: false,
+    }));
+  })();
+`, context);

@@ -1,0 +1,41 @@
+const fs = require('node:fs');
+const vm = require('node:vm');
+const path = require('node:path');
+const source = fs.readFileSync(path.join(process.argv[2], 'internal/webui/static/app.js'), 'utf8');
+
+// Purpose-built read branch adapter, independent of the repository test harness.
+// A native Response is real; DOM/layout, native form behavior, focus and browser cookies are not.
+async function observe(label, response, reject = false) {
+  let interval, requests = 0, jsonCalls = 0;
+  if (response) {
+    const json = response.json.bind(response);
+    response.json = (...args) => { jsonCalls++; return json(...args); };
+  }
+  const form = {innerHTML: 'EXPLICIT CONTROLS'};
+  const article = {dataset: {slug: 'cedar-0', readSecs: '1'}};
+  const doc = {
+    documentElement: {scrollHeight: 500, classList: {add() {}}}, visibilityState: 'visible',
+    querySelector(selector) { return selector === 'article[data-slug]' ? article : null; },
+    querySelectorAll() { return []; }, addEventListener() {},
+    getElementById(id) { return id === 'readform' ? form : null; },
+  };
+  const context = {document:doc, navigator:{}, location:{},
+    innerHeight:800, scrollY:0, AbortController, addEventListener(){},
+    matchMedia(){return {matches:false,addEventListener(){}};},
+    setInterval(fn){interval=fn;return 1;}, clearInterval(){},
+    setTimeout(){},clearTimeout(){},
+    fetch:async()=>{requests++;if(reject)throw new Error('fixture network failure');return response;},
+  };
+  context.window=context;
+  vm.runInNewContext(source,context,{filename:'shipped-app.js'});
+  await interval();
+  console.log(JSON.stringify({label,status:response?.status,contentType:response?.headers.get('content-type'),requests,jsonCalls,successDisplayed:form.innerHTML!=='EXPLICIT CONTROLS'}));
+}
+(async()=>{
+  await observe('login HTML after redirect follow',new Response('<html>Login</html>',{status:200,headers:{'content-type':'text/html'}}));
+  await observe('JSON read false',new Response('{"read":false}',{status:200,headers:{'content-type':'application/json'}}));
+  await observe('JSON malformed',new Response('{', {status:200,headers:{'content-type':'application/json'}}));
+  await observe('JSON read true positive',new Response('{"read":true}',{status:200,headers:{'content-type':'application/json'}}));
+  await observe('401 negative',new Response('{"error":"login"}',{status:401,headers:{'content-type':'application/json'}}));
+  await observe('network negative',null,true);
+})();

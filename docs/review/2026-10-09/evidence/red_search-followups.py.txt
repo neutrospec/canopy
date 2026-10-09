@@ -1,0 +1,98 @@
+"""Small follow-up probes and static evidence; no existing source is changed."""
+from pathlib import Path
+import ast
+import hashlib
+import io
+import json
+import os
+import shutil
+import subprocess
+import tarfile
+import tempfile
+import time
+
+REPO=Path(__file__).resolve().parents[4]
+E=Path(__file__).resolve().parent
+BASE=Path(tempfile.mkdtemp(prefix='red_search-',dir='/private/tmp/canopy-audit-20261009'))
+SCRATCH=REPO/'review_probes/red_search'
+if SCRATCH.exists():raise SystemExit('Refusing existing own scratch')
+ENV=dict(os.environ)
+for key,sub in [('HOME','home'),('XDG_CONFIG_HOME','config'),('XDG_DATA_HOME','data'),('XDG_CACHE_HOME','cache'),('XDG_STATE_HOME','state'),('TMPDIR','tmp')]:
+ p=BASE/sub;p.mkdir();ENV[key]=str(p)
+ENV.update(GOCACHE='/private/tmp/canopy-review/go-cache',GOMODCACHE='/Users/nobocop/go/pkg/mod',GOPATH=str(BASE/'go'),GOPROXY='off',GOTOOLCHAIN='local',GOTELEMETRY='off',CGO_ENABLED='0',GOFLAGS='',CANOPY_WIKI='',RED_SEARCH_FIXTURES=str(BASE/'fixtures'),GIT_CONFIG_NOSYSTEM='1',GIT_CONFIG_GLOBAL='/dev/null')
+records=[dict(label='environment',base=str(BASE),env={k:ENV[k] for k in ['HOME','XDG_CONFIG_HOME','XDG_DATA_HOME','XDG_CACHE_HOME','XDG_STATE_HOME','TMPDIR','GOCACHE','GOMODCACHE','GOPROXY','GOTELEMETRY']})]
+def save(): (E/'red_search-followups.jsonl.txt').write_text(''.join(json.dumps(r,ensure_ascii=False)+'\n' for r in records))
+def run(label,argv,changes=None):
+ env=dict(ENV);env.update(changes or {});start=time.monotonic()
+ p=subprocess.run([str(a) for a in argv],cwd=REPO,env=env,capture_output=True,text=True,timeout=60)
+ r=dict(label=label,argv=[str(a) for a in argv],exit=p.returncode,stdout=p.stdout,stderr=p.stderr,elapsed_ms=round((time.monotonic()-start)*1000));records.append(r);save();print(json.dumps(dict(label=label,exit=p.returncode)),flush=True);return r
+def ok(r):
+ if r['exit']!=0:raise RuntimeError(r['stderr'])
+
+try:
+ SCRATCH.mkdir(parents=True)
+ (SCRATCH/'helpers.go').write_text((E/'red_search-main.go.txt').read_text().replace('func main() {','func baselineMain() {',1))
+ shutil.copyfile(E/'red_search-extra.go.txt',SCRATCH/'main.go')
+ ok(run('format-extra',['gofmt','-w',SCRATCH/'main.go']))
+ shutil.copyfile(SCRATCH/'main.go',E/'red_search-extra.go.txt')
+ ok(run('build-extra',['go','build','-o',BASE/'extra','./review_probes/red_search']))
+ r=run('extra',[BASE/'extra']);ok(r)
+ (E/'red_search-extra-output.txt').write_text(r['stdout'])
+ ok(run('build-lite',['go','build','-o',BASE/'canopy-lite','./cmd/canopy']))
+ wiki=BASE/'fixtures/cli_reconcile';lite=BASE/'canopy-lite'
+ ok(run('bless-fixture',[lite,'reconcile','bless','--all','--wiki',wiki,'--json']))
+ (wiki/'concepts/removed.md').unlink()
+ p=wiki/'concepts/present.md';p.write_text(p.read_text().replace('Original common instruction.','An independent revised instruction.'))
+ ok(run('reconcile-deleted-candidate',[lite,'reconcile','--wiki',wiki,'--json']))
+ ok(run('mathjax-loader',['node',E/'red_search-mathjax.cjs.txt']))
+ # Compile only AST path assignments, avoiding ONNX imports/conversion.
+ s=ast.parse((REPO/'scripts/quantize-model.py').read_text())
+ assignments=[n for n in s.body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id in ('src_dir','dst_dir') for t in n.targets)]
+ program=ast.fix_missing_locations(ast.Module(body=assignments,type_ignores=[]))
+ prior=os.environ.get('HOME');os.environ['HOME']=ENV['HOME']
+ try:
+  ns={'os':os};exec(compile(program,'quantize-paths-only','exec'),ns)
+ finally:
+  if prior is None:os.environ.pop('HOME',None)
+  else:os.environ['HOME']=prior
+ records.append(dict(label='quantize-paths',source=ns['src_dir'],destination=ns['dst_dir'],go_expected_source=str(Path(ENV['XDG_DATA_HOME'])/'canopy/models/bge-m3')));save()
+ # No network/native asset: fake curl emits a complete toy archive then fails.
+ fakebin=BASE/'fakebin';fakebin.mkdir();archive=BASE/'toy.tar.gz'
+ with tarfile.open(archive,'w:gz') as t:
+  b=b'independent disposable audit artifact';i=tarfile.TarInfo('libtokenizers.a');i.size=len(b);t.addfile(i,io.BytesIO(b))
+ curl=fakebin/'curl';curl.write_text('#!/bin/sh\n/bin/cat "$RED_SEARCH_TOY_ARCHIVE"\nexit 7\n');curl.chmod(0o755)
+ depsenv={'PATH':str(fakebin)+':'+ENV['PATH'],'RED_SEARCH_TOY_ARCHIVE':str(archive),'XDG_DATA_HOME':str(BASE/'toy-data')}
+ r=run('make-failed-curl-toy',['make','deps','VERSION=review','COMMIT=review','DATE=review'],depsenv)
+ lib=BASE/'toy-data/canopy/lib/libtokenizers.a';records.append(dict(label='toy-lib-result',make_exit=r['exit'],exists=lib.exists(),size=lib.stat().st_size if lib.exists() else None));save()
+ ok(run('make-next-attempt',['make','-n','deps','VERSION=review','COMMIT=review','DATE=review'],depsenv))
+ # Verify original evidence identifiers against source, without reading red teams.
+ inv=[]
+ for f in sorted((REPO/'internal').rglob('*_test.go')):
+  for line_no,line in enumerate(f.read_text().splitlines(),1):
+   if line.startswith('func Test'):
+    inv.append((str(f.relative_to(REPO)),line_no,line.split('(')[0].split()[1]))
+ original=(E/'ops-test-inventory.tsv').read_text().splitlines()[1:]
+ own=['\t'.join(map(str,row)) for row in inv]
+ records.append(dict(label='test-inventory',test_files=len(list((REPO/'internal').rglob('*_test.go'))),test_functions=len(inv),original_inventory_matches=sorted(original)==sorted(own)));save()
+ static=[]
+ segments={
+  'internal/indexer/indexer.go':[(22,89)],'internal/store/vectors.go':[(34,53),(94,129),(143,184),(187,240),(262,279)],
+  'internal/embed/chunk.go':[(16,77)],'internal/embed/engine_ort.go':[(58,88)],
+  'internal/search/search.go':[(13,42)],'internal/webui/server.go':[(449,508),(559,574)],
+  'internal/webui/render.go':[(45,65),(93,116)],'internal/wiki/page.go':[(37,59),(87,101),(138,156)],
+  'cmd/canopy/main.go':[(52,64),(379,429),(461,521),(580,603)],
+  'cmd/canopy/reconcile.go':[(187,239)],'internal/resurface/pick.go':[(188,232)],
+  'internal/lint/lint.go':[(83,113)],'internal/lint/audit.go':[(34,78)],
+  'Makefile':[(1,34),(53,69)],'.github/workflows/ci.yml':[(1,46)],'.github/workflows/release.yml':[(15,36)],
+  '.goreleaser.yaml':[(13,37)],'scripts/quantize-model.py':[(1,22)],'packaging/homebrew/canopy.rb':[(24,51),(99,102)],
+ }
+ for name,ranges in segments.items():
+  data=(REPO/name).read_bytes();lines=data.decode().splitlines();static.append('\n'+name+' sha256='+hashlib.sha256(data).hexdigest())
+  for first,last in ranges:
+   static.extend(str(i)+'\t'+lines[i-1] for i in range(first,min(last,len(lines))+1))
+ for p in ['internal/webui/static/vendor/force-graph.min.js','internal/webui/static/vendor/tex-svg.js','internal/mermaid/mermaid.min.js']:
+  b=(REPO/p).read_bytes();static.append(json.dumps(dict(path=p,sha256=hashlib.sha256(b).hexdigest(),case_insensitive_license=b.lower().count(b'license'),case_insensitive_copyright=b.lower().count(b'copyright'))))
+ (E/'red_search-static.txt').write_text('\n'.join(static)+'\n')
+finally:
+ if SCRATCH.exists():shutil.rmtree(SCRATCH)
+ records.append(dict(label='cleanup',scratch_removed=not SCRATCH.exists()));save()

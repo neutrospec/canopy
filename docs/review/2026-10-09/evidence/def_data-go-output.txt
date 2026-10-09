@@ -1,0 +1,106 @@
+$ ['go', 'test', '-count=1', '-v', './review_probes/def_data']
+=== RUN   TestG01HTTPProposals
+    probe_test.go:103: G01 sequential=5
+    probe_test.go:139: G01 requests=64 HTTP303=64 retained_distinct_bodies=27 corrupt=0 page_unchanged=true
+    probe_test.go:145: G01 independent_same_time_equal_ID=true (API only; no clone merge)
+--- PASS: TestG01HTTPProposals (2.29s)
+=== RUN   TestG02HTTPStateAndMutexControls
+    probe_test.go:226: G02 read-one-server statuses=map[303:28] successful_distinct=28 retained=28 successful_missing=0 Load_error=<nil>
+    probe_test.go:226: G02 read-two-servers statuses=map[303:28] successful_distinct=28 retained=14 successful_missing=14 Load_error=<nil>
+    probe_test.go:226: G02 feedback statuses=map[303:17 500:11] successful_distinct=17 retained=2 successful_missing=15 Load_error=<nil>
+--- PASS: TestG02HTTPStateAndMutexControls (0.07s)
+=== RUN   TestG03SnapshotAndCrossDoor
+    probe_test.go:244: G03 human after_successful_saves human=map[beta:0x5f5ff0116200] agent=map[]
+    probe_test.go:244: G03 agent after_successful_saves human=map[] agent=map[beta:0x5f5ff010efc0]
+    probe_test.go:253: G03 cross_file_control human_alpha=true agent_beta=true
+    probe_test.go:260: G03 resurface feedback=0 snooze_beta=2026-10-16
+    probe_test.go:277: G03 ledger expected_both_removed actual_alpha=true beta=false (forced snapshot API order)
+--- PASS: TestG03SnapshotAndCrossDoor (0.00s)
+=== RUN   TestG04AtomicChild
+    probe_test.go:283: child only
+--- SKIP: TestG04AtomicChild (0.00s)
+=== RUN   TestG04AtomicState
+    probe_test.go:307: G04 old_bytes=179 after_bytes=96 unchanged=false next_Load=unexpected end of JSON input child==== RUN   TestG04AtomicChild
+            probe_test.go:291: G04 child Save_error=write /private/tmp/canopy-review/def_data-pjuwdqcl/fixtures/go-3827997916/_meta/webui/reads.json: file too large
+        --- PASS: TestG04AtomicChild (0.00s)
+        PASS
+--- PASS: TestG04AtomicState (0.01s)
+=== RUN   TestG05MigrationShapeAndConcurrency
+    probe_test.go:324: G05 shape=missing result={From:1 To:1 Applied:[]} err=<nil> changed=true second={From:1 To:1 Applied:[]} second_err=<nil>
+    probe_test.go:324: G05 shape=null result={From:0 To:1 Applied:[relocate legacy ~/.canopy into XDG directories]} err=<nil> changed=true second={From:1 To:1 Applied:[]} second_err=<nil>
+    probe_test.go:324: G05 shape={"schema_version":-3} result={From:-3 To:1 Applied:[relocate legacy ~/.canopy into XDG directories]} err=<nil> changed=true second={From:1 To:1 Applied:[]} second_err=<nil>
+    probe_test.go:324: G05 shape={"schema_version":88} result={From:88 To:88 Applied:[]} err=canopy is older (schema 1) than your data (schema 88) — upgrade canopy changed=false second={From:88 To:88 Applied:[]} second_err=canopy is older (schema 1) than your data (schema 88) — upgrade canopy
+    probe_test.go:324: G05 shape={ result={From:0 To:0 Applied:[]} err=parse /private/tmp/canopy-review/def_data-pjuwdqcl/fixtures/go-2492303689/config/state.json: unexpected end of JSON input changed=false second={From:0 To:0 Applied:[]} second_err=parse /private/tmp/canopy-review/def_data-pjuwdqcl/fixtures/go-2492303689/config/state.json: unexpected end of JSON input
+    probe_test.go:348: G05 goroutine_Ensure calls=32 failed=3 sample=rename /private/tmp/canopy-review/def_data-pjuwdqcl/fixtures/go-2277237814/config/state.json.tmp /private/tmp/canopy-review/def_data-pjuwdqcl/fixtures/go-2277237814/config/state.json: no such file or directory
+--- PASS: TestG05MigrationShapeAndConcurrency (0.00s)
+=== RUN   TestG06CompatibilityNoopAndNested
+    probe_test.go:362: G06 human version=1 noop_bytes_same=true changed_has_addon=false
+    probe_test.go:362: G06 human version=8 noop_bytes_same=true changed_has_addon=false
+    probe_test.go:369: G06 agent_after={
+          "version": 1,
+          "agent": {
+            "alpha": {
+              "first": "2026-10-01T00:00:00Z",
+              "last": "2026-10-01T00:00:00Z",
+              "days": 1
+            },
+            "beta": {
+              "first": "2026-10-09T12:00:00Z",
+              "last": "2026-10-09T12:00:00Z",
+              "days": 1
+            }
+          }
+        }
+    probe_test.go:374: G06 resurface_addon_retained=false
+    probe_test.go:378: G06 ledger_addon_retained=false
+--- PASS: TestG06CompatibilityNoopAndNested (0.00s)
+=== RUN   TestG07SnoozeSeedAndRecentTie
+    probe_test.go:401: G07 distinct_top5_sets=50 fixed_seed_equal=true
+    probe_test.go:410: G07 snooze offset=32400 until=2026-10-10 after=0s eligible=false
+    probe_test.go:410: G07 snooze offset=32400 until=2026-10-10 after=9h0m0s eligible=false
+    probe_test.go:410: G07 snooze offset=32400 until=2026-10-10 after=10h0m0s eligible=true
+    probe_test.go:410: G07 snooze offset=32400 until=2026-10-10 after=24h0m0s eligible=true
+    probe_test.go:410: G07 snooze offset=0 until=2026-10-10 after=0s eligible=false
+    probe_test.go:410: G07 snooze offset=0 until=2026-10-10 after=9h0m0s eligible=true
+    probe_test.go:410: G07 snooze offset=0 until=2026-10-10 after=10h0m0s eligible=true
+    probe_test.go:410: G07 snooze offset=0 until=2026-10-10 after=24h0m0s eligible=true
+    probe_test.go:410: G07 snooze offset=-14400 until=2026-10-10 after=0s eligible=true
+    probe_test.go:410: G07 snooze offset=-14400 until=2026-10-10 after=9h0m0s eligible=true
+    probe_test.go:410: G07 snooze offset=-14400 until=2026-10-10 after=10h0m0s eligible=true
+    probe_test.go:410: G07 snooze offset=-14400 until=2026-10-10 after=24h0m0s eligible=true
+--- PASS: TestG07SnoozeSeedAndRecentTie (0.00s)
+=== RUN   TestG08YAMLAndDomain
+    probe_test.go:419: G08 title_requested="C:\\new\\tool" parsed="C:\new\tool" error="" equal=false
+    probe_test.go:419: G08 title_requested="C:\\Users\\note" parsed="" error="yaml: did not find expected hexdecimal number" equal=false
+    probe_test.go:419: G08 title_requested="Line one\nLine two" parsed="Line one Line two" error="" equal=false
+    probe_test.go:419: G08 title_requested="A \"quote\"" parsed="A \"quote\"" error="" equal=true
+    probe_test.go:425: G08 block_before="2026-02-01" after="2026-10-09 2026-02-01" addon_bytes=true body_bytes_same=true
+    probe_test.go:434: G08 flat_scan=1 recursive_bless=2 foreign=0
+--- PASS: TestG08YAMLAndDomain (0.00s)
+=== RUN   TestG09DoneOriginAndVersion
+    probe_test.go:447: G09 unchanged_rejected=true frontmatter_only_done_error=<nil>
+    probe_test.go:461: G09 GET=200 POST=303 base_is_GET=false base_is_POST=true
+    probe_test.go:476: G09 known_type_future_version_actual_links_done=<nil>
+--- PASS: TestG09DoneOriginAndVersion (0.01s)
+=== RUN   TestG10OffsetsAndRenameRemedy
+    probe_test.go:499: G10 query=[{2026-10-09T09:00:00+09:00 older agent show } {2026-10-09T05:00:00Z newer agent show }] top=[{newer 1 0 1} {older 1 0 1}] newer_weekly=[0] removed=2 remain=0
+    probe_test.go:505: G10 LastAccess_correct=true recent=[alpha beta] expected=[beta alpha]
+    probe_test.go:512: G10 unconditional_Rename_destination_days=4->1 (API counterexample to remedy)
+--- PASS: TestG10OffsetsAndRenameRemedy (0.00s)
+=== RUN   TestG11AliasAndFutureDB
+    probe_test.go:527: G11 alias_event_key_same=false checkout_key_same=false alias_open=0 original_copy_survives=true
+    probe_test.go:544: G11 higher_version_same_real_schema Log=<nil> rows=2 (no actual future schema)
+--- PASS: TestG11AliasAndFutureDB (0.00s)
+=== RUN   TestG12CLIHashWriteWindow
+    probe_test.go:583: G12 actual_CLI concurrent=false elapsed=11.2455ms err=exit status 1 direct_writer_preserved=true copy_present=true output=error: page changed since checkout (another machine, web edit, or direct write) — re-checkout alpha and re-apply your edits; `--discard` drops this copy
+    probe_test.go:583: G12 actual_CLI concurrent=true elapsed=2.236651625s err=<nil> direct_writer_preserved=false copy_present=false output={
+          "rel_path": "concepts/alpha.md",
+          "unchanged": false,
+          "old_lines": 13,
+          "new_lines": 133
+        }
+--- PASS: TestG12CLIHashWriteWindow (2.31s)
+PASS
+ok  	github.com/neutrospec/canopy/review_probes/def_data	5.155s
+
+EXIT 0

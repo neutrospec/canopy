@@ -1,0 +1,6 @@
+ok  	github.com/neutrospec/canopy/internal/webui	1.687s
+ok  	github.com/neutrospec/canopy/internal/tasks	0.329s
+ok  	github.com/neutrospec/canopy/internal/reads	0.267s
+ok  	github.com/neutrospec/canopy/internal/mermaid	2.434s
+ok  	github.com/neutrospec/canopy/internal/lint	0.738s
+ok  	github.com/neutrospec/canopy/internal/skills	0.269s

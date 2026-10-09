@@ -1,0 +1,68 @@
+"""Replay the isolated search audit; execute from this source with python3.
+
+Creates only review_probes/search (removed in finally) and the fixed /private/tmp
+fixture directories. Never invokes a model, network downloader, or real wiki.
+"""
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+
+repo = Path(__file__).resolve().parents[4]
+evidence = Path(__file__).resolve().parent
+base = Path('/private/tmp/canopy-audit-20261009/search')
+probe = repo / 'review_probes/search'
+if probe.exists():
+    raise SystemExit('Refusing to overwrite existing review_probes/search')
+base.mkdir(parents=True, exist_ok=True)
+module_cache = subprocess.check_output(['go', 'env', 'GOMODCACHE'], cwd=repo, text=True).strip()
+env = os.environ.copy()
+env.update(GOCACHE='/private/tmp/canopy-review/go-cache', GOPROXY='off', GOMODCACHE=module_cache)
+for key, folder in [('HOME', 'home'), ('XDG_CONFIG_HOME', 'config'),
+                    ('XDG_CACHE_HOME', 'cache'), ('XDG_DATA_HOME', 'data'),
+                    ('XDG_STATE_HOME', 'state')]:
+    path = base / folder
+    path.mkdir(parents=True, exist_ok=True)
+    env[key] = str(path)
+
+def run(label, argv, expected=0, changes=None):
+    active_env = env.copy()
+    active_env.update(changes or {})
+    result = subprocess.run(argv, cwd=repo, env=active_env, capture_output=True, text=True)
+    record = dict(label=label, argv=argv, exit=result.returncode,
+                  stdout=result.stdout, stderr=result.stderr)
+    (base / (label + '.json')).write_text(json.dumps(record, ensure_ascii=False, indent=2) + '\n')
+    print(json.dumps(record, ensure_ascii=False))
+    if result.returncode != expected:
+        raise SystemExit(f'{label}: exit {result.returncode}, expected {expected}')
+
+probe.mkdir(parents=True)
+try:
+    for name in ['main.go', 'bench.go']:
+        shutil.copyfile(evidence / ('search-' + name + '.txt'), probe / name)
+    run('baseline', ['go', 'test', '-count=1', './internal/store', './internal/indexer',
+                     './internal/embed', './internal/search', './internal/resurface',
+                     './internal/wiki', './internal/reconcile', './internal/webui', './cmd/canopy'])
+    run('probe', ['go', 'run', './review_probes/search'])
+    run('bench', ['go', 'run', './review_probes/search', 'bench'])
+    run('seed', ['go', 'run', './review_probes/search', 'seed-bridge'])
+    binary = str(base / 'canopy-lite')
+    run('build-lite', ['go', 'build', '-o', binary, './cmd/canopy'], changes={'CGO_ENABLED': '0'})
+    wiki = ['--wiki', str(base / 'keywords')]
+    for label, args, expected in [
+        ('hybrid-lite', ['search', '산업용 프로토콜', '--mode', 'hybrid', '--no-mark', '--json'], 0),
+        ('semantic-lite', ['search', '산업용 프로토콜', '--mode', 'semantic', '--no-mark', '--json'], 1),
+        ('keyword-negative-k', ['search', '산업용 프로토콜', '--mode', 'keyword', '--top-k', '-1', '--no-mark', '--json'], 0),
+        ('reindex-lite', ['reindex', '--no-embed', '--json'], 0),
+        ('recall-lite', ['recall', 'question', '--no-mark', '--json'], 1),
+        ('model-status-lite', ['model', 'status', '--json'], 0),
+    ]:
+        run(label, [binary, *args, *wiki], expected=expected)
+    run('bridge-stale-cli', [binary, 'bridge', '--wiki', str(base / 'cli-bridge'), '--peek', '--json'])
+finally:
+    shutil.rmtree(probe)
+    try:
+        probe.parent.rmdir()
+    except OSError:
+        pass

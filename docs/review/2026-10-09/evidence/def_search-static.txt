@@ -1,0 +1,1688 @@
+internal/indexer/indexer.go SHA256=952caf966cb995d7b4e3969d38fccda9e1878ccb45bd5d327156c562c95d553c
+20: }
+21: 
+22: // Reindex scans the wiki and refreshes the store. eng may be nil for a
+23: // keyword-only refresh. progress (optional) receives human status lines.
+24: func Reindex(w *config.Wiki, st *store.Store, scan *wiki.ScanResult, eng embed.Engine, progress func(string)) (*Result, error) {
+25: 	say := func(s string) {
+26: 		if progress != nil {
+27: 			progress(s)
+28: 		}
+29: 	}
+30: 	var err error
+31: 	if scan == nil {
+32: 		scan, err = wiki.Scan(w)
+33: 		if err != nil {
+34: 			return nil, err
+35: 		}
+36: 	}
+37: 	if err := st.RebuildPages(scan.Pages); err != nil {
+38: 		return nil, err
+39: 	}
+40: 	res := &Result{Pages: len(scan.Pages)}
+41: 	if eng == nil {
+42: 		return res, nil
+43: 	}
+44: 
+45: 	stored, err := st.ChunkHashes()
+46: 	if err != nil {
+47: 		return nil, err
+48: 	}
+49: 	live := map[string]bool{}
+50: 	for _, p := range scan.Pages {
+51: 		live[p.Slug] = true
+52: 		title := p.Title
+53: 		if title == "" {
+54: 			title = p.Slug
+55: 		}
+56: 		chunks := embed.Split(title, p.Body)
+57: 		if len(chunks) == 0 {
+58: 			continue
+59: 		}
+60: 		var hashes []string
+61: 		for _, c := range chunks {
+62: 			hashes = append(hashes, c.Hash)
+63: 		}
+64: 		if stored[p.Slug] == strings.Join(hashes, ",") {
+65: 			continue // unchanged since last embedding run
+66: 		}
+67: 		texts := make([]string, len(chunks))
+68: 		seqs := make([]int, len(chunks))
+69: 		for i, c := range chunks {
+70: 			texts[i] = c.Text
+71: 			seqs[i] = c.Seq
+72: 		}
+73: 		say(fmt.Sprintf("embedding %s (%d chunks)", p.RelPath, len(chunks)))
+74: 		vecs, err := eng.Embed(texts)
+75: 		if err != nil {
+76: 			return nil, fmt.Errorf("embed %s: %w", p.RelPath, err)
+77: 		}
+78: 		if err := st.ReplaceChunks(p.Slug, seqs, hashes, texts, vecs); err != nil {
+79: 			return nil, err
+80: 		}
+81: 		res.Embedded++
+82: 	}
+83: 	if res.Pruned, err = st.PruneChunks(live); err != nil {
+84: 		return nil, err
+85: 	}
+86: 	if res.TotalChunks, err = st.ChunkCount(); err != nil {
+87: 		return nil, err
+88: 	}
+89: 	return res, nil
+90: }
+
+internal/embed/chunk.go SHA256=8dd2c9b8c3c7722aebfc7ef0d3f961cc4af7e16d59624ff7b274f099d856232b
+18: const (
+19: 	targetRunes = 1200
+20: 	maxRunes    = 1600
+21: )
+22: 
+23: // Split cuts a page into chunks along paragraph boundaries. The page
+24: // title is prepended to every chunk so retrieval keeps page context.
+25: func Split(title, body string) []Chunk {
+26: 	paras := strings.Split(body, "\n\n")
+27: 	var chunks []Chunk
+28: 	var cur strings.Builder
+29: 	curLen := 0
+30: 
+31: 	flush := func() {
+32: 		text := strings.TrimSpace(cur.String())
+33: 		cur.Reset()
+34: 		curLen = 0
+35: 		if text == "" {
+36: 			return
+37: 		}
+38: 		if title != "" {
+39: 			text = title + "\n\n" + text
+40: 		}
+41: 		sum := sha256.Sum256([]byte(text))
+42: 		chunks = append(chunks, Chunk{
+43: 			Seq:  len(chunks),
+44: 			Text: text,
+45: 			Hash: hex.EncodeToString(sum[:8]),
+46: 		})
+47: 	}
+48: 
+49: 	for _, para := range paras {
+50: 		p := strings.TrimSpace(para)
+51: 		if p == "" {
+52: 			continue
+53: 		}
+54: 		n := len([]rune(p))
+55: 		// Oversized single paragraph: hard-split by runes.
+56: 		if n > maxRunes {
+57: 			flush()
+58: 			runes := []rune(p)
+59: 			for start := 0; start < len(runes); start += targetRunes {
+60: 				end := min(start+targetRunes, len(runes))
+61: 				cur.WriteString(string(runes[start:end]))
+62: 				curLen = end - start
+63: 				flush()
+64: 			}
+65: 			continue
+66: 		}
+67: 		if curLen > 0 && curLen+n > targetRunes {
+68: 			flush()
+69: 		}
+70: 		if curLen > 0 {
+71: 			cur.WriteString("\n\n")
+72: 		}
+73: 		cur.WriteString(p)
+74: 		curLen += n
+75: 	}
+76: 	flush()
+77: 	return chunks
+78: }
+
+internal/embed/engine.go SHA256=7d0a235ed6650489b77a36d5ee8d266ab2e04409daf77303b26acef66530820e
+22: // Engine turns texts into unit-normalized vectors.
+23: type Engine interface {
+24: 	Embed(texts []string) ([][]float32, error)
+25: 	Close() error
+26: }
+27: 
+28: // SetModelDir overrides the default model directory name.
+29: // Call before New() to select a different model (e.g. "bge-m3-int8").
+30: // An empty name is ignored.
+31: func SetModelDir(name string) {
+32: 	if name != "" {
+33: 		modelDirName = name
+34: 	}
+35: }
+36: 
+37: // DefaultModelPath returns $XDG_DATA_HOME/canopy/models/<modelDirName>.
+38: func DefaultModelPath() string {
+39: 	return filepath.Join(config.DataHome(), "models", modelDirName)
+40: }
+41: 
+42: // ModelAvailable reports whether the model files are downloaded.
+43: func ModelAvailable() bool {
+44: 	p := DefaultModelPath()
+45: 	if p == "" {
+46: 		return false
+47: 	}
+48: 	_, err := os.Stat(filepath.Join(p, "model.onnx"))
+49: 	return err == nil
+50: }
+
+internal/embed/engine_ort.go SHA256=d6261703ecc7f5d6aa02f9c3a851d76bf62309318f338f8972f03b74ae82ce26
+58: func New() (Engine, error) {
+59: 	if !ModelAvailable() {
+60: 		return nil, fmt.Errorf("embedding model not found at %s — run `canopy model pull`", DefaultModelPath())
+61: 	}
+62: 	dir := findOnnxRuntime()
+63: 	if dir == "" {
+64: 		return nil, fmt.Errorf("libonnxruntime not found (try `brew install onnxruntime`)")
+65: 	}
+66: 	ctx := context.Background()
+67: 	session, err := hugot.NewORTSession(ctx, options.WithOnnxLibraryPath(dir))
+68: 	if err != nil {
+69: 		return nil, err
+70: 	}
+71: 	pipe, err := hugot.NewPipeline(session, hugot.FeatureExtractionConfig{
+72: 		ModelPath: DefaultModelPath(),
+73: 		Name:      "canopy-embed",
+74: 		Options:   []hugot.FeatureExtractionOption{pipelines.WithNormalization()},
+75: 	})
+76: 	if err != nil {
+77: 		session.Destroy()
+78: 		return nil, err
+79: 	}
+80: 	return &ortEngine{session: session, pipe: pipe}, nil
+81: }
+82: 
+83: func (e *ortEngine) Embed(texts []string) ([][]float32, error) {
+84: 	out, err := e.pipe.RunPipeline(context.Background(), texts)
+85: 	if err != nil {
+86: 		return nil, err
+87: 	}
+88: 	return out.Embeddings, nil
+89: }
+90: 
+91: func (e *ortEngine) Close() error { return e.session.Destroy() }
+
+internal/store/vectors.go SHA256=625305ccee17b08e2442e83d8b497f409a809398cc5c12027b689d48c525f9f1
+33: 
+34: // ReplaceChunks swaps a page's embedded chunks atomically.
+35: func (s *Store) ReplaceChunks(slug string, seqs []int, hashes, texts []string, vectors [][]float32) error {
+36: 	tx, err := s.db.Begin()
+37: 	if err != nil {
+38: 		return err
+39: 	}
+40: 	defer tx.Rollback()
+41: 	if _, err := tx.Exec(`DELETE FROM chunks WHERE slug=?`, slug); err != nil {
+42: 		return err
+43: 	}
+44: 	ins, err := tx.Prepare(`INSERT INTO chunks(slug, seq, hash, text, vector) VALUES(?,?,?,?,?)`)
+45: 	if err != nil {
+46: 		return err
+47: 	}
+48: 	for i := range seqs {
+49: 		if _, err := ins.Exec(slug, seqs[i], hashes[i], texts[i], encodeVec(vectors[i])); err != nil {
+50: 			return err
+51: 		}
+52: 	}
+53: 	return tx.Commit()
+54: }
+55: 
+94: func (s *Store) SearchSemantic(query []float32, k int) ([]Hit, error) {
+95: 	rows, err := s.db.Query(`
+96: 		SELECT c.slug, p.rel_path, p.title, c.vector, c.text
+97: 		FROM chunks c JOIN pages p ON p.slug = c.slug`)
+98: 	if err != nil {
+99: 		return nil, err
+100: 	}
+101: 	defer rows.Close()
+102: 	best := map[string]*Hit{}
+103: 	for rows.Next() {
+104: 		var slug, relPath, title, text string
+105: 		var blob []byte
+106: 		if err := rows.Scan(&slug, &relPath, &title, &blob, &text); err != nil {
+107: 			return nil, err
+108: 		}
+109: 		vec, err := decodeVec(blob)
+110: 		if err != nil {
+111: 			return nil, fmt.Errorf("chunk %s: %w", slug, err)
+112: 		}
+113: 		score := dot(query, vec)
+114: 		if h, ok := best[slug]; !ok || score > h.Score {
+115: 			best[slug] = &Hit{Slug: slug, RelPath: relPath, Title: title, Score: score, Snippet: snippetOf(text)}
+116: 		}
+117: 	}
+118: 	if err := rows.Err(); err != nil {
+119: 		return nil, err
+120: 	}
+121: 	hits := make([]Hit, 0, len(best))
+122: 	for _, h := range best {
+123: 		hits = append(hits, *h)
+124: 	}
+125: 	sort.Slice(hits, func(i, j int) bool { return hits[i].Score > hits[j].Score })
+126: 	if len(hits) > k {
+127: 		hits = hits[:k]
+128: 	}
+129: 	return hits, nil
+130: }
+145: // (perPageCap <= 0 disables the cap).
+146: func (s *Store) SearchChunks(query []float32, k, perPageCap int) ([]ChunkHit, error) {
+147: 	rows, err := s.db.Query(`
+148: 		SELECT c.slug, p.rel_path, p.title, c.seq, c.vector, c.text
+149: 		FROM chunks c JOIN pages p ON p.slug = c.slug`)
+150: 	if err != nil {
+151: 		return nil, err
+152: 	}
+153: 	defer rows.Close()
+154: 	var all []ChunkHit
+155: 	for rows.Next() {
+156: 		var h ChunkHit
+157: 		var blob []byte
+158: 		if err := rows.Scan(&h.Slug, &h.RelPath, &h.Title, &h.Seq, &blob, &h.Text); err != nil {
+159: 			return nil, err
+160: 		}
+161: 		vec, err := decodeVec(blob)
+162: 		if err != nil {
+163: 			return nil, err
+164: 		}
+165: 		h.Score = dot(query, vec)
+166: 		all = append(all, h)
+167: 	}
+168: 	if err := rows.Err(); err != nil {
+169: 		return nil, err
+170: 	}
+171: 	sort.Slice(all, func(i, j int) bool { return all[i].Score > all[j].Score })
+172: 	perPage := map[string]int{}
+173: 	out := []ChunkHit{}
+174: 	for _, h := range all {
+175: 		if perPageCap > 0 && perPage[h.Slug] >= perPageCap {
+176: 			continue
+177: 		}
+178: 		perPage[h.Slug]++
+179: 		out = append(out, h)
+180: 		if len(out) == k {
+181: 			break
+182: 		}
+183: 	}
+184: 	return out, nil
+185: }
+188: // its chunk vectors. Used for page-to-page similarity (bridge picks).
+189: func (s *Store) PageVectors() (map[string][]float32, error) {
+190: 	rows, err := s.db.Query(`SELECT slug, vector FROM chunks ORDER BY slug, seq`)
+191: 	if err != nil {
+192: 		return nil, err
+193: 	}
+194: 	defer rows.Close()
+195: 	sums := map[string][]float64{}
+196: 	counts := map[string]int{}
+197: 	for rows.Next() {
+198: 		var slug string
+199: 		var blob []byte
+200: 		if err := rows.Scan(&slug, &blob); err != nil {
+201: 			return nil, err
+202: 		}
+203: 		vec, err := decodeVec(blob)
+204: 		if err != nil {
+205: 			return nil, err
+206: 		}
+207: 		sum := sums[slug]
+208: 		if sum == nil {
+209: 			sum = make([]float64, len(vec))
+210: 			sums[slug] = sum
+211: 		}
+212: 		for i, f := range vec {
+213: 			sum[i] += float64(f)
+214: 		}
+215: 		counts[slug]++
+216: 	}
+217: 	if err := rows.Err(); err != nil {
+218: 		return nil, err
+219: 	}
+220: 	out := make(map[string][]float32, len(sums))
+221: 	for slug, sum := range sums {
+222: 		var norm float64
+223: 		for _, f := range sum {
+224: 			norm += f * f
+225: 		}
+226: 		norm = math.Sqrt(norm)
+227: 		if norm == 0 {
+228: 			continue
+229: 		}
+230: 		v := make([]float32, len(sum))
+231: 		for i, f := range sum {
+232: 			v[i] = float32(f / norm)
+233: 		}
+234: 		out[slug] = v
+235: 	}
+236: 	return out, nil
+237: }
+238: 
+239: // Cosine of two unit vectors (exported for bridge scoring).
+240: func Cosine(a, b []float32) float64 { return dot(a, b) }
+241: 
+261: 
+262: func decodeVec(b []byte) ([]float32, error) {
+263: 	if len(b)%4 != 0 {
+264: 		return nil, fmt.Errorf("bad vector blob length %d", len(b))
+265: 	}
+266: 	v := make([]float32, len(b)/4)
+267: 	for i := range v {
+268: 		v[i] = math.Float32frombits(binary.LittleEndian.Uint32(b[i*4:]))
+269: 	}
+270: 	return v, nil
+271: }
+272: 
+273: func dot(a, b []float32) float64 {
+274: 	n := min(len(a), len(b))
+275: 	var sum float64
+276: 	for i := 0; i < n; i++ {
+277: 		sum += float64(a[i]) * float64(b[i])
+278: 	}
+279: 	return sum
+280: }
+
+internal/store/store.go SHA256=21fdc6d71537ce9e335b6d7bff6db803c6be33389ada92c8b408b23857335f15
+26: // migrating a throwaway would be wasted work (see docs/versioning.md and
+27: // internal/migrate). It is exported so `canopy version` can report it.
+28: const SchemaVersion = "2"
+29: 
+30: const schema = `
+31: CREATE TABLE IF NOT EXISTS pages (
+32: 	slug     TEXT PRIMARY KEY,
+33: 	rel_path TEXT NOT NULL,
+34: 	title    TEXT,
+35: 	type     TEXT,
+36: 	created  TEXT,
+37: 	updated  TEXT,
+38: 	tags     TEXT
+39: );
+40: CREATE VIRTUAL TABLE IF NOT EXISTS fts USING fts5(
+41: 	slug, title, body, tokenize='unicode61 remove_diacritics 2'
+42: );
+43: CREATE TABLE IF NOT EXISTS chunks (
+44: 	slug     TEXT NOT NULL,
+45: 	seq      INTEGER NOT NULL,
+46: 	hash     TEXT NOT NULL,
+47: 	text     TEXT NOT NULL,
+48: 	vector   BLOB NOT NULL,
+49: 	PRIMARY KEY (slug, seq)
+50: );
+51: CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
+130: 
+131: // SearchKeyword runs BM25-ranked FTS5 search. Query terms are converted
+132: // to prefix matches so Korean particles (조사) and English suffixes still
+133: // match: "프로토콜" finds "프로토콜은".
+134: func (s *Store) SearchKeyword(query string, k int) ([]Hit, error) {
+135: 	match := buildMatch(query)
+136: 	if match == "" {
+137: 		return nil, nil
+138: 	}
+139: 	rows, err := s.db.Query(`
+140: 		SELECT f.slug, p.rel_path, p.title,
+141: 		       bm25(fts, 10.0, 5.0, 1.0) AS rank,
+142: 		       snippet(fts, 2, '»', '«', '…', 12)
+143: 		FROM fts f JOIN pages p ON p.slug = f.slug
+144: 		WHERE fts MATCH ?
+145: 		ORDER BY rank LIMIT ?`, match, k)
+146: 	if err != nil {
+147: 		return nil, fmt.Errorf("fts query %q: %w", match, err)
+148: 	}
+149: 	defer rows.Close()
+150: 	var hits []Hit
+151: 	for rows.Next() {
+152: 		var h Hit
+153: 		var rank float64
+154: 		if err := rows.Scan(&h.Slug, &h.RelPath, &h.Title, &rank, &h.Snippet); err != nil {
+155: 			return nil, err
+156: 		}
+157: 		// bm25() returns negative-is-better; flip sign so higher is better.
+158: 		h.Score = -rank
+159: 		hits = append(hits, h)
+160: 	}
+161: 	return hits, rows.Err()
+162: }
+163: 
+164: // buildMatch converts free text into an FTS5 MATCH expression:
+165: // each term quoted (protects operators) with a prefix star.
+166: func buildMatch(query string) string {
+167: 	var terms []string
+168: 	for _, t := range strings.Fields(query) {
+169: 		t = strings.ReplaceAll(t, `"`, "")
+170: 		if t == "" {
+171: 			continue
+172: 		}
+173: 		terms = append(terms, `"`+t+`"*`)
+174: 	}
+175: 	return strings.Join(terms, " ")
+176: }
+177: 
+
+internal/search/search.go SHA256=0134ae914cdb9d336ebd4b14a86f66faf51207d12a7ba092023599a4d946736c
+14: // prefer the keyword list (it highlights matched terms).
+15: func Fuse(k int, lists ...[]store.Hit) []store.Hit {
+16: 	type acc struct {
+17: 		hit   store.Hit
+18: 		score float64
+19: 	}
+20: 	merged := map[string]*acc{}
+21: 	for _, list := range lists {
+22: 		for rank, h := range list {
+23: 			a, ok := merged[h.Slug]
+24: 			if !ok {
+25: 				a = &acc{hit: h}
+26: 				merged[h.Slug] = a
+27: 			} else if a.hit.Snippet == "" {
+28: 				a.hit.Snippet = h.Snippet
+29: 			}
+30: 			a.score += 1.0 / (rrfK + float64(rank+1))
+31: 		}
+32: 	}
+33: 	out := make([]store.Hit, 0, len(merged))
+34: 	for _, a := range merged {
+35: 		a.hit.Score = a.score
+36: 		out = append(out, a.hit)
+37: 	}
+38: 	sort.Slice(out, func(i, j int) bool { return out[i].Score > out[j].Score })
+39: 	if len(out) > k {
+40: 		out = out[:k]
+41: 	}
+42: 	return out
+
+internal/webui/server.go SHA256=8961fc327de6403db55334d0682df8734510e39d41917dc7f792a2d08828ffc7
+452: func (s *Server) runSearch(query string, k int, refresh bool) ([]result, string, bool, error) {
+453: 	s.mu.Lock()
+454: 	defer s.mu.Unlock()
+455: 	scan, err := wiki.Scan(s.w)
+456: 	if err != nil {
+457: 		return nil, "", false, err
+458: 	}
+459: 	st, err := store.Open(s.w.DBPath())
+460: 	if err != nil {
+461: 		return nil, "", false, err
+462: 	}
+463: 	defer st.Close()
+464: 	if refresh {
+465: 		if _, err := indexer.Reindex(s.w, st, scan, s.eng, nil); err != nil {
+466: 			return nil, "", false, err
+467: 		}
+468: 	}
+469: 	kw, err := st.SearchKeyword(query, k)
+470: 	if err != nil {
+471: 		return nil, "", false, err
+472: 	}
+473: 	mode := "keyword"
+474: 	hits := kw
+475: 	// Best matching chunk per page: shows WHICH paragraph matched,
+476: 	// not just that the page did.
+477: 	chunkText := map[string]string{}
+478: 	if s.eng != nil {
+479: 		qv, err := s.eng.Embed([]string{query})
+480: 		if err != nil {
+481: 			return nil, "", false, err
+482: 		}
+483: 		sem, err := st.SearchSemantic(qv[0], k)
+484: 		if err != nil {
+485: 			return nil, "", false, err
+486: 		}
+487: 		if chunks, err := st.SearchChunks(qv[0], k*2, 1); err == nil {
+488: 			for _, c := range chunks {
+489: 				if _, seen := chunkText[c.Slug]; !seen {
+490: 					chunkText[c.Slug] = c.Text
+491: 				}
+492: 			}
+493: 		}
+494: 		hits = search.Fuse(k, kw, sem)
+495: 		mode = "hybrid"
+496: 	}
+497: 	res := make([]result, 0, len(hits))
+498: 	for _, h := range hits {
+499: 		snippet := strings.Join(strings.Fields(h.Snippet), " ")
+500: 		if t, ok := chunkText[h.Slug]; ok {
+501: 			snippet = excerptText(t, 200)
+502: 		}
+503: 		if p, ok := scan.BySlug[wiki.NormalizeLink(h.Slug)]; ok && snippet == "" {
+504: 			snippet = FirstParagraph(p.Body, 160)
+505: 		}
+506: 		res = append(res, result{h.Slug, h.Title, h.Score, snippet})
+559: func (s *Server) handleAPISearch(w http.ResponseWriter, r *http.Request) {
+560: 	query := strings.TrimSpace(r.URL.Query().Get("q"))
+561: 	if query == "" {
+562: 		s.emit(w, map[string]any{"results": []result{}})
+563: 		return
+564: 	}
+565: 	k := 8
+566: 	if n, err := strconv.Atoi(r.URL.Query().Get("k")); err == nil && n > 0 && n <= 50 {
+567: 		k = n
+568: 	}
+569: 	res, mode, _, err := s.runSearch(query, k, false)
+570: 	if err != nil {
+571: 		s.fail(w, err)
+572: 		return
+573: 	}
+574: 	s.emit(w, map[string]any{"query": query, "mode": mode, "results": res})
+575: }
+576: 
+
+internal/webui/render.go SHA256=2e2191089e4370b7e916bb261202a8ca25b24e2ad9e4369636e2c9fd31fff2a8
+46: // wiki.ExtractLinks, but capturing all three parts for display.
+47: var linkRe = regexp.MustCompile(`\[\[([^\]\[|#]+)(#[^\]\[|]*)?(\|[^\]\[]*)?\]\]`)
+48: 
+49: // Code regions where wikilinks must be left verbatim (mirrors the
+50: // exclusions in wiki.ExtractLinks).
+51: var (
+52: 	fencedRe = regexp.MustCompile("(?ms)^\\s*```.*?^\\s*```\\s*$")
+53: 	inlineRe = regexp.MustCompile("`[^`\n]*`")
+54: )
+55: 
+56: // RenderPage converts a page body to HTML. exists reports whether a
+57: // normalized slug resolves to a page, so missing targets render as
+58: // red links (Wikipedia pattern).
+59: func RenderPage(body string, exists func(slug string) bool) (template.HTML, error) {
+60: 	src := replaceWikilinks(body, exists)
+61: 	var buf bytes.Buffer
+62: 	if err := md.Convert([]byte(src), &buf); err != nil {
+63: 		return "", err
+64: 	}
+65: 	return template.HTML(buf.String()), nil
+66: }
+67: 
+68: // replaceWikilinks rewrites [[target#anchor|alias]] to inline anchor
+69: // tags, skipping fenced and inline code regions.
+70: func replaceWikilinks(src string, exists func(string) bool) string {
+71: 	return outsideCode(src, func(seg string) string {
+72: 		return linkRe.ReplaceAllStringFunc(seg, func(m string) string {
+73: 			g := linkRe.FindStringSubmatch(m)
+74: 			target, anchor, alias := strings.TrimSpace(g[1]), g[2], strings.TrimPrefix(g[3], "|")
+75: 			slug := wiki.NormalizeLink(target)
+76: 			display := target
+77: 			if anchor != "" {
+78: 				display += anchor
+79: 			}
+80: 			if alias != "" {
+81: 				display = alias
+82: 			}
+83: 			class := "wikilink"
+84: 			if !exists(slug) {
+85: 				class = "wikilink missing"
+86: 			}
+87: 			return fmt.Sprintf(`<a class=%q href="/page/%s%s" data-slug=%q>%s</a>`,
+88: 				class, html.EscapeString(slug), html.EscapeString(anchor), html.EscapeString(slug), html.EscapeString(display))
+89: 		})
+90: 	})
+91: }
+92: 
+93: // outsideCode applies f to the parts of src not inside fenced blocks
+94: // or inline code spans.
+95: func outsideCode(src string, f func(string) string) string {
+96: 	var out strings.Builder
+97: 	last := 0
+98: 	for _, loc := range fencedRe.FindAllStringIndex(src, -1) {
+99: 		out.WriteString(applyOutsideInline(src[last:loc[0]], f))
+100: 		out.WriteString(src[loc[0]:loc[1]])
+101: 		last = loc[1]
+102: 	}
+103: 	out.WriteString(applyOutsideInline(src[last:], f))
+104: 	return out.String()
+105: }
+106: 
+107: func applyOutsideInline(seg string, f func(string) string) string {
+108: 	var out strings.Builder
+109: 	last := 0
+110: 	for _, loc := range inlineRe.FindAllStringIndex(seg, -1) {
+111: 		out.WriteString(f(seg[last:loc[0]]))
+112: 		out.WriteString(seg[loc[0]:loc[1]])
+113: 		last = loc[1]
+114: 	}
+
+internal/wiki/page.go SHA256=e6c6fa595491fc9c536fef3fb80117de222a6ba3f3a0b8c5a1f31123b1e691da
+37: var (
+38: 	wikilinkRe   = regexp.MustCompile(`\[\[([^\]\[|#]+)(?:#[^\]\[|]*)?(?:\|[^\]\[]*)?\]\]`)
+39: 	fencedCodeRe = regexp.MustCompile("(?ms)^\\s*```.*?^\\s*```\\s*$")
+40: 	inlineCodeRe = regexp.MustCompile("`[^`\n]*`")
+41: )
+42: 
+43: // ExtractLinks returns normalized wikilink targets found in text.
+44: // Fenced code blocks and inline code are ignored so bash conditionals
+45: // like [[ "$x" == y ]] inside examples don't register as links.
+46: func ExtractLinks(text string) []string {
+47: 	text = fencedCodeRe.ReplaceAllString(text, "")
+48: 	text = inlineCodeRe.ReplaceAllString(text, "")
+49: 	seen := map[string]bool{}
+50: 	var out []string
+51: 	for _, m := range wikilinkRe.FindAllStringSubmatch(text, -1) {
+52: 		t := NormalizeLink(m[1])
+53: 		if t == "" || seen[t] {
+54: 			continue
+55: 		}
+56: 		seen[t] = true
+57: 		out = append(out, t)
+58: 	}
+59: 	return out
+60: }
+61: 
+62: // NormalizeLink lowercases and trims a wikilink target so it can be
+63: // compared against page slugs (Obsidian resolves links case-insensitively).
+64: func NormalizeLink(s string) string {
+65: 	s = strings.TrimSpace(s)
+66: 	// Links may carry a path (e.g. concepts/foo); resolve by basename like Obsidian.
+67: 	if i := strings.LastIndex(s, "/"); i >= 0 {
+68: 		s = s[i+1:]
+69: 	}
+70: 	s = strings.TrimSuffix(s, ".md")
+71: 	return strings.ToLower(s)
+72: }
+73: 
+74: // Parse builds a Page from raw file bytes.
+75: func Parse(relPath string, raw []byte) *Page {
+76: 	p := &Page{
+77: 		RelPath: filepath.ToSlash(relPath),
+78: 		Slug:    strings.TrimSuffix(filepath.Base(relPath), ".md"),
+79: 	}
+80: 	if i := strings.Index(p.RelPath, "/"); i >= 0 {
+81: 		p.Dir = p.RelPath[:i]
+82: 	}
+83: 	content := string(raw)
+84: 	p.Lines = strings.Count(content, "\n") + 1
+85: 	p.Body = content
+86: 
+87: 	fm, body, ok := splitFrontmatter(content)
+88: 	if ok {
+89: 		p.HasFrontmatter = true
+90: 		p.Body = body
+91: 		var m map[string]any
+92: 		if err := yaml.Unmarshal([]byte(fm), &m); err != nil {
+93: 			p.FMErr = err.Error()
+94: 		} else {
+95: 			p.Title = coerceString(m["title"])
+96: 			p.Type = coerceString(m["type"])
+97: 			p.Created = coerceString(m["created"])
+98: 			p.Updated = coerceString(m["updated"])
+99: 			p.Tags = coerceStringList(m["tags"])
+100: 			p.Sources = coerceStringList(m["sources"])
+101: 		}
+138: func coerceStringList(v any) []string {
+139: 	switch t := v.(type) {
+140: 	case []any:
+141: 		out := make([]string, 0, len(t))
+142: 		for _, e := range t {
+143: 			s := coerceString(e)
+144: 			if s != "" {
+145: 				out = append(out, s)
+146: 			}
+147: 		}
+148: 		return out
+149: 	case string:
+150: 		if t == "" {
+151: 			return nil
+152: 		}
+153: 		return []string{t}
+154: 	default:
+155: 		return nil
+156: 	}
+157: }
+
+internal/lint/lint.go SHA256=5fa312d5b673a10bbb367ac4372ad2d74a4b3a16fb059e835caaaa3139964e5e
+83: 		if !p.HasFrontmatter {
+84: 			add(Critical, "no-frontmatter", p.RelPath, "missing YAML frontmatter")
+85: 		} else if p.FMErr != "" {
+86: 			add(Critical, "bad-frontmatter", p.RelPath, "frontmatter parse error: "+p.FMErr)
+87: 		} else {
+88: 			var missing []string
+89: 			for k, v := range map[string]string{"title": p.Title, "type": p.Type, "created": p.Created, "updated": p.Updated} {
+90: 				if v == "" {
+91: 					missing = append(missing, k)
+92: 				}
+93: 			}
+94: 			if len(missing) > 0 {
+95: 				sort.Strings(missing)
+96: 				add(Critical, "frontmatter-fields", p.RelPath, "missing fields: "+strings.Join(missing, ", "))
+97: 			}
+98: 			if p.Type != "" && !allowedTypes[p.Type] {
+99: 				add(Critical, "invalid-type", p.RelPath, fmt.Sprintf("type %q not in schema (%s)", p.Type, strings.Join(w.Cfg.Schema.Types, "|")))
+100: 			}
+101: 			for _, t := range p.Tags {
+102: 				if !allowedTags[t] {
+103: 					add(Warning, "invalid-tag", p.RelPath, fmt.Sprintf("tag %q not in taxonomy", t))
+104: 				}
+105: 			}
+106: 			if p.Updated != "" && w.Cfg.Schema.StaleDays > 0 {
+107: 				if ts, err := time.Parse("2006-01-02", p.Updated); err == nil {
+108: 					if now.Sub(ts) > time.Duration(w.Cfg.Schema.StaleDays)*24*time.Hour {
+109: 						add(Info, "stale", p.RelPath, fmt.Sprintf("not updated since %s", p.Updated))
+110: 					}
+111: 				}
+112: 			}
+113: 		}
+114: 
+115: 		for _, target := range p.Links {
+116: 			if _, ok := scan.BySlug[target]; !ok {
+117: 				add(Critical, "broken-link", p.RelPath, "broken wikilink [["+target+"]]")
+
+internal/lint/audit.go SHA256=d1fc7c6bd475d3bb5f54c1818cd86cbe684644fc7e23d719da987d182f20a9c6
+36: 	r := &TagAuditReport{
+37: 		TotalPages:    len(scan.Pages),
+38: 		Legacy:        w.LegacyTags,
+39: 		BroadTopicPct: w.Cfg.Schema.BroadTopicPct,
+40: 	}
+41: 
+42: 	count := map[string]int{}
+43: 	for _, p := range scan.Pages {
+44: 		for _, t := range p.Tags {
+45: 			count[t]++
+46: 		}
+47: 	}
+48: 	pct := func(n int) float64 {
+49: 		if r.TotalPages == 0 {
+50: 			return 0
+51: 		}
+52: 		return float64(int(float64(n)/float64(r.TotalPages)*1000+0.5)) / 10
+53: 	}
+54: 	usage := func(tags []string) []TagUsage {
+55: 		out := make([]TagUsage, 0, len(tags))
+56: 		for _, t := range tags {
+57: 			out = append(out, TagUsage{Tag: t, Count: count[t], Pct: pct(count[t])})
+58: 		}
+59: 		sort.SliceStable(out, func(i, j int) bool { return out[i].Count > out[j].Count })
+60: 		return out
+61: 	}
+62: 
+63: 	// In legacy mode the whole list lives in Tags; treat it as topics so
+64: 	// the reclaim/split pressure still applies until the facets are split.
+65: 	topics := w.Cfg.Schema.Topics
+66: 	if r.Legacy {
+67: 		topics = w.Cfg.Schema.Tags
+68: 	}
+69: 	r.Topics = usage(topics)
+70: 	r.Forms = usage(w.Cfg.Schema.Forms)
+71: 
+72: 	for _, u := range r.Topics {
+73: 		if u.Count == 0 {
+74: 			r.UnusedTopics = append(r.UnusedTopics, u.Tag)
+75: 		}
+76: 		if r.BroadTopicPct > 0 && u.Count*100 > r.TotalPages*r.BroadTopicPct {
+77: 			r.OverbroadTopics = append(r.OverbroadTopics, u)
+78: 		}
+79: 	}
+
+internal/resurface/pick.go SHA256=99d4afe8d045a98dc5768db65508b3fb8d615c3218a985738e017eae152158d3
+186: }
+187: 
+188: // PickBridges finds page pairs with cosine similarity >= minSim.
+189: // Linked pairs are excluded unless includeLinked is set.
+190: func PickBridges(scan *wiki.ScanResult, vectors map[string][]float32, st *State, minSim float64, n int, includeLinked bool, now time.Time) []Bridge {
+191: 	linked := map[string]bool{}
+192: 	for _, p := range scan.Pages {
+193: 		from := normalizeSlug(p.Slug)
+194: 		for _, t := range p.Links {
+195: 			linked[pairKey(from, t)] = true
+196: 		}
+197: 	}
+198: 	var slugs []string
+199: 	for _, p := range scan.Pages {
+200: 		if _, ok := vectors[p.Slug]; ok {
+201: 			slugs = append(slugs, p.Slug)
+202: 		}
+203: 	}
+204: 	sort.Strings(slugs)
+205: 
+206: 	bridges := []Bridge{}
+207: 	for i := 0; i < len(slugs); i++ {
+208: 		for j := i + 1; j < len(slugs); j++ {
+209: 			a, b := slugs[i], slugs[j]
+210: 			na, nb := normalizeSlug(a), normalizeSlug(b)
+211: 			isLinked := linked[pairKey(na, nb)]
+212: 			if (isLinked && !includeLinked) || !st.pairEligible(na, nb, now) {
+213: 				continue
+214: 			}
+215: 			sim := store.Cosine(vectors[a], vectors[b])
+216: 			if sim < minSim {
+217: 				continue
+218: 			}
+219: 			pa, pb := scan.BySlug[na], scan.BySlug[nb]
+220: 			bridges = append(bridges, Bridge{
+221: 				A:          BridgeSide{Slug: pa.Slug, RelPath: pa.RelPath, Title: pa.Title, Excerpt: excerpt(pa.Body)},
+222: 				B:          BridgeSide{Slug: pb.Slug, RelPath: pb.RelPath, Title: pb.Title, Excerpt: excerpt(pb.Body)},
+223: 				Similarity: sim,
+224: 				Linked:     isLinked,
+225: 			})
+226: 		}
+227: 	}
+228: 	sort.Slice(bridges, func(i, j int) bool { return bridges[i].Similarity > bridges[j].Similarity })
+229: 	if len(bridges) > n {
+230: 		bridges = bridges[:n]
+231: 	}
+232: 	return bridges
+233: }
+234: 
+235: // excerpt returns the first substantive paragraph (skips headings and
+236: // link-list lines), capped at 200 runes.
+237: func excerpt(body string) string {
+238: 	for _, para := range strings.Split(body, "\n\n") {
+239: 		p := strings.TrimSpace(para)
+240: 		if p == "" || strings.HasPrefix(p, "#") || strings.HasPrefix(p, "- [[") || strings.HasPrefix(p, "|") || strings.HasPrefix(p, ">") || strings.HasPrefix(p, "---") {
+241: 			continue
+242: 		}
+243: 		runes := []rune(strings.ReplaceAll(p, "\n", " "))
+244: 		if len(runes) > 200 {
+245: 			runes = append(runes[:200], '…')
+246: 		}
+247: 		return string(runes)
+
+cmd/canopy/main.go SHA256=bc6d6c854514a359d0271b4332f2f175c1eb81679e2ce86dd48f5c3993f0e34d
+54: 	// version/migrate/help/completion manage or inspect the schema themselves,
+55: 	// so they are exempt and stay usable to recover from a failed migration.
+56: 	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+57: 		switch p := cmd.CommandPath(); {
+58: 		case p == "canopy", p == "canopy version", p == "canopy help",
+59: 			strings.HasPrefix(p, "canopy migrate"), strings.HasPrefix(p, "canopy completion"):
+60: 			return nil
+61: 		}
+62: 		_, err := migrate.Ensure(migrateCtx(), buildinfo.Version())
+63: 		return err
+64: 	}
+65: 
+66: 	root.AddCommand(cmdInit(), cmdStatus(), cmdReindex(), cmdSearch(), cmdBacklinks(), cmdLint(), cmdShow(), cmdList(), cmdTags(), cmdModel(),
+67: 		cmdNew(), cmdUpdate(), cmdCheckout(), cmdCheckin(), cmdGrep(), cmdMv(), cmdRm(), cmdArchive(), cmdSync(), cmdSkills(),
+68: 		cmdResurface(), cmdBridge(), cmdRecall(), cmdDigest(), cmdServe(),
+69: 		cmdVersion(), cmdMigrate(), cmdReconcile(), cmdTasks(), cmdEvents())
+70: 
+71: 	if err := root.Execute(); err != nil {
+72: 		fmt.Fprintln(os.Stderr, "error:", err)
+73: 		os.Exit(1)
+74: 	}
+379: 			switch mode {
+380: 			case "keyword", "semantic", "hybrid":
+381: 			default:
+382: 				return fmt.Errorf("unknown mode %q", mode)
+383: 			}
+384: 
+385: 			// Hybrid degrades to keyword when the embedding stack is
+386: 			// missing; explicit --mode semantic fails loudly instead.
+387: 			var eng embed.Engine
+388: 			if mode != "keyword" {
+389: 				eng, err = newEngine()
+390: 				if err != nil {
+391: 					if mode == "semantic" {
+392: 						return err
+393: 					}
+394: 					fmt.Fprintf(os.Stderr, "hybrid → keyword only (%v)\n", err)
+395: 					mode = "keyword"
+396: 				} else {
+397: 					defer eng.Close()
+398: 				}
+399: 			}
+400: 
+401: 			st, _, err := refreshIndex(w, eng)
+402: 			if err != nil {
+403: 				return err
+404: 			}
+405: 			defer st.Close()
+406: 
+407: 			var hits []store.Hit
+408: 			var kw, sem []store.Hit
+409: 			if mode == "keyword" || mode == "hybrid" {
+410: 				if kw, err = st.SearchKeyword(query, topK); err != nil {
+411: 					return err
+412: 				}
+413: 			}
+414: 			if mode == "semantic" || mode == "hybrid" {
+415: 				qv, err := eng.Embed([]string{query})
+416: 				if err != nil {
+417: 					return err
+418: 				}
+419: 				if sem, err = st.SearchSemantic(qv[0], topK); err != nil {
+420: 					return err
+421: 				}
+422: 			}
+423: 			switch mode {
+424: 			case "keyword":
+425: 				hits = kw
+426: 			case "semantic":
+427: 				hits = sem
+428: 			case "hybrid":
+429: 				hits = search.Fuse(topK, kw, sem)
+467: // modelFiles are fetched from Hugging Face by `canopy model pull`.
+468: // EmbeddedLLM/bge-m3-onnx-o2-cpu: fp32 CPU-optimized bge-m3 whose fused
+469: // ops require the ONNX Runtime backend (hence the ORT build tag).
+470: const modelRepo = "EmbeddedLLM/bge-m3-onnx-o2-cpu"
+471: 
+472: var modelFiles = []string{
+473: 	"model.onnx", "model.onnx.data", "config.json",
+474: 	"tokenizer.json", "tokenizer_config.json", "special_tokens_map.json",
+475: }
+476: 
+477: func cmdModel() *cobra.Command {
+478: 	c := &cobra.Command{Use: "model", Short: "Manage the local embedding model"}
+479: 	c.AddCommand(&cobra.Command{
+480: 		Use:   "pull",
+481: 		Short: "Download bge-m3 ONNX (~2.3GB) to $XDG_DATA_HOME/canopy/models",
+482: 		RunE: func(cmd *cobra.Command, args []string) error {
+483: 			dir := embed.DefaultModelPath()
+484: 			if err := os.MkdirAll(dir, 0o755); err != nil {
+485: 				return err
+486: 			}
+487: 			for _, f := range modelFiles {
+488: 				dst := filepath.Join(dir, f)
+489: 				if _, err := os.Stat(dst); err == nil {
+490: 					fmt.Printf("  %s (cached)\n", f)
+491: 					continue
+492: 				}
+493: 				fmt.Printf("  %s …\n", f)
+494: 				if err := download("https://huggingface.co/"+modelRepo+"/resolve/main/"+f, dst); err != nil {
+495: 					return fmt.Errorf("%s: %w", f, err)
+496: 				}
+497: 			}
+498: 			fmt.Println("✓ model ready:", dir)
+499: 			if !embed.Available() {
+500: 				fmt.Println("note: this binary lacks the ORT backend — rebuild with `make build` (-tags ORT)")
+501: 			}
+502: 			return nil
+503: 		},
+504: 	})
+505: 	c.AddCommand(&cobra.Command{
+506: 		Use:   "status",
+507: 		Short: "Show embedding stack status",
+508: 		RunE: func(cmd *cobra.Command, args []string) error {
+509: 			// Best-effort: inside a wiki, report the configured model dir
+510: 			// (loadWiki applies it); outside one, fall back to the default.
+511: 			_, _ = loadWiki()
+512: 			if flagJSON {
+513: 				return emitJSON(map[string]any{
+514: 					"ort_available":   embed.Available(),
+515: 					"model_available": embed.ModelAvailable(),
+516: 					"model_path":      embed.DefaultModelPath(),
+517: 				})
+518: 			}
+519: 			fmt.Printf("ORT backend available: %v\n", embed.Available())
+520: 			fmt.Printf("model downloaded:      %v (%s)\n", embed.ModelAvailable(), embed.DefaultModelPath())
+521: 			return nil
+522: 		},
+580: func download(url, dst string) error {
+581: 	resp, err := http.Get(url)
+582: 	if err != nil {
+583: 		return err
+584: 	}
+585: 	defer resp.Body.Close()
+586: 	if resp.StatusCode != http.StatusOK {
+587: 		return fmt.Errorf("HTTP %d", resp.StatusCode)
+588: 	}
+589: 	tmp := dst + ".part"
+590: 	f, err := os.Create(tmp)
+591: 	if err != nil {
+592: 		return err
+593: 	}
+594: 	if _, err := io.Copy(f, resp.Body); err != nil {
+595: 		f.Close()
+596: 		os.Remove(tmp)
+597: 		return err
+598: 	}
+599: 	if err := f.Close(); err != nil {
+600: 		return err
+601: 	}
+602: 	return os.Rename(tmp, dst)
+603: }
+604: 
+605: func cmdBacklinks() *cobra.Command {
+
+cmd/canopy/reconcile.go SHA256=9240c4100abd9f5e4294b5f2680e7a0c93a23dfbb431f8291a6907e0b36a2126
+187: 	var eng embed.Engine
+188: 	if embed.Available() && embed.ModelAvailable() {
+189: 		if e, err := embed.New(); err == nil {
+190: 			eng = e
+191: 			defer eng.Close()
+192: 		}
+193: 	}
+194: 	st, scan, err := refreshIndex(w, eng)
+195: 	if err != nil {
+196: 		// Evidence is best-effort; the raw candidate list still stands.
+197: 		for _, c := range cands {
+198: 			reports = append(reports, foreignReport{RelPath: c.RelPath, Kind: c.Kind,
+199: 				DupCandidates: []dupCandidate{}, Issues: []string{}})
+200: 		}
+201: 		return reports
+202: 	}
+203: 	defer st.Close()
+204: 
+205: 	issuesByPage := map[string][]string{}
+206: 	for _, f := range lint.Run(w, scan, mermaid.NewValidator()).Findings {
+207: 		issuesByPage[f.Page] = append(issuesByPage[f.Page], f.Kind+": "+f.Message)
+208: 	}
+209: 	pageByRel := map[string]*wiki.Page{}
+210: 	for _, p := range scan.Pages {
+211: 		pageByRel[p.RelPath] = p
+212: 	}
+213: 	vectors, _ := st.PageVectors()
+214: 
+215: 	for _, c := range cands {
+216: 		r := foreignReport{RelPath: c.RelPath, Kind: c.Kind,
+217: 			DupCandidates: []dupCandidate{}, Issues: issuesByPage[c.RelPath]}
+218: 		if r.Issues == nil {
+219: 			r.Issues = []string{}
+220: 		}
+221: 		if p, ok := pageByRel[c.RelPath]; ok && c.Kind != "deleted" {
+222: 			if v, ok := vectors[p.Slug]; ok {
+223: 				for slug, other := range vectors {
+224: 					if strings.EqualFold(slug, p.Slug) {
+225: 						continue
+226: 					}
+227: 					if sim := store.Cosine(v, other); sim >= dupThreshold {
+228: 						r.DupCandidates = append(r.DupCandidates, dupCandidate{Slug: slug, Similarity: sim})
+229: 					}
+230: 				}
+231: 				sort.Slice(r.DupCandidates, func(i, j int) bool {
+232: 					if r.DupCandidates[i].Similarity != r.DupCandidates[j].Similarity {
+233: 						return r.DupCandidates[i].Similarity > r.DupCandidates[j].Similarity
+234: 					}
+235: 					return r.DupCandidates[i].Slug < r.DupCandidates[j].Slug
+236: 				})
+237: 				if len(r.DupCandidates) > 3 {
+238: 					r.DupCandidates = r.DupCandidates[:3]
+239: 				}
+240: 			}
+241: 		}
+242: 		reports = append(reports, r)
+243: 	}
+244: 	return reports
+245: }
+
+cmd/canopy/write.go SHA256=f24e8c18f2a83bbdb992698810addba71873c38731ccc39798fdb9fc2d6a1131
+359: func cmdUpdate() *cobra.Command {
+360: 	var bodyFile string
+361: 	var syncNow bool
+362: 	var syncMsg string
+363: 	c := &cobra.Command{
+364: 		Use:   "update <page>",
+365: 		Short: "Record an edit: bump updated date, optionally replace the body, reindex + log",
+366: 		Args:  cobra.ExactArgs(1),
+367: 		RunE: func(cmd *cobra.Command, args []string) error {
+368: 			w, err := loadWiki()
+369: 			if err != nil {
+370: 				return err
+371: 			}
+372: 			banner(w)
+373: 			scan, err := wiki.Scan(w)
+374: 			if err != nil {
+375: 				return err
+376: 			}
+377: 			p, ok := scan.BySlug[wiki.NormalizeLink(args[0])]
+378: 			if !ok {
+379: 				return fmt.Errorf("page not found: %s", args[0])
+380: 			}
+381: 			path := filepath.Join(w.Root, p.RelPath)
+382: 			raw, err := os.ReadFile(path)
+383: 			if err != nil {
+384: 				return err
+385: 			}
+386: 			content := string(raw)
+387: 			if bodyFile != "" {
+388: 				var data []byte
+389: 				if bodyFile == "-" {
+390: 					data, err = io.ReadAll(os.Stdin)
+391: 				} else {
+392: 					data, err = os.ReadFile(bodyFile)
+393: 				}
+394: 				if err != nil {
+395: 					return err
+396: 				}
+397: 				content = wiki.ReplaceBody(content, string(data))
+398: 			}
+399: 			content = wiki.SetFrontmatterField(content, "updated", time.Now().Format("2006-01-02"))
+400: 			// Gate replaced bodies AND direct file edits being normalized —
+401: 			// both surface the parse error to the agent who can fix it now.
+402: 			if err := validateMermaid(content); err != nil {
+403: 				return err
+404: 			}
+405: 			if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+406: 				return err
+407: 			}
+408: 			if !flagJSON {
+409: 				fmt.Printf("✓ updated %s\n", p.RelPath)
+410: 			}
+411: 			return afterWrite(w, "update", p.RelPath, p.Tags, "", reconcile.Effects{Written: []string{p.RelPath}}, syncNow, syncMsg)
+412: 		},
+413: 	}
+414: 	c.Flags().StringVar(&bodyFile, "body-file", "", "replace the page body from file, or - for stdin")
+415: 	c.Flags().BoolVar(&syncNow, "sync", false, "run canopy sync right after")
+416: 	c.Flags().StringVarP(&syncMsg, "message", "m", "", "commit message when using --sync")
+
+internal/tasks/tasks_test.go SHA256=5ddb0871ddd46a20344bd8e5280af5cdba9ed734f18f0970981921ed10c564c2
+16: func testWiki(t *testing.T) *config.Wiki {
+17: 	t.Helper()
+18: 	w := &config.Wiki{Root: t.TempDir(), Cfg: config.Default()}
+19: 	if err := os.MkdirAll(filepath.Join(w.Root, "concepts"), 0o755); err != nil {
+20: 		t.Fatal(err)
+21: 	}
+22: 	return w
+23: }
+24: 
+25: func write(t *testing.T, w *config.Wiki, rel, content string) {
+
+internal/webui/tasks_test.go SHA256=1ed4fe5524e5477cb70fa5bfc702c747627b398cab9260f7c8b64561ab423941
+16: func taskTestServer(t *testing.T) (*Server, *config.Wiki) {
+17: 	t.Helper()
+18: 	w := &config.Wiki{Root: t.TempDir(), Cfg: config.Default()}
+19: 	if err := os.MkdirAll(filepath.Join(w.Root, "concepts"), 0o755); err != nil {
+20: 		t.Fatal(err)
+21: 	}
+22: 	for _, name := range []string{"alpha", "beta"} {
+23: 		content := "---\ntitle: " + name + "\ntype: concept\n---\nbody of " + name
+24: 		if err := os.WriteFile(filepath.Join(w.Root, "concepts", name+".md"), []byte(content), 0o644); err != nil {
+25: 			t.Fatal(err)
+26: 		}
+27: 	}
+28: 	s, err := NewServer(w, nil)
+29: 	if err != nil {
+30: 		t.Fatal(err)
+31: 	}
+32: 	return s, w
+33: }
+
+Makefile SHA256=811159aab134c95b6079c2f4fd25ad7d3a7f31c0420a245f9f86e8ff95bd9b73
+9: TOKENIZERS_VERSION := v1.27.0
+10: XDG_DATA := $(or $(XDG_DATA_HOME),$(HOME)/.local/share)
+11: LIBDIR := $(XDG_DATA)/canopy/lib
+12: export CGO_LDFLAGS := -L$(LIBDIR)
+13: 
+14: # Version metadata stamped into the binary (see internal/buildinfo). VERSION
+15: # tracks `git describe`, so a tagged build reports e.g. v0.1.0 and an untagged
+16: # one v0.1.0-3-gabc1234[-dirty]. Override with `make build VERSION=...`.
+17: VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+18: COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
+19: DATE    ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+20: PKG     := github.com/neutrospec/canopy/internal/buildinfo
+21: LDFLAGS := -X $(PKG).version=$(VERSION) -X $(PKG).commit=$(COMMIT) -X $(PKG).date=$(DATE)
+22: 
+23: .PHONY: build build-lite test test-ui fmt deps install release-check release-tag i18n-check release-lineage-check
+24: 
+25: build: deps
+26: 	go build -tags ORT -ldflags "$(LDFLAGS)" -o canopy ./cmd/canopy
+27: 
+28: # keyword-search-only binary, no cgo/native deps
+29: build-lite:
+30: 	go build -ldflags "$(LDFLAGS)" -o canopy ./cmd/canopy
+31: 
+32: test:
+33: 	go test ./internal/...
+53: deps: $(LIBDIR)/libtokenizers.a
+54: 
+55: $(LIBDIR)/libtokenizers.a:
+56: 	mkdir -p $(LIBDIR)
+57: 	curl -sL https://github.com/daulet/tokenizers/releases/download/$(TOKENIZERS_VERSION)/libtokenizers.darwin-arm64.tar.gz | tar xz -C $(LIBDIR)
+65: release-check:
+66: 	@test -z "$$(git status --porcelain)" || { echo "working tree dirty — commit first"; exit 1; }
+67: 	go test ./internal/...
+68: 	@test -z "$$(gofmt -l .)" || { echo "gofmt not clean: $$(gofmt -l .)"; exit 1; }
+69: 	@echo "✓ ready to release $(VERSION)"
+70: 
+71: # Tag the current commit and push it. GoReleaser (.goreleaser.yaml) turns the
+72: # tag into a GitHub release with a generated changelog. Then refresh the
+73: # Homebrew formula url+sha256 (scripts/brew-sha256.sh v$(V)) and push it to the
+74: # neutrospec/homebrew-tap repo.
+75: #
+76: # Releases are cut from main only (invariant J7). Guard order matters:
+77: #   1. cheap guards first (V set, on main) — fail before the test suite runs;
+78: #   2. fetch + require local main to CONTAIN origin/main — an outdated clone
+79: #      would otherwise tag an old commit that still passes J7 (an old commit
+80: #      is an ancestor of origin/main too) and ship stale code under a new
+81: #      version number. The fetch is not optional: releasing offline is wrong
+82: #      anyway since the pushes below would fail;
+83: #   3. push the branch BEFORE the tag so origin/main can never fall behind
+84: #      the tag: pushing a tag uploads its commit objects but leaves
+85: #      origin/main pointing at the old commit, which is how v0.4.1 shipped
+86: #      while origin/main still lagged.
+87: release-tag:
+88: 	@test -n "$(V)" || { echo "usage: make release-tag V=0.1.0"; exit 1; }
+89: 	@test "$$(git rev-parse --abbrev-ref HEAD)" = "main" || \
+90: 		{ echo "릴리스는 main에서만 (현재: $$(git rev-parse --abbrev-ref HEAD))"; exit 1; }
+91: 	git fetch origin main
+92: 	@git merge-base --is-ancestor origin/main main || \
+93: 		{ echo "로컬 main이 origin/main을 포함하지 않음 (뒤처짐/분기) — git pull --rebase 먼저"; exit 1; }
+94: 	@$(MAKE) release-check
+95: 	git push origin main
+96: 	git tag -a v$(V) -m "canopy v$(V)"
+97: 	git push origin v$(V)
+98: 	@echo "✓ tagged v$(V) — next: goreleaser release, then bump the Homebrew formula"
+
+.github/workflows/ci.yml SHA256=6a8a8f42d660de1abd1f93f69bf2299e26d580b1d3e1b5c6b0873fb224a6f19a
+1: name: ci
+2: 
+3: # Fast checks on every push and PR: format, vet, tests, and the CGO-free lite
+4: # build. The full ORT build (semantic search) needs onnxruntime + a native
+5: # tokenizer lib, so it is validated at release time (Homebrew source build),
+6: # not here — this keeps CI quick and green.
+7: on:
+8:   push:
+9:     branches: [main]
+10:   pull_request:
+11: 
+12: jobs:
+13:   check:
+14:     runs-on: ubuntu-latest
+15:     steps:
+16:       - uses: actions/checkout@v4
+17:         with:
+18:           # Full history + tags: the release-lineage check below walks every
+19:           # v* tag against origin/main. A shallow checkout has no tags, which
+20:           # would make that check silently vacuous (zero tags = pass).
+21:           fetch-depth: 0
+22:       - uses: actions/setup-go@v5
+23:         with:
+24:           go-version-file: go.mod
+25:           cache: true
+26:       - name: gofmt (invariant F3)
+27:         run: |
+28:           out="$(gofmt -l .)"
+29:           if [ -n "$out" ]; then
+30:             echo "these files need gofmt:"; echo "$out"; exit 1
+31:           fi
+32:       - name: go vet
+33:         run: go vet ./...
+34:       - name: tests (invariant F1)
+35:         run: go test ./internal/...
+36:       - uses: actions/setup-node@v4
+37:         with:
+38:           node-version: '22'
+39:       - name: client interactions (invariants U, M6)
+40:         run: make test-ui
+41:       - name: lite build (CGO-free path, invariant F2)
+42:         run: make build-lite
+43:       - name: translations current (invariant L)
+44:         run: make i18n-check
+45:       - name: release tags on origin/main (invariant J7)
+46:         run: make release-lineage-check
+
+.github/workflows/release.yml SHA256=e9f83bd2ed610bf42288dc537bbb8f0ada9bf9a2ad96cca8ac73228c8043b0a6
+15: jobs:
+16:   release:
+17:     runs-on: ubuntu-latest
+18:     permissions:
+19:       contents: write # GoReleaser creates the GitHub Release
+20:     steps:
+21:       - uses: actions/checkout@v4
+22:         with:
+23:           fetch-depth: 0 # full history so the changelog can be built
+24:       - name: release tag is on origin/main (invariant J7)
+25:         run: bash scripts/release-lineage-check.sh
+26:       - uses: actions/setup-go@v5
+27:         with:
+28:           go-version-file: go.mod
+29:           cache: true
+30:       - name: GoReleaser — GitHub Release + changelog + lite archives
+31:         uses: goreleaser/goreleaser-action@v6
+32:         with:
+33:           version: "~> v2"
+34:           args: release --clean
+35:         env:
+36:           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+37: 
+38:   publish-tap:
+39:     needs: release
+40:     runs-on: ubuntu-latest
+
+.goreleaser.yaml SHA256=1f975ed6ea59527579bad65f81a74321e6e32bda42b6067824329d9ff00a92c9
+13: before:
+14:   hooks:
+15:     - go mod tidy
+16: 
+17: builds:
+18:   - id: canopy-lite
+19:     main: ./cmd/canopy
+20:     binary: canopy
+21:     env:
+22:       - CGO_ENABLED=0
+23:     goos: [darwin, linux]
+24:     goarch: [amd64, arm64]
+25:     ldflags:
+26:       - -s -w
+27:       - -X github.com/neutrospec/canopy/internal/buildinfo.version={{ .Version }}
+28:       - -X github.com/neutrospec/canopy/internal/buildinfo.commit={{ .ShortCommit }}
+29:       - -X github.com/neutrospec/canopy/internal/buildinfo.date={{ .Date }}
+30: 
+31: archives:
+32:   - id: lite
+33:     # _lite in the name is deliberate: these binaries do keyword search only.
+34:     name_template: "canopy_{{ .Version }}_{{ .Os }}_{{ .Arch }}_lite"
+35:     files:
+36:       - README.md
+37:       - LICENSE
+38: 
+
+packaging/homebrew/canopy.rb SHA256=5722b9d216774095cea0b9b1f7a7b43329e9dba55a43dbb59737680758c5b9ed
+24:   # Prebuilt static tokenizer lib (daulet/tokenizers), pinned and arch-specific.
+25:   # Keep TOKENIZERS_VERSION in step with the Makefile.
+26:   on_macos do
+27:     on_arm do
+28:       resource "tokenizers" do
+29:         url "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.darwin-arm64.tar.gz"
+30:         sha256 "fb84b8b2e349a5952767ffe80ccd862fc44084de47f3b0cc3f0b7c9d4e649cf7"
+31:       end
+32:     end
+33:     on_intel do
+34:       resource "tokenizers" do
+35:         url "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.darwin-x86_64.tar.gz"
+36:         sha256 "6239efe5a81fde8089ef2df8ae710366542b4e5deab6d8ecb74d7d1862db2ddb"
+37:       end
+38:     end
+39:   end
+40:   on_linux do
+41:     on_arm do
+42:       resource "tokenizers" do
+43:         url "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-arm64.tar.gz"
+44:         sha256 "e96545ad05930c26f51f63d932ee6d3bbd32bbed149e102c5290d587a2293067"
+45:       end
+46:     end
+47:     on_intel do
+48:       resource "tokenizers" do
+49:         url "https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-x86_64.tar.gz"
+50:         sha256 "72556cdca798dd4ea7cdaba308e5f0d68a8cb93b67c96edf485b7a0edd7b07f4"
+51:       end
+52:     end
+53:   end
+99:   test do
+100:     assert_match version.to_s, shell_output("#{bin}/canopy version")
+101:   end
+102: end
+
+scripts/quantize-model.py SHA256=2bd5e96b99e9883fbd15ffb52befe0231e2e9aa40cef6709339d1c707ef4bfdc
+1: """bge-m3 fp32 → int8 동적 양자화 (1회성 오프라인 변환)."""
+2: import os, shutil, sys
+3: import onnx
+4: from onnxruntime.quantization import quantize_dynamic, QuantType
+5: 
+6: src_dir = os.path.expanduser("~/.local/share/canopy/models/bge-m3")
+7: dst_dir = os.path.expanduser("~/.local/share/canopy/models/bge-m3-int8")
+8: os.makedirs(dst_dir, exist_ok=True)
+9: 
+10: quantize_dynamic(
+11:     model_input=os.path.join(src_dir, "model.onnx"),
+12:     model_output=os.path.join(dst_dir, "model.onnx"),
+13:     weight_type=QuantType.QInt8,
+14:     use_external_data_format=True,  # 결과가 2GB 미만이어도 안전
+15:     extra_options={"MatMulConstBOnly": True, "DefaultTensorType": onnx.TensorProto.FLOAT},
+16: )
+17: 
+18: for f in ["config.json", "tokenizer.json", "tokenizer_config.json", "special_tokens_map.json"]:
+19:     shutil.copy2(os.path.join(src_dir, f), os.path.join(dst_dir, f))
+20: 
+21: total = sum(os.path.getsize(os.path.join(dst_dir, f)) for f in os.listdir(dst_dir))
+22: print(f"done: {dst_dir}  total {total/1e6:.0f} MB")
+
+README.md SHA256=f9a023ffab5415b91012d669401cf5365331190190d6f8eb8e1c7fbefb467bdf
+198: Apple Silicon, int8 양자화 모델 기준:
+199: 
+200: - 임베딩 ~11ms/청크, 모델 로드 ~0.5초(워밍업 상태) — fp32 대비 2.4× 빠르고
+201:   임베딩 품질은 코사인 유사도 ≥0.988로 유지
+202: - 무변경 `reindex` ≈ 1초, keyword 검색 <100ms (모델 로드 없음), 웹 UI 인스턴트
+203:   서치 ~40ms/쿼리
+204: - int8 양자화는 선택입니다: `canopy model pull`(fp32) 후
+205:   `scripts/quantize-model.py`를 1회 실행 (변환에만 파이썬 필요, 런타임은 무관)
+
+/Users/nobocop/go/pkg/mod/github.com/knights-analytics/hugot@v0.7.5/pipelines/featureExtraction.go SHA256=d1cb79f1378159f6d29f7c4d5a07bc6313624a2b8f1dbdcc060658a180e75c26
+119: 		}
+120: 	} else {
+121: 		if len(model.OutputsMeta) == 0 {
+122: 			return nil, fmt.Errorf("no model outputs metadata available for %s", model.Path)
+123: 		}
+124: 		pipeline.Output = model.OutputsMeta[0] // we take the first output otherwise, like transformers does
+125: 	}
+126: 	// validate pipeline
+127: 	err = pipeline.Validate()
+128: 	if err != nil {
+129: 		return nil, err
+130: 	}
+131: 	return pipeline, nil
+132: }
+133: 
+134: // INTERFACE IMPLEMENTATIONS.
+135: 
+136: func (p *FeatureExtractionPipeline) IsGenerative() bool {
+137: 	return false
+138: }
+222: func (p *FeatureExtractionPipeline) postprocess(batch *backends.PipelineBatch) (*FeatureExtractionOutput, error) {
+223: 	// TODO: this works if token embeddings are returned or sentence embeddings are returned.
+224: 	// in the former case embeddings are mean pooled. In the latter they are just returned.
+225: 	// to make this more general for other pipelines and to allow return of raw token embeddings,
+226: 	// we need an ndarray type that can be the return type of this pipeline. Need to think
+227: 	// about how to do this in a lightweight manner.
+228: 	output := batch.OutputValues[p.OutputIndex] // Use the index of the output we want to return
+229: 	batchEmbeddings := make([][]float32, batch.Size)
+230: 	outputDimensions := []int64(p.Output.Dimensions)
+231: 	embeddingDimension := outputDimensions[len(outputDimensions)-1]
+232: 	switch v := output.(type) {
+233: 	case [][]float32:
+234: 		batchEmbeddings = v
+235: 	case [][][]float32:
+236: 		for batchIndex, tokens := range v {
+237: 			batchEmbeddings[batchIndex] = meanPooling(tokens, batch.Input[batchIndex], batch.MaxSequenceLength, int(embeddingDimension))
+238: 		}
+239: 	default:
+240: 		return nil, fmt.Errorf("output type %T is not supported", output)
+241: 	}
+242: 	// Normalize embeddings (if asked), like in https://huggingface.co/sentence-transformers/all-mpnet-base-v2
+243: 	if p.Normalization {
+244: 		for i, embedding := range batchEmbeddings {
+245: 			batchEmbeddings[i] = vectorutil.Normalize(embedding, 2)
+246: 		}
+247: 	}
+248: 	return &FeatureExtractionOutput{Embeddings: batchEmbeddings}, nil
+249: }
+250: 
+251: func meanPooling(tokens [][]float32, input backends.TokenizedInput, maxSequence int, dimensions int) []float32 {
+
+/Users/nobocop/go/pkg/mod/github.com/knights-analytics/hugot@v0.7.5/backends/tokenizer_rust.go SHA256=9b52258e1cbd69398ff05cf45496ec02f6e63a5f0c1648bf887a65de279197aa
+62: 	outputs := make([]TokenizedInput, len(inputs))
+63: 	maxSequence := 0
+64: 	rustTK := tk.RustTokenizer
+65: 	for i, input := range inputs {
+66: 		output := rustTK.Tokenizer.EncodeWithOptions(input,
+67: 			true,
+68: 			rustTK.Options...,
+69: 		)
+70: 
+71: 		if tk.MaxAllowedTokens > 0 && len(output.Tokens) > tk.MaxAllowedTokens {
+72: 			output.Tokens = output.Tokens[:tk.MaxAllowedTokens]
+73: 			output.IDs = output.IDs[:min(len(output.IDs), tk.MaxAllowedTokens)]
+74: 			output.TypeIDs = output.TypeIDs[:min(len(output.TypeIDs), tk.MaxAllowedTokens)]
+75: 			output.AttentionMask = output.AttentionMask[:min(len(output.AttentionMask), tk.MaxAllowedTokens)]
+76: 			output.SpecialTokensMask = output.SpecialTokensMask[:min(len(output.SpecialTokensMask), tk.MaxAllowedTokens)]
+77: 			output.Offsets = output.Offsets[:min(len(output.Offsets), tk.MaxAllowedTokens)]
+78: 		}
+79: 
+80: 		maxAttentionIndex := 0
+81: 		for j, attentionMaskValue := range output.AttentionMask {
+82: 			if attentionMaskValue != 0 {
+83: 				maxAttentionIndex = j
+84: 			}
+85: 		}
+86: 
+87: 		ti := TokenizedInput{
+88: 			Raw:               input,
+89: 			Tokens:            output.Tokens,
+90: 			TokenIDs:          output.IDs,
+
+internal/webui/static/vendor/force-graph.min.js SHA256=1008539bb9e171a0dc343453366451a1b3a6ded06028ef4f978608b658ba2d0a bytes=177599 copyright_count=0 license_count=0
+internal/webui/static/vendor/tex-svg.js SHA256=d4295dc33744836935c1399feece5159577b34c5c8ffb9f1c6324cd82e03a882 bytes=2108580 copyright_count=0 license_count=0
+
+internal/webui/suggest.go SHA256=2bedcd19b85709ce94f449ce605876224e5291ac40a79e9b4b1895acef38adc8
+32: func (s *Server) suggestLinks(scan *wiki.ScanResult, p *wiki.Page, backlinks []string) []suggestion {
+33: 	st, err := store.Open(s.w.DBPath())
+34: 	if err != nil {
+35: 		return nil
+36: 	}
+37: 	vectors, err := st.PageVectors()
+38: 	st.Close()
+39: 	if err != nil {
+40: 		return nil
+41: 	}
+42: 	self, ok := vectors[strings.ToLower(p.Slug)]
+43: 	if !ok {
+44: 		return nil
+45: 	}
+46: 	linked := map[string]bool{strings.ToLower(p.Slug): true}
+47: 	for _, l := range p.Links {
+48: 		linked[l] = true
+49: 	}
+50: 	for _, b := range backlinks {
+51: 		linked[strings.ToLower(b)] = true
+52: 	}
+53: 	selfTags := map[string]bool{}
+54: 	for _, t := range p.Tags {
+55: 		selfTags[t] = true
+56: 	}
+57: 
+58: 	var out []suggestion
+59: 	for slug, v := range vectors {
+60: 		if linked[slug] {
+61: 			continue
+62: 		}
+63: 		other, exists := scan.BySlug[slug]
+64: 		if !exists { // stale vector for a deleted page
+65: 			continue
+66: 		}
+67: 		sim := store.Cosine(self, v)
+68: 		if sim < suggestMinSim {
+69: 			continue
+70: 		}
+71: 		shared := 0
+72: 		for _, t := range other.Tags {
+73: 			if selfTags[t] {
+74: 				shared++
+75: 			}
+76: 		}
+77: 		out = append(out, suggestion{Slug: other.Slug, Title: other.Title, Sim: sim, Tags: shared})
+78: 	}
+79: 	// Cosine leads; shared tags break near-ties (same ranking idea as
+80: 	// rankRelated in `canopy new`).
+81: 	sort.Slice(out, func(i, j int) bool {
+82: 		si, sj := out[i].Sim+0.01*float64(out[i].Tags), out[j].Sim+0.01*float64(out[j].Tags)
+83: 		if si != sj {
+84: 			return si > sj
+85: 		}
+86: 		return out[i].Slug < out[j].Slug
+87: 	})
+88: 	if len(out) > suggestMax {
+
+internal/webui/discover.go SHA256=0d996c228288afe8a9891b8132ce2145b0e78a7852eee6da30b489c4911406c7
+31: func (s *Server) discoverRanked(scan *wiki.ScanResult, rs *reads.State, now time.Time, loc *i18n.Localizer) []discovery {
+32: 	// Vectors are best-effort: without the embedding index the
+33: 	// affinity signal is 0 and newness+hubness still rank.
+34: 	var vectors map[string][]float32
+35: 	if st, err := store.Open(s.w.DBPath()); err == nil {
+36: 		vectors, _ = st.PageVectors()
+37: 		st.Close()
+38: 	}
+39: 	var recentVecs [][]float32
+40: 	// Affinity blends both doors: recall citations are interest too.
+41: 	for _, slug := range rs.RecentAccessSlugs(affinityRecentK) {
+42: 		if v, ok := vectors[slug]; ok {
+43: 			recentVecs = append(recentVecs, v)
+44: 		}
+45: 	}
+46: 	backlinks := scan.Backlinks()
+47: 
+48: 	var out []discovery
+49: 	for _, p := range scan.Pages {
+50: 		if rs.IsRead(p.Slug) {
+51: 			continue
+52: 		}
+53: 		days := 9999
+54: 		if t, err := time.Parse("2006-01-02", p.Created); err == nil {
+55: 			days = int(now.Sub(t).Hours() / 24)
+56: 		}
+57: 		newness := 0.0
+58: 		if days <= 30 {
+59: 			newness = 1 - float64(days)/30
+60: 		}
+61: 		hub := float64(len(backlinks[strings.ToLower(p.Slug)])) / 5
+62: 		if hub > 1 {
+63: 			hub = 1
+64: 		}
+65: 		affinity := 0.0
+66: 		if v, ok := vectors[strings.ToLower(p.Slug)]; ok {
+67: 			for _, rv := range recentVecs {
+68: 				if c := store.Cosine(v, rv); c > affinity {
+69: 					affinity = c
+70: 				}
+71: 			}
+72: 		}
+73: 		score := 0.4*newness + 0.3*hub + 0.3*affinity
+74: 		if score <= 0 {
+75: 			continue
+76: 		}
+77: 		reasonID := "reason_new"
+78: 		switch {
+79: 		case affinity >= newness && 0.3*affinity >= 0.3*hub && affinity > 0:
+80: 			reasonID = "reason_affinity"
+81: 		case 0.3*hub > 0.4*newness && hub > 0:
+82: 			reasonID = "reason_hub"
+83: 		case newness == 0:
+84: 			reasonID = "reason_unread"
+85: 		}
+86: 		reason := localizeString(loc, reasonID)
+87: 		out = append(out, discovery{Page: p, Score: score, Reason: reason, Days: days})
+88: 	}
+89: 	sort.Slice(out, func(i, j int) bool { return out[i].Score > out[j].Score })
+90: 	return out
+91: }
+92: 
+93: // --- handlers ---
+
+internal/webui/browse.go SHA256=ac0ef35a7fc76d6ac45317806c8ca98b3ac0ec26072a58cae7339974eaefe304
+241: func (s *Server) islandReport(scan *wiki.ScanResult) []islandInfo {
+242: 	comps := scan.Components()
+243: 	if len(comps) <= 1 {
+244: 		return nil
+245: 	}
+246: 	var vectors map[string][]float32
+247: 	if st, err := store.Open(s.w.DBPath()); err == nil {
+248: 		vectors, _ = st.PageVectors()
+249: 		st.Close()
+250: 	}
+251: 	mainland := comps[0]
+252: 	var out []islandInfo
+253: 	for _, island := range comps[1:] {
+254: 		info := islandInfo{}
+255: 		for _, slug := range island {
+256: 			if p, ok := scan.BySlug[slug]; ok {
+257: 				info.Pages = append(info.Pages, p)
+258: 			}
+259: 		}
+260: 		for _, a := range island {
+261: 			av, ok := vectors[a]
+262: 			if !ok {
+263: 				continue
+264: 			}
+265: 			for _, b := range mainland {
+266: 				bv, ok := vectors[b]
+267: 				if !ok {
+268: 					continue
+269: 				}
+270: 				if sim := store.Cosine(av, bv); sim > info.Sim {
+271: 					info.Sim, info.BridgeA, info.BridgeB = sim, a, b
+272: 				}
+273: 			}
+274: 		}
+275: 		if info.BridgeA != "" {
+276: 			info.HasSuggestion = true
+277: 			if p, ok := scan.BySlug[info.BridgeA]; ok {
+278: 				info.BridgeATitle = p.Title
+279: 			}
+280: 			if p, ok := scan.BySlug[info.BridgeB]; ok {
+281: 				info.BridgeBTitle = p.Title
+
+internal/webui/speak.go SHA256=d44339d9e0013af16437f2e3f7866956f1d8247078fc3a5f72a1a043e2f80f31
+57: 	if picks, err := resurface.PickPages(scan, st, rd, "auto", 1, now, rng); err == nil && len(picks) > 0 {
+58: 		s.daily.pick = &picks[0]
+59: 		st.MarkShown([]string{picks[0].Slug}, now)
+60: 		changed = true
+61: 	}
+62: 	if sdb, err := store.Open(s.w.DBPath()); err == nil {
+63: 		if vectors, err := sdb.PageVectors(); err == nil {
+64: 			if bridges := resurface.PickBridges(scan, vectors, st, 0.7, 1, false, now); len(bridges) > 0 {
+65: 				s.daily.bridge = &bridges[0]
+66: 				st.MarkPairShown(strings.ToLower(bridges[0].A.Slug), strings.ToLower(bridges[0].B.Slug), now)
+67: 				changed = true
+68: 			}
+69: 		}
+70: 		sdb.Close()
+71: 	}
+72: 	if changed {
+73: 		if err := st.Save(s.w); err != nil {
+74: 			log.Printf("resurface state save: %v", err)

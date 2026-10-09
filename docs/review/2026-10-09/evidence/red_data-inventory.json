@@ -1,0 +1,49 @@
+{
+  "01-data.md": {
+    "sha256": "8c57447dd951555541b4176d05ab6386c0e2c746dc820f74d01566aab7becd98",
+    "ids": [
+      "DATA-01",
+      "DATA-07",
+      "DATA-10",
+      "DATA-02",
+      "DATA-03",
+      "DATA-04",
+      "DATA-05",
+      "DATA-06",
+      "DATA-08",
+      "DATA-09",
+      "DATA-11",
+      "DATA-12",
+      "DATA-13",
+      "DATA-14",
+      "DATA-15"
+    ]
+  },
+  "04-state.md": {
+    "sha256": "224ef4f97293a633e697c730a0a74afd4108f16b2a5dc3d0bbf6fbf37678dc15",
+    "ids": [
+      "STATE-05",
+      "STATE-01",
+      "STATE-15",
+      "STATE-02",
+      "STATE-03",
+      "STATE-04",
+      "STATE-06",
+      "STATE-07",
+      "STATE-08",
+      "STATE-09",
+      "STATE-10",
+      "STATE-11",
+      "STATE-12",
+      "STATE-13",
+      "STATE-14",
+      "STATE-16",
+      "STATE-17",
+      "STATE-18"
+    ]
+  },
+  "head": "ede67e302a8487aecbb4d59587a8686292018cf6",
+  "initial_tracked_diff": "",
+  "initial_index_diff": "",
+  "root": "/private/tmp/canopy-audit-20261009/red_data-ctx206f"
+}

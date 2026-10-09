@@ -1,0 +1,247 @@
+from pathlib import Path
+import os, sys, subprocess, json, hashlib, time, signal, socket, urllib.request, urllib.error
+
+REPO = Path(__file__).resolve().parents[2]
+CANONICAL_EVIDENCE = REPO / 'docs/review/2026-10-09/evidence'
+EVIDENCE = Path(os.environ.get('DEF_WEB_EVIDENCE_DIR', str(CANONICAL_EVIDENCE)))
+BASELINE = json.loads((CANONICAL_EVIDENCE / 'def_web-baseline.json').read_text())
+BASE = Path(os.environ.get('DEF_WEB_REPLAY_ROOT', BASELINE['fixture']))
+assert BASE.is_absolute() and BASE.is_relative_to(Path('/private/tmp'))
+for name in ['home','config','cache','data','state','tmp','gopath']:
+    (BASE/name).mkdir(parents=True,exist_ok=True)
+EVIDENCE.mkdir(parents=True,exist_ok=True)
+BIN = BASE / 'canopy'
+ENV = {k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
+ENV.update(HOME=str(BASE/'home'), XDG_CONFIG_HOME=str(BASE/'config'),
+           XDG_CACHE_HOME=str(BASE/'cache'), XDG_DATA_HOME=str(BASE/'data'),
+           XDG_STATE_HOME=str(BASE/'state'), TMPDIR=str(BASE/'tmp'),
+           GOPATH=str(BASE/'gopath'), GOMODCACHE='/Users/nobocop/go/pkg/mod',
+           GOCACHE='/private/tmp/canopy-review/go-cache', GOTELEMETRY='off',
+           GOPROXY='off', GOTOOLCHAIN='local', GOENV='off', GOSUMDB='off',
+           CGO_ENABLED='0', GIT_CONFIG_GLOBAL='/dev/null', GIT_CONFIG_SYSTEM='/dev/null',
+           GIT_CONFIG_NOSYSTEM='1', GIT_TERMINAL_PROMPT='0', GIT_OPTIONAL_LOCKS='0',
+           DEF_WEB_BIN=str(BIN), DEF_WEB_FIXTURE=str(BASE))
+for k in ['CANOPY_WIKI','PI_CODING_AGENT_DIR']: ENV.pop(k,None)
+RECORDS=[]
+
+def run(argv, cwd=REPO, stdin=None, extra=None, timeout=120):
+    env=ENV.copy(); env.update(extra or {})
+    before=time.monotonic()
+    p=subprocess.run([str(a) for a in argv],cwd=cwd,env=env,input=stdin,
+                     capture_output=True,text=True,timeout=timeout)
+    rec=dict(argv=[str(a) for a in argv],cwd=str(cwd),exit=p.returncode,
+             seconds=round(time.monotonic()-before,3),stdout=p.stdout,stderr=p.stderr)
+    RECORDS.append(rec)
+    return rec
+
+def obs(name,**data):
+    RECORDS.append(dict(observation=name,**data))
+
+def cp(w,*args,stdin=None,cwd=None,extra=None):
+    return run([BIN,*args,'--wiki',w],cwd=cwd or BASE,stdin=stdin,extra=extra)
+
+def must(rec):
+    if rec['exit'] != 0: raise RuntimeError(json.dumps(rec,ensure_ascii=False))
+    return rec
+
+def obj(rec): return json.loads(must(rec)['stdout'])
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else None
+def manifest(w): return {str(p.relative_to(w)):sha(p) for p in w.rglob('*') if p.is_file() and '.git' not in p.relative_to(w).parts}
+def wiki(name):
+    w=BASE/name; w.mkdir(); must(cp(w,'init','--json')); return w
+def new(w,slug,body='Defense original body.\n',title=None):
+    return cp(w,'new',title or slug,'--slug',slug,'--type','concept','--tags','tool',
+              '--body-file','-','--json',stdin=body)
+def local_identity(w):
+    must(run(['git','-C',w,'config','user.name','Defense Fixture']))
+    must(run(['git','-C',w,'config','user.email','defense-fixture@example.invalid']))
+def commit(w,msg):
+    must(run(['git','-C',w,'add','-A'])); must(run(['git','-C',w,'commit','-m',msg]))
+
+action=sys.argv[1]
+try:
+    if action=='build':
+        obs('isolation',environment={k:ENV[k] for k in ['HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME','XDG_DATA_HOME','XDG_STATE_HOME','TMPDIR','GOPATH','GOMODCACHE','GOCACHE','GOTELEMETRY','GOPROXY','GOTOOLCHAIN','GOENV','GOSUMDB','GIT_CONFIG_GLOBAL']})
+        must(run(['go','version']))
+        must(run(['go','build','-mod=readonly','-ldflags','-X github.com/neutrospec/canopy/internal/buildinfo.version=v0.10.0 -X github.com/neutrospec/canopy/internal/buildinfo.commit=ede67e3','-o',BIN,'./cmd/canopy']))
+    elif action=='http':
+        must(run(['go','test','-mod=readonly','-count=1','-v','./review_probes/def_web'],timeout=240))
+    elif action=='race':
+        must(run(['go','test','-mod=readonly','-race','-count=1','-v','-run','TestProposalRetention|TestStateConsistency','./review_probes/def_web'],extra={'CGO_ENABLED':'1'},timeout=240))
+    elif action=='supplement':
+        # Preserve the first harness's no-effect title replacement and invalid --help argv;
+        # this fresh fixture verifies the disputed facts with asserted preconditions.
+        import re
+        w=wiki('supplement-correctness'); must(new(w,'metadata-probe'))
+        t=obj(cp(w,'tasks','add','edit','metadata-probe','--request','Replace the body with corrected facts','--json'))['task']
+        initial=cp(w,'tasks','done',t['id'],'--json')
+        path=w/'concepts/metadata-probe.md'; old=path.read_text()
+        changed,n=re.subn(r'(?m)^title:.*$', 'title: "Changed metadata title"', old, count=1)
+        assert n==1 and changed!=old
+        path.write_text(changed)
+        done=must(cp(w,'tasks','done',t['id'],'--note','claims corrected body','--json'))
+        obs('done-metadata-only-verified',unchanged_exit=initial['exit'],changed_file=old!=path.read_text(),body_same=old.split('---',2)[-1]==path.read_text().split('---',2)[-1],done_status=json.loads(done['stdout'])['task']['status'])
+        run([BIN,'--help'],cwd=BASE)
+        for slug,title,query in [('ko-starter','첫 페이지','첫'),('en-starter','First page','First')]:
+            starter=wiki(slug)
+            must(cp(starter,'new',title,'--slug','first-page','--type','concept','--tags','tool','--json'))
+            result=obj(cp(starter,'search',query,'--mode','keyword','--json'))
+            must(cp(starter,'show','first-page','--no-mark','--json'))
+            obs('exact-starter-'+slug,query=query,result=result)
+        broken=wiki('cli-A3-malformed'); (broken/'concepts').mkdir();(broken/'concepts/predicate.md').write_text('---\ntitle: [unclosed\n---\ntext\n')
+        result=obj(cp(broken,'lint','--json'))
+        obs('A3-actual-cli',counts=result['counts'],old_predicate=result['counts'].get('no-frontmatter',0)==0 and result['counts'].get('frontmatter-fields',0)==0)
+        must(run(['go','test','-mod=readonly','-count=1','-v','-run','TestEmptyMessageControls','./review_probes/def_web']))
+    elif action=='existing':
+        must(run(['go','test','-mod=readonly','-count=1','./internal/webui','./internal/tasks','./internal/reads','./internal/checkout','./internal/config','./internal/lint','./internal/mermaid','./internal/skills'],timeout=240))
+        must(run(['node','--test','internal/webui/uitest/app.test.cjs']))
+        must(run(['make','i18n-check']))
+    elif action=='js':
+        must(run(['node','review_probes/def_web/response.cjs',REPO]))
+    elif action=='cli':
+        w=wiki('cli wiki with spaces')
+        must(run(['git','init','-b','main',w]))
+        cp(w,'new','첫 페이지','--type','concept','--tags','tool','--json')
+        must(new(w,'first-page','첫 페이지 fixtureword.\n','첫 페이지'))
+        must(cp(w,'search','fixtureword','--mode','keyword','--json'))
+        cp(w,'sync','--json')
+        run(['git','-C',w,'rev-parse','--verify','HEAD'])
+        must(cp(w,'update','first-page','--body-file','-','--json',stdin='Replacement fixtureword.\n'))
+        must(new(w,'moving')); must(cp(w,'mv','moving','--slug','moved','--json'))
+        must(cp(w,'archive','moved','--json'))
+        must(new(w,'removing')); must(cp(w,'rm','removing','--json'))
+        cp(w,'new','Flag gate','--slug','flag-gate','--type','concept','--links','nonexistent-def','--json')
+        must(new(w,'body-link','See [[nonexistent-def]].\n'))
+        cp(w,'lint','--json')
+        page=w/'concepts/first-page.md'
+        page.write_text(page.read_text().replace('tags: [tool]','tags: [def-invalid-tag]'))
+        must(cp(w,'update','first-page','--json'))
+        cp(w,'lint','--json')
+        noop=obj(cp(w,'checkout','first-page','--json'))
+        cp(w,'checkin','first-page','--json')
+        co=obj(cp(w,'checkout','first-page','--json')); copy=Path(co['path']); copy.write_text(copy.read_text()+'\nEdited invalid copy.\n')
+        before=sha(page); result=cp(w,'checkin','first-page','--json')
+        obs('modified-invalid-checkin',exit=result['exit'],page_unchanged=before==sha(page),copy_retained=copy.exists())
+        must(cp(w,'checkin','first-page','--discard','--json'))
+        page.write_text(page.read_text().replace('tags: [def-invalid-tag]','tags: [tool]'))
+        # Entirely local source repository-independent Git setup.
+        local_identity(w); commit(w,'fixture baseline')
+        clean=run(['git','-C',w,'status','--short'])['stdout']; page.touch()
+        touched=run(['git','-C',w,'status','--short'])['stdout']
+        obs('mtime-only',before=clean,after=touched)
+        # A fresh page has no agent record from earlier invalid-copy checks.
+        must(new(w,'checkout-target')); commit(w,'fixture new checkout target')
+        pre=manifest(w); co=obj(cp(w,'checkout','checkout-target','--json')); post=manifest(w)
+        changed=sorted(k for k in pre.keys()|post.keys() if pre.get(k)!=post.get(k))
+        againpre=manifest(w); must(cp(w,'checkout','checkout-target','--json')); againpost=manifest(w)
+        obs('checkout-manifest',changed=changed,copy_path=co['path'],copy_outside_wiki=not Path(co['path']).is_relative_to(w),page_unchanged=pre['concepts/checkout-target.md']==post['concepts/checkout-target.md'],repeat_changed=sorted(k for k in againpre.keys()|againpost.keys() if againpre.get(k)!=againpost.get(k)))
+        task=obj(cp(w,'tasks','add','edit','checkout-target','--request','Correct body facts','--json'))['task']
+        for args in [('show','first-page','--no-mark'),('show','first-page','--no-mark','--json'),('list',),('list','--json'),('status',),('status','--json'),('version',),('--help',)]: cp(w,*args)
+        cp(w,'tasks','done',task['id'],'--json')
+        target=w/'concepts/checkout-target.md'; beforebody=target.read_text().split('---',2)[-1]
+        target.write_text(target.read_text().replace('title: checkout-target','title: metadata-only'))
+        cp(w,'tasks','done',task['id'],'--note','Body corrected claim','--json')
+        obs('done-metadata-only-cli',body_same=beforebody==target.read_text().split('---',2)[-1])
+        must(cp(w,'checkin','checkout-target','--discard','--json'))
+        # Legacy baseline absent, future fields present: prove actual CLI close preserves fields.
+        legacy=w/'_meta/tasks/legacy-def.json'; legacy.write_text(json.dumps(dict(version=1,id='legacy-def',type='edit',status='pending',pages=['checkout-target'],created='2020-01-01T00:00:00Z',request='legacy body request',future_viewed={'hash':'marker','body':'legacy snapshot'})))
+        cp(w,'tasks','done','legacy-def','--json')
+        obs('legacy-and-unknown-fields',stored=json.loads(legacy.read_text()))
+        # Failure recipe: duplicate slug gives a successful show of the old body.
+        for guarded in [False,True]:
+            body=BASE/('guarded-body.md' if guarded else 'unconditional-body.md'); body.write_text('Unique intended new body.\n')
+            args=[str(BIN),'new','Duplicate title','--type','concept','--slug','first-page','--body-file',str(body),'--wiki',str(w)]
+            import shlex
+            create=shlex.join(args); show=shlex.join([str(BIN),'show','first-page','--no-mark','--wiki',str(w)]); rm=shlex.join(['rm',str(body)])
+            script=(f'if {create}; then\nif {show}; then\n{rm}\nelse\nexit 1\nfi\nelse\nexit 1\nfi' if guarded else f'{create}\n{show}\n{rm}\n')
+            r=run(['zsh','-f','-c',script],cwd=BASE)
+            obs('guarded-recipe' if guarded else 'unconditional-recipe',shell_exit=r['exit'],body_retained=body.exists(),new_body_in_page='Unique intended new body.' in page.read_text())
+        # Post-write failure; checkin reclaims its working copy before afterWrite.
+        partial=wiki('partial-checkin')
+        must(new(partial,'part'))
+        c=obj(cp(partial,'checkout','part','--json')); work=Path(c['path']); backup=BASE/'checkin-intended-backup.md'
+        work.write_text(work.read_text().replace('Defense original body.','Intended checkin body.')); backup.write_bytes(work.read_bytes())
+        import shutil
+        shutil.rmtree(partial/'logs'); (partial/'logs').write_text('block logs directory')
+        r=cp(partial,'checkin','part','--json')
+        obs('partial-checkin',exit=r['exit'],page_has_intended='Intended checkin body.' in (partial/'concepts/part.md').read_text(),copy_exists=work.exists(),backup_exists=backup.exists())
+        cp(partial,'new','partial-new','--slug','partial-new','--type','concept','--json')
+        obs('partial-new',page_exists=(partial/'concepts/partial-new.md').exists(),index_exists=(partial/'index.md').exists())
+        # Custom install is inside disposable paths only.
+        custom=BASE/'custom-agent/skills'
+        must(run([BIN,'skills','install','--dir',custom,'--json'],cwd=BASE))
+        run([BIN,'skills','install','--json'],cwd=BASE)
+        must(run([BIN,'skills','install','--dir',custom,'--json'],cwd=BASE))
+        (BASE/'pi-home').mkdir(); must(run([BIN,'skills','install','--json'],cwd=BASE,extra={'PI_CODING_AGENT_DIR':str(BASE/'pi-home')}))
+        obs('pi-override',override_installed=(BASE/'pi-home/skills/canopy-wiki/SKILL.md').exists(),default_pi_created=(BASE/'home/.pi').exists())
+        # Resolver matrix: bare commands only, using fresh roots and explicit override.
+        other=wiki('wiki-b'); third=wiki('wiki-c')
+        run([BIN,'status','--json'],cwd=BASE)
+        run([BIN,'status','--json'],cwd=other)
+        run([BIN,'status','--json'],cwd=other,extra={'CANOPY_WIKI':str(third)})
+        run([BIN,'status','--json','--wiki',w],cwd=other,extra={'CANOPY_WIKI':str(third)})
+        # Runtime taxonomy checks distinguish union from list-length arithmetic.
+        toml=other/'canopy.toml'; toml.write_text(toml.read_text().replace('[schema]','[schema]\n  tags = ["legacy-def-extra"]',1))
+        cp(other,'tags','--json'); cp(other,'tags','--audit','--json')
+        duplicate=wiki('duplicate-taxonomy'); tc=duplicate/'canopy.toml'
+        tc.write_text(tc.read_text().replace('forms = [','forms = ["tool", ',1))
+        cp(duplicate,'tags','--json'); cp(duplicate,'tags','--audit','--json')
+        legacyw=wiki('legacy-taxonomy'); (legacyw/'canopy.toml').write_text('[schema]\ntags = ["legacy-only"]\n')
+        cp(legacyw,'tags','--json'); cp(legacyw,'tags','--audit','--json')
+        # Logs survive reindex and deleting only our disposable cache.
+        log=next(w.glob('logs/*.jsonl')); lines=log.read_text().splitlines(); first=json.loads(lines[0]); first['note']='DEF-PRESERVED-HISTORY'; lines[0]=json.dumps(first); log.write_text('\n'.join(lines)+'\n')
+        count=len(lines); must(cp(w,'update','first-page','--json')); must(cp(w,'reindex','--json'))
+        cache=BASE/'cache/canopy/index'
+        for p in cache.glob('*'):
+            if p.is_file(): p.unlink()
+        must(cp(w,'reindex','--json'))
+        obs('history-cache-delete',before_lines=count,after_lines=len(log.read_text().splitlines()),first_note=json.loads(log.read_text().splitlines()[0]).get('note'),html_marker='<!-- generated' in log.read_text())
+        cp(w,'recall','fixtureword','--json'); cp(w,'search','fixtureword','--mode','hybrid','--json'); cp(w,'show','first-page','--no-mark','--json')
+        # W shell failure and quoted path positive controls in both declared shells.
+        for shell in ['zsh','bash']:
+            run([shell,'-f' if shell=='zsh' else '--noprofile','-c','audit_w="--wiki $1"; "$2" lint $audit_w --json','def-web',str(w),str(BIN)],cwd=BASE)
+            run([shell,'-f' if shell=='zsh' else '--noprofile','-c','wiki=$1; "$2" lint --wiki "$wiki" --json; git -C "$wiki" status --short; test -f "$wiki/canopy.toml"','def-web',str(w),str(BIN)],cwd=BASE)
+        run(['bash','--noprofile','-c','audit_w="--wiki $1"; git -C $audit_w status --short','def-web',str(w)],cwd=BASE)
+        # Local bare remote only; initial unrelated dirty change rides along with sync.
+        syncw=wiki('sync-json'); must(run(['git','init','-b','main',syncw])); local_identity(syncw); must(new(syncw,'baseline'))
+        origin=BASE/'origin.git'; must(run(['git','init','--bare','-b','main',origin])); commit(syncw,'fixture start')
+        must(run(['git','-C',syncw,'remote','add','origin',origin])); must(run(['git','-C',syncw,'push','-u','origin','main']))
+        unrelated=syncw/'raw/unrelated-def.txt'; unrelated.parent.mkdir(exist_ok=True); unrelated.write_text('Previously pending unrelated fixture change.\n')
+        r=must(cp(syncw,'sync','--json'))
+        remote=run(['git','--git-dir',origin,'show','main:raw/unrelated-def.txt'])
+        obs('queue-first-sync',sync=json.loads(r['stdout']),unrelated_on_local_origin=remote['exit']==0)
+        for args in [('new','synced-new','--slug','synced-new','--type','concept'),('update','synced-new','--body-file','-')]:
+            r=must(cp(syncw,*args,'--json','--sync',stdin='Synced intended body.\n' if args[0]=='update' else None))
+            decoder=json.JSONDecoder(); remaining=r['stdout']; values=[]
+            while remaining.strip():
+                value,end=decoder.raw_decode(remaining.lstrip()); values.append(value); remaining=remaining.lstrip()[end:]
+            try:json.loads(r['stdout']); single=True
+            except json.JSONDecodeError:single=False
+            obs('json-sync-'+args[0],value_count=len(values),single_json=single,values=values)
+    elif action=='serve':
+        w=wiki('actual-cli-serve'); must(new(w,'served','DEF CLI PRIVATE CANARY.\n'))
+        sock=socket.socket(); sock.bind(('127.0.0.1',0)); port=sock.getsockname()[1]; sock.close()
+        out=open(BASE/'serve.stdout','w'); err=open(BASE/'serve.stderr','w')
+        argv=[str(BIN),'serve','--wiki',str(w),'--addr',f'127.0.0.1:{port}']; proc=subprocess.Popen(argv,env=ENV,cwd=BASE,stdout=out,stderr=err)
+        try:
+            for _ in range(60):
+                try:
+                    conn=socket.create_connection(('127.0.0.1',port),timeout=.5); conn.close(); break
+                except OSError:time.sleep(.05)
+            req=urllib.request.Request(f'http://127.0.0.1:{port}/api/preview/served',headers={'Host':'foreign.def.test:'+str(port)})
+            with urllib.request.urlopen(req,timeout=5) as res: obs('cli-foreign-host',status=res.status,canary='DEF CLI PRIVATE CANARY' in res.read().decode())
+            conn=socket.create_connection(('127.0.0.1',port),timeout=5); conn.settimeout(5)
+            conn.sendall(b'GET /api/preview/served HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Delayed: '); start=time.monotonic(); time.sleep(1.1); conn.sendall(b'completed\r\nConnection: close\r\n\r\n')
+            data=b''
+            while True:
+                block=conn.recv(65536)
+                if not block:break
+                data+=block
+            conn.close(); obs('cli-slow-header',seconds=round(time.monotonic()-start,3),status_line=data.split(b'\r\n')[0].decode())
+        finally:
+            proc.send_signal(signal.SIGINT); code=proc.wait(timeout=10); out.close(); err.close()
+            obs('cli-server-lifecycle',argv=argv,exit=code,stdout=(BASE/'serve.stdout').read_text(),stderr=(BASE/'serve.stderr').read_text())
+    else: raise ValueError(action)
+finally:
+    (EVIDENCE/f'def_web-{action}.json').write_text(json.dumps(RECORDS,ensure_ascii=False,indent=2)+'\n')
+    print(json.dumps(dict(action=action,records=len(RECORDS),observations=[r for r in RECORDS if 'observation' in r],nonzero=[dict(argv=r['argv'],exit=r['exit']) for r in RECORDS if r.get('exit')]),ensure_ascii=False,indent=2))

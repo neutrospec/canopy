@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "go",
+    "run",
+    "review_probes/docs/qa.go",
+    "docs/review/2026-10-09/05-docs.md"
+  ],
+  "exit": 0,
+  "stdout": "{\"parser_failures\":0,\"report_mermaid_blocks\":1}\n",
+  "stderr": ""
+}

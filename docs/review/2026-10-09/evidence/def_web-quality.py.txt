@@ -1,0 +1,146 @@
+from pathlib import Path
+import ast
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+
+# Read-only source/report checks. --final requires prior cleanup of own scratch/fixture.
+repo = Path(os.environ.get('DEF_WEB_REPO', str(Path.cwd()))).resolve()
+ev = repo / 'docs/review/2026-10-09/evidence'
+report = repo / 'docs/review/2026-10-09/12-defense-web-docs.md'
+baseline = json.loads((ev / 'def_web-baseline.json').read_text())
+fixture = Path(baseline['fixture'])
+final = '--final' in sys.argv
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+
+git_env = {k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
+git_env.update(HOME=str(fixture/'home'), XDG_CONFIG_HOME=str(fixture/'config'),
+               XDG_CACHE_HOME=str(fixture/'cache'), XDG_DATA_HOME=str(fixture/'data'),
+               XDG_STATE_HOME=str(fixture/'state'), TMPDIR=str(fixture/'tmp'),
+               GIT_CONFIG_GLOBAL='/dev/null', GIT_CONFIG_SYSTEM='/dev/null',
+               GIT_CONFIG_NOSYSTEM='1', GIT_OPTIONAL_LOCKS='0',
+               GIT_TERMINAL_PROMPT='0', GOTELEMETRY='off',
+               GOCACHE='/private/tmp/canopy-review/go-cache', GOPROXY='off')
+
+def git(*args):
+    return subprocess.check_output(['git','--no-optional-locks',*args],
+                                   cwd=repo,env=git_env).decode()
+
+text = report.read_text()
+expected = {f'WEB-{i:02}' for i in range(1,14)}
+expected |= {f'DOC-{i:02}' for i in range(1,21)}
+expected |= {f'RED-C-{i:02}' for i in range(1,4)}
+rows = re.findall(r'^\| \*\*((?:WEB|DOC)-\d\d|RED-C-\d\d)\*\* \|.*$',text,re.M)
+assert set(rows)==expected and len(rows)==len(expected), rows
+
+table_widths=[]
+width=None
+row_checks={}
+for lineno,line in enumerate(text.splitlines(),1):
+    if not line.startswith('|'):
+        width=None
+        continue
+    cells=re.split(r'(?<!\\)\|',line)[1:-1]
+    if width is None:
+        width=len(cells)
+        table_widths.append({'start_line':lineno,'columns':width})
+    assert len(cells)==width,(lineno,len(cells),width)
+    match=re.match(r'\| \*\*((?:WEB|DOC)-\d\d|RED-C-\d\d)\*\* \|',line)
+    if match:
+        ident=match.group(1)
+        claim_index=3 if ident.startswith('RED') else 4
+        claim=cells[claim_index]
+        remedy=cells[claim_index+1]
+        assert re.search(r'\*\*(accept|narrow|reject|defer)\*\*',claim),ident
+        assert re.search(r'\*\*(accept|narrow|reject|defer)\*\*',remedy),ident
+        assert re.search(r'P[123]',claim),ident
+        assert '?' in line,ident
+        row_checks[ident]={'line':lineno,'separate_claim_and_remedy':True,
+                           'severity':re.findall(r'P[123]',claim),
+                           'direct_question_answer_present':True}
+
+links=[]
+for label,target in re.findall(r'\[([^\]]+)\]\(([^)]+)\)',text):
+    if re.match(r'\w+://',target):
+        continue
+    path=(report.parent/target.split('#')[0]).resolve()
+    exists=path.is_file()
+    planned_outputs=['evidence/def_web-final-check.json']
+    if not final:
+        planned_outputs.append('evidence/def_web-quality.json')
+    pending_output=(target in planned_outputs)
+    assert exists or pending_output,(label,target)
+    links.append({'label':label,'target':target,'exists':exists,
+                  'planned_output_pending':pending_output and not exists})
+
+head=git('rev-parse','HEAD').strip()
+index=Path(baseline['index'])
+tracked=git('ls-files','-z').rstrip('\0').split('\0')
+changed=[p for p,digest in baseline['tracked_sha256'].items() if sha(repo/p)!=digest]
+input_changes=[p for p,digest in baseline['read_input_sha256'].items() if sha(repo/p)!=digest]
+tracked_status=git('status','--porcelain=v1','--untracked-files=no')
+assert head==baseline['head'],head
+assert sha(index)==baseline['index_sha256']
+assert set(tracked)==set(baseline['tracked_sha256'])
+assert not changed and not input_changes and tracked_status==baseline['tracked_status']
+
+syntax={}
+for name in ['runner.py','collect.py','quality.py']:
+    source=ev/('def_web-'+name+'.txt')
+    ast.parse(source.read_text(),filename=str(source))
+    syntax[name]='parse ok; no product execution'
+
+style=(repo/'internal/webui/static/style.css').read_text()
+chroma=(repo/'internal/webui/static/chroma.css').read_text()
+for token in ['#edf1ed','#242d27']:
+    assert token in style
+for token in ['#999988','#007f7f']:
+    assert token in chroma
+
+def luminance(rgb):
+    channels=[int(rgb[i:i+2],16)/255 for i in (1,3,5)]
+    channels=[v/12.92 if v<=0.04045 else ((v+0.055)/1.055)**2.4 for v in channels]
+    return sum(v*w for v,w in zip(channels,(0.2126,0.7152,0.0722)))
+
+contrast=[]
+for theme,fg,bg in [('light','#999988','#edf1ed'),('dark','#007f7f','#242d27')]:
+    low,high=sorted((luminance(fg),luminance(bg)))
+    ratio=(high+0.05)/(low+0.05)
+    contrast.append({'theme':theme,'foreground':fg,'background':bg,
+                     'ratio':ratio,'limitation':'specified source colors only; no browser computed style'})
+
+scratch=repo/'review_probes/def_web'
+cleanup={'own_scratch_absent':not scratch.exists(),'own_fixture_absent':not fixture.exists(),
+         'fixture':str(fixture),'scratch':str(scratch),
+         'shared_go_cache_removed':False,'real_HOME_or_other_worker_cleanup':False}
+if final:
+    assert cleanup['own_scratch_absent'] and cleanup['own_fixture_absent'],cleanup
+
+manifest={str(p.relative_to(repo)):{'sha256':sha(p),'bytes':p.stat().st_size}
+          for p in sorted(ev.glob('def_web-*'))
+          if p.is_file() and p.name not in ['def_web-quality.json','def_web-final-check.json']}
+result={'phase':'final' if final else 'before_cleanup',
+        'report':str(report.relative_to(repo)),'report_sha256':sha(report),
+        'primary_ids':sorted(rows),'primary_count':len(rows),'row_checks':row_checks,
+        'table_widths':table_widths,'links':links,'python_sources':syntax,
+        'head':head,'index_sha256':sha(index),'tracked_files':len(tracked),
+        'changed_tracked_files':changed,'changed_review_inputs':input_changes,
+        'tracked_status':tracked_status,'tracked_path_set_unchanged':True,
+        'specified_color_contrast':contrast,'cleanup':cleanup,
+        'own_evidence_manifest_excluding_quality_outputs':manifest,
+        'limit':'No filesystem-wide write tracing; no claim of zero HOME writes by all tools. No other defense report read.'}
+out=ev/('def_web-final-check.json' if final else 'def_web-quality.json')
+out.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+for link in result['links']:
+    path=(report.parent/link['target'].split('#')[0]).resolve()
+    link['exists']=path.is_file()
+    link['planned_output_pending']=not link['exists']
+out.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'output':str(out),'ids':len(rows),'head':head,'changed':changed,
+                  'input_changes':input_changes,'tables':table_widths,
+                  'contrast':contrast,'cleanup':cleanup},ensure_ascii=False,indent=2))

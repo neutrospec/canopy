@@ -1,0 +1,23 @@
+from pathlib import Path
+import json
+import os
+import subprocess
+
+repo=Path('/Users/nobocop/play/canopy');e=repo/'docs/review/2026-10-09/evidence'
+base=json.loads((e/'red_web-cli-results.json').read_text());run=Path(base['run'])
+env=os.environ.copy();env.update(base['env']);env.update(GIT_CONFIG_GLOBAL='/dev/null',GIT_CONFIG_NOSYSTEM='1',GIT_TERMINAL_PROMPT='0')
+for key in ['CANOPY_WIKI','GIT_DIR','GIT_WORK_TREE','GIT_INDEX_FILE']:env.pop(key,None)
+wiki=run/'git-wiki';binary=run/'canopy'
+records=[]
+for args in [
+    ['new','Sync flag example','--slug','sync-flag','--type','concept','--sync'],
+    ['update','sync-flag','--sync'],
+]:
+    argv=[str(binary),*args,'--wiki',str(wiki),'--json']
+    result=subprocess.run(argv,env=env,cwd=run,text=True,capture_output=True,timeout=30)
+    values=[];remaining=result.stdout.strip();decoder=json.JSONDecoder()
+    while remaining:
+        value,end=decoder.raw_decode(remaining);values.append(value);remaining=remaining[end:].lstrip()
+    records.append(dict(argv=argv,exit=result.returncode,stdout=result.stdout,stderr=result.stderr,json_values=values,json_value_count=len(values)))
+print(json.dumps(records,ensure_ascii=False,indent=2))
+(e/'red_web-sync-json-results.json').write_text(json.dumps(dict(run=str(run),records=records),ensure_ascii=False,indent=2)+'\n')

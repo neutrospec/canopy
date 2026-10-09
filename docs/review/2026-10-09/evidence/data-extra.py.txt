@@ -1,0 +1,42 @@
+from pathlib import Path
+exec(Path('review_probes/data/cli.py').read_text().split('# A create waits')[0].replace(".open('w')", ".open('a')"))
+
+w = wiki('title-escaping')
+for slug, title in [('escaped', r'C:\new\tool'), ('invalid', r'C:\Users\note'), ('multiline', 'First\nSecond')]:
+    cp = canopy(w, 'new', title, '--type', 'concept', '--slug', slug, '--json')
+    lint = canopy(w, 'lint', '--json')
+    emit('title-'+slug, code=cp.returncode, supplied=title,
+         counts=json.loads(lint.stdout)['counts'], raw=(w/'concepts'/f'{slug}.md').read_text())
+w = wiki('body-links')
+cp = canopy(w, 'new', 'Bad-Link', '--slug', 'bad-link', '--type', 'concept', '--json',
+            '--body-file', bodyfile(w, 'body.txt', '# Bad-Link\n\n[[does-not-exist]]'))
+lint = canopy(w, 'lint', '--json')
+emit('body-links', code=cp.returncode, counts=json.loads(lint.stdout)['counts'])
+
+w = wiki('duplicate-move', body='FIRST-CONCEPT')
+(w/'entities/alpha.md').write_text((w/'concepts/alpha.md').read_text().replace('type: concept', 'type: entity').replace('FIRST-CONCEPT', 'SECOND-ENTITY-UNIQUE'))
+before = canopy(w, 'lint', '--json')
+cp = canopy(w, 'mv', 'alpha', '--type', 'entity', '--json')
+emit('duplicate-move', code=cp.returncode, before_counts=json.loads(before.stdout)['counts'],
+     concept_exists=(w/'concepts/alpha.md').exists(), entity_original_preserved='SECOND-ENTITY-UNIQUE' in (w/'entities/alpha.md').read_text())
+
+w = wiki('rename-task')
+task = json.loads(good(w, 'tasks', 'add', 'edit', 'alpha', '--request', 'Revise this page', '--json').stdout)['task']
+good(w, 'mv', 'alpha', '--slug', 'beta', '--json')
+cp = canopy(w, 'tasks', 'done', task['id'], '--json')
+emit('rename-task', code=cp.returncode, stderr=cp.stderr.strip(),
+     pending_pages=json.loads((w/'_meta/tasks'/f"{task['id']}.json").read_text())['pages'])
+
+for action, args in [('mv', ['mv','alpha','--slug','beta']), ('rm',['rm','alpha','--force']), ('archive',['archive','alpha'])]:
+    w = wiki('partial-'+action)
+    source = page(w, 'source', 'REFERENCE [[alpha]]')
+    good(w, 'update', 'alpha', '--json')
+    before_logs = logcount(w)
+    source.chmod(0o444)
+    cp = canopy(w, *args, '--json')
+    emit('partial-'+action, code=cp.returncode, old_exists=(w/'concepts/alpha.md').exists(),
+         new_exists=(w/'concepts/beta.md').exists(), archive_exists=(w/'_archive/concepts/alpha.md').exists(),
+         source_has_old_link='[[alpha]]' in source.read_text(), write_logs_added=logcount(w)-before_logs,
+         stderr=cp.stderr.strip())
+    source.chmod(0o644)
+TRACE.close()

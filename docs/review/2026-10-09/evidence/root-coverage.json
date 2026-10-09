@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "counts": {
+    "DATA": 15,
+    "STATE": 18,
+    "RED-A": 0,
+    "DEF-A": 1,
+    "SEARCH": 13,
+    "OPS": 11,
+    "RED-B": 1,
+    "DEF-B": 0,
+    "WEB": 13,
+    "DOC": 20,
+    "RED-C": 3,
+    "DEF-C": 0,
+    "adjudicated": 95,
+    "final_objections": 12,
+    "adjudicated_final_objections": 12
+  },
+  "pending": [],
+  "errors": [],
+  "limit": "ID presence only; read the debate matrices.",
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "/Users/nobocop/play/canopy/docs/review/2026-10-09/evidence/check-review.py"
+  ],
+  "exit": 0,
+  "stderr": "",
+  "checked_sha256": {
+    "plan.md": "8a63dd99eeabd601e33e3212753ad75f5ee0862181ec83c294b8ddeb0ce77199",
+    "adjudication.json": "9b24abc192df6c16d3c29228488e8a393220a8939b6e10158acb01dc2fdbca9f",
+    "13-final-challenge.md": "d32bfa237e7f947232082b5afbd30a6373931d2aff7b515cec74f197698f20eb",
+    "14-final-response.md": "dd2fcfe1581b2c529110efd9565623d510376c129f351455c86c528c479ecb5d",
+    "evidence/check-review.py": "80e5620f262914eb3bc3d29288b84cebd338cbb82713f0a12fd7f671073eb699"
+  }
+}

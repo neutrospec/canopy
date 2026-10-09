@@ -1,0 +1,420 @@
+package redweb
+
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"mime/multipart"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/lint"
+	"github.com/neutrospec/canopy/internal/mermaid"
+	"github.com/neutrospec/canopy/internal/reads"
+	"github.com/neutrospec/canopy/internal/resurface"
+	"github.com/neutrospec/canopy/internal/tasks"
+	"github.com/neutrospec/canopy/internal/webui"
+	"github.com/neutrospec/canopy/internal/wiki"
+)
+
+func TestMain(m *testing.M) { log.SetOutput(io.Discard); os.Exit(m.Run()) }
+
+func fixture(t *testing.T, n int, body string) (*config.Wiki, *webui.Server) {
+	t.Helper()
+	w := &config.Wiki{Root: t.TempDir(), Cfg: config.Default()}
+	if err := os.MkdirAll(filepath.Join(w.Root, "concepts"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < n; i++ {
+		slug := fmt.Sprintf("maple-%d", i)
+		content := fmt.Sprintf("---\ntitle: 단풍 지식 %d\ntype: concept\ncreated: 2021-07-01\nupdated: 2021-07-01\ntags: [tool]\n---\n%s\n", i, body)
+		if err := os.WriteFile(filepath.Join(w.Root, "concepts", slug+".md"), []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	s, err := webui.NewServer(w, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return w, s
+}
+
+type result struct {
+	code    int
+	body    string
+	header  http.Header
+	path    string
+	cookies []*http.Cookie
+	err     error
+}
+
+func request(c *http.Client, base, method, path, host, origin, body string, cookie *http.Cookie) result {
+	r, err := http.NewRequest(method, base+path, strings.NewReader(body))
+	if err != nil {
+		return result{err: err}
+	}
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Set("Accept-Language", "ko")
+	if host != "" {
+		r.Host = host
+	}
+	if origin != "" {
+		r.Header.Set("Origin", origin)
+	}
+	if cookie != nil {
+		r.AddCookie(cookie)
+	}
+	resp, err := c.Do(r)
+	if err != nil {
+		return result{err: err}
+	}
+	defer resp.Body.Close()
+	b, err := io.ReadAll(resp.Body)
+	return result{resp.StatusCode, string(b), resp.Header, resp.Request.URL.Path, resp.Cookies(), err}
+}
+
+func client() *http.Client {
+	return &http.Client{Timeout: 15 * time.Second, CheckRedirect: func(r *http.Request, via []*http.Request) error { return http.ErrUseLastResponse }}
+}
+func logJSON(t *testing.T, probe string, v any) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("OBS %s %s", probe, b)
+}
+func rawPage(w *config.Wiki) []byte {
+	b, _ := os.ReadFile(filepath.Join(w.Root, "concepts/maple-0.md"))
+	return b
+}
+func hash(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }
+
+func TestNetworkBoundaryAndRender(t *testing.T) {
+	w, s := fixture(t, 1, "RED-MAPLE-CANARY\n\n<script>window.redMarker=1</script>\n\n<img src='/no-image' onerror='window.redEvent=1'>\n\n[unsafe](javascript:alert%281%29)\n\n[[maple-0|<i>alias</i>]]")
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	c := client()
+	r := request(c, ts.URL, "GET", "/page/maple-0", "foreign.invalid:9123", "", "", nil)
+	p := request(c, ts.URL, "POST", "/task/edit/maple-0", "foreign.invalid:9123", "http://foreign.invalid:9123", "request=independent", nil)
+	blocked := request(c, ts.URL, "POST", "/task/edit/maple-0", "foreign.invalid:9123", "http://elsewhere.invalid:9123", "request=blocked", nil)
+	list, err := tasks.Load(w)
+	if err != nil {
+		t.Fatal(err)
+	}
+	logJSON(t, "host-render", map[string]any{"host_status": r.code, "canary": strings.Contains(r.body, "RED-MAPLE-CANARY"), "script": strings.Contains(r.body, "<script>window.redMarker=1</script>"), "event": strings.Contains(r.body, "onerror='window.redEvent=1'"), "javascript": strings.Contains(r.body, "href=\"javascript:"), "escaped_alias": strings.Contains(r.body, "&lt;i&gt;alias&lt;/i&gt;"), "matched_origin": p.code, "different_origin": blocked.code, "tasks": len(list)})
+	if r.code != 200 || p.code != 303 || blocked.code != 403 {
+		t.Fatal(r, p, blocked)
+	}
+}
+
+func TestTwoTabAndBurst(t *testing.T) {
+	for _, n := range []int{2, 24} {
+		w, s := fixture(t, 1, "Retained page body")
+		ts := httptest.NewServer(s.Handler())
+		c := client()
+		before := hash(rawPage(w))
+		accepted := map[string]bool{}
+		allCodes := map[int]int{}
+		lostRounds := 0
+		rounds := 24
+		if n == 24 {
+			rounds = 3
+		}
+		for round := 0; round < rounds; round++ {
+			start := make(chan struct{})
+			var wg sync.WaitGroup
+			var mu sync.Mutex
+			for i := 0; i < n; i++ {
+				wg.Add(1)
+				go func(i int) {
+					defer wg.Done()
+					<-start
+					body := fmt.Sprintf("independent-%d-%d-%d", n, round, i)
+					r := request(c, ts.URL, "POST", "/edit/maple-0", "", "", url.Values{"body": {body}}.Encode(), nil)
+					mu.Lock()
+					defer mu.Unlock()
+					allCodes[r.code]++
+					if r.code == 303 {
+						accepted[body] = true
+					}
+				}(i)
+			}
+			close(start)
+			wg.Wait()
+			list, err := tasks.Load(w)
+			if err != nil {
+				t.Fatal(err)
+			}
+			present := map[string]bool{}
+			for _, task := range list {
+				present[task.Body] = true
+			}
+			for i := 0; i < n; i++ {
+				body := fmt.Sprintf("independent-%d-%d-%d", n, round, i)
+				if accepted[body] && !present[body] {
+					lostRounds++
+					break
+				}
+			}
+		}
+		list, err := tasks.Load(w)
+		present := map[string]bool{}
+		for _, task := range list {
+			present[task.Body] = true
+		}
+		lost := 0
+		for b := range accepted {
+			if !present[b] {
+				lost++
+			}
+		}
+		logJSON(t, "concurrent-proposals", map[string]any{"per_round": n, "rounds": rounds, "codes": allCodes, "accepted": len(accepted), "files": len(list), "unique_bodies": len(present), "lost_bodies": lost, "rounds_with_loss": lostRounds, "page_unchanged": before == hash(rawPage(w)), "load_error": fmt.Sprint(err)})
+		ts.Close()
+	}
+}
+
+func TestStateConcurrency(t *testing.T) {
+	w, s := fixture(t, 40, "State race fixture")
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	c := client()
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	ok := map[string]bool{}
+	codes := map[int]int{}
+	for i := 0; i < 40; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			<-start
+			slug := fmt.Sprintf("maple-%d", i)
+			r := request(c, ts.URL, "POST", "/resurface/feedback", "", "", url.Values{"slug": {slug}, "action": {"up"}}.Encode(), nil)
+			mu.Lock()
+			defer mu.Unlock()
+			codes[r.code]++
+			if r.code == 303 {
+				ok[slug] = true
+			}
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+	st, err := resurface.LoadState(w)
+	present := map[string]bool{}
+	if st != nil {
+		for _, f := range st.Feedback {
+			present[f.Slug] = true
+		}
+	}
+	lost := 0
+	for slug := range ok {
+		if !present[slug] {
+			lost++
+		}
+	}
+	logJSON(t, "feedback-concurrency", map[string]any{"codes": codes, "accepted": len(ok), "persisted": len(present), "accepted_but_absent": lost, "load_error": fmt.Sprint(err)})
+	// Positive control: the one server's read mutex preserves all writers.
+	request(c, ts.URL, "POST", "/read/maple-0", "", "", "action=read", nil)
+	badGET := 0
+	badPOST := 0
+	start = make(chan struct{})
+	wg = sync.WaitGroup{}
+	for g := 0; g < 4; g++ {
+		wg.Add(1)
+		go func(g int) {
+			defer wg.Done()
+			<-start
+			for i := 0; i < 120; i++ {
+				method, path, body := "GET", "/api/graph", ""
+				if g == 0 {
+					method, path, body = "POST", "/read/maple-0", "action=read"
+				}
+				r := request(c, ts.URL, method, path, "", "", body, nil)
+				mu.Lock()
+				if method == "GET" && r.code != 200 {
+					badGET++
+				}
+				if method == "POST" && r.code != 303 {
+					badPOST++
+				}
+				mu.Unlock()
+			}
+		}(g)
+	}
+	close(start)
+	wg.Wait()
+	rd, err := reads.Load(w)
+	count := 0
+	if rd != nil && rd.Reads["maple-0"] != nil {
+		count = rd.Reads["maple-0"].Count
+	}
+	logJSON(t, "read-graph-concurrency", map[string]any{"get_requests": 360, "failed_get": badGET, "post_requests": 120, "failed_post": badPOST, "final_count": count, "load_error": fmt.Sprint(err)})
+}
+
+func TestAuthResponseAndLogout(t *testing.T) {
+	w, s := fixture(t, 1, "Session probe")
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	code, err := s.EnableAuth()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(s.Handler())
+	c := client()
+	setup := request(c, ts.URL, "POST", "/setup", "", "", url.Values{"code": {code}, "id": {"review-owner"}, "password": {"review-password-456"}}.Encode(), nil)
+	if setup.code != 303 || len(setup.cookies) == 0 {
+		t.Fatal(setup)
+	}
+	cookie := setup.cookies[0]
+	noSession := request(&http.Client{Timeout: 5 * time.Second}, ts.URL, "POST", "/api/read/maple-0", "", "", "", nil)
+	rd, _ := reads.Load(w)
+	withSession := request(c, ts.URL, "POST", "/api/read/maple-0", "", "", "", cookie)
+	logJSON(t, "auth-response", map[string]any{"without_session_final_status": noSession.code, "without_session_path": noSession.path, "content_type": noSession.header.Get("Content-Type"), "read_before_session": rd.IsRead("maple-0"), "with_session_status": withSession.code, "with_session_body": withSession.body})
+	ts.Close()
+	_, local := fixture(t, 1, "Local no auth")
+	localTS := httptest.NewServer(local.Handler())
+	defer localTS.Close()
+	logout := request(c, localTS.URL, "POST", "/logout", "", "", "", cookie)
+	health := request(c, localTS.URL, "GET", "/api/preview/maple-0", "", "", "", nil)
+	noCookie := request(c, localTS.URL, "POST", "/logout", "", "", "", nil)
+	logJSON(t, "logout-local", map[string]any{"old_cookie_network_error": fmt.Sprint(logout.err), "old_cookie_status": logout.code, "subsequent_preview_status": health.code, "no_cookie_status": noCookie.code, "no_cookie_set_cookie": noCookie.header.Get("Set-Cookie")})
+}
+
+func TestHomeHEADUnknownAndStale(t *testing.T) {
+	w, s := fixture(t, 1, "Old knowledge original")
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	c := client()
+	statePath := filepath.Join(w.Root, "_meta/resurface/state.json")
+	before, _ := os.ReadFile(statePath)
+	head := request(c, ts.URL, "HEAD", "/", "", "https://different.invalid", "", nil)
+	after, _ := os.ReadFile(statePath)
+	get := request(c, ts.URL, "GET", "/", "", "", "", nil)
+	second, _ := os.ReadFile(statePath)
+	discover := request(c, ts.URL, "GET", "/special/discover", "", "", "", nil)
+	logJSON(t, "head-discover", map[string]any{"head_status": head.code, "head_body_bytes": len(head.body), "head_changed_state": !bytes.Equal(before, after), "get_same_day_unchanged": bytes.Equal(after, second), "home_unread_one": strings.Contains(get.body, "id=\"stat-unread\">1</strong>"), "home_all_read": strings.Contains(get.body, "전부 읽으셨습니다"), "discover_all_read": strings.Contains(discover.body, "전부 읽으셨습니다")})
+	explicit := request(c, ts.URL, "POST", "/read/old-tab-no-page", "", "", "action=read", nil)
+	automatic := request(c, ts.URL, "POST", "/api/read/old-tab-no-page", "", "", "", nil)
+	feedback := request(c, ts.URL, "POST", "/resurface/feedback", "", "", "slug=old-tab-no-page&action=up", nil)
+	rd, _ := reads.Load(w)
+	st, _ := resurface.LoadState(w)
+	logJSON(t, "unknown-page", map[string]any{"explicit_status": explicit.code, "recorded": rd.IsRead("old-tab-no-page"), "automatic_status": automatic.code, "feedback_status": feedback.code, "feedback_rows": len(st.Feedback)})
+	editForm := request(c, ts.URL, "GET", "/edit/maple-0", "", "", "", nil)
+	old := rawPage(w)
+	newPage := bytes.Replace(old, []byte("Old knowledge original"), []byte("New knowledge added by agent"), 1)
+	if err := os.WriteFile(filepath.Join(w.Root, "concepts/maple-0.md"), newPage, 0644); err != nil {
+		t.Fatal(err)
+	}
+	post := request(c, ts.URL, "POST", "/edit/maple-0", "", "", url.Values{"body": {"Old knowledge typo corrected"}}.Encode(), nil)
+	list, err := tasks.Load(w)
+	if err != nil {
+		t.Fatal(err)
+	}
+	logJSON(t, "stale-proposal", map[string]any{"form_has_old": strings.Contains(editForm.body, "Old knowledge original"), "post_status": post.code, "tasks": len(list), "base_is_post_current": len(list) == 1 && list[0].Base == hash(newPage), "original_page_unchanged": bytes.Equal(newPage, rawPage(w))})
+	if len(list) == 1 {
+		unchanged, _ := wiki.Scan(w)
+		_, e1 := tasks.Close(w, unchanged, list[0].ID, tasks.StatusDone, "", "cli", time.Now())
+		metadata := bytes.Replace(newPage, []byte("title: 단풍 지식 0"), []byte("title: Metadata-only change"), 1)
+		os.WriteFile(filepath.Join(w.Root, "concepts/maple-0.md"), metadata, 0644)
+		scan, _ := wiki.Scan(w)
+		closed, e2 := tasks.Close(w, scan, list[0].ID, tasks.StatusDone, "metadata-only", "cli", time.Now())
+		logJSON(t, "edit-done-metadata", map[string]any{"no_change_rejected": e1 != nil, "metadata_only_error": fmt.Sprint(e2), "metadata_only_status": closed.Status, "body_has_new_knowledge": strings.Contains(string(rawPage(w)), "New knowledge added by agent")})
+	}
+}
+
+func TestSearchColdWarmAndScale(t *testing.T) {
+	w, s := fixture(t, 1, "uncommonmaplemarker in body")
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	c := client()
+	cold := request(c, ts.URL, "GET", "/api/search?q=uncommonmaplemarker", "", "", "", nil)
+	slugSearch := request(c, ts.URL, "GET", "/search?q=maple-0", "", "", "", nil)
+	afterSlug := request(c, ts.URL, "GET", "/api/search?q=uncommonmaplemarker", "", "", "", nil)
+	full := request(c, ts.URL, "GET", "/search?q=uncommonmaplemarker", "", "", "", nil)
+	warm := request(c, ts.URL, "GET", "/api/search?q=uncommonmaplemarker", "", "", "", nil)
+	title := request(c, ts.URL, "GET", "/search?q="+url.QueryEscape("단풍 지식 0"), "", "", "", nil)
+	logJSON(t, "cold-warm-search", map[string]any{"cold": cold.body, "slug_status": slugSearch.code, "slug_location": slugSearch.header.Get("Location"), "after_slug_redirect": afterSlug.body, "full_status": full.code, "warm": warm.body, "title_status": title.code, "title_location": title.header.Get("Location"), "db_path": w.DBPath()})
+	for _, n := range []int{50, 500} {
+		_, scale := fixture(t, n, strings.Repeat("compact wiki text ", 40))
+		h := scale.Handler()
+		runtime.GC()
+		var a, b runtime.MemStats
+		runtime.ReadMemStats(&a)
+		start := time.Now()
+		r := httptest.NewRecorder()
+		h.ServeHTTP(r, httptest.NewRequest("GET", "/api/preview/maple-0", nil))
+		elapsed := time.Since(start)
+		runtime.ReadMemStats(&b)
+		logJSON(t, "preview-scale", map[string]any{"pages": n, "body_bytes_per_page": 720, "status": r.Code, "response_bytes": r.Body.Len(), "elapsed_ms": float64(elapsed.Microseconds()) / 1000, "total_alloc_bytes": b.TotalAlloc - a.TotalAlloc})
+	}
+}
+
+func TestBodyBudgetAndLinterScope(t *testing.T) {
+	w, s := fixture(t, 1, "Body budget")
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	c := client()
+	big := strings.Repeat("B", 10*1024*1024+1)
+	r := request(c, ts.URL, "POST", "/edit/maple-0", "", "", "body="+big, nil)
+	var buf bytes.Buffer
+	mp := multipart.NewWriter(&buf)
+	mp.WriteField("body", big)
+	mp.Close()
+	req, _ := http.NewRequest("POST", ts.URL+"/edit/maple-0", &buf)
+	req.Header.Set("Content-Type", mp.FormDataContentType())
+	resp, err := c.Do(req)
+	multipartCode := 0
+	if err == nil {
+		multipartCode = resp.StatusCode
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+	}
+	list, e := tasks.Load(w)
+	logJSON(t, "body-budget", map[string]any{"urlencoded_status": r.code, "urlencoded_error": r.body, "multipart_status": multipartCode, "task_count": len(list), "load_error": fmt.Sprint(e), "field_bytes": len(big)})
+	// Deliberately bad fixtures belong only to this process and temp wiki.
+	for _, kind := range []string{"bad-yaml", "missing-tags", "empty-tags", "no-fm"} {
+		content := "---\ntitle: Valid\ntype: concept\ncreated: 2026-10-09\nupdated: 2026-10-09\n"
+		switch kind {
+		case "bad-yaml":
+			content = "---\ntitle: [invalid\n"
+		case "empty-tags":
+			content += "tags: []\n"
+		case "no-fm":
+			content = "No frontmatter\n"
+		}
+		if kind != "no-fm" {
+			content += "---\n"
+		}
+		content += "ordinary body\n"
+		os.WriteFile(filepath.Join(w.Root, "concepts/maple-0.md"), []byte(content), 0644)
+		scan, err := wiki.Scan(w)
+		if err != nil {
+			t.Fatal(err)
+		}
+		report := lint.Run(w, scan, mermaid.NewValidator())
+		passes := report.Counts["no-frontmatter"] == 0 && report.Counts["frontmatter-fields"] == 0
+		logJSON(t, "A3", map[string]any{"kind": kind, "counts": report.Counts, "documented_pass": passes})
+	}
+	content := "---\ntitle: Diagram\ntype: concept\ncreated: 2026-10-09\nupdated: 2026-10-09\ntags: []\n---\n```mermaid\nflowchart LR\n A[\"Works\"] --> B[\"Here\"]\n```\n"
+	os.WriteFile(filepath.Join(w.Root, "concepts/maple-0.md"), []byte(content), 0644)
+	scan, _ := wiki.Scan(w)
+	normal := lint.Run(w, scan, mermaid.NewValidator())
+	oldBundle := mermaid.Bundle
+	mermaid.Bundle = []byte("throw new Error('red_web process-local synthetic initialization fault');")
+	fault := lint.Run(w, scan, mermaid.NewValidator())
+	mermaid.Bundle = oldBundle
+	logJSON(t, "P1-internal-only", map[string]any{"normal_counts": normal.Counts, "injected_counts": fault.Counts, "documented_pass": fault.Counts["invalid-mermaid"] == 0, "synthetic_process_only": true})
+}

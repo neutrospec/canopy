@@ -1,0 +1,22 @@
+const fs = require('node:fs');
+const vm = require('node:vm');
+let source = fs.readFileSync('/Users/nobocop/play/canopy/internal/webui/static/vendor/tex-svg.js', 'utf8');
+// Expose the unchanged webpack modules before the real browser startup.
+// This probe exercises the shipped loader, not a DOM or TeX renderer.
+const marker = 'var __webpack_exports__={};';
+if (source.indexOf(marker) < 0 || source.indexOf(marker) !== source.lastIndexOf(marker)) throw new Error('unexpected webpack marker');
+source = source.replace(marker, 'globalThis.auditRequire=__webpack_require__;return;' + marker);
+const context = {
+  console,
+  document: {currentScript: {src:'http://localhost:8737/static/vendor/tex-svg.js'}},
+  MathJax: {
+    tex: {inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},
+    svg: {fontCache:'global'},
+  },
+};
+vm.runInNewContext(source, context);
+const loader = context.auditRequire(235);
+console.log(JSON.stringify({version:context.auditRequire(3282).VERSION, mathjaxRoot:loader.CONFIG.paths.mathjax}));
+for (const name of ['color','physics']) {
+ console.log(JSON.stringify({extension:name, resolved:loader.Package.resolvePath('[mathjax]/input/tex/extensions/'+name)}));
+}

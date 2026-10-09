@@ -1,0 +1,2221 @@
+{
+  "docs-cli-results.json": {
+    "records": 81,
+    "observations": [
+      {
+        "observation": "checkout_R1",
+        "page_hash_same": true,
+        "agent_before": null,
+        "agent_after": "bc14fa87858ea4218b2a90b5690f64b84674a28d7a9725c33982d91084553e19",
+        "git_status_same": false
+      },
+      {
+        "observation": "install_content",
+        "wiki_same": true,
+        "ingest_same": true
+      }
+    ],
+    "command_checks": [
+      {
+        "command": [
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "archive",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "backlinks",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "bridge",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "checkin",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "checkout",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "completion",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "digest",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "events",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "grep",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "init",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "lint",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "list",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "migrate",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "model",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "mv",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "new",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "recall",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "reconcile",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "reindex",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "resurface",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "rm",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "search",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "serve",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "show",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "skills",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "status",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "sync",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "tags",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "tasks",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "update",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "version",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "completion",
+          "bash",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "completion",
+          "fish",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "completion",
+          "powershell",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "completion",
+          "zsh",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "events",
+          "gc",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "migrate",
+          "status",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "model",
+          "pull",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "model",
+          "status",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "reconcile",
+          "bless",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "resurface",
+          "feedback",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "skills",
+          "install",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "tasks",
+          "add",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "tasks",
+          "dismiss",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "tasks",
+          "done",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "tasks",
+          "gc",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "tasks",
+          "list",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "tasks",
+          "add",
+          "connect",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "tasks",
+          "add",
+          "edit",
+          "--help"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "init",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "init",
+          "-b",
+          "main",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "new",
+          "첫 페이지",
+          "--type",
+          "concept",
+          "--tags",
+          "tool",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki"
+        ],
+        "exit": 1,
+        "stdout_empty": true,
+        "stderr_empty": false,
+        "stderr_prefix": "⚠ wiki has 1 uncommitted change(s) — run `canopy sync`\nerror: title has no ASCII letters to derive a filename from — pass an explicit English --slug (filenames "
+      },
+      {
+        "command": [
+          "new",
+          "Alpha",
+          "--slug",
+          "alpha",
+          "--type",
+          "concept",
+          "--tags",
+          "tool",
+          "--body-file",
+          "-",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "sync",
+          "-m",
+          "tutorial probe",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki"
+        ],
+        "exit": 1,
+        "stdout_empty": false,
+        "stderr_empty": false,
+        "stderr_prefix": "error: git commit -m tutorial probe: exit status 128: Author identity unknown\n\n*** Please tell me who you are.\n\nRun\n\n  git config --global user.email \"you@examp"
+      },
+      {
+        "command": [
+          "-C",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "rev-parse",
+          "--verify",
+          "HEAD"
+        ],
+        "exit": 128,
+        "stdout_empty": true,
+        "stderr_empty": false,
+        "stderr_prefix": "fatal: Needed a single revision\n"
+      },
+      {
+        "command": [
+          "search",
+          "Original",
+          "--mode",
+          "hybrid",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": false,
+        "stderr_prefix": "hybrid → keyword only (this canopy binary was built without embedding support (rebuild with -tags ORT))\n"
+      },
+      {
+        "command": [
+          "search",
+          "Original",
+          "--mode",
+          "semantic",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 1,
+        "stdout_empty": true,
+        "stderr_empty": false,
+        "stderr_prefix": "error: this canopy binary was built without embedding support (rebuild with -tags ORT)\n"
+      },
+      {
+        "command": [
+          "new",
+          "Bad link flag",
+          "--slug",
+          "bad-link-flag",
+          "--type",
+          "concept",
+          "--links",
+          "absent",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 1,
+        "stdout_empty": true,
+        "stderr_empty": false,
+        "stderr_prefix": "error: --links target \"absent\" does not exist (run `canopy search` to find real pages; links to nonexistent pages are the top lint issue)\n"
+      },
+      {
+        "command": [
+          "new",
+          "Body link",
+          "--slug",
+          "body-link",
+          "--type",
+          "concept",
+          "--body-file",
+          "-",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "lint",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "update",
+          "alpha",
+          "--body-file",
+          "-",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": true,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "show",
+          "alpha",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json",
+          "--no-mark"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "new",
+          "Move",
+          "--slug",
+          "move",
+          "--type",
+          "concept",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "mv",
+          "move",
+          "--slug",
+          "moved",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": true,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "archive",
+          "moved",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": true,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "new",
+          "Remove",
+          "--slug",
+          "remove",
+          "--type",
+          "concept",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "rm",
+          "remove",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": true,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "-C",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "status",
+          "--short"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "checkout",
+          "alpha",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "-C",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "status",
+          "--short"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "checkin",
+          "alpha",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 1,
+        "stdout_empty": true,
+        "stderr_empty": false,
+        "stderr_prefix": "error: tags not in taxonomy: invalid-audit-tag (see `canopy tags`)\n"
+      },
+      {
+        "command": [
+          "checkin",
+          "alpha",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--discard",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "update",
+          "alpha",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": true,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "lint",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "skills",
+          "install",
+          "--dir",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/custom-agent/skills",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "skills",
+          "install",
+          "--json"
+        ],
+        "exit": 1,
+        "stdout_empty": true,
+        "stderr_empty": false,
+        "stderr_prefix": "error: no agent skills directory found (looked for /private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/home/.hermes/skills, /private/tmp/canopy-audit-20261009/"
+      },
+      {
+        "command": [
+          "skills",
+          "install",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "-C",
+          "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki",
+          "rev-parse",
+          "--verify",
+          "HEAD"
+        ],
+        "exit": 128,
+        "stdout_empty": true,
+        "stderr_empty": false,
+        "stderr_prefix": "fatal: Needed a single revision\n"
+      }
+    ]
+  },
+  "docs-extra-results.json": {
+    "records": 26,
+    "observations": [
+      {
+        "probe": "wiki_resolution",
+        "default_root": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+        "from_other_wiki_root": "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-b"
+      },
+      {
+        "probe": "logs_not_regenerated",
+        "first_note": "audit-edited-history",
+        "generated_marker_present": false
+      },
+      {
+        "probe": "skill_example_failure",
+        "shell_exit": 0,
+        "body_exists": false,
+        "page_exists": false
+      },
+      {
+        "probe": "partial_failure",
+        "exit": 1,
+        "page_exists": true,
+        "index_exists": true
+      }
+    ],
+    "command_checks": [
+      {
+        "command": [
+          "init",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "tags",
+          "--audit",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "init",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-b",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "init",
+          "-b",
+          "main",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-b"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "status",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "status",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "new",
+          "Alpha",
+          "--slug",
+          "alpha",
+          "--type",
+          "concept",
+          "--tags",
+          "tool",
+          "--body-file",
+          "-",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "update",
+          "alpha",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": true,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "show",
+          "alpha",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": false,
+        "stderr_prefix": "— concepts/alpha.md —\n"
+      },
+      {
+        "command": [
+          "new",
+          "Beta",
+          "--slug",
+          "beta",
+          "--type",
+          "concept",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "checkout",
+          "beta",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "list",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "show",
+          "alpha",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+          "--no-mark"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": false,
+        "stderr_prefix": "— concepts/alpha.md —\n"
+      },
+      {
+        "command": [
+          "checkin",
+          "beta",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+          "--discard",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "-c",
+          "audit_w='--wiki /private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a'\n/private/tmp/canopy-audit-20261009/docs/canopy lint $audit_w --json"
+        ],
+        "exit": 1,
+        "stdout_empty": true,
+        "stderr_empty": false,
+        "stderr_prefix": "error: unknown flag: --wiki /private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a\n"
+      },
+      {
+        "command": [
+          "-c",
+          "audit_w='--wiki /private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-b'\ngit -C $audit_w status --short"
+        ],
+        "exit": 128,
+        "stdout_empty": true,
+        "stderr_empty": false,
+        "stderr_prefix": "fatal: cannot change to '--wiki': No such file or directory\n"
+      },
+      {
+        "command": [
+          "-c",
+          "body_file=/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/example-body.md\n/private/tmp/canopy-audit-20261009/docs/canopy new '새 개념' --type concept --slug new-concept --body-file \"$body_file\" --wiki /private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a\n/private/tmp/canopy-audit-20261009/docs/canopy show new-concept --wiki /private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a\nrm \"$body_file\""
+        ],
+        "exit": 0,
+        "stdout_empty": true,
+        "stderr_empty": false,
+        "stderr_prefix": "error: mermaid block at line 12 fails the renderer's parser — fix the diagram and retry (syntax rules: canopy-wiki skill):\nParse error on line 4:\n...LRA[missing"
+      },
+      {
+        "command": [
+          "init",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-partial",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "new",
+          "Partial",
+          "--slug",
+          "partial",
+          "--type",
+          "concept",
+          "--body-file",
+          "-",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-partial",
+          "--json"
+        ],
+        "exit": 1,
+        "stdout_empty": true,
+        "stderr_empty": false,
+        "stderr_prefix": "error: mkdir /private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-partial/logs: not a directory\n"
+      },
+      {
+        "command": [
+          "new",
+          "Partial",
+          "--slug",
+          "partial",
+          "--type",
+          "concept",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-partial",
+          "--json"
+        ],
+        "exit": 1,
+        "stdout_empty": true,
+        "stderr_empty": false,
+        "stderr_prefix": "error: page already exists: concepts/partial.md — update it instead of duplicating\n"
+      },
+      {
+        "command": [
+          "tags",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      },
+      {
+        "command": [
+          "tags",
+          "--audit",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-a",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout_empty": false,
+        "stderr_empty": true,
+        "stderr_prefix": ""
+      }
+    ]
+  },
+  "docs-help.json": [
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Manage an LLM wiki: schema-enforced writes, hybrid search, sync\n\nUsage:\n  canopy [command]\n\nAvailable Commands:\n  archive     Move a superseded page to _archive/ (inbound wikilinks become plain text)\n  backlinks   Show pages linking to a page, or list orphans with --orphans\n  bridge      Find similar page pairs: unlinked = connection candidates; --include-linked adds merge/contradiction candidates\n  checkin     Validate the working copy (schema, mermaid, base conflict) and write it into the wiki\n  checkout    Materialize a working copy for native editing (outside the wiki; checkin brings it back)\n  completion  Generate the autocompletion script for the specified shell\n  digest      Collect review material for a window: created/updated pages, tags, decision timeline\n  events      Query the machine-local event log (attention + task/sync/reconcile lifecycle)\n  grep        Regexp search with line numbers (slug:line: text) — across the wiki or inside one page\n  help        Help about any command\n  init        Adopt a wiki: write canopy.toml (schema) and build the index cache\n  lint        Check schema compliance, links, staleness (report only for now)\n  list        List all pages (slug, type, title), filterable by --type / --tag\n  migrate     Apply pending data-state migrations (also runs automatically on first use)\n  model       Manage the local embedding model\n  mv          Move a page between categories and/or rename it (rewrites inbound wikilinks)\n  new         Create a schema-validated page (index/log/embedding handled automatically)\n  recall      Chunk-level evidence for a question (agent memory: verbatim chunks + source slugs)\n  reconcile   Report back-door changes the blessed ledger doesn't know (read-only)\n  reindex     Rebuild the derived index (pages, FTS, and embeddings)\n  resurface   Pick forgotten/stale-hub pages to re-encounter (records pick history)\n  rm          Delete a page (refuses when backlinks exist, unless --force)\n  search      Search the wiki (hybrid = BM25 keyword + semantic vectors)\n  serve       Serve the wiki as a website (search, browsing, and edit proposals)\n  show        Print a page — whole, --lines N-M, or --section \"heading\" (path header on stderr)\n  skills      Manage the agent skill set for this wiki (hermes, Claude Code, …)\n  status      Wiki health at a glance: pages, git state, index freshness\n  sync        pull --rebase → commit all wiki changes → push → refresh index\n  tags        Show the valid types and tag taxonomy; --audit measures usage\n  tasks       Delegated task queue (web → agent): list, add, done (verified), dismiss\n  update      Record an edit: bump updated date, optionally replace the body, reindex + log\n  version     Print version, build metadata, and the data-schema version\n\nFlags:\n  -h, --help          help for canopy\n      --json          machine-readable JSON output\n  -v, --version       version for canopy\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n\nUse \"canopy [command] --help\" for more information about a command.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "archive",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Move a superseded page to _archive/ (inbound wikilinks become plain text)\n\nUsage:\n  canopy archive <page> [flags]\n\nFlags:\n  -h, --help             help for archive\n  -m, --message string   commit message when using --sync\n      --sync             run canopy sync right after\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "backlinks",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Show pages linking to a page, or list orphans with --orphans\n\nUsage:\n  canopy backlinks [page] [flags]\n\nFlags:\n  -h, --help      help for backlinks\n      --orphans   list pages with no inbound links\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "bridge",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Find similar page pairs: unlinked = connection candidates; --include-linked adds merge/contradiction candidates\n\nUsage:\n  canopy bridge [flags]\n\nFlags:\n  -n, --count int        max pairs (default 5)\n      --dismiss string   permanently dismiss a pair: slug-a:slug-b\n  -h, --help             help for bridge\n      --include-linked   also return linked pairs (semantic-lint candidates; raise --min-sim to ~0.85)\n      --min-sim float    cosine similarity threshold (default 0.7)\n      --peek             don't record pairs in state (preview only)\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "checkin",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Validate the working copy (schema, mermaid, base conflict) and write it into the wiki\n\nUsage:\n  canopy checkin <page> [flags]\n\nFlags:\n      --discard          drop the working copy without touching the wiki\n  -h, --help             help for checkin\n  -m, --message string   commit message when using --sync\n      --sync             run canopy sync right after\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "checkout",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Materialize a working copy for native editing (outside the wiki; checkin brings it back)\n\nUsage:\n  canopy checkout <page> [flags]\n\nFlags:\n  -h, --help   help for checkout\n      --list   list open checkouts (slug, state, path)\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "completion",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Generate the autocompletion script for canopy for the specified shell.\nSee each sub-command's help for details on how to use the generated script.\n\nUsage:\n  canopy completion [command]\n\nAvailable Commands:\n  bash        Generate the autocompletion script for bash\n  fish        Generate the autocompletion script for fish\n  powershell  Generate the autocompletion script for powershell\n  zsh         Generate the autocompletion script for zsh\n\nFlags:\n  -h, --help   help for completion\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n\nUse \"canopy completion [command] --help\" for more information about a command.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "digest",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Collect review material for a window: created/updated pages, tags, decision timeline\n\nUsage:\n  canopy digest [flags]\n\nFlags:\n  -h, --help           help for digest\n      --since string   window start: 90d, 12w, 3m, or YYYY-MM-DD (default \"90d\")\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "events",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Query the machine-local event log (attention + task/sync/reconcile lifecycle)\n\nUsage:\n  canopy events [flags]\n  canopy events [command]\n\nAvailable Commands:\n  gc          Prune events older than --days (machine-local only; the wiki is never touched)\n\nFlags:\n  -h, --help           help for events\n      --kind string    exact kind, or a prefix like \"task.*\"\n  -n, --limit int      maximum events (default 200)\n      --since string   window (7d, 4w, 1m, or YYYY-MM-DD)\n      --slug string    only events for this page\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n\nUse \"canopy events [command] --help\" for more information about a command.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "grep",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Regexp search with line numbers (slug:line: text) — across the wiki or inside one page\n\nUsage:\n  canopy grep <pattern> [page] [flags]\n\nFlags:\n  -h, --help          help for grep\n  -i, --ignore-case   case-insensitive match\n  -n, --max int       maximum matches to print (default 200)\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "init",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Adopt a wiki: write canopy.toml (schema) and build the index cache\n\nUsage:\n  canopy init [flags]\n\nFlags:\n      --force   overwrite existing canopy.toml\n  -h, --help    help for init\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "lint",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Check schema compliance, links, staleness (report only for now)\n\nUsage:\n  canopy lint [flags]\n\nFlags:\n  -h, --help   help for lint\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "list",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "List all pages (slug, type, title), filterable by --type / --tag\n\nUsage:\n  canopy list [flags]\n\nAliases:\n  list, ls\n\nFlags:\n  -h, --help          help for list\n      --tag string    filter by tag\n      --type string   filter by type (entity|concept|comparison)\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "migrate",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Apply pending data-state migrations (also runs automatically on first use)\n\nUsage:\n  canopy migrate [flags]\n  canopy migrate [command]\n\nAvailable Commands:\n  status      Show the current and target data-schema version and any pending steps\n\nFlags:\n  -h, --help   help for migrate\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n\nUse \"canopy migrate [command] --help\" for more information about a command.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "model",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Manage the local embedding model\n\nUsage:\n  canopy model [command]\n\nAvailable Commands:\n  pull        Download bge-m3 ONNX (~2.3GB) to $XDG_DATA_HOME/canopy/models\n  status      Show embedding stack status\n\nFlags:\n  -h, --help   help for model\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n\nUse \"canopy model [command] --help\" for more information about a command.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "mv",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Move a page between categories and/or rename it (rewrites inbound wikilinks)\n\nUsage:\n  canopy mv <page> [flags]\n\nFlags:\n  -h, --help             help for mv\n  -m, --message string   commit message when using --sync\n      --slug string      new filename slug (rewrites inbound wikilinks)\n      --sync             run canopy sync right after\n      --type string      new type (changes category directory)\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "new",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Create a schema-validated page (index/log/embedding handled automatically)\n\nUsage:\n  canopy new <title> [flags]\n\nFlags:\n      --body-file string   markdown body file, or - for stdin\n  -h, --help               help for new\n      --links strings      wikilink targets for the 관련 페이지 section (must exist)\n  -m, --message string     commit message when using --sync\n      --slug string        filename slug (required when the title has no English words)\n      --sync               run canopy sync right after\n      --tags strings       tags from the taxonomy\n      --type string        entity|concept|comparison (required)\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "recall",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Unlike search (which ranks pages), recall returns the actual chunks\nso an agent can inject them into context and cite [[slug]] sources.\n\nUsage:\n  canopy recall <question> [flags]\n\nFlags:\n  -h, --help           help for recall\n      --no-mark        read without recording an access (like --peek)\n      --per-page int   max chunks per page (0 = unlimited) (default 2)\n  -k, --top-k int      number of chunks (default 6)\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "reconcile",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Compares every page's content hash against the blessed ledger\n(_meta/reconcile/state.json). Pipeline writes are blessed automatically;\nwhat remains is foreign — edited/created/deleted outside canopy — and\nneeds judgment before it counts as canonical: merge duplicates into\nexisting pages, record contradictions side by side, fix links, then\nbless what stands. See docs/reconcile-design.md.\n\nUsage:\n  canopy reconcile [flags]\n  canopy reconcile [command]\n\nAvailable Commands:\n  bless       Mark reviewed state — current content, or its absence — as canonical\n\nFlags:\n  -h, --help   help for reconcile\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n\nUse \"canopy reconcile [command] --help\" for more information about a command.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "reindex",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Rebuild the derived index (pages, FTS, and embeddings)\n\nUsage:\n  canopy reindex [flags]\n\nFlags:\n  -h, --help       help for reindex\n      --no-embed   skip embedding refresh\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "resurface",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Pick forgotten/stale-hub pages to re-encounter (records pick history)\n\nUsage:\n  canopy resurface [flags]\n  canopy resurface [command]\n\nAvailable Commands:\n  feedback    Record 👍/👎/snooze for a resurfaced page (tunes future picks)\n\nFlags:\n  -n, --count int         number of picks (default 1)\n  -h, --help              help for resurface\n      --peek              don't record picks in state (preview only)\n      --strategy string   random|hub|auto (auto = 70% random-forgotten, 30% stale-hub) (default \"auto\")\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n\nUse \"canopy resurface [command] --help\" for more information about a command.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "rm",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Delete a page (refuses when backlinks exist, unless --force)\n\nUsage:\n  canopy rm <page> [flags]\n\nFlags:\n      --force            delete even with backlinks (they become plain text)\n  -h, --help             help for rm\n  -m, --message string   commit message when using --sync\n      --sync             run canopy sync right after\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "search",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Search the wiki (hybrid = BM25 keyword + semantic vectors)\n\nUsage:\n  canopy search <query> [flags]\n\nFlags:\n  -h, --help          help for search\n      --mode string   keyword|semantic|hybrid (default \"hybrid\")\n      --no-mark       search without recording the query event/gap\n  -k, --top-k int     number of results (default 10)\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "serve",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Serve renders the wiki over HTTP for humans: page views with\nbacklinks, hybrid search, faceted browsing, and Wikipedia-style\nmissing-page fallback. The body editor files proposals for an agent to\nreview and apply through the CLI; it never writes wiki pages directly.\n\nUsage:\n  canopy serve [flags]\n\nFlags:\n      --addr string   listen address (non-loopback binds require authentication) (default \"localhost:8737\")\n  -h, --help          help for serve\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "show",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Print a page — whole, --lines N-M, or --section \"heading\" (path header on stderr)\n\nUsage:\n  canopy show <page> [flags]\n\nAliases:\n  show, view, cat\n\nFlags:\n  -h, --help             help for show\n      --lines string     print only lines N-M (1-based, file lines)\n      --no-mark          read without recording an access (like --peek)\n      --section string   print only the section whose heading contains this text\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "skills",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Manage the agent skill set for this wiki (hermes, Claude Code, …)\n\nUsage:\n  canopy skills [command]\n\nAvailable Commands:\n  install     Install/refresh the canopy-wiki / canopy-ingest skills for every detected agent\n\nFlags:\n  -h, --help   help for skills\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n\nUse \"canopy skills [command] --help\" for more information about a command.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "status",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Wiki health at a glance: pages, git state, index freshness\n\nUsage:\n  canopy status [flags]\n\nFlags:\n  -h, --help   help for status\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "sync",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "pull --rebase → commit all wiki changes → push → refresh index\n\nUsage:\n  canopy sync [flags]\n\nFlags:\n  -h, --help             help for sync\n  -m, --message string   commit message (default: auto-generated from changed pages)\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "tags",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Show the valid types and tag taxonomy; --audit measures usage\n\nUsage:\n  canopy tags [flags]\n\nFlags:\n      --audit   measure taxonomy against usage: unused/overbroad topics, unknown tags\n  -h, --help    help for tags\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "tasks",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Delegated task queue (web → agent): list, add, done (verified), dismiss\n\nUsage:\n  canopy tasks [flags]\n  canopy tasks [command]\n\nAvailable Commands:\n  add         File a task by hand (the web UI files them via its buttons)\n  dismiss     Close a task as dismissed (judged not worth doing; it won't resurface)\n  done        Close a task as done — refused unless the outcome is verifiably in the wiki\n  gc          Remove closed tasks older than --days (pending tasks are never touched)\n  list        List tasks (default: pending only — what the agent loop should pick up)\n\nFlags:\n  -h, --help   help for tasks\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n\nUse \"canopy tasks [command] --help\" for more information about a command.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "update",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Record an edit: bump updated date, optionally replace the body, reindex + log\n\nUsage:\n  canopy update <page> [flags]\n\nFlags:\n      --body-file string   replace the page body from file, or - for stdin\n  -h, --help               help for update\n  -m, --message string     commit message when using --sync\n      --sync               run canopy sync right after\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "version",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Print version, build metadata, and the data-schema version\n\nUsage:\n  canopy version [flags]\n\nFlags:\n  -h, --help   help for version\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "completion",
+        "bash",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Generate the autocompletion script for the bash shell.\n\nThis script depends on the 'bash-completion' package.\nIf it is not installed already, you can install it via your OS's package manager.\n\nTo load completions in your current shell session:\n\n\tsource <(canopy completion bash)\n\nTo load completions for every new session, execute once:\n\n#### Linux:\n\n\tcanopy completion bash > /etc/bash_completion.d/canopy\n\n#### macOS:\n\n\tcanopy completion bash > $(brew --prefix)/etc/bash_completion.d/canopy\n\nYou will need to start a new shell for this setup to take effect.\n\nUsage:\n  canopy completion bash\n\nFlags:\n  -h, --help              help for bash\n      --no-descriptions   disable completion descriptions\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "completion",
+        "fish",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Generate the autocompletion script for the fish shell.\n\nTo load completions in your current shell session:\n\n\tcanopy completion fish | source\n\nTo load completions for every new session, execute once:\n\n\tcanopy completion fish > ~/.config/fish/completions/canopy.fish\n\nYou will need to start a new shell for this setup to take effect.\n\nUsage:\n  canopy completion fish [flags]\n\nFlags:\n  -h, --help              help for fish\n      --no-descriptions   disable completion descriptions\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "completion",
+        "powershell",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Generate the autocompletion script for powershell.\n\nTo load completions in your current shell session:\n\n\tcanopy completion powershell | Out-String | Invoke-Expression\n\nTo load completions for every new session, add the output of the above command\nto your powershell profile.\n\nUsage:\n  canopy completion powershell [flags]\n\nFlags:\n  -h, --help              help for powershell\n      --no-descriptions   disable completion descriptions\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "completion",
+        "zsh",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Generate the autocompletion script for the zsh shell.\n\nIf shell completion is not already enabled in your environment you will need\nto enable it.  You can execute the following once:\n\n\techo \"autoload -U compinit; compinit\" >> ~/.zshrc\n\nTo load completions in your current shell session:\n\n\tsource <(canopy completion zsh)\n\nTo load completions for every new session, execute once:\n\n#### Linux:\n\n\tcanopy completion zsh > \"${fpath[1]}/_canopy\"\n\n#### macOS:\n\n\tcanopy completion zsh > $(brew --prefix)/share/zsh/site-functions/_canopy\n\nYou will need to start a new shell for this setup to take effect.\n\nUsage:\n  canopy completion zsh [flags]\n\nFlags:\n  -h, --help              help for zsh\n      --no-descriptions   disable completion descriptions\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "events",
+        "gc",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Prune events older than --days (machine-local only; the wiki is never touched)\n\nUsage:\n  canopy events gc [flags]\n\nFlags:\n      --days int   keep events this many days (default 365)\n  -h, --help       help for gc\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "migrate",
+        "status",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Show the current and target data-schema version and any pending steps\n\nUsage:\n  canopy migrate status [flags]\n\nFlags:\n  -h, --help   help for status\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "model",
+        "pull",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Download bge-m3 ONNX (~2.3GB) to $XDG_DATA_HOME/canopy/models\n\nUsage:\n  canopy model pull [flags]\n\nFlags:\n  -h, --help   help for pull\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "model",
+        "status",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Show embedding stack status\n\nUsage:\n  canopy model status [flags]\n\nFlags:\n  -h, --help   help for status\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "reconcile",
+        "bless",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Mark reviewed state — current content, or its absence — as canonical\n\nUsage:\n  canopy reconcile bless [<page|path>…] [flags]\n\nFlags:\n      --all    bless the entire current state (initializes the gate on first use)\n  -h, --help   help for bless\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "resurface",
+        "feedback",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Record 👍/👎/snooze for a resurfaced page (tunes future picks)\n\nUsage:\n  canopy resurface feedback <page> [flags]\n\nFlags:\n      --down         this pick was noise (120d cooldown)\n  -h, --help         help for feedback\n      --snooze int   hide this page for N days\n      --up           this pick was valuable\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "skills",
+        "install",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Installs the two embedded skills into every known agent skills\ndirectory that exists (~/.hermes/skills, ~/.claude/skills, and pi's\n<agent dir>/skills — $PI_CODING_AGENT_DIR or ~/.pi/agent), so one\ncommand after a canopy upgrade refreshes every agent. Agents that are\nnot installed are skipped. Use --dir to target a single directory (it\nis created if missing).\n\nUsage:\n  canopy skills install [flags]\n\nFlags:\n      --dir string   install into this directory only (default: every existing known dir)\n  -h, --help         help for install\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "tasks",
+        "add",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "File a task by hand (the web UI files them via its buttons)\n\nUsage:\n  canopy tasks add [command]\n\nAvailable Commands:\n  connect     File a connect task: agent should mutually [[link]] the pair\n  edit        File an edit request: agent should revise the page per --request\n\nFlags:\n  -h, --help   help for add\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n\nUse \"canopy tasks add [command] --help\" for more information about a command.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "tasks",
+        "dismiss",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Close a task as dismissed (judged not worth doing; it won't resurface)\n\nUsage:\n  canopy tasks dismiss <id> [flags]\n\nFlags:\n  -h, --help          help for dismiss\n      --note string   one-line result (done) or reason (dismiss)\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "tasks",
+        "done",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Close a task as done — refused unless the outcome is verifiably in the wiki\n\nUsage:\n  canopy tasks done <id> [flags]\n\nFlags:\n  -h, --help          help for done\n      --note string   one-line result (done) or reason (dismiss)\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "tasks",
+        "gc",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "Remove closed tasks older than --days (pending tasks are never touched)\n\nUsage:\n  canopy tasks gc [flags]\n\nFlags:\n      --days int   keep closed tasks this many days (default 90)\n  -h, --help       help for gc\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "tasks",
+        "list",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "List tasks (default: pending only — what the agent loop should pick up)\n\nUsage:\n  canopy tasks list [flags]\n\nFlags:\n      --all             include done/dismissed tasks\n  -h, --help            help for list\n      --page string     only tasks involving this page\n      --status string   filter by status (pending|done|dismissed)\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "tasks",
+        "add",
+        "connect",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "File a connect task: agent should mutually [[link]] the pair\n\nUsage:\n  canopy tasks add connect <page-a> <page-b> [flags]\n\nFlags:\n  -h, --help   help for connect\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/docs/canopy",
+        "tasks",
+        "add",
+        "edit",
+        "--help"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1",
+      "exit": 0,
+      "stdout": "File an edit request: agent should revise the page per --request\n\nUsage:\n  canopy tasks add edit <page> [flags]\n\nFlags:\n  -h, --help             help for edit\n      --request string   what to change (required)\n\nGlobal Flags:\n      --json          machine-readable JSON output\n      --wiki string   wiki root (default: $CANOPY_WIKI or canopy.toml discovery)\n",
+      "stderr": ""
+    }
+  ],
+  "docs-manifest.json": {
+    "target_commit": "ede67e302a8487aecbb4d59587a8686292018cf6",
+    "head": "ede67e302a8487aecbb4d59587a8686292018cf6",
+    "markdown_documents": 30,
+    "markdown_lines": 4438,
+    "documents": [
+      {
+        "path": "README.md",
+        "lines": 265,
+        "sha256": "f9a023ffab5415b91012d669401cf5365331190190d6f8eb8e1c7fbefb467bdf"
+      },
+      {
+        "path": "README.en.md",
+        "lines": 283,
+        "sha256": "600280de64e6aeab21527f69eff9a0d04287d1f89593d97da3a0571ba0d98ccb"
+      },
+      {
+        "path": "AGENTS.md",
+        "lines": 114,
+        "sha256": "1c2b2174178714532a9b02f8d0c23d0569dbdf96438180b30096f85752cfd175"
+      },
+      {
+        "path": "CLAUDE.md",
+        "lines": 7,
+        "sha256": "c6448152cd785aeb40ab77b568a85b65ba6d6ee90056f4b73da280334b9d9ee2"
+      },
+      {
+        "path": "docs/agent-tasks.md",
+        "lines": 139,
+        "sha256": "cf49f420e744bc697a4484b6ad006646865d2419653cb0318af5a318c7c99116"
+      },
+      {
+        "path": "docs/checkout-design.md",
+        "lines": 94,
+        "sha256": "9aedae7f18d8c57645dd630cc973eb03f8e22d18d142209779098828364831b5"
+      },
+      {
+        "path": "docs/events.md",
+        "lines": 75,
+        "sha256": "c08cb1a7cf37123490f9436d41b4b96437c4d1174f8a7a91c929319811f58afa"
+      },
+      {
+        "path": "docs/getting-started.md",
+        "lines": 237,
+        "sha256": "24124d2308411d9c62e13fcc427be33cb77097e0de46c35bc00725a4adeac37e"
+      },
+      {
+        "path": "docs/homebrew-guide.md",
+        "lines": 273,
+        "sha256": "bf2356e1f54e85ebf49360510877d449c3b941bd5263b9e986187863d1665e13"
+      },
+      {
+        "path": "docs/i18n.md",
+        "lines": 76,
+        "sha256": "aede2e88501f000cf2bdf761a95586ea75a6c70ed91202e3f067dd082522becb"
+      },
+      {
+        "path": "docs/invariants.md",
+        "lines": 281,
+        "sha256": "33eb7d57e8b0086a1b5d8f8a416173771ad9289875303bb9a9dd8559d344f3d3"
+      },
+      {
+        "path": "docs/philosophy.md",
+        "lines": 236,
+        "sha256": "354316dbecd275809d6a79c0cd4ac847c6a13730a113412a0d89652df09f2935"
+      },
+      {
+        "path": "docs/reconcile-design.md",
+        "lines": 150,
+        "sha256": "3695fdf339f31c70eca37e1884eb61873e9bd13a84a49382c5ad5e927eaa72a4"
+      },
+      {
+        "path": "docs/second-brain.md",
+        "lines": 134,
+        "sha256": "a208669f6d96219c326e3bcc9d593baeb2e4cc09e14455afc326a67078d75723"
+      },
+      {
+        "path": "docs/taxonomy.md",
+        "lines": 65,
+        "sha256": "a26cd538672780bbb50ead289b62b7b08009d92da58510988f997e03db7940c6"
+      },
+      {
+        "path": "docs/troubleshooting.md",
+        "lines": 68,
+        "sha256": "eaca666507473b6afaa9717e0944ee51e7b2ef686ae778cc5b9f100ec450a226"
+      },
+      {
+        "path": "docs/upgrading.md",
+        "lines": 121,
+        "sha256": "f5bf7ede6b9a5214ddab16f9263c8ef65840a273eb289723f28d6ca35c58d441"
+      },
+      {
+        "path": "docs/versioning.md",
+        "lines": 202,
+        "sha256": "1ed5c6bfadd4430a7c8e100dcd65834bc60a05e95b2b9d16a569d26f9b1acad8"
+      },
+      {
+        "path": "docs/web-ui-board.md",
+        "lines": 180,
+        "sha256": "2ba1bf6f3d02145a87611b980e2c65bc370a4368e28732cf5094fc90a8bc6791"
+      },
+      {
+        "path": "docs/web-ui-i18n.md",
+        "lines": 110,
+        "sha256": "4b026571a7ffdc1d77ac35075acf0f5be080b73c204970929cf58d901a91d51c"
+      },
+      {
+        "path": "docs/web-ui-plan-2.md",
+        "lines": 148,
+        "sha256": "a0c7d213eb0589b06879360887cb425d7ea6afa3c71ccbcd7d1282dcc37e1c6b"
+      },
+      {
+        "path": "docs/web-ui-plan-3.md",
+        "lines": 96,
+        "sha256": "646c4157eb6be7a8f15f02f16e86ead588922e067bd4b107d7836259cdda68b0"
+      },
+      {
+        "path": "docs/web-ui-plan-4.md",
+        "lines": 120,
+        "sha256": "abc81a9cb1471d3f7327bd4aab542fcdf80f1eae52eacc48f5655885b82b5064"
+      },
+      {
+        "path": "docs/web-ui-plan.md",
+        "lines": 125,
+        "sha256": "3680b29e3fe802770f700c8b0fc84b16f3bdc19bdc0dae9a283d87a9efade0d7"
+      },
+      {
+        "path": "docs/web-ui-write-design.md",
+        "lines": 66,
+        "sha256": "4ce8c41a90c96f427eb1ed9d31f102e572527832c650e7171830db0e568dff0e"
+      },
+      {
+        "path": "docs/en/getting-started.md",
+        "lines": 253,
+        "sha256": "1e61b19053a0f72b0e044c90467c9a7792cdc58634ef2a511ae046df163b9b73"
+      },
+      {
+        "path": "docs/en/troubleshooting.md",
+        "lines": 73,
+        "sha256": "57ff0b8c6f72fc13f7239b74deb722ef9b09cb697b640907a5ff9bdd5cab9ed2"
+      },
+      {
+        "path": "docs/en/upgrading.md",
+        "lines": 132,
+        "sha256": "02efabd2cf2707499cb811fbc5b8486736fa20f6e832508ba457972e3d62eae3"
+      },
+      {
+        "path": "internal/skills/canopy_ingest.md",
+        "lines": 73,
+        "sha256": "e142875eec879e41b6d7ca01f72627e6f0a39b456b607b77a3abee3161890193"
+      },
+      {
+        "path": "internal/skills/canopy_wiki.md",
+        "lines": 242,
+        "sha256": "e5ba724f7b09e87ac8ff3f6e1a07b28bf6157da13596d1dca131a3ec9229fa9b"
+      }
+    ],
+    "skills_go": {
+      "path": "internal/skills/skills.go",
+      "lines": 206,
+      "sha256": "a4313a66aed3769db0061993dbc7c12be14c9d79c7dd4dbaffada98583ae6981"
+    },
+    "binary_sha256": "9f83781fbbf738f1f688e661003f2b1ef7b9603005cd3412ab3e97f4634546a6",
+    "help_surfaces": 50
+  },
+  "docs-recall-results.json": {
+    "run": "/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss",
+    "records": [
+      {
+        "argv": [
+          "init",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss/cache/canopy/index/3818d4107124.db\",\n  \"default_wiki_set\": true,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss/wiki\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "new",
+          "Evidence",
+          "--slug",
+          "evidence",
+          "--type",
+          "concept",
+          "--body-file",
+          "-",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"created\": \"concepts/evidence.md\",\n  \"related\": []\n}\n",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "recall",
+          "evidence",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss/wiki",
+          "--json"
+        ],
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: recall needs the embedding stack: this canopy binary was built without embedding support (rebuild with -tags ORT)\n"
+      },
+      {
+        "argv": [
+          "search",
+          "evidence",
+          "--mode",
+          "keyword",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss/wiki",
+          "--json"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"hits\": [\n    {\n      \"slug\": \"evidence\",\n      \"rel_path\": \"concepts/evidence.md\",\n      \"title\": \"Evidence\",\n      \"score\": 0.000002054945054945055,\n      \"snippet\": \"# »Evidence«\\n\\nLocal wiki »evidence«.\\n\"\n    }\n  ],\n  \"mode\": \"keyword\",\n  \"query\": \"evidence\"\n}\n",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "show",
+          "evidence",
+          "--wiki",
+          "/private/tmp/canopy-audit-20261009/docs/recall-vs1y_oss/wiki",
+          "--json",
+          "--no-mark"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"content\": \"---\\ntitle: \\\"Evidence\\\"\\ncreated: 2026-10-09\\nupdated: 2026-10-09\\ntype: concept\\ntags: []\\nsources: []\\n---\\n\\n# Evidence\\n\\nLocal wiki evidence.\\n\",\n  \"rel_path\": \"concepts/evidence.md\"\n}\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "docs-report-qa.json": {
+    "argv": [
+      "go",
+      "run",
+      "review_probes/docs/qa.go",
+      "docs/review/2026-10-09/05-docs.md"
+    ],
+    "exit": 0,
+    "stdout": "{\"parser_failures\":0,\"report_mermaid_blocks\":1}\n",
+    "stderr": ""
+  },
+  "all_assigned_evidence_refs": [
+    {
+      "path": "docs-cli-probe.py.txt",
+      "exists": true,
+      "sha256": "3a82eea31f83dc89161e74e6158417a8ea67fd1d8df2b5e559fabb54dd2c696f"
+    },
+    {
+      "path": "docs-cli-results.json",
+      "exists": true,
+      "sha256": "c7e44e82a56e4c2f425afa73629d45d6d65da10f776d7fd67bae9661ff0b6269"
+    },
+    {
+      "path": "docs-contract-results.jsonl",
+      "exists": true,
+      "sha256": "1007ba5d39e14672f63c22d618b6b485ba55360f632cf3607f12e71ca63041b1"
+    },
+    {
+      "path": "docs-contract.go.txt",
+      "exists": true,
+      "sha256": "2d1c27bf2085def6dbcc220331d658499d692fa582e92bb98f6ce22c728713ef"
+    },
+    {
+      "path": "docs-extra-probe.py.txt",
+      "exists": true,
+      "sha256": "3aa2450d38317a82c24ead7228c5a5f2110ceedbafe7ccbd12aa150b9d14baa1"
+    },
+    {
+      "path": "docs-extra-results.json",
+      "exists": true,
+      "sha256": "c11cc15b5ea4596cfb447e345e2d387a73204c2c7a3756721f95b92af204f049"
+    },
+    {
+      "path": "docs-harness-results.jsonl",
+      "exists": true,
+      "sha256": "e2fbb2efb21ca2b8b0623dd99b692c76f6c3e85743cce7bbd2eeaeee39d4ccda"
+    },
+    {
+      "path": "docs-harness.go.txt",
+      "exists": true,
+      "sha256": "8aad2713e205dcd95169919b78865b31fddf45ffd78bd485d959af5244ec2135"
+    },
+    {
+      "path": "docs-help.json",
+      "exists": true,
+      "sha256": "2eb34e8df9a4818d4b55d7a08d75c9d5a098c7df656ee661d0037158d1f554ac"
+    },
+    {
+      "path": "docs-manifest.json",
+      "exists": true,
+      "sha256": "a6ddaf17796028082ef6f5262e4efa86b8afab3c64c6421b7da65cd58da91b52"
+    },
+    {
+      "path": "docs-recall-results.json",
+      "exists": true,
+      "sha256": "adfd5305347980376a73ab0f4b168480ab1c28b5966ea53cb68a475d6fb8214d"
+    },
+    {
+      "path": "docs-verification.txt",
+      "exists": true,
+      "sha256": "16295cd520246f07d52ad37ac580634168e1780f6e9fc020a6778ddb01b0dc7b"
+    },
+    {
+      "path": "web-adapter-output.txt",
+      "exists": true,
+      "sha256": "15a64c2b63dd5f7fd8829e7c0282078b854a11cc2ea89a23efc9ee492465c84d"
+    },
+    {
+      "path": "web-adapter-probe.cjs.txt",
+      "exists": true,
+      "sha256": "f87499bfdbc759cad678a8bcffe22a626a80c4b5279b2452ff83509415342a87"
+    },
+    {
+      "path": "web-browser-result.txt",
+      "exists": true,
+      "sha256": "0f831a89bc540ed0e6ce0406996698fcaa9b7041b55bd391674df86624673323"
+    },
+    {
+      "path": "web-color-output.txt",
+      "exists": true,
+      "sha256": "e9282eab3fc059b2d27142eb1e13f00cea1616e7a9a285e54e32927d2b9068fe"
+    },
+    {
+      "path": "web-existing-go-tests.txt",
+      "exists": true,
+      "sha256": "fde7615369f58fc6ea791cd0729b4d5ef978438d7e84cb420c106d1c4ab16936"
+    },
+    {
+      "path": "web-existing-ui-tests.txt",
+      "exists": true,
+      "sha256": "05cd4023fc05d86b93347007176556459888f270a990feb794561184805fc381"
+    },
+    {
+      "path": "web-file-manifest.txt",
+      "exists": true,
+      "sha256": "3c14dfe6386a6e547955e020bda1ee756560e8cc2bb76b7af18a13b6728270c6"
+    },
+    {
+      "path": "web-go.mod.txt",
+      "exists": true,
+      "sha256": "78e3ddfed8094baf96ecaddb084622196edb06c7409bbd847d104b55314f32fb"
+    },
+    {
+      "path": "web-logout-output.txt",
+      "exists": true,
+      "sha256": "e5553e2d776bb3fdd7a0cd6658dd849b81ae34358144a10f6d556afaab7a9614"
+    },
+    {
+      "path": "web-probe-output.txt",
+      "exists": true,
+      "sha256": "653b996f9c994752fb65bbdb0b093ba4f47b452007b9963217778a2d27c9f77d"
+    },
+    {
+      "path": "web-probe-test.go.txt",
+      "exists": true,
+      "sha256": "eab2530fa32b800e7a1f16b013dfff11264ade385933763715527010337a0c7a"
+    },
+    {
+      "path": "web-race-output.txt",
+      "exists": true,
+      "sha256": "31ddf468366381824a3ec1a9dd0615f78d09c9bfdb5ab067cee19f310fe4f93c"
+    },
+    {
+      "path": "web-replay-check.txt",
+      "exists": true,
+      "sha256": "621710bfeb9d7ae9d2418cacc209784da8f202ed8bff096b353e1a121371836e"
+    },
+    {
+      "path": "web-reproduce.sh.txt",
+      "exists": true,
+      "sha256": "b608d83f698457201bba571476ed8441038b7bca3c673894ed45cbc725e2eb51"
+    },
+    {
+      "path": "web-server-main.go.txt",
+      "exists": true,
+      "sha256": "daae9bdec80db6746badaa401c59a8a196b8972f90d78a61085b44e1794002a9"
+    }
+  ]
+}

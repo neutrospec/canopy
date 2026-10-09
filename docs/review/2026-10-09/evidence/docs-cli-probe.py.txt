@@ -1,0 +1,121 @@
+from pathlib import Path
+import hashlib
+import json
+import os
+import re
+import subprocess
+import tempfile
+
+BASE = Path('/private/tmp/canopy-audit-20261009/docs')
+RUN = Path(tempfile.mkdtemp(prefix='cli-', dir=BASE))
+BIN = BASE / 'canopy'
+ENV = os.environ.copy()
+ENV.update(HOME=str(RUN/'home'), XDG_CONFIG_HOME=str(RUN/'config'),
+           XDG_CACHE_HOME=str(RUN/'cache'), XDG_DATA_HOME=str(RUN/'data'),
+           XDG_STATE_HOME=str(RUN/'state'), GOCACHE='/private/tmp/canopy-review/go-cache',
+           GOPROXY='off', GOTOOLCHAIN='local', GIT_CONFIG_NOSYSTEM='1',
+           GIT_CONFIG_GLOBAL='/dev/null')
+ENV.pop('CANOPY_WIKI', None)
+ENV.pop('PI_CODING_AGENT_DIR', None)
+(RUN/'home').mkdir()
+WIKI = RUN/'wiki'
+WIKI.mkdir()
+RECORDS = []
+
+def command(args, cwd=RUN, stdin=None):
+    p = subprocess.run(args, cwd=cwd, env=ENV, input=stdin, capture_output=True,
+                       text=True, timeout=45)
+    item = dict(argv=[str(a) for a in args], cwd=str(cwd), exit=p.returncode,
+                stdout=p.stdout, stderr=p.stderr)
+    RECORDS.append(item)
+    return item
+
+def canopy(*args, cwd=RUN, stdin=None):
+    return command([str(BIN), *args], cwd=cwd, stdin=stdin)
+
+def digest(p):
+    return hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None
+
+help_items = []
+pending = [[]]
+while pending:
+    cmd = pending.pop(0)
+    result = canopy(*cmd, '--help')
+    help_items.append(result)
+    inside = False
+    for line in result['stdout'].splitlines():
+        if line == 'Available Commands:':
+            inside = True
+            continue
+        if inside and line and not line.startswith('  '):
+            inside = False
+        if inside:
+            m = re.match(r'^  ([a-z][a-z-]*)\s{2,}', line)
+            if m and m.group(1) != 'help':
+                pending.append(cmd+[m.group(1)])
+(BASE/'help.json').write_text(json.dumps(help_items, ensure_ascii=False, indent=2))
+
+canopy('init', '--wiki', str(WIKI), '--json')
+command(['git', 'init', '-b', 'main', str(WIKI)])
+canopy('new', '첫 페이지', '--type', 'concept', '--tags', 'tool', '--wiki', str(WIKI))
+canopy('new', 'Alpha', '--slug', 'alpha', '--type', 'concept', '--tags', 'tool',
+       '--body-file', '-', '--wiki', str(WIKI), '--json', stdin='## Intro\n\nOriginal body.\n')
+canopy('sync', '-m', 'tutorial probe', '--wiki', str(WIKI))
+command(['git', '-C', str(WIKI), 'rev-parse', '--verify', 'HEAD'])
+canopy('search', 'Original', '--mode', 'hybrid', '--wiki', str(WIKI), '--json')
+canopy('search', 'Original', '--mode', 'semantic', '--wiki', str(WIKI), '--json')
+canopy('new', 'Bad link flag', '--slug', 'bad-link-flag', '--type', 'concept',
+       '--links', 'absent', '--wiki', str(WIKI), '--json')
+canopy('new', 'Body link', '--slug', 'body-link', '--type', 'concept', '--body-file', '-',
+       '--wiki', str(WIKI), '--json', stdin='A related concept is [[absent]].\n')
+canopy('lint', '--wiki', str(WIKI), '--json')
+canopy('update', 'alpha', '--body-file', '-', '--wiki', str(WIKI), '--json',
+       stdin='## Intro\n\nUpdated body.\n')
+canopy('show', 'alpha', '--wiki', str(WIKI), '--json', '--no-mark')
+canopy('new', 'Move', '--slug', 'move', '--type', 'concept', '--wiki', str(WIKI), '--json')
+canopy('mv', 'move', '--slug', 'moved', '--wiki', str(WIKI), '--json')
+canopy('archive', 'moved', '--wiki', str(WIKI), '--json')
+canopy('new', 'Remove', '--slug', 'remove', '--type', 'concept', '--wiki', str(WIKI), '--json')
+canopy('rm', 'remove', '--wiki', str(WIKI), '--json')
+
+before_git = command(['git', '-C', str(WIKI), 'status', '--short'])['stdout']
+before_page = digest(WIKI/'concepts/alpha.md')
+agent = WIKI/'_meta/attention/agent-reads.json'
+before_agent = digest(agent)
+co = canopy('checkout', 'alpha', '--wiki', str(WIKI), '--json')
+after_git = command(['git', '-C', str(WIKI), 'status', '--short'])['stdout']
+RECORDS.append(dict(observation='checkout_R1', page_hash_same=before_page==digest(WIKI/'concepts/alpha.md'),
+                    agent_before=before_agent, agent_after=digest(agent),
+                    git_status_same=before_git==after_git))
+copy = Path(json.loads(co['stdout'])['path'])
+copy.write_text(copy.read_text().replace('tags: [tool]', 'tags: [invalid-audit-tag]'))
+canopy('checkin', 'alpha', '--wiki', str(WIKI), '--json')
+canopy('checkin', 'alpha', '--wiki', str(WIKI), '--discard', '--json')
+alpha = WIKI/'concepts/alpha.md'
+alpha.write_text(alpha.read_text().replace('tags: [tool]', 'tags: [invalid-audit-tag]'))
+canopy('update', 'alpha', '--wiki', str(WIKI), '--json')
+canopy('lint', '--wiki', str(WIKI), '--json')
+
+custom = RUN/'custom-agent/skills'
+canopy('skills', 'install', '--dir', str(custom), '--json')
+canopy('skills', 'install', '--json')
+(RUN/'home/.claude/skills').mkdir(parents=True)
+ENV['PI_CODING_AGENT_DIR'] = str(RUN/'pi-agent')
+(RUN/'pi-agent').mkdir()
+canopy('skills', 'install', '--json')
+RECORDS.append(dict(observation='install_content', wiki_same=(custom/'canopy-wiki/SKILL.md').read_bytes()==Path('internal/skills/canopy_wiki.md').read_bytes(),
+                    ingest_same=(custom/'canopy-ingest/SKILL.md').read_bytes()==Path('internal/skills/canopy_ingest.md').read_bytes()))
+
+# The user's no-commit constraint is maintained: the only sync case above was
+# an unborn repository with isolated empty Git identity config; it failed at
+# commit identity lookup after the skipped pull. Verify HEAD is absent again.
+command(['git', '-C', str(WIKI), 'rev-parse', '--verify', 'HEAD'])
+(BASE/'cli-results.json').write_text(json.dumps(dict(run=str(RUN), env={k:ENV[k] for k in ['HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME','XDG_DATA_HOME','XDG_STATE_HOME']}, records=RECORDS), ensure_ascii=False, indent=2))
+for r in RECORDS[len(help_items):]:
+    if 'argv' in r:
+        print(json.dumps(dict(command=r['argv'][1:] if r['argv'][0]==str(BIN) else r['argv'],
+                              exit=r['exit'], stdout=r['stdout'][:1200], stderr=r['stderr'][:650]), ensure_ascii=False))
+    else:
+        print(json.dumps(r, ensure_ascii=False))
+print('run='+str(RUN))
+print('help_commands='+str(len(help_items)))

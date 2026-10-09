@@ -1,0 +1,554 @@
+package red_data
+
+import (
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"math/rand"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"os/exec"
+	"os/signal"
+	"path/filepath"
+	"reflect"
+	"sort"
+	"strings"
+	"sync"
+	"syscall"
+	"testing"
+	"time"
+
+	"github.com/neutrospec/canopy/internal/attention"
+	"github.com/neutrospec/canopy/internal/checkout"
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/digest"
+	"github.com/neutrospec/canopy/internal/mermaid"
+	"github.com/neutrospec/canopy/internal/migrate"
+	"github.com/neutrospec/canopy/internal/reads"
+	"github.com/neutrospec/canopy/internal/reconcile"
+	"github.com/neutrospec/canopy/internal/resurface"
+	"github.com/neutrospec/canopy/internal/tasks"
+	"github.com/neutrospec/canopy/internal/webui"
+	"github.com/neutrospec/canopy/internal/wiki"
+)
+
+var instant = time.Date(2026, 10, 9, 15, 27, 0, 0, time.UTC)
+
+func need(t *testing.T, e error) {
+	t.Helper()
+	if e != nil {
+		t.Fatal(e)
+	}
+}
+func put(t *testing.T, p, s string) {
+	t.Helper()
+	need(t, os.MkdirAll(filepath.Dir(p), 0755))
+	need(t, os.WriteFile(p, []byte(s), 0644))
+}
+func get(t *testing.T, p string) []byte { t.Helper(); b, e := os.ReadFile(p); need(t, e); return b }
+func fresh(t *testing.T) *config.Wiki {
+	t.Helper()
+	r, e := os.MkdirTemp(filepath.Join(os.Getenv("RED_DATA_ROOT"), "fixtures"), "go-")
+	need(t, e)
+	return &config.Wiki{Root: r, Cfg: config.Default()}
+}
+func page(t *testing.T, w *config.Wiki, s, body string) {
+	t.Helper()
+	put(t, filepath.Join(w.Root, "concepts", s+".md"), wiki.NewPageContent(s, "concept", "2026-03-04", []string{"tool"}, nil, body))
+}
+func scan(t *testing.T, w *config.Wiki) *wiki.ScanResult {
+	t.Helper()
+	s, e := wiki.Scan(w)
+	need(t, e)
+	return s
+}
+func rd(t *testing.T, w *config.Wiki) *reads.State {
+	t.Helper()
+	s, e := reads.Load(w)
+	need(t, e)
+	return s
+}
+func rs(t *testing.T, w *config.Wiki) *resurface.State {
+	t.Helper()
+	s, e := resurface.LoadState(w)
+	need(t, e)
+	return s
+}
+func TestQ01SnapshotsAndCrossFileControl(t *testing.T) {
+	w := fresh(t)
+	a, b := rd(t, w), rd(t, w)
+	a.Mark("cedar", "explicit", instant)
+	b.Mark("birch", "explicit", instant)
+	need(t, a.Save(w))
+	need(t, b.Save(w))
+	t.Logf("two stale human snapshots: cedar=%v birch=%v", rd(t, w).IsRead("cedar"), rd(t, w).IsRead("birch"))
+	a, b = rd(t, w), rd(t, w)
+	a.MarkAgent("cedar", instant)
+	b.MarkAgent("birch", instant)
+	need(t, a.Save(w))
+	need(t, b.Save(w))
+	t.Logf("two stale agent snapshots: cedar=%v birch=%v", rd(t, w).Agent["cedar"] != nil, rd(t, w).Agent["birch"] != nil)
+	// Save already has door-specific dirty flags: independent doors do not
+	// overwrite each other's file even when both loaded before either save.
+	w = fresh(t)
+	a, b = rd(t, w), rd(t, w)
+	a.Mark("cedar", "explicit", instant)
+	b.MarkAgent("birch", instant)
+	need(t, a.Save(w))
+	need(t, b.Save(w))
+	t.Logf("cross-door control: human=%v agent=%v", rd(t, w).IsRead("cedar"), rd(t, w).Agent["birch"] != nil)
+	sa, sb := rs(t, w), rs(t, w)
+	sa.Snooze("cedar", 5, instant)
+	sb.DismissPair("birch", "cedar")
+	need(t, sa.Save(w))
+	need(t, sb.Save(w))
+	t.Logf("stale resurface: snooze=%q dismiss=%q", rs(t, w).Snoozed["cedar"], rs(t, w).ShownPairs["birch|cedar"])
+	page(t, w, "cedar", "one")
+	page(t, w, "birch", "two")
+	_, e := reconcile.BlessAll(w)
+	need(t, e)
+	la, _, e := reconcile.Load(w)
+	need(t, e)
+	lb, _, e := reconcile.Load(w)
+	need(t, e)
+	la.Blessed["concepts/cedar.md"] = "first-new-hash"
+	lb.Blessed["concepts/birch.md"] = "second-new-hash"
+	need(t, la.Save(w))
+	need(t, lb.Save(w))
+	lf, _, e := reconcile.Load(w)
+	need(t, e)
+	t.Logf("stale ledger: first_retained=%v second_retained=%v", lf.Blessed["concepts/cedar.md"] == "first-new-hash", lf.Blessed["concepts/birch.md"] == "second-new-hash")
+}
+
+func TestQ02AtomicChild(t *testing.T) {
+	if os.Getenv("RED_DATA_FAULT_ROOT") == "" {
+		t.Skip("only subprocess")
+	}
+	w := &config.Wiki{Root: os.Getenv("RED_DATA_FAULT_ROOT"), Cfg: config.Default()}
+	s := rd(t, w)
+	s.Mark("birch", "explicit", instant)
+	var lim syscall.Rlimit
+	need(t, syscall.Getrlimit(syscall.RLIMIT_FSIZE, &lim))
+	old := lim
+	lim.Cur = 96
+	signal.Ignore(syscall.SIGXFSZ)
+	need(t, syscall.Setrlimit(syscall.RLIMIT_FSIZE, &lim))
+	e := s.Save(w)
+	need(t, syscall.Setrlimit(syscall.RLIMIT_FSIZE, &old))
+	_, parse := reads.Load(w)
+	t.Logf("Save=%v bytes=%d subsequent_Load=%v", e, len(get(t, reads.Path(w))), parse)
+}
+func TestQ02AtomicState(t *testing.T) {
+	w := fresh(t)
+	s := rd(t, w)
+	s.Mark("cedar", "explicit", instant)
+	need(t, s.Save(w))
+	old := get(t, reads.Path(w))
+	exe, e := os.Executable()
+	need(t, e)
+	c := exec.Command(exe, "-test.run=^TestQ02AtomicChild$", "-test.v")
+	c.Env = append(os.Environ(), "RED_DATA_FAULT_ROOT="+w.Root)
+	out, e := c.CombinedOutput()
+	need(t, e)
+	t.Log(strings.TrimSpace(string(out)))
+	t.Logf("old_complete_bytes_preserved=%v", string(old) == string(get(t, reads.Path(w))))
+}
+
+func TestQ03ReachableHTTPConcurrentProposals(t *testing.T) {
+	log.SetOutput(io.Discard)
+	w := fresh(t)
+	page(t, w, "cedar", "old body")
+	s, e := webui.NewServer(w, nil)
+	need(t, e)
+	h := s.Handler()
+	submit := func(body string) int {
+		r := httptest.NewRequest("POST", "/edit/cedar", strings.NewReader(url.Values{"body": {body}}.Encode()))
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		rw := httptest.NewRecorder()
+		h.ServeHTTP(rw, r)
+		return rw.Code
+	}
+	for i := 0; i < 8; i++ {
+		if submit(fmt.Sprintf("sequential-%d", i)) != 303 {
+			t.Fatal("bad control HTTP")
+		}
+	}
+	first, e := tasks.Load(w)
+	need(t, e)
+	t.Logf("sequential control: submitted=8 files=%d", len(first))
+	const n = 80
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	codes := make(chan int, n)
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) { defer wg.Done(); <-start; codes <- submit(fmt.Sprintf("own-distinct-body-%03d", i)) }(i)
+	}
+	close(start)
+	wg.Wait()
+	close(codes)
+	successes := 0
+	for code := range codes {
+		if code == 303 {
+			successes++
+		}
+	}
+	files, e := os.ReadDir(tasks.Dir(w))
+	need(t, e)
+	bodies := map[string]bool{}
+	corrupt := 0
+	for _, f := range files {
+		var task tasks.Task
+		if json.Unmarshal(get(t, filepath.Join(tasks.Dir(w), f.Name())), &task) != nil {
+			corrupt++
+			continue
+		}
+		if strings.HasPrefix(task.Body, "own-distinct-body-") {
+			bodies[task.Body] = true
+		}
+	}
+	t.Logf("concurrent actual handler: submitted=%d HTTP303=%d retained_unique_concurrent_bodies=%d files_total=%d corrupt=%d", n, successes, len(bodies), len(files), corrupt)
+	l, r := fresh(t), fresh(t)
+	lt, e := tasks.FileEdit(l, "cedar", "", "device-one", "base", "web", instant)
+	need(t, e)
+	rt, e := tasks.FileEdit(r, "cedar", "", "device-two", "base", "web", instant)
+	need(t, e)
+	t.Logf("independent fixture same second: id_equal=%v", lt.ID == rt.ID)
+}
+
+func TestQ04CheckinTimingAndSequentialControl(t *testing.T) {
+	w := fresh(t)
+	page(t, w, "cedar", "old text")
+	sc := scan(t, w)
+	info, e := checkout.Checkout(w, sc, "cedar")
+	need(t, e)
+	cp := string(get(t, info.Path)) + strings.Repeat("\n```mermaid\nflowchart LR\n    A[\"first\"] --> B[\"second\"]\n```\n", 12)
+	put(t, info.Path, cp)
+	validator := mermaid.NewValidator()
+	done := make(chan error, 1)
+	start := time.Now()
+	go func() { _, e := checkout.Checkin(w, sc, "cedar", validator); done <- e }()
+	time.Sleep(25 * time.Millisecond)
+	wikiPath := filepath.Join(w.Root, "concepts/cedar.md")
+	other := string(get(t, wikiPath)) + "\nANOTHER-WRITER-UNIQUE\n"
+	put(t, wikiPath, other)
+	e = <-done
+	t.Logf("hash->validation->write window: error=%v elapsed=%v other_writer_retained=%v", e, time.Since(start), strings.Contains(string(get(t, wikiPath)), "ANOTHER-WRITER-UNIQUE"))
+	w = fresh(t)
+	page(t, w, "cedar", "baseline")
+	sc = scan(t, w)
+	info, e = checkout.Checkout(w, sc, "cedar")
+	need(t, e)
+	put(t, info.Path, string(get(t, info.Path))+"EDIT")
+	page(t, w, "cedar", "earlier other writer")
+	_, e = checkout.Checkin(w, sc, "cedar", nil)
+	t.Logf("sequential prior base change: rejected=%v copy_present=%v", e != nil, exists(info.Path))
+}
+func exists(p string) bool { _, e := os.Stat(p); return e == nil }
+
+func TestQ05MigrationBoundaries(t *testing.T) {
+	ctx := func() *migrate.Context {
+		w := fresh(t)
+		return &migrate.Context{ConfigHome: filepath.Join(w.Root, "config"), CacheHome: filepath.Join(w.Root, "cache"), DataHome: filepath.Join(w.Root, "data")}
+	}
+	c := ctx()
+	const n = 40
+	start := make(chan struct{})
+	errs := make(chan error, n)
+	var wg sync.WaitGroup
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func() { defer wg.Done(); <-start; _, e := migrate.Ensure(c, "review"); errs <- e }()
+	}
+	close(start)
+	wg.Wait()
+	close(errs)
+	fail := 0
+	var example error
+	for e := range errs {
+		if e != nil {
+			fail++
+			example = e
+		}
+	}
+	status, se := migrate.Status(c)
+	t.Logf("fresh concurrent Ensure=%d failures=%d example=%v final_Status=%+v error=%v", n, fail, example, status, se)
+	c = ctx()
+	for i := 0; i < 12; i++ {
+		_, e := migrate.Ensure(c, "review")
+		need(t, e)
+	}
+	t.Log("sequential Ensure control=12 successful")
+	for _, input := range []string{"null", `{"schema_version":-3}`, `{"schema_version":88}`, "{"} {
+		c = ctx()
+		put(t, filepath.Join(c.ConfigHome, "state.json"), input)
+		r, e := migrate.Ensure(c, "review")
+		t.Logf("state shape=%s result=%+v error=%v original_preserved=%v", input, r, e, string(get(t, filepath.Join(c.ConfigHome, "state.json"))) == input)
+	}
+}
+
+func TestQ06MetadataCompatibilityAndNoop(t *testing.T) {
+	w := fresh(t)
+	sentinel := `{"version":1,"reads":{"cedar":{"first":"2026-01-01T00:00:00Z","last":"2026-01-01T00:00:00Z","count":1,"source":"explicit","extension":{"n":7}}},"extension":{"keep":true}}`
+	put(t, reads.Path(w), sentinel)
+	s := rd(t, w)
+	need(t, s.Save(w))
+	t.Logf("current-version unknown-field no-op Save preserves=%v", string(get(t, reads.Path(w))) == sentinel)
+	s.Mark("birch", "explicit", instant)
+	need(t, s.Save(w))
+	t.Logf("current-version human mutation top_or_nested_extension_preserved=%v", strings.Contains(string(get(t, reads.Path(w))), "extension"))
+	put(t, reads.AgentPath(w), `{"version":8,"agent":{},"extension":true}`)
+	s = rd(t, w)
+	s.MarkAgent("birch", instant)
+	need(t, s.Save(w))
+	t.Logf("agent mutated JSON=%s", get(t, reads.AgentPath(w)))
+	put(t, resurface.StatePath(w), `{"version":8,"shown":{},"shown_pairs":{},"snoozed":{},"feedback":[],"extension":true}`)
+	r := rs(t, w)
+	r.Snooze("birch", 2, instant)
+	need(t, r.Save(w))
+	t.Logf("resurface version8 extension_preserved=%v", strings.Contains(string(get(t, resurface.StatePath(w))), "extension"))
+	page(t, w, "birch", "text")
+	put(t, reconcile.Path(w), `{"version":8,"blessed":{},"extension":true}`)
+	need(t, reconcile.BlessPaths(w, []string{"concepts/birch.md"}))
+	t.Logf("ledger version8 extension_preserved=%v", strings.Contains(string(get(t, reconcile.Path(w))), "extension"))
+}
+
+func TestQ07TiesSeedAndSnooze(t *testing.T) {
+	w := fresh(t)
+	s := rd(t, w)
+	for i := 0; i < 18; i++ {
+		slug := fmt.Sprintf("page-%02d", i)
+		s.MarkAgent(slug, instant)
+		page(t, w, slug, "body")
+	}
+	sets := map[string]bool{}
+	for i := 0; i < 60; i++ {
+		x := s.RecentAccessSlugs(5)
+		sort.Strings(x)
+		sets[strings.Join(x, ",")] = true
+	}
+	t.Logf("same state same timestamp: distinct_top5_sets=%d", len(sets))
+	sc := scan(t, w)
+	st := rs(t, w)
+	p1, e := resurface.PickPages(sc, st, nil, "auto", 5, instant, rand.New(rand.NewSource(412)))
+	need(t, e)
+	p2, e := resurface.PickPages(sc, st, nil, "auto", 5, instant, rand.New(rand.NewSource(412)))
+	need(t, e)
+	t.Logf("same seed + state + now auto control: equal=%v", reflect.DeepEqual(p1, p2))
+	for _, offset := range []int{9 * 3600, 0, -4 * 3600} {
+		local := time.Date(2026, 10, 9, 23, 0, 0, 0, time.FixedZone("fixture", offset))
+		st = rs(t, w)
+		st.Snooze("page-00", 1, local)
+		single := &wiki.ScanResult{Pages: []*wiki.Page{sc.BySlug["page-00"]}, BySlug: map[string]*wiki.Page{"page-00": sc.BySlug["page-00"]}}
+		for _, d := range []time.Duration{9 * time.Hour, 10 * time.Hour, 24 * time.Hour} {
+			p, e := resurface.PickPages(single, st, nil, "random", 1, local.Add(d), rand.New(rand.NewSource(1)))
+			need(t, e)
+			t.Logf("snooze offset=%d until=%s elapsed=%s eligible=%v", offset, st.Snoozed["page-00"], d, len(p) > 0)
+		}
+	}
+}
+
+func TestQ08YAMLAndNestedScope(t *testing.T) {
+	for _, title := range []string{`C:\new\tool`, `C:\Review\artifact`, "line-one\nline-two", "한글 \"title\""} {
+		p := wiki.Parse("concepts/cedar.md", []byte(wiki.NewPageContent(title, "concept", "2026-03-04", nil, nil, "body")))
+		t.Logf("title input=%q parsed=%q equals=%v error=%q", title, p.Title, title == p.Title, p.FMErr)
+	}
+	before := "---\ntitle: Cedar\ncreated: 2026-03-04\nupdated: |-\n  2026-03-04\ntype: concept\ntags: []\ncustom: keep\n---\n    body-indent\n"
+	after := wiki.SetFrontmatterField(before, "updated", "2026-10-09")
+	b, a := wiki.Parse("concepts/cedar.md", []byte(before)), wiki.Parse("concepts/cedar.md", []byte(after))
+	t.Logf("block updated before=%q after=%q errors=%q/%q body_equal=%v unknown_retained=%v", b.Updated, a.Updated, b.FMErr, a.FMErr, b.Body == a.Body, strings.Contains(after, "custom: keep"))
+	w := fresh(t)
+	page(t, w, "cedar", "flat")
+	put(t, filepath.Join(w.Root, "concepts/nest/hidden.md"), wiki.NewPageContent("hidden", "concept", "2026-03-04", nil, nil, "nested"))
+	sc := scan(t, w)
+	n, e := reconcile.BlessAll(w)
+	need(t, e)
+	foreign, _, e := reconcile.Foreign(w)
+	need(t, e)
+	t.Logf("nested: scan_pages=%d blessed_files=%d foreign=%d", len(sc.Pages), n, len(foreign))
+	bad := wiki.Parse("concepts/bad.md", []byte(strings.Replace(wiki.NewPageContent("bad", "concept", "2026-03-04", nil, nil, "body"), "created: 2026-03-04", "created: \"zzz-invalid\"", 1)))
+	result := digest.Collect(&wiki.ScanResult{Pages: []*wiki.Page{bad}}, instant.AddDate(0, 0, -1))
+	t.Logf("invalid digest: created=%d value=%q", result.Stats.Created, bad.Created)
+}
+
+func TestQ09TaskContractAndOrigin(t *testing.T) {
+	log.SetOutput(io.Discard)
+	w := fresh(t)
+	page(t, w, "cedar", "unchanged body")
+	path := filepath.Join(w.Root, "concepts/cedar.md")
+	base := reconcile.HashBytes(get(t, path))
+	task, e := tasks.FileEdit(w, "cedar", "change the argument", "proposal", base, "cli", instant)
+	need(t, e)
+	_, e = tasks.Close(w, scan(t, w), task.ID, tasks.StatusDone, "", "cli", instant)
+	t.Logf("unchanged control rejected=%v", e != nil)
+	put(t, path, wiki.SetFrontmatterField(string(get(t, path)), "updated", "2026-10-09"))
+	_, e = tasks.Close(w, scan(t, w), task.ID, tasks.StatusDone, "", "cli", instant)
+	t.Logf("frontmatter only unrelated to request: done_error=%v", e)
+	s, e := webui.NewServer(w, nil)
+	need(t, e)
+	h := s.Handler()
+	form := httptest.NewRecorder()
+	h.ServeHTTP(form, httptest.NewRequest("GET", "/edit/cedar", nil))
+	formHash := reconcile.HashBytes(get(t, path))
+	page(t, w, "cedar", "changed-after-form")
+	postHash := reconcile.HashBytes(get(t, path))
+	r := httptest.NewRequest("POST", "/edit/cedar", strings.NewReader(url.Values{"body": {"new user proposal"}}.Encode()))
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rw := httptest.NewRecorder()
+	h.ServeHTTP(rw, r)
+	list, e := tasks.Load(w)
+	need(t, e)
+	var submitted *tasks.Task
+	for _, x := range list {
+		if x.Body == "new user proposal" {
+			submitted = x
+		}
+	}
+	if submitted == nil {
+		t.Fatal("proposal not filed")
+	}
+	t.Logf("stale form GET=%d POST=%d base_is_form=%v base_is_submission=%v", form.Code, rw.Code, submitted.Base == formHash, submitted.Base == postHash)
+}
+
+func TestQ10AliasAndFutureDBLimits(t *testing.T) {
+	w := fresh(t)
+	page(t, w, "cedar", "wiki")
+	link := w.Root + "-alias"
+	need(t, os.Symlink(w.Root, link))
+	alias, e := config.Resolve(link)
+	need(t, e)
+	info, e := checkout.Checkout(w, scan(t, w), "cedar")
+	need(t, e)
+	opens, e := checkout.Open(alias)
+	need(t, e)
+	t.Logf("symlink identity: event_same=%v checkout_same=%v alias_open=%d original_copy_exists=%v", w.AttentionDBPath() == alias.AttentionDBPath(), w.CheckoutDir() == alias.CheckoutDir(), len(opens), exists(info.Path))
+	db := filepath.Join(w.Root, "future.db")
+	ev, e := attention.Open(db)
+	need(t, e)
+	need(t, ev.Log(instant, "cedar", "agent", "show", "existing"))
+	need(t, ev.Close())
+	raw, e := sql.Open("sqlite", db)
+	need(t, e)
+	_, e = raw.Exec("PRAGMA user_version = 8")
+	need(t, e)
+	need(t, raw.Close())
+	ev, e = attention.Open(db)
+	need(t, e)
+	le := ev.Log(instant, "birch", "agent", "show", "new")
+	records, e := ev.Recent(10)
+	need(t, e)
+	need(t, ev.Close())
+	t.Logf("synthetic future DB same actual schema: Log_error=%v rows=%d existing_preserved=%v", le, len(records), len(records) == 2)
+}
+
+func TestQ11OffsetAndRenameRemedyControls(t *testing.T) {
+	w := fresh(t)
+	older := time.Date(2026, 3, 4, 15, 0, 0, 0, time.FixedZone("fixture", 9*3600))
+	newer := time.Date(2026, 3, 4, 9, 0, 0, 0, time.UTC)
+	since := time.Date(2026, 3, 4, 8, 0, 0, 0, time.UTC)
+	ev, e := attention.Open(filepath.Join(w.Root, "mixed-offsets.db"))
+	need(t, e)
+	need(t, ev.Log(older, "older", "agent", "show", ""))
+	need(t, ev.Log(newer, "newer", "agent", "show", ""))
+	queried, e := ev.Query(attention.Filter{Since: since})
+	need(t, e)
+	consumed, e := ev.TopConsumed(since, 10)
+	need(t, e)
+	removed, e := ev.Prune(older.Add(time.Hour))
+	need(t, e)
+	remaining, e := ev.Recent(10)
+	need(t, e)
+	need(t, ev.Close())
+	t.Logf("mixed offset: since=%s query=%v TopConsumed=%v prune_removed=%d remaining=%d", since.Format(time.RFC3339), queried, consumed, removed, len(remaining))
+	s := rd(t, w)
+	s.Mark("cedar", "explicit", older)
+	s.MarkAgent("cedar", newer)
+	s.MarkAgent("birch", newer.Add(time.Hour))
+	last, ok := s.LastAccess("cedar")
+	t.Logf("aggregate control: LastAccess_true_instant=%v recent_order=%v want=[birch cedar]", ok && last.Equal(newer), s.RecentAccessSlugs(2))
+	w = fresh(t)
+	s = rd(t, w)
+	for i := 0; i < 4; i++ {
+		s.MarkAgent("unused-destination", instant.AddDate(0, 0, i))
+	}
+	s.MarkAgent("cedar", instant.AddDate(0, 0, 5))
+	destBefore := s.Agent["unused-destination"].Days
+	s.Rename("cedar", "unused-destination")
+	t.Logf("proposed unconditional Rename with stale destination history: destination_days_before=%d after=%d (no destination page required)", destBefore, s.Agent["unused-destination"].Days)
+	w = fresh(t)
+	page(t, w, "cedar", "[[birch]]")
+	page(t, w, "birch", "[[cedar]]")
+	task, _, e := tasks.FileConnect(w, "cedar", "birch", 0, "cli", instant)
+	need(t, e)
+	path := filepath.Join(tasks.Dir(w), task.ID+".json")
+	var raw map[string]json.RawMessage
+	need(t, json.Unmarshal(get(t, path), &raw))
+	raw["version"] = json.RawMessage("88")
+	b, e := json.Marshal(raw)
+	need(t, e)
+	put(t, path, string(b))
+	_, e = tasks.Close(w, scan(t, w), task.ID, tasks.StatusDone, "", "cli", instant)
+	t.Logf("known type future version with actual mutual links: done_error=%v", e)
+}
+
+func TestQ12HTTPStateMutationsAndMutexControl(t *testing.T) {
+	log.SetOutput(io.Discard)
+	for _, door := range []string{"read", "feedback"} {
+		w := fresh(t)
+		const n = 36
+		for i := 0; i < n; i++ {
+			page(t, w, fmt.Sprintf("slug-%02d", i), "own page")
+		}
+		s, e := webui.NewServer(w, nil)
+		need(t, e)
+		handler := s.Handler()
+		start := make(chan struct{})
+		codes := make(chan int, n)
+		var wg sync.WaitGroup
+		for i := 0; i < n; i++ {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				<-start
+				slug := fmt.Sprintf("slug-%02d", i)
+				path := "/read/" + slug
+				form := url.Values{}
+				if door == "feedback" {
+					path = "/resurface/feedback"
+					form = url.Values{"slug": {slug}, "action": {"up"}}
+				}
+				request := httptest.NewRequest("POST", path, strings.NewReader(form.Encode()))
+				request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+				rw := httptest.NewRecorder()
+				handler.ServeHTTP(rw, request)
+				codes <- rw.Code
+			}(i)
+		}
+		close(start)
+		wg.Wait()
+		close(codes)
+		success, fail := 0, 0
+		for code := range codes {
+			if code == 303 {
+				success++
+			} else {
+				fail++
+			}
+		}
+		if door == "read" {
+			st, e := reads.Load(w)
+			need(t, e)
+			t.Logf("same-server read mutex control: requests=%d success=%d failed=%d retained=%d", n, success, fail, len(st.Reads))
+		} else {
+			st, e := resurface.LoadState(w)
+			retained := -1
+			if e == nil {
+				retained = len(st.Feedback)
+			}
+			t.Logf("actual feedback handler: requests=%d success=%d failed=%d retained=%d Load_error=%v", n, success, fail, retained, e)
+		}
+	}
+}

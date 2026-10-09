@@ -1,0 +1,6 @@
+{"probe":"web_stale_submission","result":{"get_status":200,"location":"/page/alpha?tasked=1","page_unchanged":true,"post_status":303,"task_base_is_current":true,"task_base_is_form_origin":false,"task_body":"Original body with my proposed fix.\n","task_count":1}}
+{"probe":"edit_done_metadata_only","result":{"body_same":true,"close_error":"\u003cnil\u003e","closed":{"version":1,"id":"edit-alpha-20261009-133349","type":"edit","status":"done","door":"cli","created":"2026-10-09T13:33:49+09:00","closed":"2026-10-09T13:33:50+09:00","note":"metadata changed","pages":["alpha"],"request":"Replace the body with corrected facts","base":"61f8e5a68283f03034b93bee8b0c1b7b9950d99acd8b5dcfdb95620b311e4f89"}}}
+{"probe":"repository_mermaid","result":{"blocks":10,"documents":30,"failures":null}}
+{"probe":"A3_bad_yaml","result":{"counts":{"bad-frontmatter":1,"orphan":1},"documented_condition_passes":true}}
+{"probe":"P1_environment_fault","result":{"counts":{"mermaid-unchecked":1,"orphan":1,"stale":1},"documented_condition_passes":true,"fault_injected_in_memory_only":true}}
+{"probe":"run","result":"/private/tmp/canopy-audit-20261009/docs/harness-1771023241"}

@@ -1,0 +1,26 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+
+	"github.com/neutrospec/canopy/internal/mermaid"
+)
+
+func main() {
+	data, err := os.ReadFile(os.Args[1])
+	if err != nil {
+		panic(err)
+	}
+	v := mermaid.NewValidator()
+	blocks := mermaid.Blocks(string(data))
+	for _, b := range blocks {
+		bad, env := v.Validate(b.Source)
+		if bad != nil || env != nil {
+			panic(fmt.Sprintf("line %d: %v / %v", b.Line, bad, env))
+		}
+	}
+	out, _ := json.Marshal(map[string]any{"report_mermaid_blocks": len(blocks), "parser_failures": 0})
+	fmt.Println(string(out))
+}

@@ -1,0 +1,7 @@
+$ ['go', 'test', '-count=1', '-v', './review_probes/def_data']
+FAIL	github.com/neutrospec/canopy/review_probes/def_data [build failed]
+FAIL
+# github.com/neutrospec/canopy/review_probes/def_data [github.com/neutrospec/canopy/review_probes/def_data.test]
+review_probes/def_data/probe_test.go:28:2: "github.com/neutrospec/canopy/internal/mermaid" imported and not used
+
+EXIT 1

@@ -1,0 +1,21 @@
+$ ['go', 'test', '-count=1', '-v', '-run', '^TestG07', './review_probes/def_data']
+=== RUN   TestG07SnoozeSeedAndRecentTie
+    probe_test.go:401: G07 distinct_top5_sets=50 fixed_seed_equal=true
+    probe_test.go:408: G07 actual_discover_K=10 distinct_sets=50
+    probe_test.go:417: G07 snooze offset=32400 until=2026-10-10 after=0s eligible=false
+    probe_test.go:417: G07 snooze offset=32400 until=2026-10-10 after=9h0m0s eligible=false
+    probe_test.go:417: G07 snooze offset=32400 until=2026-10-10 after=10h0m0s eligible=true
+    probe_test.go:417: G07 snooze offset=32400 until=2026-10-10 after=24h0m0s eligible=true
+    probe_test.go:417: G07 snooze offset=0 until=2026-10-10 after=0s eligible=false
+    probe_test.go:417: G07 snooze offset=0 until=2026-10-10 after=9h0m0s eligible=true
+    probe_test.go:417: G07 snooze offset=0 until=2026-10-10 after=10h0m0s eligible=true
+    probe_test.go:417: G07 snooze offset=0 until=2026-10-10 after=24h0m0s eligible=true
+    probe_test.go:417: G07 snooze offset=-14400 until=2026-10-10 after=0s eligible=true
+    probe_test.go:417: G07 snooze offset=-14400 until=2026-10-10 after=9h0m0s eligible=true
+    probe_test.go:417: G07 snooze offset=-14400 until=2026-10-10 after=10h0m0s eligible=true
+    probe_test.go:417: G07 snooze offset=-14400 until=2026-10-10 after=24h0m0s eligible=true
+--- PASS: TestG07SnoozeSeedAndRecentTie (0.00s)
+PASS
+ok  	github.com/neutrospec/canopy/review_probes/def_data	0.505s
+
+EXIT 0

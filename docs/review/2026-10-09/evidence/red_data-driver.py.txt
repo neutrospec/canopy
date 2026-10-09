@@ -1,0 +1,51 @@
+"""Own offline review harness; never executes an original review harness."""
+from pathlib import Path
+import os, subprocess, json, sys, time
+
+REPO = Path('/Users/nobocop/play/canopy')
+ROOT = Path(os.environ.get('RED_DATA_REPLAY_ROOT','/private/tmp/canopy-audit-20261009/red_data-ctx206f'))
+assert Path('/private/tmp/canopy-audit-20261009') in ROOT.parents, ROOT
+for name in ['home','config','state','cache','share','tmp','fixtures']:
+    (ROOT/name).mkdir(parents=True,exist_ok=True)
+EVID = REPO/'docs/review/2026-10-09/evidence'
+ENV = dict(os.environ)
+ENV.update(HOME=str(ROOT/'home'), XDG_CONFIG_HOME=str(ROOT/'config'),
+           XDG_STATE_HOME=str(ROOT/'state'), XDG_CACHE_HOME=str(ROOT/'cache'),
+           XDG_DATA_HOME=str(ROOT/'share'), TMPDIR=str(ROOT/'tmp'),
+           GOCACHE='/private/tmp/canopy-review/go-cache',
+           GOMODCACHE='/Users/nobocop/go/pkg/mod', GOPROXY='off', GOSUMDB='off',
+           GOTOOLCHAIN='local', GOENV='off', GOTELEMETRY='off', CGO_ENABLED='0',
+           CANOPY_WIKI='', GIT_CONFIG_GLOBAL='/dev/null', GIT_CONFIG_NOSYSTEM='1',
+           GIT_TERMINAL_PROMPT='0', TZ='Asia/Seoul',
+           RED_DATA_ROOT=str(ROOT), RED_DATA_BIN=str(ROOT/'canopy-lite'))
+
+def command(argv, output):
+    cp = subprocess.run(argv, cwd=REPO, env=ENV, text=True, capture_output=True, timeout=240)
+    (EVID/output).write_text('$ '+repr(argv)+'\n'+cp.stdout+cp.stderr+'\nEXIT '+str(cp.returncode)+'\n')
+    print(output, 'exit', cp.returncode, flush=True)
+    if cp.returncode:
+        print(cp.stdout[-3000:]+cp.stderr[-3000:], flush=True)
+        raise SystemExit(cp.returncode)
+
+if sys.argv[1] == 'build':
+    command(['go','version'], 'red_data-go-version.txt')
+    command(['go','build','-mod=readonly','-o',str(ROOT/'canopy-lite'),'./cmd/canopy'], 'red_data-build.txt')
+elif sys.argv[1] == 'existing':
+    command(['go','test','-mod=readonly','-count=1','-v','./internal/...','./cmd/canopy'], 'red_data-existing-tests.txt')
+elif sys.argv[1] == 'cli':
+    trial=ROOT/('cli-'+str(time.time_ns()))
+    (trial/'fixtures').mkdir(parents=True)
+    (trial/'inputs').mkdir()
+    ENV['RED_DATA_ROOT']=str(trial)
+    command(['python3','review_probes/red_data/cli.py'], 'red_data-cli-output.txt')
+elif sys.argv[1] == 'go':
+    command(['go','test','-mod=readonly','-count=1','-v','./review_probes/red_data'], 'red_data-go-output.txt')
+elif sys.argv[1] == 'goextra':
+    command(['go','test','-mod=readonly','-count=1','-v','-run','^TestQ1[12]','./review_probes/red_data'], 'red_data-go-extra-output.txt')
+elif sys.argv[1] == 'extra':
+    trial=ROOT/('extra-'+str(time.time_ns()))
+    (trial/'fixtures').mkdir(parents=True)
+    ENV['RED_DATA_ROOT']=str(trial)
+    command(['python3','review_probes/red_data/extras.py'], 'red_data-cli-extra-output.txt')
+else:
+    raise SystemExit('choose build/existing/cli/go')

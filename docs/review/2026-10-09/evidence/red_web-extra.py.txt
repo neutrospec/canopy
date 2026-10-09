@@ -1,0 +1,37 @@
+from pathlib import Path
+import json
+import os
+import subprocess
+
+REPO=Path('/Users/nobocop/play/canopy')
+E=REPO/'docs/review/2026-10-09/evidence'
+baseline=json.loads((E/'red_web-cli-results.json').read_text())
+RUN=Path(baseline['run']);ENV=os.environ.copy();ENV.update(baseline['env'])
+ENV.update(GOSUMDB='off',GIT_CONFIG_NOSYSTEM='1',GIT_CONFIG_GLOBAL='/dev/null',GIT_TERMINAL_PROMPT='0')
+for key in ['CANOPY_WIKI','PI_CODING_AGENT_DIR','GIT_DIR','GIT_WORK_TREE','GIT_INDEX_FILE']:
+    ENV.pop(key,None)
+records=[]
+def run(argv,cwd=RUN):
+    p=subprocess.run([str(x) for x in argv],env=ENV,cwd=cwd,capture_output=True,text=True,timeout=120)
+    r=dict(argv=[str(x) for x in argv],cwd=str(cwd),exit=p.returncode,stdout=p.stdout,stderr=p.stderr)
+    records.append(r);return r
+BIN=RUN/'canopy';w=RUN/'wiki with spaces';page=w/'concepts/maple.md'
+raw=page.read_text();assert 'tags: [tool]' in raw
+page.write_text(raw.replace('tags: [tool]','tags: [outside-taxonomy]',1))
+updated=run([BIN,'update','maple','--wiki',w,'--json'])
+lint=run([BIN,'lint','--wiki',w,'--json'])
+checkout=run([BIN,'checkout','maple','--wiki',w,'--json']);copy=Path(json.loads(checkout['stdout'])['path'])
+unchanged=run([BIN,'checkin','maple','--wiki',w,'--json'])
+checkout=run([BIN,'checkout','maple','--wiki',w,'--json']);copy=Path(json.loads(checkout['stdout'])['path']);copy.write_text(copy.read_text()+'\nChanged the invalid-tag working copy.\n')
+changed=run([BIN,'checkin','maple','--wiki',w,'--json']);discard=run([BIN,'checkin','maple','--wiki',w,'--discard','--json'])
+summary=dict(probe='gate-checkin-correction',invalid_tag_update_exit=updated['exit'],invalid_tag_lint_count=json.loads(lint['stdout'])['counts'].get('invalid-tag',0),unchanged_invalid_copy_checkin_exit=unchanged['exit'],changed_invalid_copy_checkin_exit=changed['exit'],changed_copy_error=changed['stderr'],discard_exit=discard['exit'])
+records.append(summary);print(json.dumps(summary,ensure_ascii=False),flush=True);page.write_text(raw)
+fmt=run(['gofmt','-w','review_probes/red_web/extra_test.go'],cwd=REPO);assert fmt['exit']==0
+ENV['CGO_ENABLED']='0'
+tests=run(['go','test','-mod=readonly','-count=1','-v','-run','TestSupplement','./review_probes/red_web'],cwd=REPO)
+(E/'red_web-extra-http-results.txt').write_text(tests['stdout']+tests['stderr']);print(tests['stdout'],flush=True);assert tests['exit']==0
+ENV['CGO_ENABLED']='1'
+race=run(['go','test','-mod=readonly','-race','-count=1','-v','-run','TestTwoTabAndBurst|TestStateConcurrency','./review_probes/red_web'],cwd=REPO)
+(E/'red_web-race-results.txt').write_text(race['stdout']+race['stderr']);print(race['stdout'],flush=True);assert race['exit']==0
+i18n=run(['make','i18n-check'],cwd=REPO);assert i18n['exit']==0;print(i18n['stdout'])
+(E/'red_web-extra-results.json').write_text(json.dumps(dict(run=str(RUN),env=baseline['env'],records=records),ensure_ascii=False,indent=2)+'\n')

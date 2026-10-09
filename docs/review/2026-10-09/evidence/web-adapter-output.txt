@@ -1,0 +1,1 @@
+{"model":"existing fake DOM, HTTP 200 with no JSON body supplied","readRequests":1,"autoSuccess":true,"fetchResponseValidatedAsJSON":false}

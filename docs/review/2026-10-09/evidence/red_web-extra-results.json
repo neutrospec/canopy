@@ -1,0 +1,181 @@
+{
+  "run": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+  "env": {
+    "HOME": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/home",
+    "XDG_CONFIG_HOME": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/config",
+    "XDG_STATE_HOME": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/state",
+    "XDG_CACHE_HOME": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/cache",
+    "XDG_DATA_HOME": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/data",
+    "TMPDIR": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/tmp",
+    "GOTELEMETRY": "off",
+    "GOCACHE": "/private/tmp/canopy-review/go-cache",
+    "GOPROXY": "off",
+    "GOMODCACHE": "/Users/nobocop/go/pkg/mod",
+    "GOPATH": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/gopath",
+    "GOENV": "off",
+    "GOTOOLCHAIN": "local"
+  },
+  "records": [
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "update",
+        "maple",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "lint",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"total_pages\": 2,\n  \"findings\": [\n    {\n      \"severity\": \"critical\",\n      \"kind\": \"broken-link\",\n      \"page\": \"concepts/body-link.md\",\n      \"message\": \"broken wikilink [[does-not-exist]]\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"invalid-tag\",\n      \"page\": \"concepts/maple.md\",\n      \"message\": \"tag \\\"outside-taxonomy\\\" not in taxonomy\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"island\",\n      \"page\": \"maple\",\n      \"message\": \"1-page island, unreachable from the main graph (1 pages): maple\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/body-link.md\",\n      \"message\": \"no inbound links from other pages\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/maple.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"broken-link\": 1,\n    \"invalid-tag\": 1,\n    \"island\": 1,\n    \"orphan\": 2\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "checkout",
+        "maple",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"slug\": \"maple\",\n  \"rel_path\": \"concepts/maple.md\",\n  \"path\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/state/canopy/checkout/3f070b1be286/maple.md\",\n  \"base\": \"31f2cef2a5c073fbd71f7928aaa9a677e2759c7866fc20cf8392ec2bc78a1b43\",\n  \"opened_at\": \"2026-10-09T14:23:21+09:00\",\n  \"modified\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "checkin",
+        "maple",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"rel_path\": \"concepts/maple.md\",\n  \"unchanged\": true,\n  \"old_lines\": 0,\n  \"new_lines\": 0\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "checkout",
+        "maple",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"slug\": \"maple\",\n  \"rel_path\": \"concepts/maple.md\",\n  \"path\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/state/canopy/checkout/3f070b1be286/maple.md\",\n  \"base\": \"31f2cef2a5c073fbd71f7928aaa9a677e2759c7866fc20cf8392ec2bc78a1b43\",\n  \"opened_at\": \"2026-10-09T14:23:21+09:00\",\n  \"modified\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "checkin",
+        "maple",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: tags not in taxonomy: outside-taxonomy (see `canopy tags`)\n"
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "checkin",
+        "maple",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--discard",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"discarded\": \"maple\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "probe": "gate-checkin-correction",
+      "invalid_tag_update_exit": 0,
+      "invalid_tag_lint_count": 1,
+      "unchanged_invalid_copy_checkin_exit": 0,
+      "changed_invalid_copy_checkin_exit": 1,
+      "changed_copy_error": "error: tags not in taxonomy: outside-taxonomy (see `canopy tags`)\n",
+      "discard_exit": 0
+    },
+    {
+      "argv": [
+        "gofmt",
+        "-w",
+        "review_probes/red_web/extra_test.go"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-mod=readonly",
+        "-count=1",
+        "-v",
+        "-run",
+        "TestSupplement",
+        "./review_probes/red_web"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "=== RUN   TestSupplementUnauthSpooling\n    probe_test.go:97: OBS unauth-spool-real-net-http {\"disk_backed_during_handler\":true,\"parsed_file_bytes\":34603008,\"response_status\":400,\"supplied_bytes\":34603008,\"task_load_error\":\"\\u003cnil\\u003e\",\"tasks\":0,\"temp_removed_by_net_http\":true}\n--- PASS: TestSupplementUnauthSpooling (0.05s)\n=== RUN   TestSupplementEmptyProposal\n    probe_test.go:97: OBS empty-body-proposal-not-yet-defended {\"empty_with_note_status\":303,\"empty_without_note_error\":\"edit task needs a request or a proposed body\\n\",\"empty_without_note_status\":500,\"page_unchanged\":true,\"serialized_body_key\":false,\"task_count\":1}\n--- PASS: TestSupplementEmptyProposal (0.01s)\nPASS\nok  \tgithub.com/neutrospec/canopy/review_probes/red_web\t0.576s\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-mod=readonly",
+        "-race",
+        "-count=1",
+        "-v",
+        "-run",
+        "TestTwoTabAndBurst|TestStateConcurrency",
+        "./review_probes/red_web"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "=== RUN   TestTwoTabAndBurst\n    probe_test.go:97: OBS concurrent-proposals {\"accepted\":48,\"codes\":{\"303\":48},\"files\":31,\"load_error\":\"\\u003cnil\\u003e\",\"lost_bodies\":17,\"page_unchanged\":true,\"per_round\":2,\"rounds\":24,\"rounds_with_loss\":17,\"unique_bodies\":31}\n    probe_test.go:97: OBS concurrent-proposals {\"accepted\":72,\"codes\":{\"303\":72},\"files\":35,\"load_error\":\"\\u003cnil\\u003e\",\"lost_bodies\":37,\"page_unchanged\":true,\"per_round\":24,\"rounds\":3,\"rounds_with_loss\":3,\"unique_bodies\":35}\n--- PASS: TestTwoTabAndBurst (0.48s)\n=== RUN   TestStateConcurrency\n    probe_test.go:97: OBS feedback-concurrency {\"accepted\":25,\"accepted_but_absent\":19,\"codes\":{\"303\":25,\"500\":15},\"load_error\":\"\\u003cnil\\u003e\",\"persisted\":6}\n    probe_test.go:97: OBS read-graph-concurrency {\"failed_get\":1,\"failed_post\":0,\"final_count\":121,\"get_requests\":360,\"load_error\":\"\\u003cnil\\u003e\",\"post_requests\":120}\n--- PASS: TestStateConcurrency (1.01s)\nPASS\nok  \tgithub.com/neutrospec/canopy/review_probes/red_web\t3.045s\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "make",
+        "i18n-check"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "scripts/i18n-check.sh\n✓ i18n: 4 translation(s) current\n",
+      "stderr": ""
+    }
+  ]
+}

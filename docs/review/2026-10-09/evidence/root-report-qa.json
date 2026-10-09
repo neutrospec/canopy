@@ -1,0 +1,137 @@
+{
+  "scope": "Audit Markdown links/fences and repository Mermaid parser only; no browser QA.",
+  "fixture": "/private/tmp/canopy-audit-20261009/root-report-qa-zv8_v21i",
+  "files": [
+    {
+      "path": "00-baseline.md",
+      "sha256": "2d9b876d911e48239ae0e841145815ac63039908c04dab9b19a06365d93b11dc",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 1
+    },
+    {
+      "path": "01-data.md",
+      "sha256": "8c57447dd951555541b4176d05ab6386c0e2c746dc820f74d01566aab7becd98",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 1
+    },
+    {
+      "path": "02-search.md",
+      "sha256": "1abc9aaa53492be84a84762c5add9ace3a18fc5be03da02296a1b1a3c69ee352",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 0
+    },
+    {
+      "path": "03-web.md",
+      "sha256": "796380a8b7d473d548661464d78280a61db1dbd8cccb88aed53da6edf4925c28",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 1
+    },
+    {
+      "path": "04-state.md",
+      "sha256": "224ef4f97293a633e697c730a0a74afd4108f16b2a5dc3d0bbf6fbf37678dc15",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 1
+    },
+    {
+      "path": "05-docs.md",
+      "sha256": "8c1193f1afa4b90333c51683bd50f1b95b19bc29d933cb7c51e8bcf8da7c6135",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 1
+    },
+    {
+      "path": "06-ops.md",
+      "sha256": "7d24e9ef1af7400a5625197a4584faa23133c0a74e11adaa311786e86f031c80",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 1
+    },
+    {
+      "path": "07-red-data.md",
+      "sha256": "9f32c070f1f727cd372cbae76e1f353f86a4c0919f4b08e86e34bb77b8b94942",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 0
+    },
+    {
+      "path": "08-red-search.md",
+      "sha256": "97e3a922fdf09d6b8f93a9ed51f0340f3c6a223c8200b77a46e8a5965fcaa270",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 0
+    },
+    {
+      "path": "09-red-web-docs.md",
+      "sha256": "66de623c123cc3d1c339b18a5e597b2ac4426e9e72817c7f6322e90127713a0f",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 0
+    },
+    {
+      "path": "10-defense-data.md",
+      "sha256": "143f99d5ff3a062dbbfac1e9bce3d4b06009c89f20552accac5d56a211ce151f",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 0
+    },
+    {
+      "path": "11-defense-search.md",
+      "sha256": "5b1138cc906284409440f6badd5af882085929100c345a9473bb38a97684b7d4",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 0
+    },
+    {
+      "path": "12-defense-web-docs.md",
+      "sha256": "c23cece4c51484db7af5ab5a33d9a5b30f0be1f165c1716dad470fa928403531",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 0
+    },
+    {
+      "path": "13-final-challenge.md",
+      "sha256": "d32bfa237e7f947232082b5afbd30a6373931d2aff7b515cec74f197698f20eb",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 0
+    },
+    {
+      "path": "14-final-response.md",
+      "sha256": "dd2fcfe1581b2c529110efd9565623d510376c129f351455c86c528c479ecb5d",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 0
+    },
+    {
+      "path": "README.md",
+      "sha256": "cbdd02b39b82787942a1d94b7c3984d422c3d5afb48fbec72c65ca443f5eddf1",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 0
+    },
+    {
+      "path": "decisions.md",
+      "sha256": "f2b84c0e4dbe0c9ec29d4d833ed3a122ee7b9ed770b0a04399c3bf0b01cb4de2",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 0
+    },
+    {
+      "path": "plan.md",
+      "sha256": "8a63dd99eeabd601e33e3212753ad75f5ee0862181ec83c294b8ddeb0ce77199",
+      "missing_links": [],
+      "parser_failures": 0,
+      "report_mermaid_blocks": 1
+    }
+  ],
+  "errors": [],
+  "build_stderr": "go: writing stat cache: open /Users/nobocop/go/pkg/mod/cache/download/github.com/neutrospec/canopy/@v/v0.10.0.info144305514.tmp: operation not permitted\n",
+  "scratch_removed": true,
+  "fixture_removed": true,
+  "ok": true
+}

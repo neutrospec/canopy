@@ -1,0 +1,4 @@
+$ ['go', 'version']
+go version go1.27.1 darwin/arm64
+
+EXIT 0

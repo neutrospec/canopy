@@ -1,0 +1,93 @@
+from pathlib import Path
+import json, os, subprocess, time
+
+BASE = Path('/private/tmp/canopy-audit-20261009/ops-term398')
+REPO = Path('/Users/nobocop/play/canopy')
+env = dict(os.environ)
+env.update(HOME=str(BASE/'home'), XDG_CONFIG_HOME=str(BASE/'config'),
+           XDG_CACHE_HOME=str(BASE/'cache'), XDG_DATA_HOME=str(BASE/'data'),
+           XDG_STATE_HOME=str(BASE/'state'), TMPDIR=str(BASE/'tmp'),
+           CANOPY_WIKI='', PI_CODING_AGENT_DIR='', GOCACHE='/private/tmp/canopy-review/go-cache',
+           GOPROXY='off', GOTOOLCHAIN='local', GOMODCACHE='/Users/nobocop/go/pkg/mod')
+records = []
+def run(label, argv, changes=None, cwd=None, timeout=60):
+    e = dict(env)
+    if changes: e.update(changes)
+    start = time.monotonic()
+    try:
+        p = subprocess.run(argv, cwd=cwd or REPO, env=e, capture_output=True, text=True, timeout=timeout)
+        row = dict(label=label, argv=argv, cwd=str(cwd or REPO), exit=p.returncode,
+                   elapsed_ms=int((time.monotonic()-start)*1000), stdout=p.stdout, stderr=p.stderr)
+    except subprocess.TimeoutExpired as x:
+        row = dict(label=label, argv=argv, exit='timeout', stdout=str(x.stdout), stderr=str(x.stderr))
+    records.append(row)
+    print(json.dumps(row, ensure_ascii=False), flush=True)
+    (BASE/'logs'/'checks.json').write_text(json.dumps(records, ensure_ascii=False, indent=2))
+    return row
+
+lite = str(BASE/'bin'/'canopy-lite')
+ort = str(BASE/'bin'/'canopy-ort')
+probe = str(BASE/'bin'/'ops-probe')
+wiki = BASE/'fixtures'/'wiki'
+wiki.mkdir(exist_ok=True)
+for d in ['concepts','entities','comparisons']: (wiki/d).mkdir(exist_ok=True)
+for slug, title, body in [
+    ('protocol','산업용 프로토콜','산업용 프로토콜 OPC-UA와 MQTT 비교. [[lunch]]'),
+    ('lunch','점심 메뉴','오늘 점심 메뉴로 김치찌개를 먹었다. [[protocol]]')]:
+    (wiki/'concepts'/f'{slug}.md').write_text(f'---\ntitle: {title}\ntype: concept\ncreated: 2026-10-09\nupdated: 2026-10-09\ntags: []\n---\n\n{body}\n')
+run('lite-version', [lite,'version','--json'])
+run('lite-init', [lite,'init','--wiki',str(wiki),'--json'])
+run('lite-hybrid-F2', [lite,'search','MQTT','--mode','hybrid','--wiki',str(wiki),'--json','--no-mark'])
+run('lite-semantic-refusal', [lite,'search','MQTT','--mode','semantic','--wiki',str(wiki),'--json','--no-mark'])
+run('adopted-wiki-other-cwd-F4', [lite,'status','--json'], cwd=BASE/'tmp')
+
+models = BASE/'data'/'canopy'/'models'
+models.mkdir(parents=True,exist_ok=True)
+link = models/'bge-m3'
+if not link.exists(): link.symlink_to('/Users/nobocop/.local/share/canopy/models/bge-m3', target_is_directory=True)
+run('ort-version', [ort,'version','--json'])
+run('native-smoke', [probe,'embed-smoke'])
+run('ort-reindex-first', [ort,'reindex','--wiki',str(wiki),'--json'])
+run('ort-semantic-smoke', [ort,'search','산업용 프로토콜 비교','--mode','semantic','--wiki',str(wiki),'--json','--no-mark'])
+run('ort-reindex-unchanged', [ort,'reindex','--wiki',str(wiki),'--json'])
+
+bad_data = BASE/'fixtures'/'bad-data'
+bad_model = bad_data/'canopy'/'models'/'bge-m3'
+bad_model.mkdir(parents=True,exist_ok=True)
+# These are zero-byte text fixtures. All six names already exist, so pull
+# takes only its cached branches and does not perform any HTTP request.
+for f in ['model.onnx','model.onnx.data','config.json','tokenizer.json','tokenizer_config.json','special_tokens_map.json']:
+    (bad_model/f).write_bytes(b'')
+bad_env = {'XDG_DATA_HOME': str(bad_data)}
+run('zero-byte-model-status', [ort,'model','status','--wiki',str(wiki),'--json'], bad_env)
+run('zero-byte-model-pull-all-cached', [ort,'model','pull'], bad_env)
+run('zero-byte-model-semantic', [ort,'search','MQTT','--mode','semantic','--wiki',str(wiki),'--json','--no-mark'], bad_env)
+run('zero-byte-model-hybrid-degrade', [ort,'search','MQTT','--mode','hybrid','--wiki',str(wiki),'--json','--no-mark'], bad_env)
+
+lint_wiki = BASE/'fixtures'/'lint-wiki'
+(lint_wiki/'concepts').mkdir(parents=True,exist_ok=True)
+(lint_wiki/'canopy.toml').write_text('[schema]\ntopics=["tool"]\nforms=[]\n')
+(lint_wiki/'concepts'/'bad-fields.md').write_text('---\ntitle: Field gaps\ntype: concept\ncreated: nonsense\nupdated: nonsense\n---\n\n본문.\n')
+run('lint-A3-missing-tags-invalid-dates', [lite,'lint','--wiki',str(lint_wiki),'--json'])
+(lint_wiki/'concepts'/'bad-fields.md').write_text('---\ntitle: Duplicate tags\ntype: concept\ncreated: 2026-10-09\nupdated: 2026-10-09\ntags: [tool, tool, tool]\n---\n\n본문.\n')
+run('taxonomy-duplicate-tags', [lite,'tags','--audit','--wiki',str(lint_wiki),'--json'])
+run('mermaid-render-parity', [probe,'render-parity'])
+
+run('cmd-test-inventory', ['go','test','./cmd/canopy'], {'CGO_ENABLED':'0'})
+run('focused-lint-mermaid-skills', ['go','test','-count=1','-coverprofile='+str(BASE/'logs'/'focused.cover'),'./internal/lint','./internal/mermaid','./internal/skills'], {'CGO_ENABLED':'0'})
+run('client-tests', ['node','--test','internal/webui/uitest/app.test.cjs'])
+run('i18n-current', ['make','i18n-check'])
+run('gofmt', ['gofmt','-l','cmd','internal','spike','review_probes/ops'])
+run('goreleaser-config', ['goreleaser','check','--config','.goreleaser.yaml'])
+run('formula-ruby-syntax', ['ruby','-c','packaging/homebrew/canopy.rb'])
+run('scripts-shell-syntax', ['bash','-n','scripts/brew-sha256.sh','scripts/i18n-check.sh','scripts/release-lineage-check.sh'])
+
+# Deliberately leave XDG_STATE_HOME unset inside a fake HOME. This proves
+# what the ordinary task test writes to a user's default state directory.
+test_home = BASE/'fixtures'/'test-default-home'
+test_home.mkdir(exist_ok=True)
+run('task-test-default-state-side-effect', ['go','test','-count=1','./internal/tasks','-run','^TestConnectDoneRequiresMutualLinks$'],
+    {'HOME':str(test_home),'XDG_STATE_HOME':''})
+files = [str(p.relative_to(test_home)) for p in test_home.rglob('*') if p.is_file()]
+print(json.dumps({'label':'task-test-leftover-state', 'files':files}, ensure_ascii=False), flush=True)
+(BASE/'logs'/'test-side-effects.json').write_text(json.dumps(files,ensure_ascii=False,indent=2))

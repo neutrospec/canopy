@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+"""Read-only report checks and baseline comparison; JSON output goes to stdout."""
+import ast, hashlib, json, pathlib, re, subprocess
+repo=pathlib.Path(__file__).resolve().parents[4]
+base=repo/'docs/review/2026-10-09'
+report=base/'13-final-challenge.md'
+text=report.read_text()
+findings=json.loads((base/'adjudication.json').read_text())['findings']
+ids={x['id'] for x in findings}
+appendix=text.split('## 6. exact ID별 추적·독립 평가 부록',1)[1]
+rows=re.findall(r'^\| ((?:DATA|STATE|SEARCH|OPS|WEB|DOC)-\d{2}|RED-[ABC]-\d{2}|DEF-[ABC]-\d{2}) \|',appendix,re.M)
+plan_rows=re.findall(r'^\| (PLAN-\d{2}) \|',text,re.M)
+finals=re.findall(r'^### (FINAL-\d{2}) —',text,re.M)
+broken=[]
+for label,target in re.findall(r'\[([^\]]+)\]\(([^)]+)\)',text):
+ if re.match(r'^[a-zA-Z]+://',target): continue
+ p=(report.parent/target.split('#')[0]).resolve()
+ if not p.exists(): broken.append({'label':label,'target':target})
+for p in (base/'evidence').glob('final-*.py.txt'):ast.parse(p.read_text(),filename=str(p))
+baseline=json.loads((base/'evidence/final-baseline.json').read_text())
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+frozen_changes=[p for p,h in baseline['frozen_sha256'].items() if sha(repo/p)!=h]
+tracked_changes=[p for p,h in baseline['tracked_sha256'].items() if not (repo/p).is_file() or sha(repo/p)!=h]
+index=pathlib.Path(subprocess.check_output(['git','rev-parse','--git-path','index'],cwd=repo,text=True).strip()); index=index if index.is_absolute() else repo/index
+result={'source_head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip(),'head_unchanged':subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip()==baseline['head'],'index_unchanged':sha(index)==baseline['index_sha256'],'frozen_changes':frozen_changes,'tracked_changes':tracked_changes,'ledger_count':len(findings),'coverage_row_count':len(rows),'missing_ids':sorted(ids-set(rows)),'extra_ids':sorted(set(rows)-ids),'duplicated_rows':sorted({x for x in rows if rows.count(x)>1}),'plan_rows':plan_rows,'all_14_plan_rows':set(plan_rows)=={f'PLAN-{i:02}' for i in range(1,15)},'final_objections':finals,'all_12_final_objections':finals==[f'FINAL-{i:02}' for i in range(1,13)],'broken_local_links':broken,'python_sources_parse':True,'scratch_removed':not (repo/'review_probes/final').exists(),'status':subprocess.check_output(['git','status','--porcelain=v1','--untracked-files=normal'],cwd=repo,text=True),'note':'Presence/syntax/hash checks do not establish debate adequacy, product fixes, browser quality, or retrieval performance.'}
+print(json.dumps(result,ensure_ascii=False,indent=2))

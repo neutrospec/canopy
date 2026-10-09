@@ -1,0 +1,1094 @@
+{
+  "run": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+  "env": {
+    "HOME": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/home",
+    "XDG_CONFIG_HOME": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/config",
+    "XDG_STATE_HOME": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/state",
+    "XDG_CACHE_HOME": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/cache",
+    "XDG_DATA_HOME": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/data",
+    "TMPDIR": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/tmp",
+    "GOTELEMETRY": "off",
+    "GOCACHE": "/private/tmp/canopy-review/go-cache",
+    "GOPROXY": "off",
+    "GOMODCACHE": "/Users/nobocop/go/pkg/mod",
+    "GOPATH": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/gopath",
+    "GOENV": "off",
+    "GOTOOLCHAIN": "local"
+  },
+  "records": [
+    {
+      "argv": [
+        "go",
+        "version"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "go version go1.27.1 darwin/arm64\n",
+      "stderr": ""
+    },
+    {
+      "probe": "go-version",
+      "result": "go version go1.27.1 darwin/arm64",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "gofmt",
+        "-w",
+        "review_probes/red_web/probe_test.go"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "go",
+        "build",
+        "-mod=readonly",
+        "-ldflags",
+        "-X github.com/neutrospec/canopy/internal/buildinfo.version=v0.10.0 -X github.com/neutrospec/canopy/internal/buildinfo.commit=ede67e3",
+        "-o",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "./cmd/canopy"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-mod=readonly",
+        "-count=1",
+        "-v",
+        "./review_probes/red_web"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "=== RUN   TestNetworkBoundaryAndRender\n    probe_test.go:97: OBS host-render {\"canary\":true,\"different_origin\":403,\"escaped_alias\":true,\"event\":true,\"host_status\":200,\"javascript\":true,\"matched_origin\":303,\"script\":true,\"tasks\":1}\n--- PASS: TestNetworkBoundaryAndRender (0.02s)\n=== RUN   TestTwoTabAndBurst\n    probe_test.go:97: OBS concurrent-proposals {\"accepted\":48,\"codes\":{\"303\":48},\"files\":34,\"load_error\":\"\\u003cnil\\u003e\",\"lost_bodies\":14,\"page_unchanged\":true,\"per_round\":2,\"rounds\":24,\"rounds_with_loss\":14,\"unique_bodies\":34}\n    probe_test.go:97: OBS concurrent-proposals {\"accepted\":72,\"codes\":{\"303\":72},\"files\":42,\"load_error\":\"\\u003cnil\\u003e\",\"lost_bodies\":30,\"page_unchanged\":true,\"per_round\":24,\"rounds\":3,\"rounds_with_loss\":3,\"unique_bodies\":42}\n--- PASS: TestTwoTabAndBurst (0.76s)\n=== RUN   TestStateConcurrency\n    probe_test.go:97: OBS feedback-concurrency {\"accepted\":25,\"accepted_but_absent\":17,\"codes\":{\"303\":25,\"500\":15},\"load_error\":\"\\u003cnil\\u003e\",\"persisted\":8}\n    probe_test.go:97: OBS read-graph-concurrency {\"failed_get\":3,\"failed_post\":0,\"final_count\":121,\"get_requests\":360,\"load_error\":\"\\u003cnil\\u003e\",\"post_requests\":120}\n--- PASS: TestStateConcurrency (0.21s)\n=== RUN   TestAuthResponseAndLogout\n    probe_test.go:97: OBS auth-response {\"content_type\":\"text/html; charset=utf-8\",\"read_before_session\":false,\"with_session_body\":\"{\\\"read\\\":true}\\n\",\"with_session_status\":200,\"without_session_final_status\":200,\"without_session_path\":\"/login\"}\n    probe_test.go:97: OBS logout-local {\"no_cookie_set_cookie\":\"canopy_session=; Path=/; Max-Age=0\",\"no_cookie_status\":303,\"old_cookie_network_error\":\"Post \\\"http://127.0.0.1:50980/logout\\\": EOF\",\"old_cookie_status\":0,\"subsequent_preview_status\":200}\n--- PASS: TestAuthResponseAndLogout (0.05s)\n=== RUN   TestHomeHEADUnknownAndStale\n    probe_test.go:97: OBS head-discover {\"discover_all_read\":true,\"get_same_day_unchanged\":true,\"head_body_bytes\":0,\"head_changed_state\":true,\"head_status\":200,\"home_all_read\":true,\"home_unread_one\":true}\n    probe_test.go:97: OBS unknown-page {\"automatic_status\":404,\"explicit_status\":303,\"feedback_rows\":1,\"feedback_status\":303,\"recorded\":true}\n    probe_test.go:97: OBS stale-proposal {\"base_is_post_current\":true,\"form_has_old\":true,\"original_page_unchanged\":true,\"post_status\":303,\"tasks\":1}\n    probe_test.go:97: OBS edit-done-metadata {\"body_has_new_knowledge\":true,\"metadata_only_error\":\"\\u003cnil\\u003e\",\"metadata_only_status\":\"done\",\"no_change_rejected\":true}\n--- PASS: TestHomeHEADUnknownAndStale (0.02s)\n=== RUN   TestSearchColdWarmAndScale\n    probe_test.go:97: OBS cold-warm-search {\"after_slug_redirect\":\"{\\\"mode\\\":\\\"keyword\\\",\\\"query\\\":\\\"uncommonmaplemarker\\\",\\\"results\\\":[]}\\n\",\"cold\":\"{\\\"mode\\\":\\\"keyword\\\",\\\"query\\\":\\\"uncommonmaplemarker\\\",\\\"results\\\":[]}\\n\",\"db_path\":\"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/cache/canopy/index/3c0fb947e85d.db\",\"full_status\":200,\"slug_location\":\"/page/maple-0\",\"slug_status\":302,\"title_location\":\"\",\"title_status\":200,\"warm\":\"{\\\"mode\\\":\\\"keyword\\\",\\\"query\\\":\\\"uncommonmaplemarker\\\",\\\"results\\\":[{\\\"Slug\\\":\\\"maple-0\\\",\\\"Title\\\":\\\"단풍 지식 0\\\",\\\"Score\\\":0.000001,\\\"Snippet\\\":\\\"»uncommonmaplemarker« in body\\\"}]}\\n\"}\n    probe_test.go:97: OBS preview-scale {\"body_bytes_per_page\":720,\"elapsed_ms\":1.335,\"pages\":50,\"response_bytes\":332,\"status\":200,\"total_alloc_bytes\":1062048}\n    probe_test.go:97: OBS preview-scale {\"body_bytes_per_page\":720,\"elapsed_ms\":13.155,\"pages\":500,\"response_bytes\":332,\"status\":200,\"total_alloc_bytes\":10316400}\n--- PASS: TestSearchColdWarmAndScale (0.08s)\n=== RUN   TestBodyBudgetAndLinterScope\n    probe_test.go:97: OBS body-budget {\"field_bytes\":10485761,\"load_error\":\"\\u003cnil\\u003e\",\"multipart_status\":303,\"task_count\":1,\"urlencoded_error\":\"edit task needs a request or a proposed body\\n\",\"urlencoded_status\":500}\n    probe_test.go:97: OBS A3 {\"counts\":{\"bad-frontmatter\":1,\"orphan\":1},\"documented_pass\":true,\"kind\":\"bad-yaml\"}\n    probe_test.go:97: OBS A3 {\"counts\":{\"orphan\":1},\"documented_pass\":true,\"kind\":\"missing-tags\"}\n    probe_test.go:97: OBS A3 {\"counts\":{\"orphan\":1},\"documented_pass\":true,\"kind\":\"empty-tags\"}\n    probe_test.go:97: OBS A3 {\"counts\":{\"no-frontmatter\":1,\"orphan\":1},\"documented_pass\":false,\"kind\":\"no-fm\"}\n    probe_test.go:97: OBS P1-internal-only {\"documented_pass\":true,\"injected_counts\":{\"mermaid-unchecked\":1,\"orphan\":1},\"normal_counts\":{\"orphan\":1},\"synthetic_process_only\":true}\n--- PASS: TestBodyBudgetAndLinterScope (0.33s)\nPASS\nok  \tgithub.com/neutrospec/canopy/review_probes/red_web\t1.992s\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-mod=readonly",
+        "-count=1",
+        "./internal/webui",
+        "./internal/tasks",
+        "./internal/reads",
+        "./internal/mermaid",
+        "./internal/lint",
+        "./internal/skills"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "ok  \tgithub.com/neutrospec/canopy/internal/webui\t1.687s\nok  \tgithub.com/neutrospec/canopy/internal/tasks\t0.329s\nok  \tgithub.com/neutrospec/canopy/internal/reads\t0.267s\nok  \tgithub.com/neutrospec/canopy/internal/mermaid\t2.434s\nok  \tgithub.com/neutrospec/canopy/internal/lint\t0.738s\nok  \tgithub.com/neutrospec/canopy/internal/skills\t0.269s\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "node",
+        "/Users/nobocop/play/canopy/review_probes/red_web/auto-response.cjs",
+        "/Users/nobocop/play/canopy"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\"probe\":\"independent-auto-read\",\"name\":\"login-html\",\"status\":200,\"type\":\"text/html\",\"requests\":1,\"jsonCalls\":0,\"showsSuccess\":true,\"preservesControls\":false,\"limit\":\"VM and real Response object, without native DOM/browser navigation\"}\n{\"probe\":\"independent-auto-read\",\"name\":\"json-false\",\"status\":200,\"type\":\"application/json\",\"requests\":1,\"jsonCalls\":0,\"showsSuccess\":true,\"preservesControls\":false,\"limit\":\"VM and real Response object, without native DOM/browser navigation\"}\n{\"probe\":\"independent-auto-read\",\"name\":\"unauthorized\",\"status\":401,\"type\":\"application/json\",\"requests\":1,\"jsonCalls\":0,\"showsSuccess\":false,\"preservesControls\":true,\"limit\":\"VM and real Response object, without native DOM/browser navigation\"}\n{\"probe\":\"independent-auto-read\",\"name\":\"stored-read\",\"status\":200,\"type\":\"application/json\",\"requests\":1,\"jsonCalls\":0,\"showsSuccess\":true,\"preservesControls\":false,\"limit\":\"VM and real Response object, without native DOM/browser navigation\"}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "node",
+        "--test",
+        "internal/webui/uitest/app.test.cjs"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "TAP version 13\n# Subtest: a cleared query cannot be reopened by a late response\nok 1 - a cleared query cannot be reopened by a late response\n  ---\n  duration_ms: 3.453459\n  type: 'test'\n  ...\n# Subtest: responses from before the current debounce stay hidden\nok 2 - responses from before the current debounce stay hidden\n  ---\n  duration_ms: 0.575084\n  type: 'test'\n  ...\n# Subtest: out-of-order search responses never replace current results\nok 3 - out-of-order search responses never replace current results\n  ---\n  duration_ms: 0.438583\n  type: 'test'\n  ...\n# Subtest: Escape cancels pending results and keyboard selection\nok 4 - Escape cancels pending results and keyboard selection\n  ---\n  duration_ms: 0.368917\n  type: 'test'\n  ...\n# Subtest: IME composition defers search and prevents suggestion navigation\nok 5 - IME composition defers search and prevents suggestion navigation\n  ---\n  duration_ms: 0.569166\n  type: 'test'\n  ...\n# Subtest: keyboard selection is exposed to assistive technology and opens the selected page\nok 6 - keyboard selection is exposed to assistive technology and opens the selected page\n  ---\n  duration_ms: 2.712833\n  type: 'test'\n  ...\n# Subtest: failed search responses leave the ordinary form available\nok 7 - failed search responses leave the ordinary form available\n  ---\n  duration_ms: 1.213125\n  type: 'test'\n  ...\n# Subtest: mobile navigation opens, closes with Escape, and adapts to desktop\nok 8 - mobile navigation opens, closes with Escape, and adapts to desktop\n  ---\n  duration_ms: 0.419375\n  type: 'test'\n  ...\n# Subtest: search shortcuts respect typing, while Ctrl K can focus search from an editor\nok 9 - search shortcuts respect typing, while Ctrl K can focus search from an editor\n  ---\n  duration_ms: 0.784459\n  type: 'test'\n  ...\n# Subtest: code copy preserves literal source text and displays localized success\nok 10 - code copy preserves literal source text and displays localized success\n  ---\n  duration_ms: 0.617959\n  type: 'test'\n  ...\n# Subtest: clipboard failure never displays a success state\nok 11 - clipboard failure never displays a success state\n  ---\n  duration_ms: 0.313209\n  type: 'test'\n  ...\n# Subtest: the page outline uses real heading targets without including the anchor marker\nok 12 - the page outline uses real heading targets without including the anchor marker\n  ---\n  duration_ms: 0.218875\n  type: 'test'\n  ...\n# Subtest: only an exact duplicate body title is collapsed, with its source preserved\nok 13 - only an exact duplicate body title is collapsed, with its source preserved\n  ---\n  duration_ms: 0.33425\n  type: 'test'\n  ...\n# Subtest: auto read requires visible dwell and scroll progress\nok 14 - auto read requires visible dwell and scroll progress\n  ---\n  duration_ms: 0.276167\n  type: 'test'\n  ...\n# Subtest: dwell without sufficient scroll does not mark a long page read\nok 15 - dwell without sufficient scroll does not mark a long page read\n  ---\n  duration_ms: 0.183333\n  type: 'test'\n  ...\n# Subtest: HTTP failure keeps explicit read controls without showing auto success\nok 16 - HTTP failure keeps explicit read controls without showing auto success\n  ---\n  duration_ms: 0.268625\n  type: 'test'\n  ...\n# Subtest: network failure keeps explicit read controls without showing auto success\nok 17 - network failure keeps explicit read controls without showing auto success\n  ---\n  duration_ms: 0.197833\n  type: 'test'\n  ...\n# Subtest: read shortcut respects editable content and key repeats\nok 18 - read shortcut respects editable content and key repeats\n  ---\n  duration_ms: 0.184417\n  type: 'test'\n  ...\n1..18\n# tests 18\n# suites 0\n# pass 18\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 46.589167\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "init",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/cache/canopy/index/3f070b1be286.db\",\n  \"default_wiki_set\": true,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "init",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/other-wiki",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/cache/canopy/index/7052ff8cbb8e.db\",\n  \"default_wiki_set\": false,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/other-wiki\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "new",
+        "첫 페이지",
+        "--type",
+        "concept",
+        "--tags",
+        "tool",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: title has no ASCII letters to derive a filename from — pass an explicit English --slug (filenames must be English)\n"
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "new",
+        "검토 첫 페이지",
+        "--slug",
+        "maple",
+        "--type",
+        "concept",
+        "--tags",
+        "tool",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json",
+        "--body-file",
+        "-"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"created\": \"concepts/maple.md\",\n  \"related\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "search",
+        "knowledge",
+        "--mode",
+        "hybrid",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"hits\": [\n    {\n      \"slug\": \"maple\",\n      \"rel_path\": \"concepts/maple.md\",\n      \"title\": \"검토 첫 페이지\",\n      \"score\": 0.000001,\n      \"snippet\": \"# 검토 첫 페이지\\n\\nOriginal recorded »knowledge«.\\n\"\n    }\n  ],\n  \"mode\": \"keyword\",\n  \"query\": \"knowledge\"\n}\n",
+      "stderr": "hybrid → keyword only (this canopy binary was built without embedding support (rebuild with -tags ORT))\n"
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "recall",
+        "knowledge",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: recall needs the embedding stack: this canopy binary was built without embedding support (rebuild with -tags ORT)\n"
+    },
+    {
+      "probe": "first-success",
+      "bare_exit": 1,
+      "bare_error": "error: title has no ASCII letters to derive a filename from — pass an explicit English --slug (filenames must be English)\n",
+      "explicit_exit": 0,
+      "hybrid_exit": 0,
+      "hybrid_stdout": "{\n  \"hits\": [\n    {\n      \"slug\": \"maple\",\n      \"rel_path\": \"concepts/maple.md\",\n      \"title\": \"검토 첫 페이지\",\n      \"score\": 0.000001,\n      \"snippet\": \"# 검토 첫 페이지\\n\\nOriginal recorded »knowledge«.\\n\"\n    }\n  ],\n  \"mode\": \"keyword\",\n  \"query\": \"knowledge\"\n}\n",
+      "recall_exit": 1
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "status",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"checkouts_open\": 0,\n  \"git\": {\n    \"is_repo\": false,\n    \"branch\": \"\",\n    \"dirty\": 0,\n    \"ahead\": 0,\n    \"behind\": 0\n  },\n  \"initialized\": true,\n  \"pages\": 1,\n  \"root\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces\",\n  \"stray_root\": null,\n  \"tasks_pending\": 0\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "status",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/other-wiki",
+      "exit": 0,
+      "stdout": "{\n  \"checkouts_open\": 0,\n  \"git\": {\n    \"is_repo\": false,\n    \"branch\": \"\",\n    \"dirty\": 0,\n    \"ahead\": 0,\n    \"behind\": 0\n  },\n  \"initialized\": true,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/other-wiki\",\n  \"stray_root\": null,\n  \"tasks_pending\": 0\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "status",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/other-wiki",
+      "exit": 0,
+      "stdout": "{\n  \"checkouts_open\": 0,\n  \"git\": {\n    \"is_repo\": false,\n    \"branch\": \"\",\n    \"dirty\": 0,\n    \"ahead\": 0,\n    \"behind\": 0\n  },\n  \"initialized\": true,\n  \"pages\": 1,\n  \"root\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces\",\n  \"stray_root\": null,\n  \"tasks_pending\": 0\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "status",
+        "--json",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/other-wiki",
+      "exit": 0,
+      "stdout": "{\n  \"checkouts_open\": 0,\n  \"git\": {\n    \"is_repo\": false,\n    \"branch\": \"\",\n    \"dirty\": 0,\n    \"ahead\": 0,\n    \"behind\": 0\n  },\n  \"initialized\": true,\n  \"pages\": 1,\n  \"root\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces\",\n  \"stray_root\": null,\n  \"tasks_pending\": 0\n}\n",
+      "stderr": ""
+    },
+    {
+      "probe": "root-resolution",
+      "cases": [
+        {
+          "case": "default",
+          "root": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+          "exit": 0
+        },
+        {
+          "case": "cwd",
+          "root": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/other-wiki",
+          "exit": 0
+        },
+        {
+          "case": "environment",
+          "root": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+          "exit": 0
+        },
+        {
+          "case": "explicit",
+          "root": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "new",
+        "Broken explicit link",
+        "--slug",
+        "bad-flag",
+        "--type",
+        "concept",
+        "--links",
+        "does-not-exist",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: --links target \"does-not-exist\" does not exist (run `canopy search` to find real pages; links to nonexistent pages are the top lint issue)\n"
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "new",
+        "Broken body link",
+        "--slug",
+        "body-link",
+        "--type",
+        "concept",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json",
+        "--body-file",
+        "-"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"created\": \"concepts/body-link.md\",\n  \"related\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "lint",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"total_pages\": 2,\n  \"findings\": [\n    {\n      \"severity\": \"critical\",\n      \"kind\": \"broken-link\",\n      \"page\": \"concepts/body-link.md\",\n      \"message\": \"broken wikilink [[does-not-exist]]\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"island\",\n      \"page\": \"maple\",\n      \"message\": \"1-page island, unreachable from the main graph (1 pages): maple\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/body-link.md\",\n      \"message\": \"no inbound links from other pages\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/maple.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"broken-link\": 1,\n    \"island\": 1,\n    \"orphan\": 2\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "update",
+        "maple",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json",
+        "--body-file",
+        "-"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "checkout",
+        "maple",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"slug\": \"maple\",\n  \"rel_path\": \"concepts/maple.md\",\n  \"path\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/state/canopy/checkout/3f070b1be286/maple.md\",\n  \"base\": \"31f2cef2a5c073fbd71f7928aaa9a677e2759c7866fc20cf8392ec2bc78a1b43\",\n  \"opened_at\": \"2026-10-09T14:19:46+09:00\",\n  \"modified\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "checkin",
+        "maple",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"rel_path\": \"concepts/maple.md\",\n  \"unchanged\": true,\n  \"old_lines\": 0,\n  \"new_lines\": 0\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "checkin",
+        "maple",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--discard",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: not checked out: maple\n"
+    },
+    {
+      "probe": "gate-json",
+      "explicit_bad_link_exit": 1,
+      "body_bad_link_exit": 0,
+      "broken_link_count": 1,
+      "invalid_tag_update_exit": 0,
+      "update_stdout": "",
+      "invalid_tag_checkin_exit": 0
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "new",
+        "Move",
+        "--slug",
+        "move",
+        "--type",
+        "concept",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"created\": \"concepts/move.md\",\n  \"related\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "mv",
+        "move",
+        "--slug",
+        "moved",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "archive",
+        "moved",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "new",
+        "Remove",
+        "--slug",
+        "remove",
+        "--type",
+        "concept",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"created\": \"concepts/remove.md\",\n  \"related\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "rm",
+        "remove",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "probe": "json-mutations",
+      "outputs": [
+        {
+          "command": "mv",
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": "archive",
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": "rm",
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        }
+      ]
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "skills",
+        "install",
+        "--dir",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/custom-skills",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"superseded_present\": {},\n  \"written\": {\n    \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/custom-skills\": [\n      \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/custom-skills/canopy-wiki/SKILL.md\",\n      \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/custom-skills/canopy-ingest/SKILL.md\"\n    ]\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "skills",
+        "install",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: no agent skills directory found (looked for /private/tmp/canopy-audit-20261009/red_web-nyzlfu99/home/.hermes/skills, /private/tmp/canopy-audit-20261009/red_web-nyzlfu99/home/.claude/skills, /private/tmp/canopy-audit-20261009/red_web-nyzlfu99/home/.pi/agent/skills) — pass --dir\n"
+    },
+    {
+      "probe": "skills-install",
+      "explicit_exit": 0,
+      "subsequent_plain_exit": 1,
+      "subsequent_error": "error: no agent skills directory found (looked for /private/tmp/canopy-audit-20261009/red_web-nyzlfu99/home/.hermes/skills, /private/tmp/canopy-audit-20261009/red_web-nyzlfu99/home/.claude/skills, /private/tmp/canopy-audit-20261009/red_web-nyzlfu99/home/.pi/agent/skills) — pass --dir\n"
+    },
+    {
+      "argv": [
+        "zsh",
+        "-f",
+        "-c",
+        "body_file=/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/sole-proposal-body.md\n/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy new '새 개념' --type concept --slug maple --body-file \"$body_file\" --wiki '/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces'\n/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy show maple --wiki '/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces'\nrm \"$body_file\""
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "---\ntitle: \"검토 첫 페이지\"\ncreated: 2026-10-09\nupdated: 2026-10-09\ntype: concept\ntags: [tool]\nsources: []\n---\nNew body with frontmatter retained.\n",
+      "stderr": "error: page already exists: concepts/maple.md — update it instead of duplicating\n— concepts/maple.md —\n"
+    },
+    {
+      "probe": "unconditional-example",
+      "shell_exit": 0,
+      "source_exists": false,
+      "existing_page_contains_intent": false,
+      "stderr": "error: page already exists: concepts/maple.md — update it instead of duplicating\n— concepts/maple.md —\n"
+    },
+    {
+      "argv": [
+        "zsh",
+        "-f",
+        "-c",
+        "body_file=/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/sole-proposal-body.md\nif /private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy new '새 개념' --type concept --slug maple --body-file \"$body_file\" --wiki '/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces'; then\n  /private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy show maple --wiki '/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces' && rm \"$body_file\"\nelse\n  exit 1\nfi"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: page already exists: concepts/maple.md — update it instead of duplicating\n"
+    },
+    {
+      "probe": "guarded-example",
+      "exit": 1,
+      "source_preserved": true
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "init",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/partial-wiki",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/cache/canopy/index/ba5cc4d0622b.db\",\n  \"default_wiki_set\": false,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/partial-wiki\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "new",
+        "Partial",
+        "--slug",
+        "partial",
+        "--type",
+        "concept",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/partial-wiki",
+        "--json",
+        "--body-file",
+        "-"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: mkdir /private/tmp/canopy-audit-20261009/red_web-nyzlfu99/partial-wiki/logs: not a directory\n"
+    },
+    {
+      "probe": "partial-new",
+      "exit": 1,
+      "page_exists": true,
+      "index_exists": true
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "update",
+        "maple",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "reindex",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"pages\": 2,\n  \"embedded_pages\": 0,\n  \"pruned_pages\": 0,\n  \"total_chunks\": 0\n}\n",
+      "stderr": ""
+    },
+    {
+      "probe": "logs-history",
+      "old_note": "red-history-canary",
+      "old_rows": 8,
+      "after_rows": 9
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "tags",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"forms\": [\n    \"comparison\",\n    \"timeline\",\n    \"controversy\",\n    \"prediction\",\n    \"method\",\n    \"definition\",\n    \"decision\",\n    \"review\",\n    \"debugging\"\n  ],\n  \"tags\": [\n    \"person\",\n    \"company\",\n    \"community\",\n    \"ai-ml\",\n    \"science\",\n    \"philosophy\",\n    \"history\",\n    \"language\",\n    \"math\",\n    \"politics\",\n    \"health\",\n    \"psychology\",\n    \"fitness\",\n    \"nutrition\",\n    \"sleep\",\n    \"business\",\n    \"finance\",\n    \"career\",\n    \"productivity\",\n    \"startup\",\n    \"book\",\n    \"movie\",\n    \"music\",\n    \"travel\",\n    \"cooking\",\n    \"hobby\",\n    \"programming\",\n    \"tool\",\n    \"hardware\",\n    \"infrastructure\",\n    \"hacking\",\n    \"comparison\",\n    \"timeline\",\n    \"controversy\",\n    \"prediction\",\n    \"method\",\n    \"definition\",\n    \"decision\",\n    \"review\",\n    \"debugging\",\n    \"legacy-extra\"\n  ],\n  \"topics\": [\n    \"person\",\n    \"company\",\n    \"community\",\n    \"ai-ml\",\n    \"science\",\n    \"philosophy\",\n    \"history\",\n    \"language\",\n    \"math\",\n    \"politics\",\n    \"health\",\n    \"psychology\",\n    \"fitness\",\n    \"nutrition\",\n    \"sleep\",\n    \"business\",\n    \"finance\",\n    \"career\",\n    \"productivity\",\n    \"startup\",\n    \"book\",\n    \"movie\",\n    \"music\",\n    \"travel\",\n    \"cooking\",\n    \"hobby\",\n    \"programming\",\n    \"tool\",\n    \"hardware\",\n    \"infrastructure\",\n    \"hacking\"\n  ],\n  \"types\": [\n    \"entity\",\n    \"concept\",\n    \"comparison\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "tags",
+        "--audit",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"total_pages\": 2,\n  \"legacy\": false,\n  \"topics\": [\n    {\n      \"tag\": \"tool\",\n      \"count\": 1,\n      \"pct\": 50\n    },\n    {\n      \"tag\": \"person\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"company\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"community\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"ai-ml\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"science\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"philosophy\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"history\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"language\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"math\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"politics\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"health\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"psychology\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"fitness\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"nutrition\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"sleep\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"business\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"finance\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"career\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"productivity\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"startup\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"book\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"movie\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"music\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"travel\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"cooking\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"hobby\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"programming\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"hardware\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"infrastructure\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"hacking\",\n      \"count\": 0,\n      \"pct\": 0\n    }\n  ],\n  \"forms\": [\n    {\n      \"tag\": \"comparison\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"timeline\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"controversy\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"prediction\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"method\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"definition\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"decision\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"review\",\n      \"count\": 0,\n      \"pct\": 0\n    },\n    {\n      \"tag\": \"debugging\",\n      \"count\": 0,\n      \"pct\": 0\n    }\n  ],\n  \"unused_topics\": [\n    \"ai-ml\",\n    \"book\",\n    \"business\",\n    \"career\",\n    \"community\",\n    \"company\",\n    \"cooking\",\n    \"finance\",\n    \"fitness\",\n    \"hacking\",\n    \"hardware\",\n    \"health\",\n    \"history\",\n    \"hobby\",\n    \"infrastructure\",\n    \"language\",\n    \"math\",\n    \"movie\",\n    \"music\",\n    \"nutrition\",\n    \"person\",\n    \"philosophy\",\n    \"politics\",\n    \"productivity\",\n    \"programming\",\n    \"psychology\",\n    \"science\",\n    \"sleep\",\n    \"startup\",\n    \"travel\"\n  ],\n  \"overbroad_topics\": [\n    {\n      \"tag\": \"tool\",\n      \"count\": 1,\n      \"pct\": 50\n    }\n  ],\n  \"broad_topic_pct\": 25,\n  \"unknown_tags\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "probe": "mixed-taxonomy",
+      "tag_present": true,
+      "audit_has_tag": false,
+      "audit_legacy": false
+    },
+    {
+      "argv": [
+        "zsh",
+        "-f",
+        "-c",
+        "audit_w='--wiki /private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces'\n/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy lint $audit_w --json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: unknown flag: --wiki /private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces\n"
+    },
+    {
+      "argv": [
+        "zsh",
+        "-f",
+        "-c",
+        "wiki='/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/wiki with spaces'\n/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy lint --wiki \"$wiki\" --json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"total_pages\": 2,\n  \"findings\": [\n    {\n      \"severity\": \"critical\",\n      \"kind\": \"broken-link\",\n      \"page\": \"concepts/body-link.md\",\n      \"message\": \"broken wikilink [[does-not-exist]]\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"island\",\n      \"page\": \"maple\",\n      \"message\": \"1-page island, unreachable from the main graph (1 pages): maple\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/body-link.md\",\n      \"message\": \"no inbound links from other pages\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"kind\": \"orphan\",\n      \"page\": \"concepts/maple.md\",\n      \"message\": \"no inbound links from other pages\"\n    }\n  ],\n  \"counts\": {\n    \"broken-link\": 1,\n    \"island\": 1,\n    \"orphan\": 2\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "probe": "W-shell",
+      "mixed_flag_exit": 1,
+      "quoted_path_exit": 0
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "init",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/cache/canopy/index/a4a88b11e11c.db\",\n  \"default_wiki_set\": false,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "new",
+        "Git page",
+        "--slug",
+        "git-page",
+        "--type",
+        "concept",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"created\": \"concepts/git-page.md\",\n  \"related\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "init",
+        "-b",
+        "main",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "Initialized empty Git repository in /private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki/.git/\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "sync",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: git commit -m canopy: update 5 file(s): exit status 128: Author identity unknown\n\n*** Please tell me who you are.\n\nRun\n\n  git config --global user.email \"you@example.com\"\n  git config --global user.name \"Your Name\"\n\nto set your account's default identity.\nOmit --global to set the identity only in this repository.\n\nfatal: unable to auto-detect email address (got 'nobocop@solo.(none)')\n"
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "rev-parse",
+        "--verify",
+        "HEAD"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 128,
+      "stdout": "",
+      "stderr": "fatal: Needed a single revision\n"
+    },
+    {
+      "probe": "identity-missing",
+      "exit": 1,
+      "error": "error: git commit -m canopy: update 5 file(s): exit status 128: Author identity unknown\n\n*** Please tell me who you are.\n\nRun\n\n  git config --global user.email \"you@example.com\"\n  git config --global user.name \"Your Name\"\n\nto set your account's default identity.\nOmit --global to set the identity only in this repository.\n\nfatal: unable to auto-detect email address (got 'nobocop@solo.(none)')\n",
+      "unborn": true
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "config",
+        "user.name",
+        "Red Web Fixture"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "config",
+        "user.email",
+        "red-web@example.invalid"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "add",
+        "-A"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "commit",
+        "-m",
+        "fixture baseline"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "[main (root-commit) d78b6c6] fixture baseline\n 7 files changed, 146 insertions(+)\n create mode 100644 canopy.toml\n create mode 100644 concepts/git-page.md\n create mode 100644 index.md\n create mode 100644 index/comparisons.md\n create mode 100644 index/concepts.md\n create mode 100644 index/entities.md\n create mode 100644 logs/2026-10.jsonl\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "init",
+        "--bare",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/only-local-remote.git"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "Initialized empty Git repository in /private/tmp/canopy-audit-20261009/red_web-nyzlfu99/only-local-remote.git/\n",
+      "stderr": "hint: Using 'master' as the name for the initial branch. This default branch name\nhint: will change to \"main\" in Git 3.0. To configure the initial branch name\nhint: to use in all of your new repositories, which will suppress this warning,\nhint: call:\nhint:\nhint: \tgit config --global init.defaultBranch <name>\nhint:\nhint: Names commonly chosen instead of 'master' are 'main', 'trunk' and\nhint: 'development'. The just-created branch can be renamed via this command:\nhint:\nhint: \tgit branch -m <name>\nhint:\nhint: Disable this message with \"git config set advice.defaultBranchName false\"\n"
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "remote",
+        "add",
+        "origin",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/only-local-remote.git"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "push",
+        "-u",
+        "origin",
+        "main"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "branch 'main' set up to track 'origin/main'.\n",
+      "stderr": "To /private/tmp/canopy-audit-20261009/red_web-nyzlfu99/only-local-remote.git\n * [new branch]      main -> main\n"
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "checkout",
+        "git-page",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"slug\": \"git-page\",\n  \"rel_path\": \"concepts/git-page.md\",\n  \"path\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/state/canopy/checkout/a4a88b11e11c/git-page.md\",\n  \"base\": \"274c966ecdc6f04c62f6bb5356b268ed7d11a0675b228d3bbe350959dc678d48\",\n  \"opened_at\": \"2026-10-09T14:19:46+09:00\",\n  \"modified\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "?? _meta/\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "checkout",
+        "git-page",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"slug\": \"git-page\",\n  \"rel_path\": \"concepts/git-page.md\",\n  \"path\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/state/canopy/checkout/a4a88b11e11c/git-page.md\",\n  \"base\": \"274c966ecdc6f04c62f6bb5356b268ed7d11a0675b228d3bbe350959dc678d48\",\n  \"opened_at\": \"2026-10-09T14:19:46+09:00\",\n  \"modified\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "show",
+        "git-page",
+        "--no-mark",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "---\ntitle: \"Git page\"\ncreated: 2026-10-09\nupdated: 2026-10-09\ntype: concept\ntags: []\nsources: []\n---\n\n# Git page\n",
+      "stderr": "— concepts/git-page.md —\n"
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "status",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"checkouts_open\": 1,\n  \"git\": {\n    \"is_repo\": true,\n    \"branch\": \"main\",\n    \"dirty\": 1,\n    \"ahead\": 0,\n    \"behind\": 0,\n    \"changed\": [\n      \"_meta/\"\n    ]\n  },\n  \"initialized\": true,\n  \"pages\": 1,\n  \"root\": \"/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki\",\n  \"stray_root\": null,\n  \"tasks_pending\": 0\n}\n",
+      "stderr": ""
+    },
+    {
+      "probe": "checkout-banner",
+      "page_unchanged": true,
+      "git_before": "",
+      "git_after": "?? _meta/\n",
+      "second_checkout_exit": 0,
+      "show_stderr": "— concepts/git-page.md —\n",
+      "open_count": 1
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "checkin",
+        "git-page",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "--discard",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"discarded\": \"git-page\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "sync",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"committed\": true,\n  \"message\": \"canopy: update 1 file(s)\",\n  \"pushed\": true\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "probe": "touch-banner-premise",
+      "git_status": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+        "sync",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/git-wiki",
+        "--json"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "{\n  \"committed\": true,\n  \"message\": \"canopy: update 1 file(s)\",\n  \"pushed\": true\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "--git-dir",
+        "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/only-local-remote.git",
+        "show",
+        "main:raw/preexisting-notes.txt"
+      ],
+      "cwd": "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99",
+      "exit": 0,
+      "stdout": "Preexisting outside this task purpose.\n",
+      "stderr": ""
+    },
+    {
+      "probe": "task-start-sync",
+      "sync_exit": 0,
+      "sync_stdout": "{\n  \"committed\": true,\n  \"message\": \"canopy: update 1 file(s)\",\n  \"pushed\": true\n}\n",
+      "local_remote_contains_unrelated": true,
+      "remote_content": "Preexisting outside this task purpose.\n"
+    },
+    {
+      "probe": "actual-cli-serve",
+      "foreign_host_status": 200,
+      "foreign_host_body": "{\"excerpt\":\"New body with frontmatter retained.\",\"exists\":true,\"slug\":\"maple\",\"title\":\"검토 첫 페이지\",\"type\":\"concept\"}\n",
+      "header_hold_seconds": 1.2,
+      "completed_header_response": "HTTP/1.1 200 OK"
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--name-only"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--cached",
+        "--name-only"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "probe": "finish",
+      "tracked_diff": "",
+      "source_index_diff": ""
+    }
+  ]
+}

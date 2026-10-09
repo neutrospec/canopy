@@ -1,0 +1,11 @@
+Saved evidence replay validation — 2026-10-09
+baseline: ede67e302a8487aecbb4d59587a8686292018cf6
+commands: bash docs/review/2026-10-09/evidence/web-reproduce.sh.txt [--race]
+GOCACHE=/private/tmp/canopy-review/go-cache GOPROXY=off
+All XDG paths and TMPDIR were redirected into /private/tmp/canopy-audit-20261009/web.
+full: 16 observational tests completed; ok  	github.com/neutrospec/canopy/review_probes/web	9.984s
+race: 3 observational tests completed; ok  	github.com/neutrospec/canopy/review_probes/web	2.419s
+Fake-DOM probe reproduced autoSuccess=true without any read JSON payload.
+These are observational probes; PASS records reproduction, not a claim of correct product behavior.
+All 47 reviewed source fingerprints still match; no tracked or staged changes.
+Owned review_probes/web was removed by the runner; no other probe directory was touched.

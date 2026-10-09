@@ -1,0 +1,68 @@
+[
+  {
+    "command": [
+      "canopy-lite",
+      "init",
+      "--json"
+    ],
+    "cwd": "/private/tmp",
+    "exit": 0,
+    "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/baseline/cache/canopy/index/f7a5a24c026c.db\",\n  \"default_wiki_set\": true,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/baseline/wiki\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "canopy-lite",
+      "new",
+      "Audit smoke",
+      "--type",
+      "concept",
+      "--body-file",
+      "-",
+      "--json"
+    ],
+    "cwd": "/private/tmp",
+    "exit": 0,
+    "stdout": "{\n  \"created\": \"concepts/audit-smoke.md\",\n  \"related\": []\n}\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "canopy-lite",
+      "search",
+      "keyword",
+      "--mode",
+      "hybrid",
+      "--no-mark",
+      "--json"
+    ],
+    "cwd": "/private/tmp",
+    "exit": 0,
+    "stdout": "{\n  \"hits\": [\n    {\n      \"slug\": \"audit-smoke\",\n      \"rel_path\": \"concepts/audit-smoke.md\",\n      \"title\": \"Audit smoke\",\n      \"score\": 0.000001,\n      \"snippet\": \"# Audit smoke\\n\\nLocal wiki »keyword« evidence.\\n\"\n    }\n  ],\n  \"mode\": \"keyword\",\n  \"query\": \"keyword\"\n}\n",
+    "stderr": "hybrid → keyword only (this canopy binary was built without embedding support (rebuild with -tags ORT))\n"
+  },
+  {
+    "command": [
+      "canopy-lite",
+      "show",
+      "audit-smoke",
+      "--no-mark",
+      "--json"
+    ],
+    "cwd": "/private/tmp",
+    "exit": 0,
+    "stdout": "{\n  \"content\": \"---\\ntitle: \\\"Audit smoke\\\"\\ncreated: 2026-10-09\\nupdated: 2026-10-09\\ntype: concept\\ntags: []\\nsources: []\\n---\\n\\n# Audit smoke\\n\\nLocal wiki keyword evidence.\\n\",\n  \"rel_path\": \"concepts/audit-smoke.md\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "canopy-lite",
+      "status",
+      "--json"
+    ],
+    "cwd": "/private/tmp",
+    "exit": 0,
+    "stdout": "{\n  \"checkouts_open\": 0,\n  \"git\": {\n    \"is_repo\": false,\n    \"branch\": \"\",\n    \"dirty\": 0,\n    \"ahead\": 0,\n    \"behind\": 0\n  },\n  \"initialized\": true,\n  \"pages\": 1,\n  \"root\": \"/private/tmp/canopy-audit-20261009/baseline/wiki\",\n  \"stray_root\": null,\n  \"tasks_pending\": 0\n}\n",
+    "stderr": ""
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "argv": [
+      "go",
+      "test",
+      "-mod=readonly",
+      "-race",
+      "-count=1",
+      "-v",
+      "-run",
+      "TestProposalRetention|TestStateConsistency",
+      "./review_probes/def_web"
+    ],
+    "cwd": "/Users/nobocop/play/canopy",
+    "exit": 0,
+    "seconds": 4.224,
+    "stdout": "=== RUN   TestProposalRetention\n    probe_test.go:101: two-tab-retention {\"all_task_files\":43,\"json_valid\":true,\"lost_successful\":19,\"page_unchanged\":true,\"retained_successful\":41,\"sequential_codes\":[303,303],\"statuses\":{\"303\":60},\"successful_distinct\":60}\n    probe_test.go:110: web-cli-retention {\"cli_success\":12,\"lost_cli\":0,\"lost_web\":0,\"task_files\":24,\"web_success\":12}\n    probe_test.go:112: connect-dedup-control {\"first_created\":true,\"repeat_created\":false,\"repeat_status\":\"dismissed\",\"same_id\":true,\"scope\":\"package API positive control, not concurrency\"}\n--- PASS: TestProposalRetention (0.36s)\n=== RUN   TestStateConsistency\n    probe_test.go:119: feedback-retention {\"lost_successful\":27,\"saved\":6,\"statuses\":{\"303\":33,\"500\":15},\"successful\":33}\n    probe_test.go:125: read-graph-visibility {\"agent_file_absent\":true,\"auto_no_increment\":true,\"auto_status\":200,\"explicit_preserved\":true,\"final_count\":181,\"get_statuses\":{\"200\":240},\"post_statuses\":{\"303\":180}}\n--- PASS: TestStateConsistency (1.03s)\nPASS\nok  \tgithub.com/neutrospec/canopy/review_probes/def_web\t3.257s\n",
+    "stderr": ""
+  }
+]

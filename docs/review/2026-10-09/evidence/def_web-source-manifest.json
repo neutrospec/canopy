@@ -1,0 +1,714 @@
+{
+  "README.md": {
+    "sha256": "f9a023ffab5415b91012d669401cf5365331190190d6f8eb8e1c7fbefb467bdf",
+    "lines": 265,
+    "regions": [
+      [
+        13,
+        27
+      ],
+      [
+        53,
+        69
+      ],
+      [
+        76,
+        109
+      ],
+      [
+        154,
+        174
+      ],
+      [
+        179,
+        195
+      ],
+      [
+        207,
+        248
+      ]
+    ]
+  },
+  "README.en.md": {
+    "sha256": "600280de64e6aeab21527f69eff9a0d04287d1f89593d97da3a0571ba0d98ccb",
+    "lines": 283,
+    "regions": [
+      [
+        18,
+        32
+      ],
+      [
+        58,
+        73
+      ],
+      [
+        81,
+        118
+      ],
+      [
+        166,
+        187
+      ]
+    ]
+  },
+  "docs/getting-started.md": {
+    "sha256": "24124d2308411d9c62e13fcc427be33cb77097e0de46c35bc00725a4adeac37e",
+    "lines": 237,
+    "regions": [
+      [
+        4,
+        8
+      ],
+      [
+        62,
+        108
+      ],
+      [
+        169,
+        179
+      ],
+      [
+        216,
+        220
+      ]
+    ]
+  },
+  "docs/en/getting-started.md": {
+    "sha256": "1e61b19053a0f72b0e044c90467c9a7792cdc58634ef2a511ae046df163b9b73",
+    "lines": 253,
+    "regions": [
+      [
+        179,
+        189
+      ],
+      [
+        231,
+        237
+      ]
+    ]
+  },
+  "docs/troubleshooting.md": {
+    "sha256": "eaca666507473b6afaa9717e0944ee51e7b2ef686ae778cc5b9f100ec450a226",
+    "lines": 68,
+    "regions": [
+      [
+        42,
+        57
+      ]
+    ]
+  },
+  "docs/en/troubleshooting.md": {
+    "sha256": "57ff0b8c6f72fc13f7239b74deb722ef9b09cb697b640907a5ff9bdd5cab9ed2",
+    "lines": 73,
+    "regions": [
+      [
+        47,
+        60
+      ]
+    ]
+  },
+  "docs/versioning.md": {
+    "sha256": "1ed5c6bfadd4430a7c8e100dcd65834bc60a05e95b2b9d16a569d26f9b1acad8",
+    "lines": 202,
+    "regions": [
+      [
+        18,
+        28
+      ],
+      [
+        86,
+        101
+      ]
+    ]
+  },
+  "docs/agent-tasks.md": {
+    "sha256": "cf49f420e744bc697a4484b6ad006646865d2419653cb0318af5a318c7c99116",
+    "lines": 139,
+    "regions": [
+      [
+        53,
+        69
+      ],
+      [
+        77,
+        116
+      ]
+    ]
+  },
+  "docs/second-brain.md": {
+    "sha256": "a208669f6d96219c326e3bcc9d593baeb2e4cc09e14455afc326a67078d75723",
+    "lines": 134,
+    "regions": [
+      [
+        85,
+        101
+      ],
+      [
+        124,
+        134
+      ]
+    ]
+  },
+  "docs/taxonomy.md": {
+    "sha256": "a26cd538672780bbb50ead289b62b7b08009d92da58510988f997e03db7940c6",
+    "lines": 65,
+    "regions": [
+      [
+        25,
+        62
+      ]
+    ]
+  },
+  "internal/skills/canopy_wiki.md": {
+    "sha256": "e5ba724f7b09e87ac8ff3f6e1a07b28bf6157da13596d1dca131a3ec9229fa9b",
+    "lines": 242,
+    "regions": [
+      [
+        13,
+        26
+      ],
+      [
+        52,
+        63
+      ],
+      [
+        82,
+        109
+      ],
+      [
+        122,
+        128
+      ],
+      [
+        149,
+        172
+      ],
+      [
+        181,
+        188
+      ],
+      [
+        213,
+        242
+      ]
+    ]
+  },
+  "internal/skills/canopy_ingest.md": {
+    "sha256": "e142875eec879e41b6d7ca01f72627e6f0a39b456b607b77a3abee3161890193",
+    "lines": 73,
+    "regions": [
+      [
+        14,
+        40
+      ],
+      [
+        61,
+        76
+      ]
+    ]
+  },
+  "internal/skills/skills.go": {
+    "sha256": "a4313a66aed3769db0061993dbc7c12be14c9d79c7dd4dbaffada98583ae6981",
+    "lines": 206,
+    "regions": [
+      [
+        79,
+        129
+      ],
+      [
+        158,
+        179
+      ]
+    ]
+  },
+  "internal/webui/auth.go": {
+    "sha256": "218b1ffa3e79e5f6cd0d910f55de466661d3a8b9e6ef77aa128d4f9c1cd6d309",
+    "lines": 343,
+    "regions": [
+      [
+        107,
+        195
+      ],
+      [
+        209,
+        274
+      ],
+      [
+        281,
+        343
+      ]
+    ]
+  },
+  "cmd/canopy/serve.go": {
+    "sha256": "d9e20edc72de557678609483dbe5879d07c4f8ae927c49ee4b47aa68607a173b",
+    "lines": 84,
+    "regions": [
+      [
+        30,
+        83
+      ]
+    ]
+  },
+  "internal/webui/edit.go": {
+    "sha256": "2f6bab48541c0dd8f8964c9594a0b1ac12f8e9ca76bd97c283455959c3176bac",
+    "lines": 76,
+    "regions": [
+      [
+        15,
+        75
+      ]
+    ]
+  },
+  "internal/webui/discover.go": {
+    "sha256": "0d996c228288afe8a9891b8132ce2145b0e78a7852eee6da30b489c4911406c7",
+    "lines": 186,
+    "regions": [
+      [
+        53,
+        76
+      ],
+      [
+        97,
+        155
+      ]
+    ]
+  },
+  "internal/webui/speak.go": {
+    "sha256": "d44339d9e0013af16437f2e3f7866956f1d8247078fc3a5f72a1a043e2f80f31",
+    "lines": 183,
+    "regions": [
+      [
+        34,
+        111
+      ]
+    ]
+  },
+  "internal/webui/server.go": {
+    "sha256": "8961fc327de6403db55334d0682df8734510e39d41917dc7f792a2d08828ffc7",
+    "lines": 614,
+    "regions": [
+      [
+        54,
+        77
+      ],
+      [
+        127,
+        134
+      ],
+      [
+        215,
+        235
+      ],
+      [
+        450,
+        468
+      ],
+      [
+        520,
+        595
+      ]
+    ]
+  },
+  "internal/webui/render.go": {
+    "sha256": "2e2191089e4370b7e916bb261202a8ca25b24e2ad9e4369636e2c9fd31fff2a8",
+    "lines": 137,
+    "regions": [
+      [
+        26,
+        88
+      ]
+    ]
+  },
+  "internal/webui/templates/edit.html": {
+    "sha256": "5f63f580fe4414c8b72cac804b49dfb2b74974e03d9b9a6db966eded78bab540",
+    "lines": 10,
+    "regions": [
+      [
+        1,
+        13
+      ]
+    ]
+  },
+  "internal/webui/templates/home.html": {
+    "sha256": "8ef1c6516e55ffe1cf7975fb0b52c3b4b6fa2c4468b4818ada73830d3ad2759b",
+    "lines": 67,
+    "regions": [
+      [
+        5,
+        34
+      ]
+    ]
+  },
+  "internal/webui/templates/discover.html": {
+    "sha256": "dd5a37228050e59d027da8d8a1c988ac17c60792c690d1c79406712eb3cf2627",
+    "lines": 16,
+    "regions": [
+      [
+        1,
+        17
+      ]
+    ]
+  },
+  "internal/webui/templates/tasks.html": {
+    "sha256": "2bf18e83678dd69c594eb951c3bde60ad33f998a7a1a577e79a8d10bd1a26100",
+    "lines": 35,
+    "regions": [
+      [
+        1,
+        35
+      ]
+    ]
+  },
+  "internal/webui/static/app.js": {
+    "sha256": "99dc859757274e30ad6ec4b6acc16aa77d49721284ba313936713a6bd1ffa13b",
+    "lines": 286,
+    "regions": [
+      [
+        94,
+        112
+      ],
+      [
+        163,
+        170
+      ],
+      [
+        199,
+        240
+      ],
+      [
+        242,
+        278
+      ]
+    ]
+  },
+  "internal/webui/static/graph.js": {
+    "sha256": "88ca89f3a4ee78f44b402c3fddb0e611f7477f33d6fb3872f4228d3173ab2ca9",
+    "lines": 203,
+    "regions": [
+      [
+        13,
+        26
+      ],
+      [
+        137,
+        152
+      ],
+      [
+        176,
+        200
+      ]
+    ]
+  },
+  "internal/webui/static/style.css": {
+    "sha256": "5f88e7c1a72318e9fb47755760ef8ebacb61ec39fbe2db4706b5e8ab88ffcd25",
+    "lines": 355,
+    "regions": [
+      [
+        1,
+        27
+      ],
+      [
+        179,
+        187
+      ],
+      [
+        291,
+        299
+      ]
+    ]
+  },
+  "internal/webui/static/chroma.css": {
+    "sha256": "a6bf0863fa636a143d485f93edce8836267006562433e670bb0719be4b798268",
+    "lines": 131,
+    "regions": [
+      [
+        1,
+        5
+      ],
+      [
+        57,
+        65
+      ],
+      [
+        120,
+        127
+      ]
+    ]
+  },
+  "internal/webui/templates/base.html": {
+    "sha256": "13e5ca43e39db5024064ade20e1022476f6afdd6a31b53359b6304d35290b5e3",
+    "lines": 78,
+    "regions": [
+      [
+        1,
+        25
+      ]
+    ]
+  },
+  "internal/webui/uitest/app.test.cjs": {
+    "sha256": "711f1d80915c2f178a8fdccd498576f8a80bf59fdb5d06ee783d8254893bce45",
+    "lines": 314,
+    "regions": [
+      [
+        8,
+        46
+      ],
+      [
+        80,
+        91
+      ]
+    ]
+  },
+  "internal/tasks/tasks.go": {
+    "sha256": "24ac0a79b84d7f9a6944de23788ace4c3178c023b8ce04f53f4fede5e466f169",
+    "lines": 365,
+    "regions": [
+      [
+        46,
+        59
+      ],
+      [
+        136,
+        145
+      ],
+      [
+        153,
+        212
+      ],
+      [
+        214,
+        270
+      ],
+      [
+        341,
+        360
+      ]
+    ]
+  },
+  "internal/reads/reads.go": {
+    "sha256": "c478e46229ab83ee1c794ffa0a3eb4ed7445145aa56bb7d6d1f4c152227cc1cd",
+    "lines": 272,
+    "regions": [
+      [
+        69,
+        126
+      ],
+      [
+        152,
+        193
+      ]
+    ]
+  },
+  "internal/resurface/state.go": {
+    "sha256": "0db3e18d60a4dd26dab6a08bdf06835cf553cc5432b9d1345026a68943f8f18e",
+    "lines": 148,
+    "regions": [
+      [
+        47,
+        81
+      ]
+    ]
+  },
+  "internal/resurface/pick.go": {
+    "sha256": "99d4afe8d045a98dc5768db65508b3fb8d615c3218a985738e017eae152158d3",
+    "lines": 257,
+    "regions": [
+      [
+        49,
+        70
+      ]
+    ]
+  },
+  "internal/lint/lint.go": {
+    "sha256": "5fa312d5b673a10bbb367ac4372ad2d74a4b3a16fb059e835caaaa3139964e5e",
+    "lines": 172,
+    "regions": [
+      [
+        83,
+        104
+      ],
+      [
+        129,
+        144
+      ]
+    ]
+  },
+  "internal/mermaid/mermaid.go": {
+    "sha256": "3994cb245790a2c59260ef0bbf1379d72004002eefbcec48d696b14f80cd3d3f",
+    "lines": 189,
+    "regions": [
+      [
+        1,
+        34
+      ],
+      [
+        51,
+        87
+      ]
+    ]
+  },
+  "cmd/canopy/write.go": {
+    "sha256": "f24e8c18f2a83bbdb992698810addba71873c38731ccc39798fdb9fc2d6a1131",
+    "lines": 676,
+    "regions": [
+      [
+        131,
+        147
+      ],
+      [
+        150,
+        206
+      ],
+      [
+        258,
+        311
+      ],
+      [
+        337,
+        345
+      ],
+      [
+        382,
+        412
+      ]
+    ]
+  },
+  "cmd/canopy/main.go": {
+    "sha256": "bc6d6c854514a359d0271b4332f2f175c1eb81679e2ce86dd48f5c3993f0e34d",
+    "lines": 1007,
+    "regions": [
+      [
+        45,
+        52
+      ],
+      [
+        105,
+        139
+      ],
+      [
+        709,
+        761
+      ]
+    ]
+  },
+  "cmd/canopy/checkout.go": {
+    "sha256": "d8ceed81795d1d30bec16233a025ac6150e187e5924a3cf14dab6065957680b3",
+    "lines": 139,
+    "regions": [
+      [
+        52,
+        70
+      ],
+      [
+        93,
+        134
+      ]
+    ]
+  },
+  "internal/checkout/checkout.go": {
+    "sha256": "190b653039bfaedd88253546b149332da225c2cccebb2b221fba5a10ce37906c",
+    "lines": 255,
+    "regions": [
+      [
+        135,
+        169
+      ],
+      [
+        172,
+        206
+      ]
+    ]
+  },
+  "internal/config/config.go": {
+    "sha256": "17d7301594edb77d8225a207676f4b6c0f10cff1d7eaf110af91171894224817",
+    "lines": 291,
+    "regions": [
+      [
+        90,
+        104
+      ],
+      [
+        242,
+        275
+      ]
+    ]
+  },
+  "internal/gitops/gitops.go": {
+    "sha256": "8a997f19cc08d59dc598748049d2c22d74e4bfc177aa718bb094f3a2d1d8b772",
+    "lines": 113,
+    "regions": [
+      [
+        67,
+        99
+      ]
+    ]
+  },
+  "internal/logops/logops.go": {
+    "sha256": "079895b1c70f7d1a870c4b074a8a4e8c98c2c3bf02a394911a9125b2ef2ea423",
+    "lines": 83,
+    "regions": [
+      [
+        24,
+        60
+      ]
+    ]
+  },
+  "docs/invariants.md": {
+    "sha256": "33eb7d57e8b0086a1b5d8f8a416173771ad9289875303bb9a9dd8559d344f3d3",
+    "lines": 281,
+    "regions": [
+      [
+        3,
+        16
+      ],
+      [
+        44,
+        51
+      ],
+      [
+        124,
+        132
+      ],
+      [
+        181,
+        194
+      ],
+      [
+        201,
+        210
+      ],
+      [
+        220,
+        225
+      ],
+      [
+        228,
+        248
+      ],
+      [
+        252,
+        260
+      ]
+    ]
+  },
+  "docs/review/2026-10-09/evidence/web-reproduce.sh.txt": {
+    "sha256": "b608d83f698457201bba571476ed8441038b7bca3c673894ed45cbc725e2eb51",
+    "lines": 53,
+    "regions": [
+      [
+        34,
+        57
+      ]
+    ]
+  },
+  "docs/review/2026-10-09/evidence/docs-cli-probe.py.txt": {
+    "sha256": "3a82eea31f83dc89161e74e6158417a8ea67fd1d8df2b5e559fabb54dd2c696f",
+    "lines": 121,
+    "regions": [
+      [
+        1,
+        25
+      ]
+    ]
+  }
+}

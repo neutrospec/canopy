@@ -1,0 +1,111 @@
+// Audit-only observations; no production files or installed assets are used.
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"math/rand"
+	"os"
+	"path/filepath"
+	"time"
+
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/indexer"
+	"github.com/neutrospec/canopy/internal/lint"
+	"github.com/neutrospec/canopy/internal/resurface"
+	"github.com/neutrospec/canopy/internal/store"
+	"github.com/neutrospec/canopy/internal/tasks"
+	"github.com/neutrospec/canopy/internal/wiki"
+)
+
+type engine struct {
+	Calls int
+	V     []float32
+}
+
+func (e *engine) Embed(texts []string) ([][]float32, error) {
+	e.Calls++
+	v := make([][]float32, len(texts))
+	for i := range v {
+		v[i] = append([]float32(nil), e.V...)
+	}
+	return v, nil
+}
+func (e *engine) Close() error { return nil }
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+func scan(p *wiki.Page) *wiki.ScanResult {
+	return &wiki.ScanResult{Pages: []*wiki.Page{p}, BySlug: map[string]*wiki.Page{p.Slug: p}}
+}
+
+func main() {
+	root := os.Getenv("FINAL_API_ROOT")
+	if root == "" {
+		panic("FINAL_API_ROOT required")
+	}
+	must(os.MkdirAll(root, 0700))
+	w := &config.Wiki{Root: root, Cfg: config.Default()}
+	out := map[string]any{}
+	page := wiki.Parse("concepts/alpha.md", []byte("---\ntitle: Alpha\ncreated: 2020-01-01\nupdated: 2020-01-01\ntype: concept\ntags: []\n---\n\nOld evidence.\n"))
+	rows := []map[string]any{}
+	for _, z := range []struct {
+		Name   string
+		Offset int
+		Hour   int
+	}{{"minus04-late", -4, 23}, {"UTC-late", 0, 23}, {"KST-late", 9, 23}, {"plus14-early", 14, 1}} {
+		now := time.Date(2026, 10, 9, z.Hour, 30, 0, 0, time.FixedZone(z.Name, z.Offset*3600))
+		for _, days := range []int{1, 7} {
+			s := &resurface.State{Version: 1, Shown: map[string]string{}, ShownPairs: map[string]string{}, Snoozed: map[string]string{}}
+			s.Snooze("alpha", days, now)
+			deadline, err := time.Parse("2006-01-02", s.Snoozed["alpha"])
+			must(err)
+			picks, err := resurface.PickPages(scan(page), s, nil, "random", 1, now, rand.New(rand.NewSource(1)))
+			must(err)
+			rows = append(rows, map[string]any{"zone": z.Name, "days": days, "now": now.Format(time.RFC3339), "stored": s.Snoozed["alpha"], "deadline": deadline.Format(time.RFC3339), "remaining_hours": deadline.Sub(now).Hours(), "immediate_excluded": len(picks) == 0})
+		}
+	}
+	out["snooze_fixed_time"] = rows
+	fm := "---\ntitle: Alpha\ncreated: 2026-01-01\nupdated: 2026-01-01\ntype: concept\n%s---\n\nBody.\n"
+	variants := map[string]string{"missing-tags": "", "empty-tags": "tags: []\n", "scalar-tags": "tags: tool\n", "bad-yaml": "tags: [\n"}
+	fr := map[string]any{}
+	for name, tags := range variants {
+		p := wiki.Parse("concepts/alpha.md", []byte(fmt.Sprintf(fm, tags)))
+		rep := lint.Run(w, scan(p), nil)
+		fr[name] = map[string]any{"tags": p.Tags, "parse_error": p.FMErr, "counts": rep.Counts, "literal_A3_green": rep.Counts["no-frontmatter"] == 0 && rep.Counts["frontmatter-fields"] == 0}
+	}
+	out["A3"] = fr
+	must(os.MkdirAll(tasks.Dir(w), 0700))
+	taskPath := filepath.Join(tasks.Dir(w), "unknown-number.json")
+	must(os.WriteFile(taskPath, []byte(`{"version":1,"id":"unknown-number","type":"future-kind","status":"pending","created":"2026-01-01T00:00:00Z","addon":{"exact":9007199254740993,"text":"keep"}}`), 0600))
+	_, err := tasks.Close(w, scan(page), "unknown-number", tasks.StatusDismissed, "bounded probe", "agent", time.Date(2026, 10, 9, 0, 0, 0, 0, time.UTC))
+	must(err)
+	raw, err := os.ReadFile(taskPath)
+	must(err)
+	out["task_unknown_number_after_close"] = json.RawMessage(raw)
+	st, err := store.Open(filepath.Join(root, "cache", "probe.db"))
+	must(err)
+	defer st.Close()
+	a := &engine{V: []float32{1, 0}}
+	b := &engine{V: []float32{0, 1}}
+	r1, err := indexer.Reindex(w, st, scan(page), a, nil)
+	must(err)
+	w.Cfg.Embedding.Dimension = 3
+	w.Cfg.Embedding.ChunkTokens = 1
+	r2, err := indexer.Reindex(w, st, scan(page), b, nil)
+	must(err)
+	out["profile_and_unused_knobs"] = map[string]any{"first": r1, "second": r2, "engine_A_calls": a.Calls, "engine_B_calls": b.Calls, "configured_dimension": w.Cfg.Embedding.Dimension, "configured_chunk_tokens": w.Cfg.Embedding.ChunkTokens, "limit": "synthetic engine; no measured ORT or retrieval quality claim"}
+	blank := *page
+	blank.Body = ""
+	r3, err := indexer.Reindex(w, st, scan(&blank), b, nil)
+	must(err)
+	hits, err := st.SearchChunks([]float32{1, 0}, 10, 0)
+	must(err)
+	out["blank_body"] = map[string]any{"result": r3, "hits": hits, "current_body": blank.Body}
+	out["http_proposals"] = httpProbe(filepath.Join(root, "http"))
+	e := json.NewEncoder(os.Stdout)
+	e.SetIndent("", "  ")
+	must(e.Encode(out))
+}

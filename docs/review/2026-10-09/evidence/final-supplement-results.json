@@ -1,0 +1,481 @@
+{
+  "api": {
+    "A3": {
+      "bad-yaml": {
+        "counts": {
+          "bad-frontmatter": 1,
+          "orphan": 1
+        },
+        "literal_A3_green": true,
+        "parse_error": "yaml: line 5: did not find expected node content",
+        "tags": null
+      },
+      "empty-tags": {
+        "counts": {
+          "orphan": 1,
+          "stale": 1
+        },
+        "literal_A3_green": true,
+        "parse_error": "",
+        "tags": []
+      },
+      "missing-tags": {
+        "counts": {
+          "orphan": 1,
+          "stale": 1
+        },
+        "literal_A3_green": true,
+        "parse_error": "",
+        "tags": null
+      },
+      "scalar-tags": {
+        "counts": {
+          "orphan": 1,
+          "stale": 1
+        },
+        "literal_A3_green": true,
+        "parse_error": "",
+        "tags": [
+          "tool"
+        ]
+      }
+    },
+    "blank_body": {
+      "current_body": "",
+      "hits": [
+        {
+          "slug": "alpha",
+          "rel_path": "concepts/alpha.md",
+          "title": "Alpha",
+          "seq": 0,
+          "score": 1,
+          "text": "Alpha\n\nOld evidence."
+        }
+      ],
+      "result": {
+        "pages": 1,
+        "embedded_pages": 0,
+        "pruned_pages": 0,
+        "total_chunks": 1
+      }
+    },
+    "http_proposals": {
+      "foreign_host_contains_fixture": true,
+      "foreign_host_preview_status": 200,
+      "limit": "actual local HTTP requests; no actual browser exploit, browser DOM, or two-clone merge claim",
+      "missing_success_bodies": [
+        "final-two-tabs-00-0",
+        "final-two-tabs-01-1",
+        "final-two-tabs-06-1",
+        "final-two-tabs-07-1",
+        "final-two-tabs-09-0",
+        "final-two-tabs-14-1"
+      ],
+      "page_unchanged": true,
+      "parallel_per_round": 2,
+      "preserved_success_body_count": 26,
+      "rounds": 16,
+      "status_counts": {
+        "303": 32
+      },
+      "stored_task_count": 26,
+      "success_count": 32,
+      "transport_failures": []
+    },
+    "profile_and_unused_knobs": {
+      "configured_chunk_tokens": 1,
+      "configured_dimension": 3,
+      "engine_A_calls": 1,
+      "engine_B_calls": 0,
+      "first": {
+        "pages": 1,
+        "embedded_pages": 1,
+        "pruned_pages": 0,
+        "total_chunks": 1
+      },
+      "limit": "synthetic engine; no measured ORT or retrieval quality claim",
+      "second": {
+        "pages": 1,
+        "embedded_pages": 0,
+        "pruned_pages": 0,
+        "total_chunks": 1
+      }
+    },
+    "snooze_fixed_time": [
+      {
+        "days": 1,
+        "deadline": "2026-10-10T00:00:00Z",
+        "immediate_excluded": false,
+        "now": "2026-10-09T23:30:00-04:00",
+        "remaining_hours": -3.5,
+        "stored": "2026-10-10",
+        "zone": "minus04-late"
+      },
+      {
+        "days": 7,
+        "deadline": "2026-10-16T00:00:00Z",
+        "immediate_excluded": true,
+        "now": "2026-10-09T23:30:00-04:00",
+        "remaining_hours": 140.5,
+        "stored": "2026-10-16",
+        "zone": "minus04-late"
+      },
+      {
+        "days": 1,
+        "deadline": "2026-10-10T00:00:00Z",
+        "immediate_excluded": true,
+        "now": "2026-10-09T23:30:00Z",
+        "remaining_hours": 0.5,
+        "stored": "2026-10-10",
+        "zone": "UTC-late"
+      },
+      {
+        "days": 7,
+        "deadline": "2026-10-16T00:00:00Z",
+        "immediate_excluded": true,
+        "now": "2026-10-09T23:30:00Z",
+        "remaining_hours": 144.5,
+        "stored": "2026-10-16",
+        "zone": "UTC-late"
+      },
+      {
+        "days": 1,
+        "deadline": "2026-10-10T00:00:00Z",
+        "immediate_excluded": true,
+        "now": "2026-10-09T23:30:00+09:00",
+        "remaining_hours": 9.5,
+        "stored": "2026-10-10",
+        "zone": "KST-late"
+      },
+      {
+        "days": 7,
+        "deadline": "2026-10-16T00:00:00Z",
+        "immediate_excluded": true,
+        "now": "2026-10-09T23:30:00+09:00",
+        "remaining_hours": 153.5,
+        "stored": "2026-10-16",
+        "zone": "KST-late"
+      },
+      {
+        "days": 1,
+        "deadline": "2026-10-10T00:00:00Z",
+        "immediate_excluded": true,
+        "now": "2026-10-09T01:30:00+14:00",
+        "remaining_hours": 36.5,
+        "stored": "2026-10-10",
+        "zone": "plus14-early"
+      },
+      {
+        "days": 7,
+        "deadline": "2026-10-16T00:00:00Z",
+        "immediate_excluded": true,
+        "now": "2026-10-09T01:30:00+14:00",
+        "remaining_hours": 180.5,
+        "stored": "2026-10-16",
+        "zone": "plus14-early"
+      }
+    ],
+    "task_unknown_number_after_close": {
+      "addon": {
+        "exact": 9007199254740992,
+        "text": "keep"
+      },
+      "closed": "2026-10-09T00:00:00Z",
+      "created": "2026-01-01T00:00:00Z",
+      "id": "unknown-number",
+      "note": "bounded probe",
+      "status": "dismissed",
+      "type": "future-kind",
+      "version": 1
+    }
+  },
+  "git_conflict": {
+    "sync_exit": 0,
+    "sync_stdout": "{\n  \"committed\": true,\n  \"message\": \"canopy: update 1 file(s)\",\n  \"pushed\": true\n}\n",
+    "published_text": "header\n<<<<<<< Updated upstream\nremote value\n=======\nlocal dirty value\n>>>>>>> Stashed changes\nfooter\n",
+    "conflict_marker_published": true,
+    "local_original_recoverable": true,
+    "remote_original_recoverable": true,
+    "status_after": "",
+    "limit": "only two own local clones and own bare origin; proves wrong publication, not irrecoverable Git source loss"
+  },
+  "records": [
+    {
+      "argv": [
+        "go",
+        "run",
+        "-mod=readonly",
+        "./review_probes/final"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "{\n  \"A3\": {\n    \"bad-yaml\": {\n      \"counts\": {\n        \"bad-frontmatter\": 1,\n        \"orphan\": 1\n      },\n      \"literal_A3_green\": true,\n      \"parse_error\": \"yaml: line 5: did not find expected node content\",\n      \"tags\": null\n    },\n    \"empty-tags\": {\n      \"counts\": {\n        \"orphan\": 1,\n        \"stale\": 1\n      },\n      \"literal_A3_green\": true,\n      \"parse_error\": \"\",\n      \"tags\": []\n    },\n    \"missing-tags\": {\n      \"counts\": {\n        \"orphan\": 1,\n        \"stale\": 1\n      },\n      \"literal_A3_green\": true,\n      \"parse_error\": \"\",\n      \"tags\": null\n    },\n    \"scalar-tags\": {\n      \"counts\": {\n        \"orphan\": 1,\n        \"stale\": 1\n      },\n      \"literal_A3_green\": true,\n      \"parse_error\": \"\",\n      \"tags\": [\n        \"tool\"\n      ]\n    }\n  },\n  \"blank_body\": {\n    \"current_body\": \"\",\n    \"hits\": [\n      {\n        \"slug\": \"alpha\",\n        \"rel_path\": \"concepts/alpha.md\",\n        \"title\": \"Alpha\",\n        \"seq\": 0,\n        \"score\": 1,\n        \"text\": \"Alpha\\n\\nOld evidence.\"\n      }\n    ],\n    \"result\": {\n      \"pages\": 1,\n      \"embedded_pages\": 0,\n      \"pruned_pages\": 0,\n      \"total_chunks\": 1\n    }\n  },\n  \"http_proposals\": {\n    \"foreign_host_contains_fixture\": true,\n    \"foreign_host_preview_status\": 200,\n    \"limit\": \"actual local HTTP requests; no actual browser exploit, browser DOM, or two-clone merge claim\",\n    \"missing_success_bodies\": [\n      \"final-two-tabs-00-0\",\n      \"final-two-tabs-01-1\",\n      \"final-two-tabs-06-1\",\n      \"final-two-tabs-07-1\",\n      \"final-two-tabs-09-0\",\n      \"final-two-tabs-14-1\"\n    ],\n    \"page_unchanged\": true,\n    \"parallel_per_round\": 2,\n    \"preserved_success_body_count\": 26,\n    \"rounds\": 16,\n    \"status_counts\": {\n      \"303\": 32\n    },\n    \"stored_task_count\": 26,\n    \"success_count\": 32,\n    \"transport_failures\": []\n  },\n  \"profile_and_unused_knobs\": {\n    \"configured_chunk_tokens\": 1,\n    \"configured_dimension\": 3,\n    \"engine_A_calls\": 1,\n    \"engine_B_calls\": 0,\n    \"first\": {\n      \"pages\": 1,\n      \"embedded_pages\": 1,\n      \"pruned_pages\": 0,\n      \"total_chunks\": 1\n    },\n    \"limit\": \"synthetic engine; no measured ORT or retrieval quality claim\",\n    \"second\": {\n      \"pages\": 1,\n      \"embedded_pages\": 0,\n      \"pruned_pages\": 0,\n      \"total_chunks\": 1\n    }\n  },\n  \"snooze_fixed_time\": [\n    {\n      \"days\": 1,\n      \"deadline\": \"2026-10-10T00:00:00Z\",\n      \"immediate_excluded\": false,\n      \"now\": \"2026-10-09T23:30:00-04:00\",\n      \"remaining_hours\": -3.5,\n      \"stored\": \"2026-10-10\",\n      \"zone\": \"minus04-late\"\n    },\n    {\n      \"days\": 7,\n      \"deadline\": \"2026-10-16T00:00:00Z\",\n      \"immediate_excluded\": true,\n      \"now\": \"2026-10-09T23:30:00-04:00\",\n      \"remaining_hours\": 140.5,\n      \"stored\": \"2026-10-16\",\n      \"zone\": \"minus04-late\"\n    },\n    {\n      \"days\": 1,\n      \"deadline\": \"2026-10-10T00:00:00Z\",\n      \"immediate_excluded\": true,\n      \"now\": \"2026-10-09T23:30:00Z\",\n      \"remaining_hours\": 0.5,\n      \"stored\": \"2026-10-10\",\n      \"zone\": \"UTC-late\"\n    },\n    {\n      \"days\": 7,\n      \"deadline\": \"2026-10-16T00:00:00Z\",\n      \"immediate_excluded\": true,\n      \"now\": \"2026-10-09T23:30:00Z\",\n      \"remaining_hours\": 144.5,\n      \"stored\": \"2026-10-16\",\n      \"zone\": \"UTC-late\"\n    },\n    {\n      \"days\": 1,\n      \"deadline\": \"2026-10-10T00:00:00Z\",\n      \"immediate_excluded\": true,\n      \"now\": \"2026-10-09T23:30:00+09:00\",\n      \"remaining_hours\": 9.5,\n      \"stored\": \"2026-10-10\",\n      \"zone\": \"KST-late\"\n    },\n    {\n      \"days\": 7,\n      \"deadline\": \"2026-10-16T00:00:00Z\",\n      \"immediate_excluded\": true,\n      \"now\": \"2026-10-09T23:30:00+09:00\",\n      \"remaining_hours\": 153.5,\n      \"stored\": \"2026-10-16\",\n      \"zone\": \"KST-late\"\n    },\n    {\n      \"days\": 1,\n      \"deadline\": \"2026-10-10T00:00:00Z\",\n      \"immediate_excluded\": true,\n      \"now\": \"2026-10-09T01:30:00+14:00\",\n      \"remaining_hours\": 36.5,\n      \"stored\": \"2026-10-10\",\n      \"zone\": \"plus14-early\"\n    },\n    {\n      \"days\": 7,\n      \"deadline\": \"2026-10-16T00:00:00Z\",\n      \"immediate_excluded\": true,\n      \"now\": \"2026-10-09T01:30:00+14:00\",\n      \"remaining_hours\": 180.5,\n      \"stored\": \"2026-10-16\",\n      \"zone\": \"plus14-early\"\n    }\n  ],\n  \"task_unknown_number_after_close\": {\n    \"addon\": {\n      \"exact\": 9007199254740992,\n      \"text\": \"keep\"\n    },\n    \"closed\": \"2026-10-09T00:00:00Z\",\n    \"created\": \"2026-01-01T00:00:00Z\",\n    \"id\": \"unknown-number\",\n    \"note\": \"bounded probe\",\n    \"status\": \"dismissed\",\n    \"type\": \"future-kind\",\n    \"version\": 1\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "init",
+        "--bare",
+        "--initial-branch=main",
+        "/private/tmp/canopy-audit-20261009/final/supplement/remote.git"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "Initialized empty Git repository in /private/tmp/canopy-audit-20261009/final/supplement/remote.git/\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "clone",
+        "/private/tmp/canopy-audit-20261009/final/supplement/remote.git",
+        "/private/tmp/canopy-audit-20261009/final/supplement/A"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into '/private/tmp/canopy-audit-20261009/final/supplement/A'...\nwarning: You appear to have cloned an empty repository.\ndone.\n"
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/supplement/A",
+        "config",
+        "user.name",
+        "Canopy Fixture"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/supplement/A",
+        "config",
+        "user.email",
+        "fixture@invalid.local"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "init",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/supplement/A",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/final/independent/run/cache/canopy/index/396ea41179c3.db\",\n  \"default_wiki_set\": false,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/final/supplement/A\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/supplement/A",
+        "add",
+        "-A"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/supplement/A",
+        "commit",
+        "-m",
+        "fixture base"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "[main (root-commit) 923ffc9] fixture base\n 2 files changed, 23 insertions(+)\n create mode 100644 canopy.toml\n create mode 100644 raw/final.txt\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/supplement/A",
+        "push",
+        "-u",
+        "origin",
+        "main"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "branch 'main' set up to track 'origin/main'.\n",
+      "stderr": "To /private/tmp/canopy-audit-20261009/final/supplement/remote.git\n * [new branch]      main -> main\n"
+    },
+    {
+      "argv": [
+        "git",
+        "clone",
+        "/private/tmp/canopy-audit-20261009/final/supplement/remote.git",
+        "/private/tmp/canopy-audit-20261009/final/supplement/B"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into '/private/tmp/canopy-audit-20261009/final/supplement/B'...\ndone.\n"
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/supplement/B",
+        "config",
+        "user.name",
+        "Canopy Fixture"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/supplement/B",
+        "config",
+        "user.email",
+        "fixture@invalid.local"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/supplement/B",
+        "add",
+        "-A"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/supplement/B",
+        "commit",
+        "-m",
+        "fixture remote edit"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "[main c63c759] fixture remote edit\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/supplement/B",
+        "push"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "To /private/tmp/canopy-audit-20261009/final/supplement/remote.git\n   923ffc9..c63c759  main -> main\n"
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/supplement/B",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "c63c759df6f988bbadfface180960c4b93d2f5b7\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/final/independent/run/canopy-lite",
+        "sync",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/final/supplement/A",
+        "--json"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "{\n  \"committed\": true,\n  \"message\": \"canopy: update 1 file(s)\",\n  \"pushed\": true\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "--git-dir",
+        "/private/tmp/canopy-audit-20261009/final/supplement/remote.git",
+        "show",
+        "HEAD:raw/final.txt"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "header\n<<<<<<< Updated upstream\nremote value\n=======\nlocal dirty value\n>>>>>>> Stashed changes\nfooter\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/supplement/A",
+        "show",
+        "refs/stash:raw/final.txt"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "header\nlocal dirty value\nfooter\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/supplement/A",
+        "show",
+        "c63c759df6f988bbadfface180960c4b93d2f5b7:raw/final.txt"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "header\nremote value\nfooter\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/private/tmp/canopy-audit-20261009/final/supplement/A",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/Users/nobocop/play/canopy",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

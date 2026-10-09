@@ -1,0 +1,182 @@
+{
+  "evidence/web-adapter-output.txt": {
+    "exists": true,
+    "sha256": "15a64c2b63dd5f7fd8829e7c0282078b854a11cc2ea89a23efc9ee492465c84d"
+  },
+  "evidence/web-adapter-probe.cjs.txt": {
+    "exists": true,
+    "sha256": "f87499bfdbc759cad678a8bcffe22a626a80c4b5279b2452ff83509415342a87"
+  },
+  "evidence/web-browser-result.txt": {
+    "exists": true,
+    "sha256": "0f831a89bc540ed0e6ce0406996698fcaa9b7041b55bd391674df86624673323"
+  },
+  "evidence/web-color-output.txt": {
+    "exists": true,
+    "sha256": "e9282eab3fc059b2d27142eb1e13f00cea1616e7a9a285e54e32927d2b9068fe"
+  },
+  "evidence/web-existing-go-tests.txt": {
+    "exists": true,
+    "sha256": "fde7615369f58fc6ea791cd0729b4d5ef978438d7e84cb420c106d1c4ab16936"
+  },
+  "evidence/web-existing-ui-tests.txt": {
+    "exists": true,
+    "sha256": "05cd4023fc05d86b93347007176556459888f270a990feb794561184805fc381"
+  },
+  "evidence/web-file-manifest.txt": {
+    "exists": true,
+    "sha256": "3c14dfe6386a6e547955e020bda1ee756560e8cc2bb76b7af18a13b6728270c6"
+  },
+  "evidence/web-go.mod.txt": {
+    "exists": true,
+    "sha256": "78e3ddfed8094baf96ecaddb084622196edb06c7409bbd847d104b55314f32fb"
+  },
+  "evidence/web-logout-output.txt": {
+    "exists": true,
+    "sha256": "e5553e2d776bb3fdd7a0cd6658dd849b81ae34358144a10f6d556afaab7a9614"
+  },
+  "evidence/web-probe-output.txt": {
+    "exists": true,
+    "sha256": "653b996f9c994752fb65bbdb0b093ba4f47b452007b9963217778a2d27c9f77d"
+  },
+  "evidence/web-probe-test.go.txt": {
+    "exists": true,
+    "sha256": "eab2530fa32b800e7a1f16b013dfff11264ade385933763715527010337a0c7a"
+  },
+  "evidence/web-race-output.txt": {
+    "exists": true,
+    "sha256": "31ddf468366381824a3ec1a9dd0615f78d09c9bfdb5ab067cee19f310fe4f93c"
+  },
+  "evidence/web-replay-check.txt": {
+    "exists": true,
+    "sha256": "621710bfeb9d7ae9d2418cacc209784da8f202ed8bff096b353e1a121371836e"
+  },
+  "evidence/web-server-main.go.txt": {
+    "exists": true,
+    "sha256": "daae9bdec80db6746badaa401c59a8a196b8972f90d78a61085b44e1794002a9"
+  },
+  "evidence/docs-cli-probe.py.txt": {
+    "exists": true,
+    "sha256": "3a82eea31f83dc89161e74e6158417a8ea67fd1d8df2b5e559fabb54dd2c696f"
+  },
+  "evidence/docs-cli-results.json": {
+    "exists": true,
+    "sha256": "c7e44e82a56e4c2f425afa73629d45d6d65da10f776d7fd67bae9661ff0b6269"
+  },
+  "evidence/docs-contract-results.jsonl": {
+    "exists": true,
+    "sha256": "1007ba5d39e14672f63c22d618b6b485ba55360f632cf3607f12e71ca63041b1"
+  },
+  "evidence/docs-contract.go.txt": {
+    "exists": true,
+    "sha256": "2d1c27bf2085def6dbcc220331d658499d692fa582e92bb98f6ce22c728713ef"
+  },
+  "evidence/docs-extra-probe.py.txt": {
+    "exists": true,
+    "sha256": "3aa2450d38317a82c24ead7228c5a5f2110ceedbafe7ccbd12aa150b9d14baa1"
+  },
+  "evidence/docs-extra-results.json": {
+    "exists": true,
+    "sha256": "c11cc15b5ea4596cfb447e345e2d387a73204c2c7a3756721f95b92af204f049"
+  },
+  "evidence/docs-harness-results.jsonl": {
+    "exists": true,
+    "sha256": "e2fbb2efb21ca2b8b0623dd99b692c76f6c3e85743cce7bbd2eeaeee39d4ccda"
+  },
+  "evidence/docs-harness.go.txt": {
+    "exists": true,
+    "sha256": "8aad2713e205dcd95169919b78865b31fddf45ffd78bd485d959af5244ec2135"
+  },
+  "evidence/docs-help.json": {
+    "exists": true,
+    "sha256": "2eb34e8df9a4818d4b55d7a08d75c9d5a098c7df656ee661d0037158d1f554ac"
+  },
+  "evidence/docs-manifest.json": {
+    "exists": true,
+    "sha256": "a6ddaf17796028082ef6f5262e4efa86b8afab3c64c6421b7da65cd58da91b52"
+  },
+  "evidence/docs-recall-results.json": {
+    "exists": true,
+    "sha256": "adfd5305347980376a73ab0f4b168480ab1c28b5966ea53cb68a475d6fb8214d"
+  },
+  "evidence/docs-verification.txt": {
+    "exists": true,
+    "sha256": "16295cd520246f07d52ad37ac580634168e1780f6e9fc020a6778ddb01b0dc7b"
+  },
+  "evidence/red_web-auto-response.cjs.txt": {
+    "exists": true,
+    "sha256": "73b04d8a2a839ae1957ae50f1d7e943635a41c5196668da75e66c1759fe8dc89"
+  },
+  "evidence/red_web-build.txt": {
+    "exists": true,
+    "sha256": "2477cc922b275d7699ede8458dde47dae1341b75d88cd9781f2942a2ed5322d6"
+  },
+  "evidence/red_web-cli-results.json": {
+    "exists": true,
+    "sha256": "59bf969b063c24ae1161c9144adc293f25c7707f6d9baf2dbe1b050b5c9bdee5"
+  },
+  "evidence/red_web-existing-tests.txt": {
+    "exists": true,
+    "sha256": "dac139ed27f18780c1ffeee4c144573919e37d569c1a90e7f8c2627227a85511"
+  },
+  "evidence/red_web-existing-ui-tests.txt": {
+    "exists": true,
+    "sha256": "8a34477402c82052cd27637a5dbd30e50b58582e18ef0de549419771efea7796"
+  },
+  "evidence/red_web-extra-http-results.txt": {
+    "exists": true,
+    "sha256": "317a1e8999c8a1e0c97c53049e0426cdbd97009033a5116e5792c6ef0643edd1"
+  },
+  "evidence/red_web-extra-results.json": {
+    "exists": true,
+    "sha256": "6b6c1ee58010552a7b5f45d715225307b18ca6fa39a31e439fdfac33fbec3ef1"
+  },
+  "evidence/red_web-extra.py.txt": {
+    "exists": true,
+    "sha256": "cdca5637bde77b750ffea569da1e88c24bccf1c33d446972651861619f996a77"
+  },
+  "evidence/red_web-extra_test.go.txt": {
+    "exists": true,
+    "sha256": "1dedc83fc8c71b84e26c914ee5eca34d468a1abbfb0b66fb448b43861dfcd1b8"
+  },
+  "evidence/red_web-final-check.json": {
+    "exists": true,
+    "sha256": "582964d65740cc2a58632d73e5ba3b529527f9417d8f88444d8cd76b18196718"
+  },
+  "evidence/red_web-http-results.txt": {
+    "exists": true,
+    "sha256": "80fe3b2efd523af845ae3ffcc904cc11313d7c48f5e9ff178cc2a811fe298d57"
+  },
+  "evidence/red_web-inventory.json": {
+    "exists": true,
+    "sha256": "302a768e6ecbe85095db6f8cf5383d66d4907ef52d127ae5b7de052229851423"
+  },
+  "evidence/red_web-js-results.txt": {
+    "exists": true,
+    "sha256": "ac38bd98de7bef7aeefc920d06f54cc96dc42d54ce6daea634fee20eeb3cfbd7"
+  },
+  "evidence/red_web-original-check.json": {
+    "exists": true,
+    "sha256": "9147c0877780ff18fe45f8a497fc59fe98da640be91fbb4a8e5c237c6a59a16c"
+  },
+  "evidence/red_web-probe_test.go.txt": {
+    "exists": true,
+    "sha256": "6b30ce89ee1f47a1462f4f844d7ea0173dbf82b7c29320ec337cb88f563a183d"
+  },
+  "evidence/red_web-race-results.txt": {
+    "exists": true,
+    "sha256": "b02dab69e2937b25250d422b764563552a11a41ae321458c2f9d7bf808b510b6"
+  },
+  "evidence/red_web-runner.py.txt": {
+    "exists": true,
+    "sha256": "bd211f55c2b06c73e834a0425674429b6edef42b2490f8a95b94e2f7f7bea8a1"
+  },
+  "evidence/red_web-sync-json-results.json": {
+    "exists": true,
+    "sha256": "0e5a8c4706e519031f5ee59116a5d6ad9d4c3bad09b9afad7a503d9eded151b5"
+  },
+  "evidence/red_web-sync-json.py.txt": {
+    "exists": true,
+    "sha256": "5b2e9447c3edb60ddd9e943f3e3e230ab2f1a730f8e3d834748e906305f9a34f"
+  }
+}

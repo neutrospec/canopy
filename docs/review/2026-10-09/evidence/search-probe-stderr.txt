@@ -1,0 +1,9 @@
+2026/10/09 13:08:22 GET /api/search?q=oldneedle
+2026/10/09 13:08:22 GET /search?q=oldneedle
+2026/10/09 13:08:22 GET /api/search?q=oldneedle
+2026/10/09 13:08:22 GET /api/search?q=oldneedle
+2026/10/09 13:08:22 GET /api/search?q=newneedle
+2026/10/09 13:08:22 GET /api/search?q=oldneedle
+2026/10/09 13:08:22 error: fixture inference failed
+2026/10/09 13:08:22 GET /api/search?q=oldneedle
+2026/10/09 13:08:22 GET /api/search?q=needle

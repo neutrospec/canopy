@@ -1,0 +1,204 @@
+=== RUN   TestSetFrontmatterField
+--- PASS: TestSetFrontmatterField (0.00s)
+=== RUN   TestRewriteLinks
+--- PASS: TestRewriteLinks (0.00s)
+=== RUN   TestStripLinks
+--- PASS: TestStripLinks (0.00s)
+=== RUN   TestReplaceBody
+--- PASS: TestReplaceBody (0.00s)
+=== RUN   TestExtractLinks
+--- PASS: TestExtractLinks (0.00s)
+=== RUN   TestParseFrontmatter
+--- PASS: TestParseFrontmatter (0.00s)
+=== RUN   TestScanAndBacklinks
+--- PASS: TestScanAndBacklinks (0.00s)
+=== RUN   TestSlugify
+--- PASS: TestSlugify (0.00s)
+=== RUN   TestComponents
+--- PASS: TestComponents (0.00s)
+PASS
+ok  	github.com/neutrospec/canopy/internal/wiki	0.304s
+?   	github.com/neutrospec/canopy/internal/writeops	[no test files]
+=== RUN   TestCheckoutEditCheckin
+--- PASS: TestCheckoutEditCheckin (0.00s)
+=== RUN   TestCheckinBaseConflict
+--- PASS: TestCheckinBaseConflict (0.00s)
+=== RUN   TestCheckinGates
+--- PASS: TestCheckinGates (0.33s)
+=== RUN   TestCheckinUnchanged
+--- PASS: TestCheckinUnchanged (0.00s)
+=== RUN   TestCheckoutIdempotent
+--- PASS: TestCheckoutIdempotent (0.00s)
+=== RUN   TestOpenList
+--- PASS: TestOpenList (0.00s)
+PASS
+ok  	github.com/neutrospec/canopy/internal/checkout	0.649s
+=== RUN   TestUninitializedGateIsSilent
+--- PASS: TestUninitializedGateIsSilent (0.00s)
+=== RUN   TestForeignDetection
+--- PASS: TestForeignDetection (0.00s)
+=== RUN   TestBlessPaths
+--- PASS: TestBlessPaths (0.00s)
+=== RUN   TestRecordEffects
+--- PASS: TestRecordEffects (0.00s)
+PASS
+ok  	github.com/neutrospec/canopy/internal/reconcile	0.247s
+=== RUN   TestRegenerate
+--- PASS: TestRegenerate (0.00s)
+=== RUN   TestRegenerateEmptyWiki
+--- PASS: TestRegenerateEmptyWiki (0.00s)
+=== RUN   TestRegenerateIdempotent
+--- PASS: TestRegenerateIdempotent (0.00s)
+=== RUN   TestCountArchived
+--- PASS: TestCountArchived (0.00s)
+PASS
+ok  	github.com/neutrospec/canopy/internal/genindex	0.568s
+=== RUN   TestAppendCreatesLogFile
+--- PASS: TestAppendCreatesLogFile (0.00s)
+=== RUN   TestAppendContent
+--- PASS: TestAppendContent (0.00s)
+=== RUN   TestAppendAppends
+--- PASS: TestAppendAppends (0.00s)
+=== RUN   TestAppendWithRelated
+--- PASS: TestAppendWithRelated (0.00s)
+=== RUN   TestAppendCreatesLogsDir
+--- PASS: TestAppendCreatesLogsDir (0.00s)
+=== RUN   TestReadRecent
+--- PASS: TestReadRecent (0.00s)
+PASS
+ok  	github.com/neutrospec/canopy/internal/logops	0.572s
+?   	github.com/neutrospec/canopy/internal/gitops	[no test files]
+=== RUN   TestMarkUpgradeAndUndo
+--- PASS: TestMarkUpgradeAndUndo (0.00s)
+=== RUN   TestRecentSlugs
+--- PASS: TestRecentSlugs (0.00s)
+=== RUN   TestMarkAgent
+--- PASS: TestMarkAgent (0.00s)
+=== RUN   TestRenameMovesAgent
+--- PASS: TestRenameMovesAgent (0.00s)
+=== RUN   TestRecentAccessSlugs
+--- PASS: TestRecentAccessSlugs (0.00s)
+PASS
+ok  	github.com/neutrospec/canopy/internal/reads	0.567s
+=== RUN   TestAuthBootstrapAndLogin
+--- PASS: TestAuthBootstrapAndLogin (1.14s)
+=== RUN   TestIsLoopbackAddr
+--- PASS: TestIsLoopbackAddr (0.00s)
+=== RUN   TestLocaleKeyParity
+--- PASS: TestLocaleKeyParity (0.00s)
+=== RUN   TestLocaleFallback
+--- PASS: TestLocaleFallback (0.00s)
+=== RUN   TestLocaleCookieOverride
+--- PASS: TestLocaleCookieOverride (0.00s)
+=== RUN   TestNoHardcodedUIStrings
+--- PASS: TestNoHardcodedUIStrings (0.00s)
+=== RUN   TestMermaidBundleServedFromValidator
+2026/10/09 13:01:25 GET /static/vendor/mermaid.min.js
+--- PASS: TestMermaidBundleServedFromValidator (0.01s)
+=== RUN   TestReplaceWikilinks
+--- PASS: TestReplaceWikilinks (0.00s)
+=== RUN   TestWikilinksSkippedInCode
+--- PASS: TestWikilinksSkippedInCode (0.00s)
+=== RUN   TestRenderPageProducesHTML
+--- PASS: TestRenderPageProducesHTML (0.00s)
+=== RUN   TestFirstParagraph
+--- PASS: TestFirstParagraph (0.00s)
+=== RUN   TestWebTaskFilingDoesNotEditPages
+2026/10/09 13:01:25 POST /task/edit/alpha
+2026/10/09 13:01:25 POST /task/connect
+--- PASS: TestWebTaskFilingDoesNotEditPages (0.01s)
+=== RUN   TestWebTaskFilingRejectsBadInput
+2026/10/09 13:01:25 POST /task/connect
+2026/10/09 13:01:25 POST /task/connect
+2026/10/09 13:01:25 POST /task/edit/alpha
+--- PASS: TestWebTaskFilingRejectsBadInput (0.00s)
+=== RUN   TestWebConnectRefilingAndTodoList
+2026/10/09 13:01:25 POST /task/connect
+2026/10/09 13:01:25 POST /task/connect
+2026/10/09 13:01:25 GET /page/alpha?tasked=1
+--- PASS: TestWebConnectRefilingAndTodoList (0.01s)
+=== RUN   TestWebEditFilesProposalNotFile
+2026/10/09 13:01:25 POST /edit/alpha
+--- PASS: TestWebEditFilesProposalNotFile (0.00s)
+=== RUN   TestWebEditNoopFilesNothing
+2026/10/09 13:01:25 POST /edit/alpha
+--- PASS: TestWebEditNoopFilesNothing (0.00s)
+=== RUN   TestTasksScreenAndWithdraw
+2026/10/09 13:01:25 POST /edit/alpha
+2026/10/09 13:01:25 POST /task/connect
+2026/10/09 13:01:25 GET /special/tasks
+2026/10/09 13:01:25 POST /task/cancel/connect-alpha--beta
+2026/10/09 13:01:25 POST /task/cancel/edit-alpha-20261009-130125
+--- PASS: TestTasksScreenAndWithdraw (0.01s)
+=== RUN   TestSuggestedSectionTaskButtons
+--- PASS: TestSuggestedSectionTaskButtons (0.00s)
+=== RUN   TestClientMessagesLocalized
+=== RUN   TestClientMessagesLocalized/en
+2026/10/09 13:01:25 GET /page/alpha
+=== RUN   TestClientMessagesLocalized/ko
+2026/10/09 13:01:25 GET /page/alpha
+2026/10/09 13:01:25 GET /
+--- PASS: TestClientMessagesLocalized (0.01s)
+    --- PASS: TestClientMessagesLocalized/en (0.01s)
+    --- PASS: TestClientMessagesLocalized/ko (0.00s)
+=== RUN   TestWorkspaceNavigation
+=== RUN   TestWorkspaceNavigation//
+2026/10/09 13:01:25 GET /
+=== RUN   TestWorkspaceNavigation//browse?type=concept
+2026/10/09 13:01:25 GET /browse?type=concept
+=== RUN   TestWorkspaceNavigation//page/alpha
+2026/10/09 13:01:25 GET /page/alpha
+=== RUN   TestWorkspaceNavigation//edit/alpha
+2026/10/09 13:01:25 GET /edit/alpha
+=== RUN   TestWorkspaceNavigation//graph
+2026/10/09 13:01:25 GET /graph
+=== RUN   TestWorkspaceNavigation//special/discover
+2026/10/09 13:01:25 GET /special/discover
+=== RUN   TestWorkspaceNavigation//special/tasks
+2026/10/09 13:01:25 GET /special/tasks
+=== RUN   TestWorkspaceNavigation//history
+2026/10/09 13:01:25 GET /history
+=== RUN   TestWorkspaceNavigation//special/recent
+2026/10/09 13:01:25 GET /special/recent
+=== RUN   TestWorkspaceNavigation//special/attention
+2026/10/09 13:01:25 GET /special/attention
+=== RUN   TestWorkspaceNavigation//special/gaps
+2026/10/09 13:01:25 GET /special/gaps
+--- PASS: TestWorkspaceNavigation (0.01s)
+    --- PASS: TestWorkspaceNavigation// (0.01s)
+    --- PASS: TestWorkspaceNavigation//browse?type=concept (0.00s)
+    --- PASS: TestWorkspaceNavigation//page/alpha (0.00s)
+    --- PASS: TestWorkspaceNavigation//edit/alpha (0.00s)
+    --- PASS: TestWorkspaceNavigation//graph (0.00s)
+    --- PASS: TestWorkspaceNavigation//special/discover (0.00s)
+    --- PASS: TestWorkspaceNavigation//special/tasks (0.00s)
+    --- PASS: TestWorkspaceNavigation//history (0.00s)
+    --- PASS: TestWorkspaceNavigation//special/recent (0.00s)
+    --- PASS: TestWorkspaceNavigation//special/attention (0.00s)
+    --- PASS: TestWorkspaceNavigation//special/gaps (0.00s)
+=== RUN   TestLanguageSwitchPreservesQuery
+2026/10/09 13:01:25 GET /browse?dir=concepts&tag=ai-ml&tag=tool
+2026/10/09 13:01:25 GET /setlang?lang=en&next=%2fbrowse%3fdir%3dconcepts%26tag%3dai-ml%26tag%3dtool
+2026/10/09 13:01:25 GET /search?q=body+alpha
+2026/10/09 13:01:25 GET /setlang?lang=en&next=%2fsearch%3fq%3dbody%2balpha
+--- PASS: TestLanguageSwitchPreservesQuery (0.01s)
+=== RUN   TestLanguageSwitchRejectsExternalRedirect
+2026/10/09 13:01:25 GET /setlang?lang=en&next=https%3A%2F%2Fexample.test%2F
+2026/10/09 13:01:25 GET /setlang?lang=en&next=%2F%2Fexample.test%2F
+2026/10/09 13:01:25 GET /setlang?lang=en&next=%2F%5Cexample.test%2F
+2026/10/09 13:01:25 GET /setlang?lang=en&next=%5Cexample.test%2F
+2026/10/09 13:01:25 GET /setlang?lang=en&next=relative
+2026/10/09 13:01:25 GET /setlang?lang=en&next=%2Fpage%2Falpha%0D%0ALocation%3A+https%3A%2F%2Fexample.test
+2026/10/09 13:01:25 GET /setlang?lang=en&next=
+--- PASS: TestLanguageSwitchRejectsExternalRedirect (0.00s)
+=== RUN   TestWorkspaceSummary
+2026/10/09 13:01:25 GET /
+2026/10/09 13:01:25 GET /
+2026/10/09 13:01:25 home task summary: bad.json: unexpected end of JSON input
+2026/10/09 13:01:25 GET /
+=== RUN   TestWorkspaceSummary/empty_wiki
+2026/10/09 13:01:25 GET /
+--- PASS: TestWorkspaceSummary (0.02s)
+    --- PASS: TestWorkspaceSummary/empty_wiki (0.01s)
+PASS
+ok  	github.com/neutrospec/canopy/internal/webui	1.664s

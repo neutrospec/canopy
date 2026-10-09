@@ -1,0 +1,86 @@
+$ ['go', 'test', '-mod=readonly', '-count=1', '-v', './review_probes/red_data']
+=== RUN   TestQ01SnapshotsAndCrossFileControl
+    probe_test.go:87: two stale human snapshots: cedar=false birch=true
+    probe_test.go:93: two stale agent snapshots: cedar=false birch=true
+    probe_test.go:102: cross-door control: human=true agent=true
+    probe_test.go:108: stale resurface: snooze="" dismiss="dismissed"
+    probe_test.go:123: stale ledger: first_retained=false second_retained=true
+--- PASS: TestQ01SnapshotsAndCrossFileControl (0.00s)
+=== RUN   TestQ02AtomicChild
+    probe_test.go:128: only subprocess
+--- SKIP: TestQ02AtomicChild (0.00s)
+=== RUN   TestQ02AtomicState
+    probe_test.go:156: === RUN   TestQ02AtomicChild
+            probe_test.go:142: Save=write /private/tmp/canopy-audit-20261009/red_data-ctx206f/fixtures/go-1726821768/_meta/webui/reads.json: file too large bytes=96 subsequent_Load=unexpected end of JSON input
+        --- PASS: TestQ02AtomicChild (0.00s)
+        PASS
+    probe_test.go:157: old_complete_bytes_preserved=false
+--- PASS: TestQ02AtomicState (0.01s)
+=== RUN   TestQ03ReachableHTTPConcurrentProposals
+    probe_test.go:181: sequential control: submitted=8 files=8
+    probe_test.go:213: concurrent actual handler: submitted=80 HTTP303=80 retained_unique_concurrent_bodies=40 files_total=48 corrupt=0
+    probe_test.go:219: independent fixture same second: id_equal=true
+--- PASS: TestQ03ReachableHTTPConcurrentProposals (3.80s)
+=== RUN   TestQ04CheckinTimingAndSequentialControl
+    probe_test.go:239: hash->validation->write window: error=<nil> elapsed=1.23586225s other_writer_retained=false
+    probe_test.go:248: sequential prior base change: rejected=true copy_present=true
+--- PASS: TestQ04CheckinTimingAndSequentialControl (1.24s)
+=== RUN   TestQ05MigrationBoundaries
+    probe_test.go:278: fresh concurrent Ensure=40 failures=18 example=rename /private/tmp/canopy-audit-20261009/red_data-ctx206f/fixtures/go-505555750/config/state.json.tmp /private/tmp/canopy-audit-20261009/red_data-ctx206f/fixtures/go-505555750/config/state.json: no such file or directory final_Status={Current:1 Target:1 Persisted:true Pending:[]} error=<nil>
+    probe_test.go:284: sequential Ensure control=12 successful
+    probe_test.go:289: state shape=null result={From:0 To:1 Applied:[relocate legacy ~/.canopy into XDG directories]} error=<nil> original_preserved=false
+    probe_test.go:289: state shape={"schema_version":-3} result={From:-3 To:1 Applied:[relocate legacy ~/.canopy into XDG directories]} error=<nil> original_preserved=false
+    probe_test.go:289: state shape={"schema_version":88} result={From:88 To:88 Applied:[]} error=canopy is older (schema 1) than your data (schema 88) — upgrade canopy original_preserved=true
+    probe_test.go:289: state shape={ result={From:0 To:0 Applied:[]} error=parse /private/tmp/canopy-audit-20261009/red_data-ctx206f/fixtures/go-4278959216/config/state.json: unexpected end of JSON input original_preserved=true
+--- PASS: TestQ05MigrationBoundaries (0.00s)
+=== RUN   TestQ06MetadataCompatibilityAndNoop
+    probe_test.go:299: current-version unknown-field no-op Save preserves=true
+    probe_test.go:302: current-version human mutation top_or_nested_extension_preserved=false
+    probe_test.go:307: agent mutated JSON={
+          "version": 1,
+          "agent": {
+            "birch": {
+              "first": "2026-10-09T15:27:00Z",
+              "last": "2026-10-09T15:27:00Z",
+              "days": 1
+            }
+          }
+        }
+    probe_test.go:312: resurface version8 extension_preserved=false
+    probe_test.go:316: ledger version8 extension_preserved=false
+--- PASS: TestQ06MetadataCompatibilityAndNoop (0.00s)
+=== RUN   TestQ07TiesSeedAndSnooze
+    probe_test.go:333: same state same timestamp: distinct_top5_sets=60
+    probe_test.go:340: same seed + state + now auto control: equal=true
+    probe_test.go:349: snooze offset=32400 until=2026-10-10 elapsed=9h0m0s eligible=false
+    probe_test.go:349: snooze offset=32400 until=2026-10-10 elapsed=10h0m0s eligible=true
+    probe_test.go:349: snooze offset=32400 until=2026-10-10 elapsed=24h0m0s eligible=true
+    probe_test.go:349: snooze offset=0 until=2026-10-10 elapsed=9h0m0s eligible=true
+    probe_test.go:349: snooze offset=0 until=2026-10-10 elapsed=10h0m0s eligible=true
+    probe_test.go:349: snooze offset=0 until=2026-10-10 elapsed=24h0m0s eligible=true
+    probe_test.go:349: snooze offset=-14400 until=2026-10-10 elapsed=9h0m0s eligible=true
+    probe_test.go:349: snooze offset=-14400 until=2026-10-10 elapsed=10h0m0s eligible=true
+    probe_test.go:349: snooze offset=-14400 until=2026-10-10 elapsed=24h0m0s eligible=true
+--- PASS: TestQ07TiesSeedAndSnooze (0.00s)
+=== RUN   TestQ08YAMLAndNestedScope
+    probe_test.go:357: title input="C:\\new\\tool" parsed="C:\new\tool" equals=false error=""
+    probe_test.go:357: title input="C:\\Review\\artifact" parsed="" equals=false error="yaml: found unknown escape character"
+    probe_test.go:357: title input="line-one\nline-two" parsed="line-one line-two" equals=false error=""
+    probe_test.go:357: title input="한글 \"title\"" parsed="한글 \"title\"" equals=true error=""
+    probe_test.go:362: block updated before="2026-03-04" after="2026-10-09 2026-03-04" errors=""/"" body_equal=true unknown_retained=true
+    probe_test.go:371: nested: scan_pages=1 blessed_files=2 foreign=0
+    probe_test.go:374: invalid digest: created=1 value="zzz-invalid"
+--- PASS: TestQ08YAMLAndNestedScope (0.00s)
+=== RUN   TestQ09TaskContractAndOrigin
+    probe_test.go:386: unchanged control rejected=true
+    probe_test.go:389: frontmatter only unrelated to request: done_error=<nil>
+    probe_test.go:413: stale form GET=200 POST=303 base_is_form=false base_is_submission=true
+--- PASS: TestQ09TaskContractAndOrigin (0.01s)
+=== RUN   TestQ10AliasAndFutureDBLimits
+    probe_test.go:427: symlink identity: event_same=false checkout_same=false alias_open=0 original_copy_exists=true
+    probe_test.go:444: synthetic future DB same actual schema: Log_error=<nil> rows=2 existing_preserved=true
+--- PASS: TestQ10AliasAndFutureDBLimits (0.00s)
+PASS
+ok  	github.com/neutrospec/canopy/review_probes/red_data	5.844s
+
+EXIT 0

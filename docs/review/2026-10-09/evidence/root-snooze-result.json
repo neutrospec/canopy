@@ -1,0 +1,159 @@
+{
+  "fixture": "/private/tmp/canopy-audit-20261009/root-snooze-u_n017mn",
+  "utc_start": "2026-10-09T06:20:35.678492+00:00",
+  "tz": "America/Los_Angeles",
+  "binary_sha256": "801b61843e865acfc41d9b29088c331cc2712b1524ca5142587a7c102db25a90",
+  "limit": "Wall-clock/TZ conditional CLI example, not a seven-day E4 failure.",
+  "records": [
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/canopy-lite",
+        "init",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/root-snooze-u_n017mn/wiki",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"db\": \"/private/tmp/canopy-audit-20261009/root-snooze-u_n017mn/cache/canopy/index/6ba5f506e52f.db\",\n  \"default_wiki_set\": true,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-audit-20261009/root-snooze-u_n017mn/wiki\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/canopy-lite",
+        "resurface",
+        "--strategy",
+        "random",
+        "--peek",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/root-snooze-u_n017mn/wiki",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"picks\": [\n    {\n      \"slug\": \"alpha\",\n      \"rel_path\": \"concepts/alpha.md\",\n      \"title\": \"Alpha\",\n      \"strategy\": \"random-forgotten\",\n      \"days_stale\": 281,\n      \"excerpt\": \"Old isolated fixture page.\",\n      \"explanation\": \"281일간 열람·갱신이 없던 페이지\"\n    }\n  ],\n  \"state_updated\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/canopy-lite",
+        "resurface",
+        "feedback",
+        "alpha",
+        "--snooze",
+        "1",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/root-snooze-u_n017mn/wiki",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"recorded\": true,\n  \"slug\": \"alpha\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/canopy-lite",
+        "resurface",
+        "--strategy",
+        "random",
+        "--peek",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/root-snooze-u_n017mn/wiki",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"picks\": [\n    {\n      \"slug\": \"alpha\",\n      \"rel_path\": \"concepts/alpha.md\",\n      \"title\": \"Alpha\",\n      \"strategy\": \"random-forgotten\",\n      \"days_stale\": 281,\n      \"excerpt\": \"Old isolated fixture page.\",\n      \"explanation\": \"281일간 열람·갱신이 없던 페이지\"\n    }\n  ],\n  \"state_updated\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/canopy-lite",
+        "resurface",
+        "feedback",
+        "alpha",
+        "--snooze",
+        "7",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/root-snooze-u_n017mn/wiki",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"recorded\": true,\n  \"slug\": \"alpha\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/private/tmp/canopy-audit-20261009/canopy-lite",
+        "resurface",
+        "--strategy",
+        "random",
+        "--peek",
+        "--wiki",
+        "/private/tmp/canopy-audit-20261009/root-snooze-u_n017mn/wiki",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"picks\": [],\n  \"state_updated\": false\n}\n",
+      "stderr": ""
+    }
+  ],
+  "before": {
+    "picks": [
+      {
+        "slug": "alpha",
+        "rel_path": "concepts/alpha.md",
+        "title": "Alpha",
+        "strategy": "random-forgotten",
+        "days_stale": 281,
+        "excerpt": "Old isolated fixture page.",
+        "explanation": "281일간 열람·갱신이 없던 페이지"
+      }
+    ],
+    "state_updated": false
+  },
+  "one_day_response": {
+    "recorded": true,
+    "slug": "alpha"
+  },
+  "one_day_state": {
+    "version": 1,
+    "shown": {},
+    "shown_pairs": {},
+    "snoozed": {
+      "alpha": "2026-10-09"
+    },
+    "feedback": null
+  },
+  "one_day_picks": {
+    "picks": [
+      {
+        "slug": "alpha",
+        "rel_path": "concepts/alpha.md",
+        "title": "Alpha",
+        "strategy": "random-forgotten",
+        "days_stale": 281,
+        "excerpt": "Old isolated fixture page.",
+        "explanation": "281일간 열람·갱신이 없던 페이지"
+      }
+    ],
+    "state_updated": false
+  },
+  "seven_day_response": {
+    "recorded": true,
+    "slug": "alpha"
+  },
+  "seven_day_state": {
+    "version": 1,
+    "shown": {},
+    "shown_pairs": {},
+    "snoozed": {
+      "alpha": "2026-10-15"
+    },
+    "feedback": null
+  },
+  "seven_day_picks": {
+    "picks": [],
+    "state_updated": false
+  },
+  "one_day_counterexample": true,
+  "seven_day_suppressed": true,
+  "fixture_removed": true
+}

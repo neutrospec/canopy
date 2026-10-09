@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "go",
+    "build",
+    "-mod=readonly",
+    "-ldflags",
+    "-X github.com/neutrospec/canopy/internal/buildinfo.version=v0.10.0 -X github.com/neutrospec/canopy/internal/buildinfo.commit=ede67e3",
+    "-o",
+    "/private/tmp/canopy-audit-20261009/red_web-nyzlfu99/canopy",
+    "./cmd/canopy"
+  ],
+  "cwd": "/Users/nobocop/play/canopy",
+  "exit": 0,
+  "stdout": "",
+  "stderr": ""
+}

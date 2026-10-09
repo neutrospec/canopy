@@ -1,0 +1,249 @@
+package audit_test
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/neutrospec/canopy/internal/checkout"
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/genindex"
+	"github.com/neutrospec/canopy/internal/lint"
+	"github.com/neutrospec/canopy/internal/mermaid"
+	"github.com/neutrospec/canopy/internal/reads"
+	"github.com/neutrospec/canopy/internal/reconcile"
+	"github.com/neutrospec/canopy/internal/resurface"
+	"github.com/neutrospec/canopy/internal/tasks"
+	"github.com/neutrospec/canopy/internal/wiki"
+)
+
+func mk(t *testing.T) *config.Wiki {
+	t.Helper()
+	w := &config.Wiki{Root: t.TempDir(), Cfg: config.Default()}
+	for _, d := range w.Cfg.Schema.PageDirs {
+		must(t, os.MkdirAll(filepath.Join(w.Root, d), 0o755))
+	}
+	return w
+}
+
+func must(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func put(t *testing.T, w *config.Wiki, rel, body string) {
+	t.Helper()
+	must(t, os.MkdirAll(filepath.Dir(filepath.Join(w.Root, rel)), 0o755))
+	content := "---\ntitle: Alpha\ncreated: 2026-01-01\nupdated: 2026-01-01\ntype: concept\ntags: [tool]\nsources: []\n---\n\n" + body + "\n"
+	must(t, os.WriteFile(filepath.Join(w.Root, rel), []byte(content), 0o644))
+}
+
+func TestStaleStateSnapshots(t *testing.T) {
+	w := mk(t)
+	now := time.Date(2026, 10, 9, 12, 0, 0, 0, time.UTC)
+	a, err := reads.Load(w)
+	must(t, err)
+	b, err := reads.Load(w)
+	must(t, err)
+	a.Mark("alpha", "explicit", now)
+	b.Mark("beta", "explicit", now)
+	must(t, a.Save(w))
+	must(t, b.Save(w))
+	s, err := reads.Load(w)
+	must(t, err)
+	t.Logf("human both saves=nil alpha=%v beta=%v", s.IsRead("alpha"), s.IsRead("beta"))
+	if s.IsRead("alpha") || !s.IsRead("beta") {
+		t.Fatal("unexpected interleaving")
+	}
+	a, err = reads.Load(w)
+	must(t, err)
+	b, err = reads.Load(w)
+	must(t, err)
+	a.MarkAgent("alpha", now)
+	b.MarkAgent("beta", now)
+	must(t, a.Save(w))
+	must(t, b.Save(w))
+	s, err = reads.Load(w)
+	must(t, err)
+	t.Logf("agent both saves=nil alpha=%v beta=%v", s.Agent["alpha"] != nil, s.Agent["beta"] != nil)
+	ra, err := resurface.LoadState(w)
+	must(t, err)
+	rb, err := resurface.LoadState(w)
+	must(t, err)
+	ra.AddFeedback("alpha", "up", now)
+	rb.Snooze("beta", 7, now)
+	must(t, ra.Save(w))
+	must(t, rb.Save(w))
+	rs, err := resurface.LoadState(w)
+	must(t, err)
+	t.Logf("resurface feedback=%d snoozed_beta=%q", len(rs.Feedback), rs.Snoozed["beta"])
+	put(t, w, "concepts/alpha.md", "old alpha")
+	put(t, w, "concepts/beta.md", "old beta")
+	_, err = reconcile.BlessAll(w)
+	must(t, err)
+	la, _, err := reconcile.Load(w)
+	must(t, err)
+	lb, _, err := reconcile.Load(w)
+	must(t, err)
+	put(t, w, "concepts/alpha.md", "new alpha")
+	put(t, w, "concepts/beta.md", "new beta")
+	pa, err := os.ReadFile(filepath.Join(w.Root, "concepts/alpha.md"))
+	must(t, err)
+	pb, err := os.ReadFile(filepath.Join(w.Root, "concepts/beta.md"))
+	must(t, err)
+	la.Blessed["concepts/alpha.md"] = reconcile.HashBytes(pa)
+	lb.Blessed["concepts/beta.md"] = reconcile.HashBytes(pb)
+	must(t, la.Save(w))
+	must(t, lb.Save(w))
+	c, _, err := reconcile.Foreign(w)
+	must(t, err)
+	t.Logf("ledger stale saves foreign=%v", c)
+}
+
+func TestTaskFilingRace(t *testing.T) {
+	w := mk(t)
+	now := time.Date(2026, 10, 9, 12, 0, 0, 0, time.UTC)
+	const n = 32
+	start := make(chan struct{})
+	ids := make(chan string, n)
+	errs := make(chan error, n)
+	var wg sync.WaitGroup
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			<-start
+			task, err := tasks.FileEdit(w, "alpha", "", fmt.Sprintf("proposal-%d", i), "base", "web", now)
+			if err != nil {
+				errs <- err
+				return
+			}
+			ids <- task.ID
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+	close(ids)
+	close(errs)
+	unique := map[string]bool{}
+	for id := range ids {
+		unique[id] = true
+	}
+	for err := range errs {
+		t.Logf("file error: %v", err)
+	}
+	entries, err := os.ReadDir(tasks.Dir(w))
+	must(t, err)
+	readable := 0
+	for _, e := range entries {
+		if _, err := tasks.Get(w, strings.TrimSuffix(e.Name(), ".json")); err == nil {
+			readable++
+		}
+	}
+	t.Logf("submitted=%d unique_returned_ids=%d files=%d readable=%d", n, len(unique), len(entries), readable)
+	if len(unique) == n {
+		t.Log("No ID collision observed in this attempt; source-level stat/write race remains.")
+	}
+}
+
+func TestCheckinHashWriteWindow(t *testing.T) {
+	w := mk(t)
+	t.Setenv("XDG_STATE_HOME", filepath.Join(t.TempDir(), "state"))
+	put(t, w, "concepts/alpha.md", "original")
+	scan, err := wiki.Scan(w)
+	must(t, err)
+	info, err := checkout.Checkout(w, scan, "alpha")
+	must(t, err)
+	copy, err := os.ReadFile(info.Path)
+	must(t, err)
+	edited := strings.Replace(string(copy), "original", "CHECKIN-EDIT", 1) + strings.Repeat("\n```mermaid\nflowchart LR\n  A --> B\n```\n", 3)
+	must(t, os.WriteFile(info.Path, []byte(edited), 0o644))
+	started := time.Now()
+	result := make(chan error, 1)
+	go func() { _, err := checkout.Checkin(w, scan, "alpha", mermaid.NewValidator()); result <- err }()
+	time.Sleep(100 * time.Millisecond)
+	select {
+	case err := <-result:
+		t.Fatalf("checkin finished before concurrent write: %v", err)
+	default:
+	}
+	put(t, w, "concepts/alpha.md", "CONCURRENT-EDIT")
+	err = <-result
+	data, readErr := os.ReadFile(filepath.Join(w.Root, "concepts/alpha.md"))
+	must(t, readErr)
+	t.Logf("checkin_error=%v elapsed=%s concurrent_edit_preserved=%v", err, time.Since(started), strings.Contains(string(data), "CONCURRENT-EDIT"))
+	if err != nil {
+		t.Fatalf("race did not bypass base check: %v", err)
+	}
+	if strings.Contains(string(data), "CONCURRENT-EDIT") {
+		t.Fatal("unexpected preservation")
+	}
+}
+
+func TestFrontmatterPreservation(t *testing.T) {
+	content := "---\ntitle: Alpha\ncreated: 2026-01-01\nupdated: |-\n  2026-01-01\ntype: concept\ntags: [tool]\n---\n\n    code sample\n"
+	before := wiki.Parse("concepts/alpha.md", []byte(content))
+	out := wiki.SetFrontmatterField(content, "updated", "2026-10-09")
+	after := wiki.Parse("concepts/alpha.md", []byte(out))
+	t.Logf("before FMerr=%q updated=%q body=%q", before.FMErr, before.Updated, before.Body)
+	t.Logf("after FMerr=%q updated=%q body=%q", after.FMErr, after.Updated, after.Body)
+	t.Logf("output keeps indented first body line=%v", strings.Contains(out, "\n    code sample"))
+	newContent := wiki.NewPageContent(`C:\new\tool`, "concept", "2026-10-09", nil, nil, "")
+	p := wiki.Parse("concepts/c-path.md", []byte(newContent))
+	t.Logf("requested title=%q parsed title=%q error=%q", `C:\new\tool`, p.Title, p.FMErr)
+}
+
+func TestFutureStateFields(t *testing.T) {
+	w := mk(t)
+	now := time.Date(2026, 10, 9, 12, 0, 0, 0, time.UTC)
+	must(t, os.MkdirAll(filepath.Dir(reads.AgentPath(w)), 0o755))
+	must(t, os.WriteFile(reads.AgentPath(w), []byte(`{"version":9,"agent":{},"future":{"keep":true}}`), 0o644))
+	s, err := reads.Load(w)
+	must(t, err)
+	s.MarkAgent("alpha", now)
+	must(t, s.Save(w))
+	data, err := os.ReadFile(reads.AgentPath(w))
+	must(t, err)
+	var af map[string]any
+	must(t, json.Unmarshal(data, &af))
+	t.Logf("agent version=%v future_preserved=%v", af["version"], af["future"] != nil)
+	must(t, os.MkdirAll(filepath.Dir(reconcile.Path(w)), 0o755))
+	must(t, os.WriteFile(reconcile.Path(w), []byte(`{"version":9,"blessed":{},"future":{"keep":true}}`), 0o644))
+	_, err = reconcile.BlessAll(w)
+	must(t, err)
+	data, err = os.ReadFile(reconcile.Path(w))
+	must(t, err)
+	var lf map[string]any
+	must(t, json.Unmarshal(data, &lf))
+	t.Logf("ledger version=%v future_preserved=%v", lf["version"], lf["future"] != nil)
+}
+
+func TestScanDomainAndDuplicateSlug(t *testing.T) {
+	w := mk(t)
+	put(t, w, "concepts/alpha.md", "one")
+	put(t, w, "concepts/nested/hidden.md", "nested original")
+	put(t, w, "entities/alpha.md", "other original")
+	dupPath := filepath.Join(w.Root, "entities/alpha.md")
+	dupData, err := os.ReadFile(dupPath)
+	must(t, err)
+	must(t, os.WriteFile(dupPath, []byte(strings.Replace(string(dupData), "type: concept", "type: entity", 1)), 0o644))
+	scan, err := wiki.Scan(w)
+	must(t, err)
+	r := lint.Run(w, scan, nil)
+	_, err = reconcile.BlessAll(w)
+	must(t, err)
+	ledger, _, err := reconcile.Load(w)
+	must(t, err)
+	c, _, err := reconcile.Foreign(w)
+	must(t, err)
+	t.Logf("scan=%d by_slug=%d selected_alpha=%s lint_counts=%v", len(scan.Pages), len(scan.BySlug), scan.BySlug["alpha"].RelPath, r.Counts)
+	t.Logf("blessed_files=%d foreign=%d nested_in_scan=%v", len(ledger.Blessed), len(c), scan.BySlug["hidden"] != nil)
+	must(t, genindex.Regenerate(w, scan))
+}

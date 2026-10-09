@@ -1,0 +1,6 @@
+$ ['python3', 'review_probes/red_data/extras.py']
+{"case": "P25-real-jsonl-sync", "exit": 0, "conflict_markers_in_published_metadata": true, "both_original_records_present": true}
+{"case": "P26-write-sync-cache-control", "exit": 0, "remote_file_exists": true, "cache_before_search": ["fir"], "search_exit": 0, "cache_after_search": ["fir", "spruce"]}
+{"case": "P27-real-concurrent-cli-startup", "calls": 36, "failed": 0, "errors": []}
+
+EXIT 0

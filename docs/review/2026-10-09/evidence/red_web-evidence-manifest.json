@@ -1,0 +1,103 @@
+{
+  "checked_at_utc": "2026-10-09T05:39:00.875047+00:00",
+  "report": "docs/review/2026-10-09/09-red-web-docs.md",
+  "report_sha256": "66de623c123cc3d1c339b18a5e597b2ac4426e9e72817c7f6322e90127713a0f",
+  "files": [
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-auto-response.cjs.txt",
+      "bytes": 2035,
+      "sha256": "73b04d8a2a839ae1957ae50f1d7e943635a41c5196668da75e66c1759fe8dc89"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-build.txt",
+      "bytes": 399,
+      "sha256": "2477cc922b275d7699ede8458dde47dae1341b75d88cd9781f2942a2ed5322d6"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-cli-results.json",
+      "bytes": 56409,
+      "sha256": "59bf969b063c24ae1161c9144adc293f25c7707f6d9baf2dbe1b050b5c9bdee5"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-existing-tests.txt",
+      "bytes": 338,
+      "sha256": "dac139ed27f18780c1ffeee4c144573919e37d569c1a90e7f8c2627227a85511"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-existing-ui-tests.txt",
+      "bytes": 3699,
+      "sha256": "8a34477402c82052cd27637a5dbd30e50b58582e18ef0de549419771efea7796"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-extra-http-results.txt",
+      "bytes": 749,
+      "sha256": "317a1e8999c8a1e0c97c53049e0426cdbd97009033a5116e5792c6ef0643edd1"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-extra-results.json",
+      "bytes": 8837,
+      "sha256": "6b6c1ee58010552a7b5f45d715225307b18ca6fa39a31e439fdfac33fbec3ef1"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-extra.py.txt",
+      "bytes": 2891,
+      "sha256": "cdca5637bde77b750ffea569da1e88c24bccf1c33d446972651861619f996a77"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-extra_test.go.txt",
+      "bytes": 2885,
+      "sha256": "1dedc83fc8c71b84e26c914ee5eca34d468a1abbfb0b66fb448b43861dfcd1b8"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-final-check.json",
+      "bytes": 2822,
+      "sha256": "582964d65740cc2a58632d73e5ba3b529527f9417d8f88444d8cd76b18196718"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-http-results.txt",
+      "bytes": 4550,
+      "sha256": "80fe3b2efd523af845ae3ffcc904cc11313d7c48f5e9ff178cc2a811fe298d57"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-inventory.json",
+      "bytes": 105823,
+      "sha256": "302a768e6ecbe85095db6f8cf5383d66d4907ef52d127ae5b7de052229851423"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-js-results.txt",
+      "bytes": 968,
+      "sha256": "ac38bd98de7bef7aeefc920d06f54cc96dc42d54ce6daea634fee20eeb3cfbd7"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-original-check.json",
+      "bytes": 83266,
+      "sha256": "9147c0877780ff18fe45f8a497fc59fe98da640be91fbb4a8e5c237c6a59a16c"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-probe_test.go.txt",
+      "bytes": 16925,
+      "sha256": "6b30ce89ee1f47a1462f4f844d7ea0173dbf82b7c29320ec337cb88f563a183d"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-race-results.txt",
+      "bytes": 994,
+      "sha256": "b02dab69e2937b25250d422b764563552a11a41ae321458c2f9d7bf808b510b6"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-runner.py.txt",
+      "bytes": 14095,
+      "sha256": "bd211f55c2b06c73e834a0425674429b6edef42b2490f8a95b94e2f7f7bea8a1"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-sync-json-results.json",
+      "bytes": 1514,
+      "sha256": "0e5a8c4706e519031f5ee59116a5d6ad9d4c3bad09b9afad7a503d9eded151b5"
+    },
+    {
+      "path": "docs/review/2026-10-09/evidence/red_web-sync-json.py.txt",
+      "bytes": 1317,
+      "sha256": "5b2e9447c3edb60ddd9e943f3e3e230ab2f1a730f8e3d834748e906305f9a34f"
+    }
+  ],
+  "excludes_self": true
+}

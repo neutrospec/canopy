@@ -1,0 +1,63 @@
+Final independent docs review checks, 2026-10-09
+{
+  "target_commit": "ede67e302a8487aecbb4d59587a8686292018cf6",
+  "changed_original_documents": [],
+  "tracked_diff_empty": true,
+  "tracked_go_files_checked": 82,
+  "tracked_go_format_output": "",
+  "i18n_output": "scripts/i18n-check.sh\n✓ i18n: 4 translation(s) current",
+  "relative_file_links_checked": 160,
+  "broken_relative_file_links": [],
+  "excluded_link_notation_examples": [
+    {
+      "source": "docs/i18n.md",
+      "target": "…"
+    },
+    {
+      "source": "docs/i18n.md",
+      "target": "…"
+    }
+  ],
+  "findings_and_proposal_ids": [
+    "DOC-01",
+    "DOC-02",
+    "DOC-03",
+    "DOC-04",
+    "DOC-05",
+    "DOC-06",
+    "DOC-07",
+    "DOC-08",
+    "DOC-09",
+    "DOC-10",
+    "DOC-11",
+    "DOC-12",
+    "DOC-13",
+    "DOC-14",
+    "DOC-15",
+    "DOC-16",
+    "DOC-17",
+    "DOC-18",
+    "DOC-19",
+    "DOC-20"
+  ],
+  "report_mermaid": "{\"parser_failures\":0,\"report_mermaid_blocks\":1}",
+  "probe_removed": true,
+  "fixture_heads_absent": true,
+  "markdown_fences": 8,
+  "limits": [
+    "Only tracked Go files were passed to gofmt -l, avoiding other workers probes",
+    "No anchors or external URL verification",
+    "No full ordinary/race rerun",
+    "No Browser/ORT/Homebrew/remote sync execution"
+  ]
+}
+
+Actual read-only command results:
+{"argv": ["git", "rev-parse", "HEAD"], "exit": 0, "stdout": "ede67e302a8487aecbb4d59587a8686292018cf6\n", "stderr": ""}
+{"argv": ["git", "diff", "--name-only"], "exit": 0, "stdout": "", "stderr": ""}
+{"argv": ["git", "diff", "--cached", "--name-only"], "exit": 0, "stdout": "", "stderr": ""}
+{"argv": ["git", "ls-files", "*.go"], "exit": 0, "stdout": "82 tracked Go paths; see next gofmt argv", "stderr": ""}
+{"argv": ["gofmt", "-l", "cmd/canopy/checkout.go", "cmd/canopy/events.go", "cmd/canopy/main.go", "cmd/canopy/read.go", "cmd/canopy/recall.go", "cmd/canopy/reconcile.go", "cmd/canopy/resurface.go", "cmd/canopy/serve.go", "cmd/canopy/tasks.go", "cmd/canopy/write.go", "internal/attention/attention_test.go", "internal/attention/events.go", "internal/attention/gaps.go", "internal/attention/touch.go", "internal/buildinfo/buildinfo.go", "internal/checkout/checkout.go", "internal/checkout/checkout_test.go", "internal/config/config.go", "internal/config/config_test.go", "internal/digest/digest.go", "internal/digest/digest_test.go", "internal/embed/chunk.go", "internal/embed/engine.go", "internal/embed/engine_ort.go", "internal/embed/engine_stub.go", "internal/genindex/genindex.go", "internal/genindex/genindex_test.go", "internal/gitops/gitops.go", "internal/indexer/indexer.go", "internal/lint/audit.go", "internal/lint/lint.go", "internal/lint/lint_test.go", "internal/logops/logops.go", "internal/logops/logops_test.go", "internal/mermaid/mermaid.go", "internal/mermaid/mermaid_test.go", "internal/migrate/migrate.go", "internal/migrate/migrate_test.go", "internal/migrate/migrations.go", "internal/reads/reads.go", "internal/reads/reads_test.go", "internal/reconcile/reconcile.go", "internal/reconcile/reconcile_test.go", "internal/resurface/pick.go", "internal/resurface/pick_test.go", "internal/resurface/state.go", "internal/search/search.go", "internal/search/search_test.go", "internal/skills/skills.go", "internal/skills/skills_test.go", "internal/store/store.go", "internal/store/store_test.go", "internal/store/vectors.go", "internal/tasks/tasks.go", "internal/tasks/tasks_test.go", "internal/webui/auth.go", "internal/webui/auth_test.go", "internal/webui/browse.go", "internal/webui/discover.go", "internal/webui/edit.go", "internal/webui/graph.go", "internal/webui/history.go", "internal/webui/i18n.go", "internal/webui/i18n_test.go", "internal/webui/mermaid_serve_test.go", "internal/webui/render.go", "internal/webui/render_test.go", "internal/webui/server.go", "internal/webui/speak.go", "internal/webui/suggest.go", "internal/webui/tasks.go", "internal/webui/tasks_test.go", "internal/webui/workspace_test.go", "internal/wiki/edit.go", "internal/wiki/edit_test.go", "internal/wiki/page.go", "internal/wiki/page_test.go", "internal/wiki/slug.go", "internal/writeops/writeops.go", "spike/main.go", "spike/session_go.go", "spike/session_ort.go"], "exit": 0, "stdout": "", "stderr": ""}
+{"argv": ["make", "i18n-check"], "exit": 0, "stdout": "scripts/i18n-check.sh\n✓ i18n: 4 translation(s) current\n", "stderr": ""}
+{"argv": ["git", "-C", "/private/tmp/canopy-audit-20261009/docs/cli-n47_0t_1/wiki", "rev-parse", "--verify", "HEAD"], "exit": 128, "stdout": "", "stderr": "fatal: Needed a single revision\n"}
+{"argv": ["git", "-C", "/private/tmp/canopy-audit-20261009/docs/extra-y_fo6y1d/wiki-b", "rev-parse", "--verify", "HEAD"], "exit": 128, "stdout": "", "stderr": "fatal: Needed a single revision\n"}

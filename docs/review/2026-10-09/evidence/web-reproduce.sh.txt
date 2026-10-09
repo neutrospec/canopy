@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Run from the canopy repository root, on the reviewed revision.
+# This is a non-build evidence file. Requires cached Go dependencies and Node.
+set -euo pipefail
+web_repo="$(pwd)"
+web_evidence="$web_repo/docs/review/2026-10-09/evidence"
+web_probe="$web_repo/review_probes/web"
+web_fixture=/private/tmp/canopy-audit-20261009/web
+test -f "$web_repo/internal/webui/server.go"
+if test -e "$web_probe"; then
+  echo "Refusing to overwrite existing $web_probe" >&2
+  exit 1
+fi
+mkdir -p "$web_probe" "$web_fixture"/{tmp,xdg-config,xdg-state,xdg-data,xdg-cache} /private/tmp/canopy-review/go-cache
+web_cleanup() {
+  python3 - "$web_probe" <<'PY'
+from pathlib import Path
+import sys
+
+probe = Path(sys.argv[1])
+assert probe.name == "web" and probe.parent.name == "review_probes"
+assert probe.is_dir() and not probe.is_symlink()
+allowed = {"go.mod", "go.sum", "probe_test.go", "main.go", "adapter-probe.cjs"}
+entries = list(probe.iterdir())
+assert {entry.name for entry in entries} <= allowed
+assert all(entry.is_file() and not entry.is_symlink() for entry in entries)
+for entry in entries:
+    entry.unlink()
+probe.rmdir()
+PY
+}
+trap web_cleanup EXIT
+cp "$web_evidence/web-go.mod.txt" "$web_probe/go.mod"
+cp "$web_evidence/web-probe-test.go.txt" "$web_probe/probe_test.go"
+cp "$web_evidence/web-server-main.go.txt" "$web_probe/main.go"
+cp "$web_evidence/web-adapter-probe.cjs.txt" "$web_probe/adapter-probe.cjs"
+cp "$web_repo/go.sum" "$web_probe/go.sum"
+web_env=(env GOCACHE=/private/tmp/canopy-review/go-cache GOPROXY=off GOENV=off
+  "XDG_CONFIG_HOME=$web_fixture/xdg-config" "XDG_CACHE_HOME=$web_fixture/xdg-cache"
+  "XDG_STATE_HOME=$web_fixture/xdg-state" "XDG_DATA_HOME=$web_fixture/xdg-data"
+  "TMPDIR=$web_fixture/tmp")
+(
+  cd "$web_probe"
+  if test "${1:-}" = --race; then
+    "${web_env[@]}" CGO_ENABLED=1 go test -race -mod=mod -count=1 -v \
+      -run 'TestConcurrentProposals|TestConcurrentReadsAndFeedback|TestConcurrentReadServing' . \
+      | tee "$web_fixture/reproduced-race.txt"
+  else
+    "${web_env[@]}" CGO_ENABLED=0 go test -mod=mod -count=1 -v . \
+      | tee "$web_fixture/reproduced.txt"
+    node adapter-probe.cjs | tee "$web_fixture/reproduced-adapter.txt"
+  fi
+)

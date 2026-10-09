@@ -1,0 +1,8 @@
+Command: orca tab list --json
+Observed: tabs=[]
+Command: orca tab create --url http://127.0.0.1:51805/page/alpha --json
+Exit: 1
+Error code: runtime_error
+Error message: Browser tabs are unavailable while a remote runtime is active
+Disposable loopback server stopped with SIGINT; exec exit code 130.
+No browser page or screenshot was created.

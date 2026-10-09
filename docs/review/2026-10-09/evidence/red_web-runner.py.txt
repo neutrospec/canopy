@@ -1,0 +1,158 @@
+from pathlib import Path
+import hashlib
+import json
+import os
+import shlex
+import signal
+import socket
+import subprocess
+import tempfile
+import time
+import urllib.request
+
+REPO = Path('/Users/nobocop/play/canopy')
+EVIDENCE = REPO / 'docs/review/2026-10-09/evidence'
+BASE = Path('/private/tmp/canopy-audit-20261009')
+RUN = Path(tempfile.mkdtemp(prefix='red_web-', dir=BASE))
+ENV = os.environ.copy()
+for key in ['CANOPY_WIKI', 'PI_CODING_AGENT_DIR', 'GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_CONFIG_COUNT',
+            'GIT_AUTHOR_NAME', 'GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_NAME', 'GIT_COMMITTER_EMAIL']:
+    ENV.pop(key, None)
+for key, folder in [('HOME','home'), ('XDG_CONFIG_HOME','config'), ('XDG_STATE_HOME','state'),
+                    ('XDG_CACHE_HOME','cache'), ('XDG_DATA_HOME','data'), ('TMPDIR','tmp'), ('GOPATH','gopath')]:
+    (RUN/folder).mkdir()
+    ENV[key] = str(RUN/folder)
+ENV.update(GOTELEMETRY='off', GOCACHE='/private/tmp/canopy-review/go-cache', GOPROXY='off',
+           GOMODCACHE='/Users/nobocop/go/pkg/mod', GOTOOLCHAIN='local', GOENV='off', GOSUMDB='off',
+           GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL='/dev/null', GIT_TERMINAL_PROMPT='0')
+RECORDS = []
+
+def command(args, cwd=RUN, stdin=None, extra=None, timeout=90):
+    env = ENV.copy()
+    if extra:
+        env.update(extra)
+    p = subprocess.run([str(a) for a in args], cwd=cwd, env=env, input=stdin, capture_output=True, text=True, timeout=timeout)
+    r = dict(argv=[str(a) for a in args], cwd=str(cwd), exit=p.returncode, stdout=p.stdout, stderr=p.stderr)
+    RECORDS.append(r)
+    return r
+
+def obs(name, **data):
+    r = dict(probe=name, **data)
+    RECORDS.append(r)
+    print(json.dumps(r, ensure_ascii=False), flush=True)
+
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
+
+def save():
+    (EVIDENCE/'red_web-cli-results.json').write_text(json.dumps(dict(run=str(RUN), env={k:ENV[k] for k in
+      ['HOME','XDG_CONFIG_HOME','XDG_STATE_HOME','XDG_CACHE_HOME','XDG_DATA_HOME','TMPDIR','GOTELEMETRY','GOCACHE','GOPROXY','GOMODCACHE','GOPATH','GOENV','GOTOOLCHAIN']}, records=RECORDS), ensure_ascii=False, indent=2)+'\n')
+
+try:
+    r=command(['go','version'], cwd=REPO); obs('go-version', result=r['stdout'].strip(), exit=r['exit'])
+    formatted=command(['gofmt','-w','review_probes/red_web/probe_test.go'],cwd=REPO)
+    assert formatted['exit']==0, formatted
+    BIN=RUN/'canopy'
+    build=command(['go','build','-mod=readonly','-ldflags','-X github.com/neutrospec/canopy/internal/buildinfo.version=v0.10.0 -X github.com/neutrospec/canopy/internal/buildinfo.commit=ede67e3','-o',BIN,'./cmd/canopy'],cwd=REPO,extra={'CGO_ENABLED':'0'})
+    (EVIDENCE/'red_web-build.txt').write_text(json.dumps(build,ensure_ascii=False,indent=2)+'\n')
+    assert build['exit']==0,build
+    tests=command(['go','test','-mod=readonly','-count=1','-v','./review_probes/red_web'],cwd=REPO,extra={'CGO_ENABLED':'0'},timeout=120)
+    (EVIDENCE/'red_web-http-results.txt').write_text(tests['stdout']+tests['stderr'])
+    print(tests['stdout'],flush=True)
+    assert tests['exit']==0,tests
+    # Existing green tests are controls, not proof of the challenged claims.
+    tests=command(['go','test','-mod=readonly','-count=1','./internal/webui','./internal/tasks','./internal/reads','./internal/mermaid','./internal/lint','./internal/skills'],cwd=REPO,extra={'CGO_ENABLED':'0'},timeout=120)
+    (EVIDENCE/'red_web-existing-tests.txt').write_text(tests['stdout']+tests['stderr'])
+    assert tests['exit']==0,tests
+    js=command(['node',REPO/'review_probes/red_web/auto-response.cjs',REPO]);(EVIDENCE/'red_web-js-results.txt').write_text(js['stdout']+js['stderr']);assert js['exit']==0,js
+    existingjs=command(['node','--test','internal/webui/uitest/app.test.cjs'],cwd=REPO);(EVIDENCE/'red_web-existing-ui-tests.txt').write_text(existingjs['stdout']+existingjs['stderr']);assert existingjs['exit']==0,existingjs
+
+    def canopy(*args, cwd=RUN, stdin=None, extra=None):
+        return command([BIN,*args],cwd=cwd,stdin=stdin,extra=extra)
+    a=RUN/'wiki with spaces';a.mkdir();b=RUN/'other-wiki';b.mkdir()
+    assert canopy('init','--wiki',a,'--json')['exit']==0
+    assert canopy('init','--wiki',b,'--json')['exit']==0
+    bare=canopy('new','첫 페이지','--type','concept','--tags','tool','--wiki',a)
+    positive=canopy('new','검토 첫 페이지','--slug','maple','--type','concept','--tags','tool','--wiki',a,'--json','--body-file','-',stdin='Original recorded knowledge.\n')
+    kw=canopy('search','knowledge','--mode','hybrid','--wiki',a,'--json')
+    recall=canopy('recall','knowledge','--wiki',a,'--json')
+    obs('first-success', bare_exit=bare['exit'], bare_error=bare['stderr'], explicit_exit=positive['exit'], hybrid_exit=kw['exit'], hybrid_stdout=kw['stdout'], recall_exit=recall['exit'])
+
+    roots=[]
+    for case,cwd,extra,args in [
+      ('default',RUN,{},[]),('cwd',b,{},[]),('environment',b,{'CANOPY_WIKI':str(a)},[]),
+      ('explicit',b,{'CANOPY_WIKI':str(b)},['--wiki',str(a)])]:
+        r=canopy('status','--json',*args,cwd=cwd,extra=extra);roots.append(dict(case=case,root=json.loads(r['stdout'])['root'],exit=r['exit']))
+    obs('root-resolution', cases=roots)
+
+    badflag=canopy('new','Broken explicit link','--slug','bad-flag','--type','concept','--links','does-not-exist','--wiki',a,'--json')
+    bodylink=canopy('new','Broken body link','--slug','body-link','--type','concept','--wiki',a,'--json','--body-file','-',stdin='Review [[does-not-exist]].\n')
+    lintresult=canopy('lint','--wiki',a,'--json')
+    page=a/'concepts/maple.md';page.write_text(page.read_text().replace('tags: [tool]','tags: [outside-taxonomy]'))
+    updated=canopy('update','maple','--wiki',a,'--json','--body-file','-',stdin='New body with frontmatter retained.\n')
+    co=canopy('checkout','maple','--wiki',a,'--json');invalid=canopy('checkin','maple','--wiki',a,'--json');canopy('checkin','maple','--wiki',a,'--discard','--json')
+    obs('gate-json', explicit_bad_link_exit=badflag['exit'], body_bad_link_exit=bodylink['exit'], broken_link_count=json.loads(lintresult['stdout'])['counts'].get('broken-link',0),invalid_tag_update_exit=updated['exit'], update_stdout=updated['stdout'], invalid_tag_checkin_exit=invalid['exit'])
+    page.write_text(page.read_text().replace('tags: [outside-taxonomy]','tags: [tool]'))
+    outputs=[]
+    canopy('new','Move','--slug','move','--type','concept','--wiki',a,'--json')
+    for args in [('mv','move','--slug','moved'),('archive','moved')]:
+        r=canopy(*args,'--wiki',a,'--json');outputs.append(dict(command=args[0],exit=r['exit'],stdout=r['stdout'],stderr=r['stderr']))
+    canopy('new','Remove','--slug','remove','--type','concept','--wiki',a,'--json');r=canopy('rm','remove','--wiki',a,'--json');outputs.append(dict(command='rm',exit=r['exit'],stdout=r['stdout'],stderr=r['stderr']))
+    obs('json-mutations', outputs=outputs)
+
+    custom=RUN/'custom-skills';install=canopy('skills','install','--dir',custom,'--json');plain=canopy('skills','install','--json')
+    obs('skills-install', explicit_exit=install['exit'], subsequent_plain_exit=plain['exit'], subsequent_error=plain['stderr'])
+
+    # Stronger than a synthetic Mermaid failure: duplicate slug makes show
+    # succeed with unrelated old content, then unconditional cleanup hides failure.
+    unique=RUN/'sole-proposal-body.md';unique.write_text('Replacement intention that was never stored.\n')
+    script='\n'.join(['body_file='+shlex.quote(str(unique)),shlex.quote(str(BIN))+' new '+shlex.quote('새 개념')+' --type concept --slug maple --body-file "$body_file" --wiki '+shlex.quote(str(a)),shlex.quote(str(BIN))+' show maple --wiki '+shlex.quote(str(a)),'rm "$body_file"'])
+    shell=command(['zsh','-f','-c',script]);obs('unconditional-example', shell_exit=shell['exit'], source_exists=unique.exists(), existing_page_contains_intent='Replacement intention' in page.read_text(), stderr=shell['stderr'])
+    unique.write_text('Replacement intention retained after failure.\n')
+    guarded='\n'.join(['body_file='+shlex.quote(str(unique)),'if '+shlex.quote(str(BIN))+' new '+shlex.quote('새 개념')+' --type concept --slug maple --body-file "$body_file" --wiki '+shlex.quote(str(a))+'; then','  '+shlex.quote(str(BIN))+' show maple --wiki '+shlex.quote(str(a))+' && rm "$body_file"','else','  exit 1','fi'])
+    gs=command(['zsh','-f','-c',guarded]);obs('guarded-example',exit=gs['exit'],source_preserved=unique.exists())
+    partial=RUN/'partial-wiki';partial.mkdir();canopy('init','--wiki',partial,'--json');(partial/'logs').write_text('obstruction')
+    pr=canopy('new','Partial','--slug','partial','--type','concept','--wiki',partial,'--json','--body-file','-',stdin='Partial content survived.\n')
+    obs('partial-new', exit=pr['exit'],page_exists=(partial/'concepts/partial.md').exists(),index_exists=(partial/'index.md').exists())
+
+    # Preserve append-only history instead of just checking an HTML marker.
+    logs=sorted((a/'logs').glob('*.jsonl'));logfile=logs[-1];lines=logfile.read_text().splitlines();entry=json.loads(lines[0]);entry['note']='red-history-canary';lines[0]=json.dumps(entry,ensure_ascii=False);logfile.write_text('\n'.join(lines)+'\n');count_before=len(lines)
+    canopy('update','maple','--wiki',a,'--json');canopy('reindex','--wiki',a,'--json');obs('logs-history', old_note=json.loads(logfile.read_text().splitlines()[0])['note'],old_rows=count_before,after_rows=len(logfile.read_text().splitlines()))
+
+    cfg=a/'canopy.toml';cfg.write_text(cfg.read_text().replace('[schema]','[schema]\n  tags = ["legacy-extra"]',1));tags=canopy('tags','--wiki',a,'--json');audit=canopy('tags','--audit','--wiki',a,'--json');obs('mixed-taxonomy',tag_present='legacy-extra' in json.loads(tags['stdout'])['tags'],audit_has_tag='legacy-extra' in audit['stdout'],audit_legacy=json.loads(audit['stdout'])['legacy'])
+    wrongw=command(['zsh','-f','-c','audit_w='+shlex.quote('--wiki '+str(a))+'\n'+shlex.quote(str(BIN))+' lint $audit_w --json']);correctw=command(['zsh','-f','-c','wiki='+shlex.quote(str(a))+'\n'+shlex.quote(str(BIN))+' lint --wiki "$wiki" --json']);obs('W-shell', mixed_flag_exit=wrongw['exit'],quoted_path_exit=correctw['exit'])
+
+    # Git is confined to the disposable fixture; local bare repo is the only remote.
+    g=RUN/'git-wiki';g.mkdir();canopy('init','--wiki',g,'--json');canopy('new','Git page','--slug','git-page','--type','concept','--wiki',g,'--json')
+    command(['git','init','-b','main',g]);noid=canopy('sync','--wiki',g,'--json');obs('identity-missing',exit=noid['exit'],error=noid['stderr'],unborn=command(['git','-C',g,'rev-parse','--verify','HEAD'])['exit']!=0)
+    command(['git','-C',g,'config','user.name','Red Web Fixture']);command(['git','-C',g,'config','user.email','red-web@example.invalid']);command(['git','-C',g,'add','-A']);command(['git','-C',g,'commit','-m','fixture baseline'])
+    remote=RUN/'only-local-remote.git';command(['git','init','--bare',remote]);command(['git','-C',g,'remote','add','origin',remote]);command(['git','-C',g,'push','-u','origin','main'])
+    gp=g/'concepts/git-page.md';before=digest(gp);status_before=command(['git','-C',g,'status','--porcelain'])['stdout'];checkout=canopy('checkout','git-page','--wiki',g,'--json');status_after=command(['git','-C',g,'status','--porcelain'])['stdout'];checkout2=canopy('checkout','git-page','--wiki',g,'--json')
+    show=canopy('show','git-page','--no-mark','--wiki',g);status=canopy('status','--wiki',g,'--json');obs('checkout-banner',page_unchanged=before==digest(gp),git_before=status_before,git_after=status_after,second_checkout_exit=checkout2['exit'],show_stderr=show['stderr'],open_count=json.loads(status['stdout'])['checkouts_open'])
+    canopy('checkin','git-page','--wiki',g,'--discard','--json');canopy('sync','--wiki',g,'--json');os.utime(gp,None);touch=command(['git','-C',g,'status','--porcelain'])['stdout'];obs('touch-banner-premise',git_status=touch)
+    unrelated=g/'raw/preexisting-notes.txt';unrelated.parent.mkdir(exist_ok=True);unrelated.write_text('Preexisting outside this task purpose.\n');sync=canopy('sync','--wiki',g,'--json');remoteText=command(['git','--git-dir',remote,'show','main:raw/preexisting-notes.txt'])
+    obs('task-start-sync',sync_exit=sync['exit'],sync_stdout=sync['stdout'],local_remote_contains_unrelated=remoteText['exit']==0,remote_content=remoteText['stdout'])
+
+    # Actual CLI service, loopback only, bounded lifetime; no production service.
+    portSocket=socket.socket();portSocket.bind(('127.0.0.1',0));port=portSocket.getsockname()[1];portSocket.close()
+    output=RUN/'serve.log'
+    with output.open('w') as sink:
+        proc=subprocess.Popen([str(BIN),'serve','--wiki',str(a),'--addr',f'127.0.0.1:{port}'],cwd=RUN,env=ENV,stdout=sink,stderr=sink)
+        try:
+            url=f'http://127.0.0.1:{port}/api/preview/maple'
+            for attempt in range(100):
+                try:
+                    with urllib.request.urlopen(url,timeout=1) as response: response.read();break
+                except Exception:
+                    if proc.poll() is not None: raise RuntimeError(output.read_text())
+                    time.sleep(.03)
+            req=urllib.request.Request(url,headers={'Host':f'foreign.invalid:{port}'})
+            with urllib.request.urlopen(req,timeout=5) as response:
+                hostCode=response.status;hostBody=response.read().decode()
+            conn=socket.create_connection(('127.0.0.1',port),timeout=3);conn.sendall(b'GET /api/preview/maple HTTP/1.1\r\nHost: localhost\r\n');time.sleep(1.2);conn.sendall(b'Connection: close\r\n\r\n');line=conn.makefile('rb').readline().decode().strip();conn.close()
+            obs('actual-cli-serve',foreign_host_status=hostCode,foreign_host_body=hostBody,header_hold_seconds=1.2,completed_header_response=line)
+        finally:
+            proc.send_signal(signal.SIGINT);proc.wait(timeout=5)
+    obs('finish',tracked_diff=command(['git','diff','--name-only'],cwd=REPO)['stdout'],source_index_diff=command(['git','diff','--cached','--name-only'],cwd=REPO)['stdout'])
+finally:
+    save()

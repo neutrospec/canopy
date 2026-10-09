@@ -1,0 +1,63 @@
+[
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "init",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/actual-cli-serve"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.016,
+    "stdout": "{\n  \"db\": \"/private/tmp/canopy-review-def-web-duv7b75v/cache/canopy/index/4214301c0b1f.db\",\n  \"default_wiki_set\": false,\n  \"pages\": 0,\n  \"root\": \"/private/tmp/canopy-review-def-web-duv7b75v/actual-cli-serve\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "new",
+      "served",
+      "--slug",
+      "served",
+      "--type",
+      "concept",
+      "--tags",
+      "tool",
+      "--body-file",
+      "-",
+      "--json",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/actual-cli-serve"
+    ],
+    "cwd": "/private/tmp/canopy-review-def-web-duv7b75v",
+    "exit": 0,
+    "seconds": 0.013,
+    "stdout": "{\n  \"created\": \"concepts/served.md\",\n  \"related\": []\n}\n",
+    "stderr": ""
+  },
+  {
+    "observation": "cli-foreign-host",
+    "status": 200,
+    "canary": true
+  },
+  {
+    "observation": "cli-slow-header",
+    "seconds": 1.103,
+    "status_line": "HTTP/1.1 200 OK"
+  },
+  {
+    "observation": "cli-server-lifecycle",
+    "argv": [
+      "/private/tmp/canopy-review-def-web-duv7b75v/canopy",
+      "serve",
+      "--wiki",
+      "/private/tmp/canopy-review-def-web-duv7b75v/actual-cli-serve",
+      "--addr",
+      "127.0.0.1:54982"
+    ],
+    "exit": 0,
+    "stdout": "✓ serving /private/tmp/canopy-review-def-web-duv7b75v/actual-cli-serve on http://127.0.0.1:54982\n",
+    "stderr": "embedding stack missing — search degrades to keyword only\n2026/10/09 14:51:16 GET /api/preview/served\n2026/10/09 14:51:17 GET /api/preview/served\n"
+  }
+]

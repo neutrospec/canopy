@@ -1,0 +1,67 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/neutrospec/canopy/internal/config"
+	"github.com/neutrospec/canopy/internal/lint"
+	"github.com/neutrospec/canopy/internal/mermaid"
+	"github.com/neutrospec/canopy/internal/webui"
+	"github.com/neutrospec/canopy/internal/wiki"
+)
+
+func main() {
+	base := "/private/tmp/canopy-audit-20261009/docs"
+	run, err := os.MkdirTemp(base, "contract-")
+	if err != nil {
+		panic(err)
+	}
+	for _, key := range []string{"HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME"} {
+		if err := os.Setenv(key, filepath.Join(run, strings.ToLower(key))); err != nil {
+			panic(err)
+		}
+	}
+	root := filepath.Join(run, "wiki")
+	if err := os.MkdirAll(filepath.Join(root, "concepts"), 0o755); err != nil {
+		panic(err)
+	}
+	w := &config.Wiki{Root: root, Cfg: config.Default()}
+	body := wiki.NewPageContent("한글 표제", "concept", "2026-10-09", nil, nil, "An audit fixture.\n")
+	path := filepath.Join(root, "concepts", "alpha.md")
+	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+		panic(err)
+	}
+	s, err := webui.NewServer(w, nil)
+	if err != nil {
+		panic(err)
+	}
+	for _, query := range []string{"한글 표제", "alpha"} {
+		rec := httptest.NewRecorder()
+		s.Handler().ServeHTTP(rec, httptest.NewRequest("GET", "/search?q="+url.QueryEscape(query), nil))
+		out, _ := json.Marshal(map[string]any{"probe": "exact_search", "query": query, "status": rec.Code, "location": rec.Header().Get("Location")})
+		fmt.Println(string(out))
+	}
+	lines := strings.Split(body, "\n")
+	var kept []string
+	for _, line := range lines {
+		if !strings.HasPrefix(line, "tags:") {
+			kept = append(kept, line)
+		}
+	}
+	if err := os.WriteFile(path, []byte(strings.Join(kept, "\n")), 0o644); err != nil {
+		panic(err)
+	}
+	scan, err := wiki.Scan(w)
+	if err != nil {
+		panic(err)
+	}
+	report := lint.Run(w, scan, mermaid.NewValidator())
+	out, _ := json.Marshal(map[string]any{"probe": "A3_missing_tags", "counts": report.Counts, "frontmatter_fields": report.Counts["frontmatter-fields"], "has_frontmatter": scan.BySlug["alpha"].HasFrontmatter, "run": run})
+	fmt.Println(string(out))
+}

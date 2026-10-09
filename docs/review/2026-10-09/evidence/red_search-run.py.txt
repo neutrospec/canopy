@@ -1,0 +1,125 @@
+"""Independent Group B probes. Only own scratch, evidence and /private/tmp are written.
+Run from any cwd using python3; no native/model assets or model downloads are used.
+"""
+from pathlib import Path
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import tempfile
+import time
+
+REPO = Path(__file__).resolve().parents[4]
+EVIDENCE = Path(__file__).resolve().parent
+PARENT = Path('/private/tmp/canopy-audit-20261009')
+PARENT.mkdir(parents=True, exist_ok=True)
+BASE = Path(tempfile.mkdtemp(prefix='red_search-', dir=PARENT))
+SCRATCH = REPO / 'review_probes/red_search'
+if SCRATCH.exists():
+    raise SystemExit('Refusing to overwrite own existing scratch')
+ENV = dict(os.environ)
+for key, sub in [('HOME','home'),('XDG_CONFIG_HOME','config'),('XDG_DATA_HOME','data'),
+                 ('XDG_CACHE_HOME','cache'),('XDG_STATE_HOME','state'),('TMPDIR','tmp')]:
+    p = BASE / sub
+    p.mkdir()
+    ENV[key] = str(p)
+ENV.update(GOCACHE='/private/tmp/canopy-review/go-cache', GOPROXY='off',
+           GOMODCACHE='/Users/nobocop/go/pkg/mod', GOPATH=str(BASE/'go'),
+           GOTOOLCHAIN='local', GOTELEMETRY='off', CGO_ENABLED='0', GOFLAGS='',
+           CANOPY_WIKI='', PI_CODING_AGENT_DIR='', RED_SEARCH_FIXTURES=str(BASE/'fixtures'))
+ENV.update(GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL='/dev/null', GIT_TERMINAL_PROMPT='0')
+records = []
+def save():
+    (EVIDENCE/'red_search-run.jsonl.txt').write_text(''.join(json.dumps(r, ensure_ascii=False)+'\n' for r in records))
+def run(label, args, changes=None, timeout=90):
+    env = dict(ENV)
+    env.update(changes or {})
+    started = time.monotonic()
+    p = subprocess.run([str(a) for a in args], cwd=REPO, env=env, capture_output=True, text=True, timeout=timeout)
+    row = dict(label=label, argv=[str(a) for a in args], cwd=str(REPO), exit=p.returncode,
+               elapsed_ms=round((time.monotonic()-started)*1000), stdout=p.stdout, stderr=p.stderr)
+    records.append(row);save()
+    print(json.dumps(dict(label=label, exit=p.returncode, elapsed_ms=row['elapsed_ms']), ensure_ascii=False), flush=True)
+    return row
+def require_ok(row):
+    if row['exit'] != 0:
+        raise RuntimeError(row['label']+': '+row['stderr'])
+
+def page(wiki, slug, body, tags='tags: []\n', title=None):
+    (wiki/'concepts').mkdir(parents=True, exist_ok=True)
+    (wiki/'concepts'/f'{slug}.md').write_text('---\ntitle: '+(title or slug)+'\ntype: concept\ncreated: 2026-10-08\nupdated: 2026-10-09\n'+tags+'---\n'+body)
+
+tracked = subprocess.check_output(['git','ls-files','-z'], cwd=REPO, env=ENV).split(b'\0')
+before = {f.decode():hashlib.sha256((REPO/f.decode()).read_bytes()).hexdigest()
+          for f in tracked if f and (REPO/f.decode()).is_file()}
+head = subprocess.check_output(['git','rev-parse','HEAD'], cwd=REPO, env=ENV, text=True).strip()
+index_path = Path(subprocess.check_output(['git','rev-parse','--git-path','index'], cwd=REPO, env=ENV, text=True).strip())
+if not index_path.is_absolute():index_path=REPO/index_path
+index = hashlib.sha256(index_path.read_bytes()).hexdigest()
+records.append(dict(label='environment', base=str(BASE), source_head=head, env={k:ENV[k] for k in ['HOME','XDG_CONFIG_HOME','XDG_DATA_HOME','XDG_CACHE_HOME','XDG_STATE_HOME','TMPDIR','GOCACHE','GOMODCACHE','GOPROXY','GOTOOLCHAIN','GOTELEMETRY','CGO_ENABLED','GOFLAGS']}))
+save()
+try:
+    SCRATCH.mkdir(parents=True)
+    shutil.copyfile(EVIDENCE/'red_search-main.go.txt', SCRATCH/'main.go')
+    require_ok(run('go-version',['go','version']))
+    require_ok(run('format-probe',['gofmt','-w',SCRATCH/'main.go']))
+    # Persist exactly the independently built source bytes as non-build evidence.
+    shutil.copyfile(SCRATCH/'main.go', EVIDENCE/'red_search-main.go.txt')
+    require_ok(run('tests',['go','test','-count=1','./internal/...','./cmd/canopy'],timeout=120))
+    require_ok(run('build-lite',['go','build','-o',BASE/'canopy-lite','./cmd/canopy']))
+    require_ok(run('build-probe',['go','build','-o',BASE/'red-search-probe','./review_probes/red_search']))
+    probe = run('independent-go-probes',[BASE/'red-search-probe'],timeout=120);require_ok(probe)
+    (EVIDENCE/'red_search-probe-output.txt').write_text(probe['stdout'])
+    lite = BASE/'canopy-lite'
+    w = BASE/'fixtures/cli'
+    page(w,'valve','valve solvent pressure.\n')
+    page(w,'spring','spring solvent pressure.\n')
+    require_ok(run('cli-init',[lite,'init','--wiki',w,'--json']))
+    for mode in ['keyword','hybrid','semantic']:
+        for k in [-1,0,1]:
+            run(f'cli-{mode}-k{k}',[lite,'search','solvent','--mode',mode,'-k='+str(k),'--wiki',w,'--json','--no-mark'])
+    bridge = BASE/'fixtures/cli_bridge'
+    run('bridge-stale',[lite,'bridge','--wiki',bridge,'--peek','--json'])
+    run('bridge-negative',[lite,'bridge','--wiki',bridge,'--peek','--json','-n=-1'])
+    bad = BASE/'fixtures/bad-model'
+    bundle = bad/'canopy/models/bge-m3'
+    bundle.mkdir(parents=True)
+    names = ['model.onnx','model.onnx.data','config.json','tokenizer.json','tokenizer_config.json','special_tokens_map.json']
+    for name in names:
+        (bundle/name).write_bytes(b'')
+    run('model-zero-status',[lite,'model','status','--wiki',w,'--json'],{'XDG_DATA_HOME':str(bad)})
+    require_ok(run('model-zero-pull-cached',[lite,'model','pull'],{'XDG_DATA_HOME':str(bad)}))
+    for name in names:
+        (bundle/name).unlink();(bundle/name).mkdir()
+    run('model-directory-status',[lite,'model','status','--wiki',w,'--json'],{'XDG_DATA_HOME':str(bad)})
+    require_ok(run('model-directory-pull-cached',[lite,'model','pull'],{'XDG_DATA_HOME':str(bad)}))
+    lintwiki = BASE/'fixtures/required-tags'
+    for label,tags in [('missing',''),('empty','tags: []\n'),('scalar','tags: tool\n'),('duplicate','tags: [tool, tool]\n')]:
+        page(lintwiki,'check','Check field validity.\n',tags=tags)
+        run('lint-tags-'+label,[lite,'lint','--wiki',lintwiki,'--json'])
+        if label=='duplicate':
+            run('tag-duplicate',[lite,'tags','--audit','--wiki',lintwiki,'--json'])
+    body_file=BASE/'duplicate-body.md';body_file.write_text('Normal source text.\n')
+    run('new-duplicate-tags',[lite,'new','Repeat tags','--slug','repeat-tags','--type','concept','--tags','tool,tool','--wiki',w,'--body-file',body_file,'--json'])
+    run('new-duplicate-audit',[lite,'tags','--audit','--wiki',w,'--json'])
+    page(w,'widget','Subroutine target.\n')
+    diagram_file=BASE/'diagram-body.md';diagram_file.write_text('~~~mermaid\nflowchart TD\n  R[[widget]] --> T["Done"]\n~~~\n')
+    run('cli-tilde-mermaid',[lite,'new','Fence test','--slug','fence-test','--type','concept','--wiki',w,'--body-file',diagram_file,'--json'])
+    run('cli-tilde-lint',[lite,'lint','--wiki',w,'--json'])
+    fakehome=BASE/'test-home';fakehome.mkdir()
+    require_ok(run('test-home-isolation',['go','test','-count=1','./internal/tasks','-run','^TestConnectDoneRequiresMutualLinks$'],{'HOME':str(fakehome),'XDG_STATE_HOME':''}))
+    files=[dict(path=str(p.relative_to(fakehome)),size=p.stat().st_size) for p in fakehome.rglob('*') if p.is_file()]
+    records.append(dict(label='test-home-leftovers',files=files));save()
+    require_ok(run('node-client-tests',['node','--test','internal/webui/uitest/app.test.cjs']))
+    require_ok(run('make-deps-linux-dryrun',['make','-Bn','deps','VERSION=review','COMMIT=review','DATE=review'],{'GOOS':'linux','GOARCH':'amd64'}))
+    require_ok(run('make-deps-intel-dryrun',['make','-Bn','deps','VERSION=review','COMMIT=review','DATE=review'],{'GOOS':'darwin','GOARCH':'amd64'}))
+finally:
+    if SCRATCH.exists():shutil.rmtree(SCRATCH)
+    after={f:hashlib.sha256((REPO/f).read_bytes()).hexdigest() for f in before if (REPO/f).is_file()}
+    now_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,env=ENV,text=True).strip()
+    now_index=hashlib.sha256(index_path.read_bytes()).hexdigest()
+    records.append(dict(label='source-preserved',head_unchanged=head==now_head,index_tree_unchanged=index==now_index,
+                        tracked_changed=[f for f in before if after.get(f)!=before[f]],scratch_removed=not SCRATCH.exists()))
+    save()
+print('Evidence saved in '+str(EVIDENCE/'red_search-run.jsonl.txt'),flush=True)

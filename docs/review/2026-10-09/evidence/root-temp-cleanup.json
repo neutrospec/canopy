@@ -1,0 +1,17 @@
+{
+  "recorded_utc": "2026-10-09T06:58:54.454994+00:00",
+  "fixtures": [
+    {
+      "path": "/private/tmp/canopy-audit-20261009/root-report-qa-g5q7zbq6",
+      "present_before": true,
+      "removed": true
+    },
+    {
+      "path": "/private/tmp/canopy-root-sync-sv00f6l2",
+      "present_before": true,
+      "removed": true
+    }
+  ],
+  "ok": true,
+  "scope": "Only coordinator-created old report-QA and root-sync fixtures; no other worker fixtures, shared caches, actual HOME, or user state cleanup."
+}
