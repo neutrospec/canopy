@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -230,25 +229,45 @@ func (s *Server) sessionOK(r *http.Request) bool {
 // localhost, where a hostile web page could otherwise POST blindly).
 func (s *Server) guard(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet && r.Method != http.MethodHead {
-			if o := r.Header.Get("Origin"); o != "" {
-				if u, err := url.Parse(o); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.User != nil || !strings.EqualFold(u.Host, r.Host) || u.Path != "" || u.RawQuery != "" || u.Fragment != "" {
-					http.Error(w, "cross-origin request rejected", http.StatusForbidden)
-					return
-				}
-			}
+		if r.Method != http.MethodGet && r.Method != http.MethodHead && !s.originOK(r) {
+			http.Error(w, "cross-origin request rejected", http.StatusForbidden)
+			return
 		}
+		// An explicitly supplied credential cannot fall back to a session.
+		if _, present := r.Header["Authorization"]; present && s.authRequired {
+			if !s.bearerOK(r) {
+				authenticationRequired(w)
+				return
+			}
+			// Authentication endpoints have session side effects; token clients
+			// already have access and never need to create or clear a cookie.
+			if r.URL.Path == "/login" || r.URL.Path == "/setup" || r.URL.Path == "/logout" {
+				http.Redirect(w, r, "/", http.StatusSeeOther)
+				return
+			}
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		if !s.authRequired {
 			next.ServeHTTP(w, r)
 			return
 		}
 		p := r.URL.Path
+		if s.tokenDigest != nil && !s.auth.hasAccount() && (p == "/login" || p == "/setup") {
+			authenticationRequired(w)
+			return
+		}
 		if strings.HasPrefix(p, "/static/") || p == "/login" || p == "/setup" {
 			next.ServeHTTP(w, r)
 			return
 		}
 		if s.sessionOK(r) {
 			next.ServeHTTP(w, r)
+			return
+		}
+		if s.tokenDigest != nil && !s.auth.hasAccount() {
+			authenticationRequired(w)
 			return
 		}
 		if strings.HasPrefix(p, "/api/") {
