@@ -95,6 +95,11 @@ class Canopy < Formula
 
       To run the web UI as a background service (http://localhost:8737):
         brew services start canopy
+      Server options persist in [serve] in the same config.toml:
+        addr, auth_token_file (absolute path), public_origin, allow_hosts.
+      For a private reverse proxy, see:
+        https://github.com/neutrospec/canopy/blob/main/docs/proxy-auth.md
+      Restart the service after configuration or token changes.
       It serves the wiki named by default_wiki. Adopt your wiki first:
         canopy init --wiki /path/to/wiki
       If a default already exists, edit default_wiki in your canopy config
