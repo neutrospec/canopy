@@ -48,6 +48,8 @@ type Server struct {
 
 	auth           *authStore
 	authRequired   bool
+	tokenDigest    *[32]byte
+	publicOrigin   string
 	hosts          *hostPolicy
 	searchSlots    chan struct{}
 	indexSlot      chan struct{}
@@ -201,7 +203,7 @@ func logRequests(next http.Handler) http.Handler {
 func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name string, data any) {
 	lang := s.i18n.resolveLang(r)
 	if m, ok := data.(map[string]any); ok {
-		m["AuthOn"] = s.authRequired
+		m["AuthOn"] = s.authRequired && !s.bearerOK(r)
 		// Language-selector data for base.html (invariant M4: the loaded
 		// locale list drives the menu, so a new file just appears).
 		m["Lang"] = lang

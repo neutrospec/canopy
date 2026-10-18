@@ -261,6 +261,8 @@ Git 상태를 확인해 해결한 뒤 진행하세요.
 
 ## 8. 다음 읽을 문서
 
+- [proxy-auth.md](proxy-auth.md) — 개인 Gateway 인증과 Homebrew 서비스 영구 설정
+
 - [troubleshooting.md](troubleshooting.md) — 뭔가 안 될 때 (PATH, 시맨틱 검색, 웹 인증)
 - [philosophy.md](philosophy.md) — 왜 이렇게 설계했는지 (원칙마다 검증 방법 포함)
 - [invariants.md](invariants.md) — 시스템이 건강한지 직접 점검하는 체크리스트

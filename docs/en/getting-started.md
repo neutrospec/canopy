@@ -1,4 +1,4 @@
-<!-- i18n-source: docs/getting-started.md sha:32f130d27d498026894dbdc88562482daf36dbd1 -->
+<!-- i18n-source: docs/getting-started.md sha:c32b27c3f924b8d8c1e6b400b07d5a35e06db4d4 -->
 > [한국어](../getting-started.md) · **English**
 
 # Getting Started
@@ -278,6 +278,8 @@ and `_meta/` contain history and state that cannot be reconstructed and must be
 preserved. **Keep pages, raw sources, history, and state together in Git.**
 
 ## 8. What to read next
+
+- [proxy-auth.md](../proxy-auth.md) — private Gateway authentication and persistent Homebrew service settings (Korean)
 
 - [troubleshooting.md](troubleshooting.md) — when something won't work (PATH, semantic search, web auth)
 - [philosophy.md](../philosophy.md) — why it's designed this way (each principle includes how to verify it)
