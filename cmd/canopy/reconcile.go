@@ -191,8 +191,8 @@ func enrichForeignContext(ctx context.Context, w *config.Wiki, cands []reconcile
 	}
 
 	var eng embed.Engine
-	if embed.Available() && embed.ModelAvailable() {
-		if e, err := embed.New(); err == nil {
+	if embed.ReadyFor(w) {
+		if e, err := embed.NewFor(w); err == nil {
 			eng = e
 			defer eng.Close()
 		} else {

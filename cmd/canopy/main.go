@@ -176,17 +176,14 @@ func refreshIndexContext(ctx context.Context, w *config.Wiki, eng embed.Engine) 
 	return st, scan, nil
 }
 
-// newEngine loads the in-process embedding model, with a heads-up on
-// stderr. Warm loads of the int8 model take ~0.5s, but a cold OS page
-// cache (first run after boot) can take several seconds, so report the
-// measured time instead of promising one.
-func newEngine() (embed.Engine, error) {
+// newEngine initializes only the selected provider and reports setup time.
+func newEngine(w *config.Wiki) (embed.Engine, error) {
 	if flagJSON {
-		return embed.New()
+		return embed.NewFor(w)
 	}
-	fmt.Fprint(os.Stderr, "loading embedding model… ")
+	fmt.Fprint(os.Stderr, "initializing embedding provider… ")
 	start := time.Now()
-	eng, err := embed.New()
+	eng, err := embed.NewFor(w)
 	if err != nil {
 		fmt.Fprintln(os.Stderr)
 		return nil, err
@@ -344,7 +341,7 @@ func cmdStatus() *cobra.Command {
 }
 
 func cmdReindex() *cobra.Command {
-	var noEmbed bool
+	var noEmbed, check bool
 	c := &cobra.Command{
 		Use:   "reindex",
 		Short: "Rebuild the derived index (pages, FTS, and embeddings)",
@@ -355,8 +352,8 @@ func cmdReindex() *cobra.Command {
 			}
 			banner(w)
 			var eng embed.Engine
-			if !noEmbed && embed.Available() && embed.ModelAvailable() {
-				if eng, err = newEngine(); err != nil {
+			if !noEmbed && !check && embed.ReadyFor(w) {
+				if eng, err = newEngine(w); err != nil {
 					return err
 				}
 				defer eng.Close()
@@ -375,12 +372,21 @@ func cmdReindex() *cobra.Command {
 					fmt.Fprintln(os.Stderr, "  "+s)
 				}
 			}
-			res, err := indexer.EnsureCurrentContext(cmd.Context(), w, st, scan, eng, progress)
+			var res *indexer.Result
+			if check {
+				res, err = indexer.InspectCurrentContext(cmd.Context(), w, st, scan, nil)
+			} else {
+				res, err = indexer.EnsureCurrentContext(cmd.Context(), w, st, scan, eng, progress)
+			}
 			if err != nil {
 				return err
 			}
 			if flagJSON {
 				return emitJSON(res)
+			}
+			if check {
+				fmt.Printf("embedding profile: %s\nneeds reindex: %d page(s)\n", res.Profile, res.NeedsReindex)
+				return nil
 			}
 			fmt.Printf("✓ indexed %d pages → %s\n", res.Pages, w.DBPath())
 			if eng != nil {
@@ -391,6 +397,7 @@ func cmdReindex() *cobra.Command {
 			return nil
 		},
 	}
+	c.Flags().BoolVar(&check, "check", false, "check embedding coverage and invalidate stale cache without inference")
 	c.Flags().BoolVar(&noEmbed, "no-embed", false, "skip embedding refresh")
 	return c
 }
@@ -423,7 +430,7 @@ func cmdSearch() *cobra.Command {
 			// missing; explicit --mode semantic fails loudly instead.
 			var eng embed.Engine
 			if mode != "keyword" {
-				eng, err = newEngine()
+				eng, err = newEngine(w)
 				if err != nil {
 					if mode == "semantic" {
 						return err
@@ -449,7 +456,7 @@ func cmdSearch() *cobra.Command {
 				}
 			}
 			if mode == "semantic" || mode == "hybrid" {
-				qv, err := embed.EmbedContext(cmd.Context(), eng, []string{query})
+				qv, err := embed.EmbedQueryContext(cmd.Context(), eng, []string{query})
 				if err != nil {
 					return err
 				}
@@ -533,7 +540,34 @@ func cmdModel() *cobra.Command {
 	c.AddCommand(&cobra.Command{
 		Use: "status", Short: "Show cheap bundle readiness and actual embedding profile",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, _ = loadWiki()
+			w, wikiErr := loadWiki()
+			if wikiErr != nil {
+				service, err := config.LoadEmbeddingService()
+				if err != nil {
+					return err
+				}
+				w = &config.Wiki{Cfg: config.Default(), EmbeddingService: service}
+			}
+			if p := w.EmbeddingService.Provider; p != "" && p != "builtin" {
+				eng, err := embed.NewFor(w)
+				if eng != nil {
+					defer eng.Close()
+				}
+				out := map[string]any{"provider": p, "model_name": w.EmbeddingService.Model, "profile": embed.ProfileFor(w), "configured": err == nil, "builtin_loaded": false, "connectivity_checked": false}
+				if err != nil {
+					out["error"] = err.Error()
+				}
+				if flagJSON {
+					return emitJSON(out)
+				}
+				fmt.Printf("embedding provider: %s\nmodel: %s\nprofile: %s\nbuilt-in model: not loaded\n", p, w.EmbeddingService.Model, embed.ProfileFor(w))
+				if err != nil {
+					fmt.Println("configuration error:", err)
+				} else {
+					fmt.Println("configuration ready (connectivity not checked)")
+				}
+				return nil
+			}
 			dir := embed.DefaultModelPath()
 			status, err := embed.CheckModel(dir)
 			if flagJSON {

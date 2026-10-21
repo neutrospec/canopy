@@ -82,8 +82,8 @@ func RunLockedWithID(w *config.Wiki, action, relPath string, related []string, n
 // revalidates its source snapshot before publication.
 func Refresh(w *config.Wiki, scan *wiki.ScanResult) error {
 	var eng embed.Engine
-	if embed.Available() && embed.ModelAvailable() {
-		if e, err := embed.New(); err == nil {
+	if embed.ReadyFor(w) {
+		if e, err := embed.NewFor(w); err == nil {
 			eng = e
 			defer eng.Close()
 		}

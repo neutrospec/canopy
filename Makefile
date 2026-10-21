@@ -25,7 +25,7 @@ LDFLAGS := -X $(PKG).version=$(VERSION) -X $(PKG).commit=$(COMMIT) -X $(PKG).dat
 build: deps
 	go build -tags ORT -ldflags "$(LDFLAGS)" -o canopy ./cmd/canopy
 
-# keyword-search-only binary, no cgo/native deps
+# keyword search + optional external embedding API, no cgo/native deps
 build-lite:
 	CGO_ENABLED=0 go build -ldflags "$(LDFLAGS)" -o canopy ./cmd/canopy
 

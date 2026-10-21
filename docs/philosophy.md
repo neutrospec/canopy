@@ -81,8 +81,8 @@ Karpathy가 지적한 "index.md가 수백 페이지를 넘으면 탐색 불가" 
 분류가 필요한 곳에서도 트리를 키우지 않고 facet(dir×type×tag 교차 필터)을 쓴다.
 
 - 점검: `canopy search "산업용 프로토콜" --json` — 한국어 시맨틱 매칭 확인.
-- 임베딩은 프로세스 내장(ONNX Runtime)이다. 외부 서버가 없으므로 "서버 다운 →
-  검색 마비" 실패 모드가 없다. 점검: ORT 빌드·모델·인덱스를 준비한 스크래치 위키에서
+- 기본 임베딩은 프로세스 내장(ONNX Runtime)이며 외부 API는 opt-in이다.
+  외부 제공자를 선택하면 내장 모델을 로딩하지 않는다. 점검: `go test ./internal/embed/`. 점검: ORT 빌드·모델·인덱스를 준비한 스크래치 위키에서
   네트워크를 끊고 `canopy search "산업용 프로토콜" --mode semantic --wiki "$W"`.
   준비 조건이 없으면 이 점검은 미검증이다.
 
@@ -244,8 +244,9 @@ git으로 기기 사이를 이동하는 `_meta/*` 파일은 파일 안의 `versi
 - **자동 커밋** — 원칙 5의 이유로. 사용자가 명시적으로 거부한 설계.
 - **위키 데이터 형식 발명** — 순수 markdown + frontmatter + wikilink.
   Obsidian이 그대로 열 수 없는 형식은 도입하지 않는다.
-- **외부 서비스 의존** — 임베딩·검색·상태 모두 로컬. 네트워크가 필요한 것은
-  git push/pull과 모델 최초 다운로드뿐. 웹 UI도 같은 규칙을 따른다:
+- **필수 외부 서비스 의존** — 기본 임베딩·검색·상태는 로컬. 선택적으로 외부
+  임베딩 API를 사용할 수 있으며 이 경우 문서·검색어가 서버로 전송된다
+  ([embedding-providers.md](embedding-providers.md), 불변식 W). 웹 UI 자산은 로컬이다:
   하이라이팅은 서버사이드(chroma), mermaid·수식·그래프 라이브러리는 CDN이
   아니라 바이너리에 내장(vendor)되어 오프라인에서 완결된다
   ([web-ui-plan-3.md](web-ui-plan-3.md) D2).

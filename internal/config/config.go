@@ -153,8 +153,9 @@ func Default() *Config {
 
 // Wiki bundles a resolved wiki root with its configuration.
 type Wiki struct {
-	Root string
-	Cfg  *Config
+	EmbeddingService EmbeddingService // machine-local; never serialized to wiki TOML
+	Root             string
+	Cfg              *Config
 	// HasTOML reports whether <root>/canopy.toml exists (i.e. init was run).
 	HasTOML bool
 	// LegacyTags reports that canopy.toml declares the old single `tags`
@@ -228,7 +229,7 @@ func AdoptAsDefaultWiki(root string) (bool, error) {
 	if err := toml.NewEncoder(&body).Encode(values); err != nil {
 		return false, err
 	}
-	if err := safefile.WriteFile(path, body.Bytes(), 0o644); err != nil {
+	if err := safefile.WriteFile(path, body.Bytes(), 0o600); err != nil {
 		return false, err
 	}
 	return true, nil
@@ -265,6 +266,11 @@ func Resolve(explicit string) (*Wiki, error) {
 			w.Cfg.Schema.Forms = nil
 		}
 	}
+	service, err := LoadEmbeddingService()
+	if err != nil {
+		return nil, err
+	}
+	w.EmbeddingService = service
 	return w, nil
 }
 

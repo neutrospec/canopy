@@ -739,10 +739,10 @@ func cmdArchive() *cobra.Command {
 
 func relatedAfterCreate(ctx context.Context, w *config.Wiki, plan *mutationPlan, r *mutationResult) []store.Hit {
 	related := []store.Hit{}
-	if !embed.Available() || !embed.ModelAvailable() {
+	if !embed.ReadyFor(w) {
 		return related
 	}
-	eng, err := embed.New()
+	eng, err := embed.NewFor(w)
 	if err != nil {
 		return related
 	}

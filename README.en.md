@@ -1,4 +1,4 @@
-<!-- i18n-source: README.md sha:771c7fe77683c10cdb895c8e33a103084d4cc9e1 -->
+<!-- i18n-source: README.md sha:d0878e15196a921259f8c23e55583fdfde218d7c -->
 # 🌳 canopy
 
 > [한국어](README.md) · **English**
@@ -20,8 +20,8 @@ while coexisting with existing tools like Obsidian.
   embeddings; moves rewrite inbound links. Use `lint` to check body links and
   structural problems in external edits.
 - **Hybrid search** — fuses BM25 keyword search with semantic vectors (bge-m3,
-  fully local ONNX inference). Works on mixed Korean/English documents, with no
-  external API calls.
+  local ONNX inference by default). Optionally connect an external embedding
+  API for BGE-M3, EmbeddingGemma 2, or other models without loading the built-in model.
 - **Web UI** (`canopy serve`) — search-first wiki browsing: instant search,
   backlinks, hover previews, dir×type×tag facet exploration, a local link graph,
   and body-edit proposals.
@@ -53,8 +53,10 @@ make build                 # -tags ORT; 버전 각인 + 최초 1회 libtokenizer
 make install               # ~/.local/bin (없으면 /opt/homebrew/bin)
 ```
 
-To use it without embeddings: `make build-lite` — no cgo needed, keyword search
-only (the `*_lite` archives on GitHub Releases are the same keyword-only binary).
+To use it without native inference: `make build-lite` — no cgo needed; supports
+keyword search and external embedding APIs (the `*_lite` release archives do too).
+See the [getting started guide](docs/en/getting-started.md#4-5-search) for API settings
+and reindexing after model changes.
 
 ## Quick start
 

@@ -42,7 +42,7 @@ so an agent can inject them into context and cite [[slug]] sources.`,
 				return err
 			}
 			banner(w)
-			eng, err := newEngine()
+			eng, err := newEngine(w)
 			if err != nil {
 				return fmt.Errorf("recall needs the embedding stack: %w", err)
 			}
@@ -52,7 +52,7 @@ so an agent can inject them into context and cite [[slug]] sources.`,
 				return err
 			}
 			defer st.Close()
-			qv, err := embed.EmbedContext(cmd.Context(), eng, []string{query})
+			qv, err := embed.EmbedQueryContext(cmd.Context(), eng, []string{query})
 			if err != nil {
 				return err
 			}

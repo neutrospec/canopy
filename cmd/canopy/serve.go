@@ -35,8 +35,8 @@ review and apply through the CLI; it never writes wiki pages directly.`,
 			banner(w)
 			// Engine failures degrade to keyword search, same as cmdSearch.
 			var eng embed.Engine
-			if embed.Available() && embed.ModelAvailable() {
-				if eng, err = newEngine(); err != nil {
+			if embed.ReadyFor(w) {
+				if eng, err = newEngine(w); err != nil {
 					fmt.Fprintf(os.Stderr, "search degrades to keyword only (%v)\n", err)
 					eng = nil
 				} else {
