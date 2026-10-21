@@ -72,7 +72,7 @@ func refresh(ctx context.Context, w *config.Wiki, st *store.Store, scan *wiki.Sc
 	} else {
 		*scan = *fresh
 	}
-	profile := embed.ProfileIDFor(w.Cfg.Embedding.Model)
+	profile := embed.ProfileFor(w)
 	if eng != nil {
 		if e, ok := eng.(interface{ ProfileID() string }); ok && e.ProfileID() != "" {
 			profile = e.ProfileID()
@@ -92,7 +92,7 @@ func refresh(ctx context.Context, w *config.Wiki, st *store.Store, scan *wiki.Sc
 		return nil, err
 	}
 	if current, ok := eng.(interface{ ProfileCurrent() bool }); ok && !current.ProfileCurrent() {
-		if err = st.SetProfile(embed.ProfileIDFor(w.Cfg.Embedding.Model)); err != nil {
+		if err = st.SetProfile(embed.ProfileFor(w)); err != nil {
 			return nil, err
 		}
 		return nil, fmt.Errorf("embedding model files changed; reload engine and reindex")
@@ -154,7 +154,7 @@ func refresh(ctx context.Context, w *config.Wiki, st *store.Store, scan *wiki.Sc
 			}
 			defer publishGuard.Unlock()
 			if current, ok := eng.(interface{ ProfileCurrent() bool }); ok && !current.ProfileCurrent() {
-				if err = st.SetProfile(embed.ProfileIDFor(w.Cfg.Embedding.Model)); err != nil {
+				if err = st.SetProfile(embed.ProfileFor(w)); err != nil {
 					return err
 				}
 				return fmt.Errorf("embedding model changed during inference; reload engine and reindex")
@@ -189,7 +189,7 @@ func refresh(ctx context.Context, w *config.Wiki, st *store.Store, scan *wiki.Sc
 		return nil, err
 	}
 	if current, ok := eng.(interface{ ProfileCurrent() bool }); ok && !current.ProfileCurrent() {
-		if err = st.SetProfile(embed.ProfileIDFor(w.Cfg.Embedding.Model)); err != nil {
+		if err = st.SetProfile(embed.ProfileFor(w)); err != nil {
 			return nil, err
 		}
 		return nil, fmt.Errorf("model changed during refresh; reload engine and reindex")

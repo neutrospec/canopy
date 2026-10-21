@@ -1,9 +1,5 @@
-// Package embed computes text embeddings fully in-process (no external
-// API) using hugot with the ONNX Runtime backend and bge-m3.
-//
-// The engine is only available in binaries built with `-tags ORT`
-// (see engine_ort.go / engine_stub.go). Model files live under
-// $XDG_DATA_HOME/canopy/models/bge-m3.
+// Package embed computes embeddings using a built-in ONNX model or an optional
+// OpenAI-compatible external API. External engines also work in lite builds.
 package embed
 
 import (

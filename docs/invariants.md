@@ -303,6 +303,16 @@ scalar는 관용 읽기와 taxonomy 검사를 유지한다. 모든 쓰기의 새
 | V15 | 실제 lite CLI 실패 경로와 사용자 상태 격리가 CI와 release의 동일 소스에 연결된다 | `make test-cli`; `make release-check` — F2 강등·실패 보존·HOME/XDG·발행 전 검사 |
 | V16 | Overview·Discover 등 탐색 HTML은 추론을 기다리지 않고, 완전한 현재 캐시만 의미 추천에 사용한다; 서버당 하나의 백그라운드 갱신은 요청 취소와 독립적이며 종료 시 정리한다 | `go test ./internal/webui/ -run 'TestNavigation|TestBackground'`; `go test ./internal/indexer/ -run TestInspect` — 멈춘 엔진·반복 요청·keyword 검색·변경 원문·profile 변경·완료 후 의미 추천·종료 대조 |
 
+## W. 선택 가능한 임베딩 제공자
+
+| # | 불변식 | 점검 |
+|---|--------|------|
+| W1 | 머신 로컬 `config.toml`의 외부 API 선택은 ORT·내장 모델 확인/로딩을 우회하며 lite 빌드에서도 동작한다. 외부 API 실패 시 내장 모델로 전환하지 않는다 | `go test ./internal/embed/ ./cmd/canopy/` — 외부 HTTP fixture·lite 경로·실패 대조 |
+| W2 | API URL·토큰은 위키 설정에 쓰지 않으며 응답 본문·인증값을 오류나 프로파일에 노출하지 않는다 | `go test ./internal/config/ ./internal/embed/` — 설정 보존·위키 직렬화·HTTP 오류/redirect 대조 |
+| W3 | 제공자·URL·모델·revision·차원·입력 형식·chunker 변경은 기존 벡터를 무효화한다. 토큰 교체만으로는 재임베딩하지 않는다 | `go test ./internal/indexer/ ./internal/embed/` — 같은 차원 모델 변경·nil engine 검사·토큰 교체 대조 |
+| W4 | 외부 응답의 개수·index·차원·유한값·영벡터를 검증하고 L2 정규화한다. 요청에는 timeout·취소·배치/응답 크기 제한을 적용한다 | `go test ./internal/embed/` — HTTP fixture의 순서 역전·잘못된 응답·취소 검증 |
+| W5 | EmbeddingGemma 입력은 query/document 역할을 구분하며 서버가 전처리를 담당하면 plain으로 설정할 수 있다 | `go test ./internal/embed/ ./internal/indexer/` — query/document 입력·프로파일 대조 |
+
 ## 감사 절차
 
 사전 조건은 임시 HOME/XDG/TMPDIR, quoted 경로 `W`, 준비된 바이너리·모듈 캐시다.

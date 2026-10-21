@@ -28,12 +28,18 @@
 
 ## 시맨틱 검색이 아무것도 찾지 못함
 
-`canopy model status`가 진단해 줍니다. 체크 순서:
+`canopy model status`가 진단해 줍니다. 내장 제공자의 체크 순서:
 
 1. `canopy model pull`로 모델을 받았는지
-2. 이 바이너리가 ORT 빌드인지 (`make build-lite` 빌드는 keyword 전용)
+2. 이 바이너리가 ORT 빌드인지 (`make build-lite`에는 내장 추론이 없음)
 3. `libonnxruntime`이 설치되어 있는지 (`brew install onnxruntime`)
 4. `canopy reindex`로 임베딩이 만들어졌는지
+
+외부 제공자는 ORT·모델 다운로드가 필요 없습니다. 머신 로컬 `config.toml`의
+`[embedding]`에서 URL·토큰·서버 모델명·차원을 확인하고, `canopy reindex --check --json`의
+`needs_reindex`가 0보다 크면 `canopy reindex`를 실행하세요. 같은 이름으로 서버 모델을
+교체했다면 `revision`도 바꿉니다. HTTP 오류는 상태 코드로 보고되며 내장 모델로
+자동 전환하지 않습니다. [설정 방법](getting-started.md#4-5-검색).
 
 모델 없이 읽으려면 `search --mode keyword`로 찾고 `show`로 본문을 확인하세요.
 hybrid search는 keyword로 강등되지만 `recall`은 임베딩 없이 실패합니다. `canopy.toml`의

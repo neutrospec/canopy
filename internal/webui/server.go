@@ -770,7 +770,7 @@ func (s *Server) runSearch(ctx context.Context, query string, k int) (searchOutc
 		hits := kw
 		chunkText := map[string]string{}
 		if semanticQuery && s.eng != nil && current.SemanticReady {
-			qv, err := cembed.EmbedContext(work, s.eng, []string{query})
+			qv, err := cembed.EmbedQueryContext(work, s.eng, []string{query})
 			if err != nil {
 				return err
 			}

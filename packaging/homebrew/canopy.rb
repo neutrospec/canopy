@@ -87,9 +87,11 @@ class Canopy < Formula
 
   def caveats
     <<~EOS
-      Semantic search uses a local bge-m3 ONNX model (~2.3GB). Download it once:
+      Built-in semantic search uses a local bge-m3 ONNX model (~2.3GB). Download it once:
         canopy model pull
-      Keyword search works without it. If the ONNX Runtime library is not found
+      Alternatively, configure an OpenAI-compatible embedding API in the machine-local
+      ~/.config/canopy/config.toml [embedding] section; no local model is loaded.
+      Keyword search works without either provider. If the ONNX Runtime library is not found
       automatically (e.g. Linuxbrew or a non-standard prefix), point canopy at it:
         export CANOPY_ONNXRUNTIME_DIR="#{formula_opt_lib("onnxruntime")}"
 

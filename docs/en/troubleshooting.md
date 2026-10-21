@@ -1,4 +1,4 @@
-<!-- i18n-source: docs/troubleshooting.md sha:ff3ad9e4bd3903572d9c1ff487b3b6a524bfe3e5 -->
+<!-- i18n-source: docs/troubleshooting.md sha:30a87d56d6f59c8a377ea120a80746609b1ec5d5 -->
 > [한국어](../troubleshooting.md) · **English**
 
 # Troubleshooting
@@ -30,12 +30,19 @@ an interactive shell.
 
 ## Semantic search finds nothing
 
-`canopy model status` diagnoses it. Check in order:
+`canopy model status` diagnoses it. For the built-in provider, check in order:
 
 1. Did you download the model with `canopy model pull`?
-2. Is this binary an ORT build? (A `make build-lite` build is keyword-only.)
+2. Is this binary an ORT build? (`make build-lite` has no native inference.)
 3. Is `libonnxruntime` installed? (`brew install onnxruntime`)
 4. Were embeddings built with `canopy reindex`?
+
+External providers need neither ORT nor a model download. Check the URL, token,
+server model name, and dimension in `[embedding]` in the machine-local
+`config.toml`. If `canopy reindex --check --json` reports `needs_reindex` above
+zero, run `canopy reindex`. Update `revision` when replacing server weights under
+the same model name. HTTP failures report the status code and do not switch to
+the built-in model. [Setup instructions](getting-started.md#4-5-search).
 
 To read without a model, find pages with `search --mode keyword` and inspect
 their bodies with `show`. Hybrid search degrades to keyword, but `recall` fails
