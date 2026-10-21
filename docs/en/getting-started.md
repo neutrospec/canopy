@@ -1,4 +1,4 @@
-<!-- i18n-source: docs/getting-started.md sha:c32b27c3f924b8d8c1e6b400b07d5a35e06db4d4 -->
+<!-- i18n-source: docs/getting-started.md sha:975d85a08f5522914e91cd4ed8381ae925a2ee9f -->
 > [한국어](../getting-started.md) · **English**
 
 # Getting Started
@@ -129,9 +129,43 @@ Before your first semantic search, download the model with `canopy model pull --
 For optional int8 conversion, check dependencies and paths with
 `scripts/quantize-model.py --help` in the repository. To use its default output,
 set `model` under `[embedding]` in the wiki's `canopy.toml` to `bge-m3-int8`, then
-check `model status` and run `reindex` with the same `--wiki`. Lite builds provide keyword
-search. `recall` requires embeddings; when unavailable, use keyword search and
+check `model status` and run `reindex` with the same `--wiki`. Lite builds support keyword search and external embedding APIs without native inference. `recall` requires embeddings; when unavailable, use keyword search and
 show to check evidence.
+
+To use an external service, add the following to `~/.config/canopy/config.toml`
+(or `canopy/config.toml` under `XDG_CONFIG_HOME`), rather than the wiki file.
+
+```toml
+[embedding]
+provider = "openai"
+url = ""
+token = ""
+model = "embeddinggemma-2"
+dimension = 768
+input_format = "auto"
+revision = ""
+```
+
+Set `url` to the complete OpenAI-compatible endpoint (for example,
+`https://host/v1/embeddings`) and `token` to the Bearer token. Match `model` to the
+name accepted by your server. For a BGE-M3 service, use `model = "bge-m3"` and
+`dimension = 1024`. The external provider does not load the built-in model; it
+sends documents and queries to the configured server. An empty URL fails setup,
+and hybrid search falls back to keyword search. If your server already adds
+EmbeddingGemma prefixes, use `input_format = "plain"`.
+
+```bash
+canopy model status --wiki "$wiki" --json
+canopy reindex --check --wiki "$wiki" --json
+canopy reindex --wiki "$wiki"
+```
+
+`--check` reports `needs_reindex` without calling the API and invalidates
+incompatible cached vectors. Changes to the model, endpoint, dimension, input
+format, or `revision` require reindexing; token rotation preserves vectors.
+Change `revision` when replacing server weights under the same model name.
+Restart a running `serve` process to apply settings.
+Details: [Embedding provider design (Korean)](../embedding-providers.md).
 
 ### 4-6. View in the browser
 

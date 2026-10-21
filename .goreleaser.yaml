@@ -1,7 +1,7 @@
 # GoReleaser turns a pushed tag (v0.1.0) into a GitHub release with a changelog
 # generated from Conventional Commit messages.
 #
-# Scope note: it builds the CGO-free *lite* binaries (keyword search only) as
+# Scope note: it builds the CGO-free *lite* binaries (keyword search + optional external embeddings) as
 # cross-platform downloads. The full semantic-search build needs ONNX Runtime
 # and a native tokenizer lib at build time, which does not cross-compile
 # cleanly — that path is distributed via the source-build Homebrew formula
@@ -30,7 +30,7 @@ builds:
 
 archives:
   - id: lite
-    # _lite in the name is deliberate: these binaries do keyword search only.
+    # _lite denotes no native inference; external embedding APIs are supported.
     name_template: "canopy_{{ .Version }}_{{ .Os }}_{{ .Arch }}_lite"
     files:
       - README.md
@@ -83,4 +83,7 @@ release:
         brew install neutrospec/tap/canopy
         canopy model pull   # one-time ~2.3GB bge-m3 download
 
-    The attached `*_lite` archives are keyword-search-only (no dependencies).
+    The attached `*_lite` archives support keyword search and external embedding APIs
+    without native dependencies. For an external BGE-M3 or EmbeddingGemma 2 service,
+    configure `[embedding]` in `~/.config/canopy/config.toml`; no model download is needed.
+    See [setup instructions](https://github.com/neutrospec/canopy/blob/main/docs/en/getting-started.md#4-5-search).

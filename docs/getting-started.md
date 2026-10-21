@@ -121,8 +121,41 @@ canopy search "산업 장비 통신" --wiki "$wiki"        # hybrid, 미준비�
 `canopy reindex --wiki "$wiki"`로 임베딩을 만듭니다. 선택적인 int8 변환은 저장소의
 `scripts/quantize-model.py --help`에서 의존성·경로를 확인하세요. 기본 출력인
 `bge-m3-int8`을 쓰려면 위키 `canopy.toml`의 `[embedding]`에서 `model`을 그 이름으로
-바꾸고, 같은 `--wiki`로 `model status` 확인과 `reindex`를 실행합니다. lite 빌드는 keyword 전용입니다. `recall`은 임베딩이
+바꾸고, 같은 `--wiki`로 `model status` 확인과 `reindex`를 실행합니다. lite 빌드는 내장 추론 없이 keyword 검색과 외부 임베딩 API를 지원합니다. `recall`은 임베딩이
 필수이므로 준비되지 않았다면 keyword search와 show로 근거를 확인합니다.
+
+외부 서비스를 쓰려면 위키 파일 대신 `~/.config/canopy/config.toml`
+(`XDG_CONFIG_HOME` 설정 시 그 아래 `canopy/config.toml`)에 추가합니다.
+
+```toml
+[embedding]
+provider = "openai"
+url = ""
+token = ""
+model = "embeddinggemma-2"
+dimension = 768
+input_format = "auto"
+revision = ""
+```
+
+`url`에는 전체 OpenAI 호환 endpoint(예: `https://host/v1/embeddings`), `token`에는
+Bearer 토큰을 넣습니다. 서버가 받는 모델명이 다르면 `model`을 맞추세요.
+BGE-M3 서비스는 `model = "bge-m3"`, `dimension = 1024`로 설정합니다.
+외부 제공자는 내장 모델을 로딩하지 않으며 문서와 검색어를 설정한 서버로 전송합니다.
+URL이 비어 있으면 연결 준비가 실패하며 hybrid는 keyword로 강등합니다.
+서버가 EmbeddingGemma 접두사를 이미 붙인다면 `input_format = "plain"`을 사용하세요.
+
+```bash
+canopy model status --wiki "$wiki" --json
+canopy reindex --check --wiki "$wiki" --json
+canopy reindex --wiki "$wiki"
+```
+
+`--check`는 API 호출 없이 `needs_reindex`를 보고하고 호환되지 않는 캐시 벡터를
+무효화합니다. 모델·주소·차원·입력 형식·`revision` 변경은 재인덱싱 대상으로 판단하고,
+토큰 교체는 기존 벡터를 유지합니다. 같은 모델명으로 서버 가중치를 교체하면
+`revision`을 바꾸세요. 실행 중인 `serve`에는 재시작 후 적용됩니다.
+상세: [임베딩 제공자 설계](embedding-providers.md).
 
 ### 4-6. 웹으로 보기
 

@@ -17,7 +17,8 @@
   유지합니다. 쓰기 뒤 인덱스·로그·임베딩이 갱신되고, 이동 시 인바운드 링크를
   재작성합니다. 본문 링크와 외부 편집의 구조 문제는 `lint`로 확인합니다.
 - **하이브리드 검색** — BM25 키워드 + 시맨틱 벡터(bge-m3, 완전 로컬 ONNX 추론)를
-  융합합니다. 한국어·영어 혼용 문서에서 동작하며, 외부 API 호출이 없습니다.
+  융합합니다. 기본은 로컬 추론이며, 선택적으로 BGE-M3·EmbeddingGemma 2 등의
+  외부 임베딩 API를 연결하면 내장 모델을 로딩하지 않습니다.
 - **웹 UI** (`canopy serve`) — 검색에서 시작하는 위키 브라우징: 인스턴트 서치,
   백링크, hover 미리보기, dir×type×tag facet 탐색, 로컬 링크 그래프, 본문 수정 제안까지.
 - **Second brain 루프** — 잊힌 페이지 재발견(`resurface`), 유사하지만 연결 안 된
@@ -47,8 +48,9 @@ make build                 # -tags ORT; 버전 각인 + 최초 1회 libtokenizer
 make install               # ~/.local/bin (없으면 /opt/homebrew/bin)
 ```
 
-임베딩 없이 쓰려면: `make build-lite` — cgo 불필요, keyword 검색만 제공됩니다
-(GitHub 릴리스의 `*_lite` 아카이브도 같은 keyword-전용 바이너리입니다).
+내장 추론 없이 쓰려면: `make build-lite` — cgo 불필요, keyword 검색과 외부 임베딩
+API를 지원합니다(GitHub 릴리스의 `*_lite` 아카이브도 동일).
+외부 API 설정과 모델 변경 후 재인덱싱은 [시작 가이드](docs/getting-started.md#4-5-검색)를 참고하세요.
 
 ## 빠른 시작
 
