@@ -121,10 +121,15 @@ scalar는 관용 읽기와 taxonomy 검사를 유지한다. 모든 쓰기의 새
 
 | # | 불변식 | 점검 |
 |---|--------|------|
-| I1 | 공개 바인딩은 무인증으로 어떤 페이지도 서빙하지 않는다 (philosophy 원칙 11) | `canopy serve --addr :8737` 후 무인증 `curl -s -o /dev/null -w '%{http_code}' http://<LAN-IP>:8737/page/anything` → 302 (로그인/설정으로 리다이렉트, 본문 없음) |
+| I1 | 공개 바인딩은 무인증으로 어떤 페이지도 서빙하지 않는다 (philosophy 원칙 11) | `canopy serve --addr :8737` 후 무인증 `curl -s -o /dev/null -w '%{http_code}' http://<LAN-IP>:8737/page/anything` → 302 (로그인/설정으로 리다이렉트, 본문 없음), 토큰 전용 모드에서는 401 |
 | I2 | 웹 저장은 edit **제안 태스크** 접수이며 페이지 Markdown을 바꾸지 않는다 (큐·읽음·피드백 상태 쓰기는 별도) | `POST /edit/{slug}` 후 페이지 파일 해시 **동일** + `_meta/tasks/`의 body == 제출 전문. `go test ./internal/webui/ -run TestWebEditFilesProposalNotFile` (현재 계약: [agent-tasks.md](agent-tasks.md)) |
 | I3 | 계정 등록은 터미널의 설정 코드 없이는 불가 | 공개 바인딩·무계정 상태에서 코드 없이 `POST /setup` → 400 |
 | I4 | 교차 출처 변조 거부 | `curl -X POST -H "Origin: https://evil.example" http://localhost:8737/logout` → 403 |
+
+| I5 | 토큰 설정 시 loopback도 보호하며 무계정 Bearer 접속은 세션 쿠키·setup 없이 동작한다. 잘못된 Authorization은 세션으로 우회하지 않는다 | `go test ./internal/webui -run 'TestProxyAuth'` |
+| I6 | 토큰 파일은 절대경로·일반 파일·0600·64자리 hex(32바이트), 끝 개행만 선택적으로 허용. 잘못된 설정은 시작 실패 | `go test ./internal/webui -run TestTokenFile`; `go test ./cmd/canopy -run TestServe` |
+| I7 | 변경 요청은 same-origin 또는 명시한 HTTPS public origin만 허용. Origin 없는 서버 요청은 허용하며 Host 검증은 토큰과 독립 | `go test ./internal/webui -run 'TestProxyOrigin|TestProxyAuth'` |
+| I8 | 서비스 옵션은 전역 `[serve]`에서 읽고 명시 CLI가 우선. 잘못된 설정은 무인증 기본값으로 강등하지 않는다. 기존 설정은 그대로 유효 | `go test ./internal/config -run TestServeConfig`; `go test ./cmd/canopy -run TestServe` |
 
 ## J. 버전·마이그레이션 ([versioning.md](versioning.md))
 

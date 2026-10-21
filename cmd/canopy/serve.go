@@ -13,12 +13,13 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/neutrospec/canopy/internal/config"
 	"github.com/neutrospec/canopy/internal/embed"
 	"github.com/neutrospec/canopy/internal/webui"
 )
 
 func cmdServe() *cobra.Command {
-	var addr string
+	var addr, tokenFile, publicOrigin string
 	var allowHosts []string
 	c := &cobra.Command{
 		Use:   "serve",
@@ -28,8 +29,38 @@ backlinks, hybrid search, faceted browsing, and Wikipedia-style
 missing-page fallback. The body editor files proposals for an agent to
 review and apply through the CLI; it never writes wiki pages directly.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			settings, err := config.LoadServeConfig()
+			if err != nil {
+				return err
+			}
+			if cmd.Flags().Changed("addr") {
+				settings.Addr = addr
+			}
+			if cmd.Flags().Changed("auth-token-file") {
+				settings.AuthTokenFile = tokenFile
+			}
+			if cmd.Flags().Changed("public-origin") {
+				settings.PublicOrigin = publicOrigin
+			}
+			if cmd.Flags().Changed("allow-host") {
+				settings.AllowHosts = allowHosts
+			}
+			addr = settings.Addr
+			allowHosts = settings.AllowHosts
 			w, err := loadWiki()
 			if err != nil {
+				return err
+			}
+			token := ""
+			if settings.AuthTokenFile != "" {
+				token, err = webui.ReadTokenFile(settings.AuthTokenFile, w.Root)
+				if err != nil {
+					return err
+				}
+			}
+			// Validate before loading models or opening a listener.
+			probe := &webui.Server{}
+			if err := probe.ConfigurePublicOrigin(settings.PublicOrigin); err != nil {
 				return err
 			}
 			banner(w)
@@ -52,7 +83,14 @@ review and apply through the CLI; it never writes wiki pages directly.`,
 			defer srv.Close()
 			// Non-loopback binds require the auth wall (plan-2 D1/D2):
 			// a public address can never serve the wiki unauthenticated.
-			if !webui.IsLoopbackAddr(addr) {
+			if err := srv.ConfigurePublicOrigin(settings.PublicOrigin); err != nil {
+				return err
+			}
+			if token != "" {
+				if err := srv.EnableTokenAuth(token); err != nil {
+					return err
+				}
+			} else if !webui.IsLoopbackAddr(addr) {
 				code, err := srv.EnableAuth()
 				if err != nil {
 					return err
@@ -93,5 +131,7 @@ review and apply through the CLI; it never writes wiki pages directly.`,
 	}
 	c.Flags().StringVar(&addr, "addr", "localhost:8737", "listen address (non-loopback binds require authentication)")
 	c.Flags().StringSliceVar(&allowHosts, "allow-host", nil, "additional trusted Host authorities for a domain/proxy, e.g. wiki.example:443; forwarded headers are ignored")
+	c.Flags().StringVar(&tokenFile, "auth-token-file", "", "absolute path to a 0600 file containing a 64-character hex bearer token")
+	c.Flags().StringVar(&publicOrigin, "public-origin", "", "exact public HTTPS origin allowed for proxy mutation requests")
 	return c
 }
